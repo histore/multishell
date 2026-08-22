@@ -1,0 +1,64 @@
+# Build and Output directories
+[Bb]in/
+[Oo]bj/
+[Aa]rtifacts/
+[Oo]ut/
+[Tt]est[Rr]esults/
+
+# .NET & Visual Studio
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+*.dbmdl
+*.jfm
+*.pidb
+*.vsp
+*.vspx
+*.vsmdi
+*.testsettings
+*.VisualState.xml
+
+# Visual Studio / Visual Studio Code / JetBrains IDEs
+.vs/
+.idea/
+.fleet/
+*.ionide
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Crash dumps & memory profiles
+*.dmp
+*.dump
+*.mdmp
+
+# OS Generated Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.Spotlight-V100
+.Trashes
+
+# Local Temporary & Application State Files
+*.tmp
+*.temp
+*.log
+*multishell_workspace_state.json
+*multishell_state.json
+*multishell_test_*.json
+*multishell_loc_test_*.json
+*multishell_vm_test_*.json
+
+# Antigravity & Scratch Artifacts
+scratch/

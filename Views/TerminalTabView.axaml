@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MultiShell.ViewModels"
+             xmlns:terminal="using:SvcSystems.UI.Terminal"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+             x:Class="MultiShell.Views.TerminalTabView"
+             x:DataType="vm:TerminalTabViewModel"
+             Focusable="True"
+             Background="{Binding TerminalBackgroundBrush}">
+
+    <!-- ThemeVariantScope explicitly sets ThemeVariant for the terminal and its color palette -->
+    <ThemeVariantScope x:Name="TerminalScope">
+        <!-- True terminal emulator control backed by ConPTY -->
+        <terminal:TerminalControl x:Name="Terminal"
+                                  Model="{Binding TerminalModel}"
+                                  Focusable="True"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Stretch"
+                                  Background="{Binding TerminalBackgroundBrush}"
+                                  CaretBrush="{Binding TerminalCaretBrush}" />
+    </ThemeVariantScope>
+</UserControl>

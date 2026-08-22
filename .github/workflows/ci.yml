@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build & Test (.NET 10 on Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore MultiShell.slnx
+
+      - name: Build Solution
+        run: dotnet build MultiShell.slnx --configuration Release --no-restore
+
+      - name: Run Automated Tests
+        run: dotnet test MultiShell.Tests/MultiShell.Tests.csproj --configuration Release --no-build --verbosity normal

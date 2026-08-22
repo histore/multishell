@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MultiShell.csproj" />
+  <Project Path="MultiShell.Tests/MultiShell.Tests.csproj" />
+</Solution>

@@ -1,0 +1,106 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MultiShell.App"
+             xmlns:local="using:MultiShell"
+             RequestedThemeVariant="Dark">
+
+    <Application.DataTemplates>
+        <local:ViewLocator />
+    </Application.DataTemplates>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <SolidColorBrush x:Key="TerminalSurfaceBackground">#0E0F15</SolidColorBrush>
+            <SolidColorBrush x:Key="TerminalCaretBrush">#7AA2F7</SolidColorBrush>
+
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppWindowBackground">#13141C</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppHeaderBackground">#0C0D12</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppContentBackground">#0E0F15</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceBackground">#181924</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceHover">#202231</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceActive">#0E0F15</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceSubtle">#14151E</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceModal">#1A1C28</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppBorder">#252738</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppBorderSubtle">#1F212D</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppBorderHover">#32354A</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextPrimary">#FFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextSecondary">#C2C8E0</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextMuted">#626880</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextDimmed">#7E849E</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextKbd">#A9B1D6</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppAccent">#7AA2F7</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppAccentHover">#89B4FA</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSuccess">#9ECE6A</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDanger">#F7768E</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppModalOverlay">#55000000</SolidColorBrush>
+
+                    <!-- SvcSystems.UI.Terminal Dark Xterm Color Palette -->
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor0">#0E0F15</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor1">#F7768E</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor2">#9ECE6A</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor3">#E0AF68</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor4">#7AA2F7</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor5">#BB9AF7</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor6">#7DCFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor7">#C0CAF5</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor8">#414868</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor9">#F7768E</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor10">#9ECE6A</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor11">#E0AF68</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor12">#7AA2F7</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor13">#BB9AF7</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor14">#7DCFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor15">#FFFFFF</SolidColorBrush>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppWindowBackground">#EEF0F6</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppHeaderBackground">#E2E5EE</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppContentBackground">#F8F9FC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceBackground">#E5E8F2</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceHover">#D6DBE8</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceActive">#F8F9FC</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceSubtle">#FFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSurfaceModal">#FFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppBorder">#CBD1E1</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppBorderSubtle">#D5DAE8</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppBorderHover">#A6B0C8</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextPrimary">#1A1D2B</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextSecondary">#2E3348</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextMuted">#757D96</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextDimmed">#5A627B</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextKbd">#383D54</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppAccent">#2563EB</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppAccentHover">#1D4ED8</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppSuccess">#16A34A</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDanger">#DC2626</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppModalOverlay">#33000000</SolidColorBrush>
+
+                    <!-- SvcSystems.UI.Terminal Light Xterm Color Palette -->
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor0">#F8F9FC</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor1">#D32F2F</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor2">#2E7D32</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor3">#E65100</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor4">#1976D2</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor5">#7B1FA2</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor6">#0097A7</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor7">#1A1D2B</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor8">#757D96</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor9">#C62828</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor10">#1B5E20</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor11">#BF360C</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor12">#0D47A1</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor13">#4A148C</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor14">#006064</SolidColorBrush>
+                    <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor15">#0A0B10</SolidColorBrush>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+</Application>

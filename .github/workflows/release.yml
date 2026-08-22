@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    name: Build & Package Windows Release
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Extract Tag Name
+        id: vars
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          Write-Output "TAG_NAME=$tag" >> $env:GITHUB_OUTPUT
+          Write-Host "Releasing version $tag"
+
+      - name: Run Automated Tests
+        run: dotnet test MultiShell.Tests/MultiShell.Tests.csproj --configuration Release --verbosity normal
+
+      - name: Publish Single-File Executable (win-x64)
+        run: |
+          dotnet publish MultiShell.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o ./publish
+
+      - name: Create Release Zip Archive
+        shell: pwsh
+        run: |
+          $zipName = "MultiShell-win-x64-${{ steps.vars.outputs.TAG_NAME }}.zip"
+          Compress-Archive -Path ./publish/* -DestinationPath "./$zipName"
+          Write-Output "ZIP_NAME=$zipName" >> $env:GITHUB_OUTPUT
+        id: package
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "MultiShell ${{ steps.vars.outputs.TAG_NAME }}"
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            ${{ steps.package.outputs.ZIP_NAME }}

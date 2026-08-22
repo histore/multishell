@@ -1,0 +1,890 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MultiShell.ViewModels"
+        xmlns:views="using:MultiShell.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+        Width="900" Height="600"
+        WindowStartupLocation="CenterScreen"
+        x:Class="MultiShell.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+                Title="MultiShell"
+        Icon="/Assets/multishell.ico"
+        Background="{DynamicResource AppWindowBackground}">
+
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+Shift+T" Command="{Binding AddNewTabCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+D" Command="{Binding DuplicateTabCommand}" />
+    </Window.KeyBindings>
+
+    <Window.Styles>
+        <!-- Inactive Tab Button Style -->
+        <Style Selector="Button.tabBtn">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="4,4,0,0" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Margin" Value="1,0,1,0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tabBtn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderHover}" />
+        </Style>
+
+        <!-- Active Tab Button Style -->
+        <Style Selector="Button.tabBtn.active">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceActive}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+            <Setter Property="BorderThickness" Value="1,2,1,0" />
+            <Setter Property="Margin" Value="1,0,1,0" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <!-- Close Tab Button Inside Tab -->
+        <Style Selector="Button.tabCloseBtn">
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextMuted}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Margin" Value="6,0,0,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tabCloseBtn:pointerover">
+            <Setter Property="Background" Value="#33FF0055" />
+            <Setter Property="Foreground" Value="{DynamicResource AppDanger}" />
+        </Style>
+
+        <!-- Add Tab (+) Button Style -->
+        <Style Selector="Button.addTabBtn">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="4,4,0,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="2,0,2,0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.addTabBtn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderHover}" />
+        </Style>
+
+        <!-- Tab Scroll Buttons (◀ / ▶) -->
+        <Style Selector="Button.tabScrollBtn">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="4,4,0,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="1,0,1,0" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tabScrollBtn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AppBorder}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+        </Style>
+
+        <!-- Tab Dropdown Menu Button Style -->
+        <Style Selector="Button.tabMenuBtn">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="4,4,0,0" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Margin" Value="1,0,0,0" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tabMenuBtn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AppBorder}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+        </Style>
+
+        <!-- Tab Menu Items Style inside Flyout -->
+        <Style Selector="Button.tabMenuItemBtn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Margin" Value="0,1" />
+        </Style>
+        <Style Selector="Button.tabMenuItemBtn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+        </Style>
+        <Style Selector="Button.tabMenuItemBtn.active">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}" />
+        </Style>
+
+        <!-- Header Action Buttons (History, Settings) -->
+        <Style Selector="Button.toolbarActionBtn">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="4,4,0,0" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Margin" Value="1,0,1,0" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontFamily" Value="Segoe UI, Inter, sans-serif" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.toolbarActionBtn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+        </Style>
+
+        <!-- History Drawer TabControl Styles -->
+        <Style Selector="TabControl.historyTabs">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="12,8,12,12" />
+        </Style>
+        <Style Selector="TabControl.historyTabs TabItem">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextMuted}" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="CornerRadius" Value="4,4,0,0" />
+            <Setter Property="FontFamily" Value="Consolas, Cascadia Code, monospace" />
+        </Style>
+        <Style Selector="TabControl.historyTabs TabItem:selected">
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}" />
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+        </Style>
+
+        <!-- History ListBox Styles -->
+        <Style Selector="ListBox.historyListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="ScrollViewer.AllowAutoHide" Value="False" />
+        </Style>
+        <Style Selector="ListBox.historyListBox ScrollViewer">
+            <Setter Property="AllowAutoHide" Value="False" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        </Style>
+        <Style Selector="ListBox.historyListBox ListBoxItem">
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+        </Style>
+        <Style Selector="ListBox.historyListBox ListBoxItem:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+        </Style>
+        <Style Selector="ListBox.historyListBox ListBoxItem:selected">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+        </Style>
+
+        <!-- Modal Dialog Styles -->
+        <Style Selector="Border.modalDialog">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceModal}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="BoxShadow" Value="0 12 32 0 #99000000" />
+        </Style>
+        <Style Selector="Border.modalSection">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtle}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12" />
+        </Style>
+        <Style Selector="Border.kbdBadge">
+            <Setter Property="Background" Value="{DynamicResource AppBorder}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderHover}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Padding" Value="5,2" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto, *">
+        <!-- Top Toolbar Header Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource AppHeaderBackground}" BorderBrush="{DynamicResource AppBorderSubtle}" BorderThickness="0,0,0,1" Padding="6,4,6,0">
+            <Grid ColumnDefinitions="*, Auto">
+                <!-- Tab Bar with Overflow Navigation -->
+                <Grid Grid.Column="0" ColumnDefinitions="Auto, *, Auto, Auto" Margin="0,0,6,0">
+                    <!-- Left Scroll Arrow Button -->
+                    <Button x:Name="TabScrollLeftBtn"
+                            Grid.Column="0"
+                            Classes="tabScrollBtn"
+                            Content="‹"
+                            ToolTip.Tip="{Binding Loc[Btn_Tab_Scroll_Left]}"
+                            IsVisible="False"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,2,0" />
+
+                    <!-- Scrollable Tabs Area with Edge Gradient Overlays -->
+                    <Grid Grid.Column="1">
+                        <ScrollViewer x:Name="TabsScrollViewer"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <StackPanel Orientation="Horizontal" Spacing="1" VerticalAlignment="Bottom">
+                                <!-- Tabs List -->
+                                <ItemsControl x:Name="TabsItemsControl" ItemsSource="{Binding Tabs}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="1" VerticalAlignment="Bottom" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:TerminalTabViewModel">
+                                            <Button Classes="tabBtn"
+                                                    Classes.active="{Binding IsSelected}"
+                                                    ToolTip.Tip="{Binding WorkingDirectory}"
+                                                    Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).SelectTabCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text=">_"
+                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               FontSize="10"
+                                                               FontWeight="Bold"
+                                                               Foreground="{DynamicResource AppAccent}"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding Title}"
+                                                               VerticalAlignment="Center"
+                                                               MaxWidth="180"
+                                                               TextTrimming="PrefixCharacterEllipsis" />
+                                                    <Button Classes="tabCloseBtn"
+                                                            Content="×"
+                                                            Command="{Binding RequestCloseCommand}"
+                                                            ToolTip.Tip="Close tab" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Add Tab (+) Button placed directly next to the tabs -->
+                                <Button Classes="addTabBtn"
+                                        Content="+"
+                                        ToolTip.Tip="{Binding Loc[Btn_New_Tab_Tooltip]}"
+                                        Command="{Binding AddNewTabCommand}"
+                                        VerticalAlignment="Bottom" />
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Left Edge Gradient Indicator -->
+                        <Border x:Name="LeftEdgeFade"
+                                HorizontalAlignment="Left"
+                                Width="20"
+                                IsHitTestVisible="False"
+                                IsVisible="False">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                    <GradientStop Offset="0.0" Color="#B30C0D12" />
+                                    <GradientStop Offset="1.0" Color="#000C0D12" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+
+                        <!-- Right Edge Gradient Indicator -->
+                        <Border x:Name="RightEdgeFade"
+                                HorizontalAlignment="Right"
+                                Width="20"
+                                IsHitTestVisible="False"
+                                IsVisible="False">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                    <GradientStop Offset="0.0" Color="#000C0D12" />
+                                    <GradientStop Offset="1.0" Color="#B30C0D12" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                    </Grid>
+
+                    <!-- Right Scroll Arrow Button -->
+                    <Button x:Name="TabScrollRightBtn"
+                            Grid.Column="2"
+                            Classes="tabScrollBtn"
+                            Content="›"
+                            ToolTip.Tip="{Binding Loc[Btn_Tab_Scroll_Right]}"
+                            IsVisible="False"
+                            VerticalAlignment="Bottom"
+                            Margin="2,0,2,0" />
+
+                    <!-- Quick Tab List Dropdown Button -->
+                    <Button x:Name="TabListMenuButton"
+                            Grid.Column="3"
+                            Classes="tabMenuBtn"
+                            ToolTip.Tip="{Binding Loc[Btn_Tab_Menu_Tooltip]}"
+                            VerticalAlignment="Bottom"
+                            Margin="2,0,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="≡" FontSize="11" VerticalAlignment="Center" />
+                            <TextBlock Text="▾" FontSize="9" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Background="{DynamicResource AppSurfaceSubtle}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="6" Padding="6" MinWidth="260" MaxHeight="350">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding Tabs}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:TerminalTabViewModel">
+                                                    <Button Classes="tabMenuItemBtn"
+                                                            Classes.active="{Binding IsSelected}"
+                                                            Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).SelectTabCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            HorizontalAlignment="Stretch">
+                                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                                            <TextBlock Grid.Column="0" Text=">_" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{Binding WorkingDirectory}" FontSize="10" Foreground="{DynamicResource AppTextMuted}" TextTrimming="PrefixCharacterEllipsis" />
+                                                            </StackPanel>
+                                                            <TextBlock Grid.Column="2" Text="●" FontSize="8" Foreground="{DynamicResource AppSuccess}" IsVisible="{Binding IsSelected}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                                        </Grid>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </Grid>
+
+                <!-- Right Action Buttons: History, Settings (Gear ⚙) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="3" VerticalAlignment="Bottom" Margin="4,0,0,0">
+                    <Button x:Name="ToggleHistoryToolbarBtn"
+                            Classes="toolbarActionBtn"
+                            Content="{Binding Loc[Btn_Tab_History_Text]}"
+                            ToolTip.Tip="{Binding Loc[Btn_Tab_History_Tooltip]}" />
+
+                    <!-- Settings Button (Gear ⚙) with Flyout Menu -->
+                    <Button x:Name="SettingsToolbarBtn"
+                            Classes="toolbarActionBtn"
+                            ToolTip.Tip="{Binding Loc[Settings_Menu_Title]}">
+                        <StackPanel Orientation="Horizontal" Spacing="3">
+                            <TextBlock Text="⚙" FontSize="12" VerticalAlignment="Center" />
+                            <TextBlock Text="▾" FontSize="9" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Background="{DynamicResource AppSurfaceSubtle}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="6" Padding="6" MinWidth="230">
+                                    <StackPanel Spacing="2">
+                                        <!-- App Theme Toggle Item -->
+                                        <Button Classes="tabMenuItemBtn"
+                                                Command="{Binding ToggleAppThemeCommand}"
+                                                HorizontalAlignment="Stretch"
+                                                ToolTip.Tip="Switch App UI between Dark and Light theme">
+                                            <Grid ColumnDefinitions="*, Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_App_Theme]}" FontSize="12" VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Loc[Theme_Dark]}" FontSize="11" Foreground="{DynamicResource AppAccent}" IsVisible="{Binding IsDarkAppTheme}" />
+                                                    <TextBlock Text="{Binding Loc[Theme_Light]}" FontSize="11" Foreground="#E0AF68" IsVisible="{Binding !IsDarkAppTheme}" />
+                                                    <TextBlock Text="●" FontSize="8" Foreground="{DynamicResource AppSuccess}" VerticalAlignment="Center" Margin="2,0,0,0" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Button>
+
+                                        <!-- Terminal Theme Toggle Item -->
+                                        <Button Classes="tabMenuItemBtn"
+                                                Command="{Binding ToggleTerminalThemeCommand}"
+                                                HorizontalAlignment="Stretch"
+                                                ToolTip.Tip="{Binding Loc[Settings_Terminal_Theme]}">
+                                            <Grid ColumnDefinitions="*, Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Terminal_Theme]}" FontSize="12" VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Loc[Theme_Dark]}" FontSize="11" Foreground="{DynamicResource AppAccent}" IsVisible="{Binding IsDarkTerminalTheme}" />
+                                                    <TextBlock Text="{Binding Loc[Theme_Light]}" FontSize="11" Foreground="#E0AF68" IsVisible="{Binding !IsDarkTerminalTheme}" />
+                                                    <TextBlock Text="●" FontSize="8" Foreground="{DynamicResource AppSuccess}" VerticalAlignment="Center" Margin="2,0,0,0" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Button>
+
+                                        <!-- Language Toggle Item -->
+                                        <Button Classes="tabMenuItemBtn"
+                                                Command="{Binding ToggleLanguageCommand}"
+                                                HorizontalAlignment="Stretch"
+                                                ToolTip.Tip="{Binding Loc[Settings_Language]}">
+                                            <Grid ColumnDefinitions="*, Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Language]}" FontSize="12" VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Loc.CurrentLanguage}"
+                                                               FontFamily="Consolas, monospace"
+                                                               FontSize="10"
+                                                               FontWeight="Bold"
+                                                               Foreground="{DynamicResource AppAccent}"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBlock Text="●" FontSize="8" Foreground="{DynamicResource AppSuccess}" VerticalAlignment="Center" Margin="2,0,0,0" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Button>
+
+                                        <!-- Multi-Language Quick Selector (DE / EN / FR / ES) -->
+                                        <Border Background="{DynamicResource AppSurfaceBackground}"
+                                                BorderBrush="{DynamicResource AppBorder}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="2"
+                                                Margin="0,1,0,3">
+                                            <Grid ColumnDefinitions="*,*,*,*">
+                                                <Button Grid.Column="0"
+                                                        Command="{Binding SelectLanguageCommand}"
+                                                        CommandParameter="de"
+                                                        HorizontalAlignment="Stretch"
+                                                        Padding="0,3"
+                                                        CornerRadius="3"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        HorizontalContentAlignment="Center"
+                                                        ToolTip.Tip="Deutsch (German)">
+                                                    <TextBlock Text="DE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
+                                                </Button>
+                                                <Button Grid.Column="1"
+                                                        Command="{Binding SelectLanguageCommand}"
+                                                        CommandParameter="en"
+                                                        HorizontalAlignment="Stretch"
+                                                        Padding="0,3"
+                                                        CornerRadius="3"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        HorizontalContentAlignment="Center"
+                                                        ToolTip.Tip="English (Default Fallback)">
+                                                    <TextBlock Text="EN" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
+                                                </Button>
+                                                <Button Grid.Column="2"
+                                                        Command="{Binding SelectLanguageCommand}"
+                                                        CommandParameter="fr"
+                                                        HorizontalAlignment="Stretch"
+                                                        Padding="0,3"
+                                                        CornerRadius="3"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        HorizontalContentAlignment="Center"
+                                                        ToolTip.Tip="Français (French)">
+                                                    <TextBlock Text="FR" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
+                                                </Button>
+                                                <Button Grid.Column="3"
+                                                        Command="{Binding SelectLanguageCommand}"
+                                                        CommandParameter="es"
+                                                        HorizontalAlignment="Stretch"
+                                                        Padding="0,3"
+                                                        CornerRadius="3"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        HorizontalContentAlignment="Center"
+                                                        ToolTip.Tip="Español (Spanish)">
+                                                    <TextBlock Text="ES" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+
+                                        <Rectangle Height="1" Fill="{DynamicResource AppBorder}" Margin="0,4" />
+
+                                        <!-- Help Item -->
+                                        <Button x:Name="SettingsHelpMenuItem"
+                                                Classes="tabMenuItemBtn"
+                                                HorizontalAlignment="Stretch">
+                                            <Grid ColumnDefinitions="*, Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Help_Title]}" FontSize="12" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="F1" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Button>
+
+                                        <!-- About Item -->
+                                        <Button x:Name="SettingsAboutMenuItem"
+                                                Classes="tabMenuItemBtn"
+                                                HorizontalAlignment="Stretch">
+                                            <Grid ColumnDefinitions="*, Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_About_Title]}" FontSize="12" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{Binding AppVersion}" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Active Tab Content Area with Left Hover Overlay & Modals -->
+        <Grid Grid.Row="1" Background="{DynamicResource AppContentBackground}">
+            <!-- Terminal Content -->
+            <ContentControl x:Name="TabContentControl" Content="{Binding SelectedTab}">
+                <ContentControl.DataTemplates>
+                    <DataTemplate DataType="vm:TerminalTabViewModel">
+                        <views:TerminalTabView />
+                    </DataTemplate>
+                </ContentControl.DataTemplates>
+            </ContentControl>
+
+            <!-- Left Edge Hover Trigger Indicator -->
+            <Border x:Name="HistoryHoverTrigger"
+                    HorizontalAlignment="Left"
+                    Width="10"
+                    Background="Transparent"
+                    ZIndex="10">
+                <Border Width="2"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Stretch"
+                        Background="{DynamicResource AppBorder}"
+                        Opacity="0.6"
+                        Margin="1,0,0,0" />
+            </Border>
+
+            <!-- History Flyout Overlay Panel taking 90% width -->
+            <Grid x:Name="HistoryDrawer"
+                  HorizontalAlignment="Stretch"
+                  IsVisible="False"
+                  ZIndex="20"
+                  ColumnDefinitions="9*, 1*">
+                <!-- 90% Overlay Container -->
+                <Border Grid.Column="0"
+                        Background="{DynamicResource AppWindowBackground}"
+                        BorderBrush="{DynamicResource AppBorder}"
+                        BorderThickness="0,0,1,0"
+                        BoxShadow="8 0 24 0 #AA000000">
+                    <Grid RowDefinitions="Auto, *">
+                        <!-- Drawer Header -->
+                        <Border Grid.Row="0" Background="{DynamicResource AppHeaderBackground}" BorderBrush="{DynamicResource AppBorderSubtle}" BorderThickness="0,0,0,1" Padding="12,8">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding Loc[Drawer_Title]}" FontFamily="Consolas, Cascadia Code, monospace" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                                    <TextBlock Text="[ ▲/▼ Navigate  |  Enter Execute  |  Esc Close ]" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="✕"
+                                        x:Name="CloseHistoryButton"
+                                        Background="Transparent"
+                                        Foreground="{DynamicResource AppTextMuted}"
+                                        Padding="6,2"
+                                        FontSize="11" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Drawer Content: TabControl for Commands and Directories -->
+                        <TabControl x:Name="HistoryTabControl" Grid.Row="1" Classes="historyTabs">
+                            <!-- Tab 1: Commands -->
+                            <TabItem Header="{Binding Loc[Drawer_Tab_Commands]}">
+                                <Grid RowDefinitions="Auto, *">
+                                    <!-- Search Filter Box -->
+                                    <Border Grid.Row="0"
+                                            Background="{DynamicResource AppSurfaceSubtle}"
+                                            BorderBrush="{DynamicResource AppBorder}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Margin="0,6,0,6"
+                                            Padding="4">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <TextBlock Grid.Column="0" Text="🔍" FontSize="11" Margin="6,0,6,0" VerticalAlignment="Center" Foreground="{DynamicResource AppTextMuted}" />
+                                            <TextBox Grid.Column="1"
+                                                     x:Name="CommandHistorySearchBox"
+                                                     Text="{Binding SelectedTab.CommandFilterQuery, Mode=TwoWay}"
+                                                     PlaceholderText="{Binding Loc[Drawer_Search_Commands_Placeholder]}"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     FontSize="12"
+                                                     VerticalAlignment="Center" />
+                                            <Button Grid.Column="2"
+                                                    x:Name="ClearCommandFilterBtn"
+                                                    Content="✕"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AppTextMuted}"
+                                                    FontSize="10"
+                                                    Padding="4,2"
+                                                    IsVisible="{Binding !!SelectedTab.CommandFilterQuery.Length}" />
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Command List -->
+                                    <Border Grid.Row="1" Background="{DynamicResource AppSurfaceSubtle}" CornerRadius="6" Padding="4" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1">
+                                        <Grid>
+                                            <ListBox x:Name="CommandHistoryListBox"
+                                                     Classes="historyListBox"
+                                                     SelectionMode="Single"
+                                                     Focusable="True"
+                                                     ItemsSource="{Binding SelectedTab.FilteredCommandHistory}">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <Grid ColumnDefinitions="Auto, *">
+                                                            <TextBlock Grid.Column="0"
+                                                                       Text="> "
+                                                                       FontFamily="Consolas, Cascadia Code, monospace"
+                                                                       FontSize="12"
+                                                                       Foreground="{DynamicResource AppSuccess}"
+                                                                       Margin="0,0,4,0" />
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding}"
+                                                                       FontFamily="Consolas, Cascadia Code, monospace"
+                                                                       FontSize="12"
+                                                                       Foreground="{DynamicResource AppTextSecondary}"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <TextBlock Text="{Binding Loc[Drawer_Empty_Commands]}"
+                                                       Foreground="{DynamicResource AppTextMuted}"
+                                                       FontSize="12"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       IsVisible="{Binding !SelectedTab.FilteredCommandHistory.Count}" />
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </TabItem>
+
+                            <!-- Tab 2: Directories -->
+                            <TabItem Header="{Binding Loc[Drawer_Tab_Directories]}">
+                                <Grid RowDefinitions="Auto, *">
+                                    <!-- Search Filter Box -->
+                                    <Border Grid.Row="0"
+                                            Background="{DynamicResource AppSurfaceSubtle}"
+                                            BorderBrush="{DynamicResource AppBorder}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Margin="0,6,0,6"
+                                            Padding="4">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <TextBlock Grid.Column="0" Text="🔍" FontSize="11" Margin="6,0,6,0" VerticalAlignment="Center" Foreground="{DynamicResource AppTextMuted}" />
+                                            <TextBox Grid.Column="1"
+                                                     x:Name="DirectoryHistorySearchBox"
+                                                     Text="{Binding SelectedTab.DirectoryFilterQuery, Mode=TwoWay}"
+                                                     PlaceholderText="{Binding Loc[Drawer_Search_Directories_Placeholder]}"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     FontSize="12"
+                                                     VerticalAlignment="Center" />
+                                            <Button Grid.Column="2"
+                                                    x:Name="ClearDirectoryFilterBtn"
+                                                    Content="✕"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AppTextMuted}"
+                                                    FontSize="10"
+                                                    Padding="4,2"
+                                                    IsVisible="{Binding !!SelectedTab.DirectoryFilterQuery.Length}" />
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Directory List -->
+                                    <Border Grid.Row="1" Background="{DynamicResource AppSurfaceSubtle}" CornerRadius="6" Padding="4" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1">
+                                        <Grid>
+                                            <ListBox x:Name="DirectoryHistoryListBox"
+                                                     Classes="historyListBox"
+                                                     SelectionMode="Single"
+                                                     Focusable="True"
+                                                     ItemsSource="{Binding SelectedTab.FilteredDirectoryHistory}">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <Grid ColumnDefinitions="Auto, *">
+                                                            <TextBlock Grid.Column="0"
+                                                                       Text="/ "
+                                                                       FontFamily="Consolas, Cascadia Code, monospace"
+                                                                       FontSize="12"
+                                                                       Foreground="{DynamicResource AppAccent}"
+                                                                       Margin="0,0,4,0" />
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding}"
+                                                                       FontFamily="Consolas, Cascadia Code, monospace"
+                                                                       FontSize="12"
+                                                                       Foreground="{DynamicResource AppTextSecondary}"
+                                                                       TextTrimming="PrefixCharacterEllipsis" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <TextBlock Text="{Binding Loc[Drawer_Empty_Directories]}"
+                                                       Foreground="{DynamicResource AppTextMuted}"
+                                                       FontSize="12"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       IsVisible="{Binding !SelectedTab.FilteredDirectoryHistory.Count}" />
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+                    </Grid>
+                </Border>
+
+                <!-- Remaining 10% backdrop area closing drawer when clicked -->
+                <Border Grid.Column="1"
+                        x:Name="HistoryBackdrop"
+                        Background="#22000000" />
+            </Grid>
+
+            <!-- Modal Backdrop & Dialog for Help (F1) -->
+            <Grid x:Name="HelpModal"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Background="{DynamicResource AppModalOverlay}"
+                  IsVisible="False"
+                  ZIndex="50">
+                <Border Classes="modalDialog"
+                        Width="560"
+                        MaxHeight="500"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="18">
+                    <Grid RowDefinitions="Auto, *, Auto">
+                        <!-- Modal Title Bar -->
+                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,14">
+                            <TextBlock Grid.Column="0" Text="{Binding Loc[Help_Modal_Title]}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" x:Name="CloseHelpModalButton" Content="✕" Background="Transparent" Foreground="{DynamicResource AppTextMuted}" FontSize="12" Padding="4,2" />
+                        </Grid>
+
+                        <!-- Content Area -->
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="12">
+                                <!-- Keyboard Shortcuts Section -->
+                                <Border Classes="modalSection">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="{Binding Loc[Help_Section_Navigation]}" FontFamily="Consolas, monospace" FontWeight="Bold" Foreground="{DynamicResource AppAccent}" FontSize="11" />
+
+                                        <Grid ColumnDefinitions="140, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto">
+                                            <Border Grid.Row="0" Grid.Column="0" Classes="kbdBadge" Margin="0,2,8,2" HorizontalAlignment="Left">
+                                                <TextBlock Text="Ctrl + Shift + T" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
+                                            </Border>
+                                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Loc[Help_Tab_New]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
+
+                                            <Border Grid.Row="1" Grid.Column="0" Classes="kbdBadge" Margin="0,2,8,2" HorizontalAlignment="Left">
+                                                <TextBlock Text="Ctrl + Shift + D" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
+                                            </Border>
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Loc[Help_Tab_Dup]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
+
+                                            <Border Grid.Row="2" Grid.Column="0" Classes="kbdBadge" Margin="0,2,8,2" HorizontalAlignment="Left">
+                                                <TextBlock Text="Ctrl + Shift + H" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
+                                            </Border>
+                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Loc[Help_Hist_Toggle]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
+
+                                            <Border Grid.Row="3" Grid.Column="0" Classes="kbdBadge" Margin="0,2,8,2" HorizontalAlignment="Left">
+                                                <TextBlock Text="F1" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
+                                            </Border>
+                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Loc[Help_Nav_F1]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
+
+                                            <Border Grid.Row="4" Grid.Column="0" Classes="kbdBadge" Margin="0,2,8,2" HorizontalAlignment="Left">
+                                                <TextBlock Text="Escape" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
+                                            </Border>
+                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Loc[Help_Nav_Esc]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Features Guide -->
+                                <Border Classes="modalSection">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="{Binding Loc[Help_Section_Features]}" FontFamily="Consolas, monospace" FontWeight="Bold" Foreground="{DynamicResource AppSuccess}" FontSize="11" />
+                                        <TextBlock Text="{Binding Loc[Help_Feature_1]}" Foreground="{DynamicResource AppTextKbd}" FontSize="12" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Loc[Help_Feature_2]}" Foreground="{DynamicResource AppTextKbd}" FontSize="12" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Loc[Help_Feature_3]}" Foreground="{DynamicResource AppTextKbd}" FontSize="12" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Loc[Help_Feature_4]}" Foreground="{DynamicResource AppTextKbd}" FontSize="12" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Close Footer Button -->
+                        <Button Grid.Row="2" x:Name="OkHelpModalButton" Content="{Binding Loc[Help_Close_Button]}" HorizontalAlignment="Right" Margin="0,14,0,0" Padding="16,5" Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" CornerRadius="4" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Modal Backdrop & Dialog for About -->
+            <Grid x:Name="AboutModal"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Background="{DynamicResource AppModalOverlay}"
+                  IsVisible="False"
+                  ZIndex="60">
+                <Border Classes="modalDialog"
+                        Width="450"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="20">
+                    <Grid RowDefinitions="Auto, Auto, Auto, Auto">
+                        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="4" Margin="0,0,0,14">
+                            <Image Source="/Assets/multishell.png" Width="56" Height="56" Margin="0,0,0,4" HorizontalAlignment="Center" />
+                            <TextBlock Text="MultiShell" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[About_Modal_Subtitle]}" FontSize="11" Foreground="{DynamicResource AppAccent}" HorizontalAlignment="Center" />
+                        </StackPanel>
+
+                        <Border Grid.Row="1" Classes="modalSection" Margin="0,0,0,14">
+                            <StackPanel Spacing="5">
+                                <Grid ColumnDefinitions="115, *">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[About_Version]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                                    <TextBlock Grid.Column="1" Text="{Binding AppVersion}" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                                </Grid>
+                                <Grid ColumnDefinitions="115, *">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[About_Framework]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                                    <TextBlock Grid.Column="1" Text=".NET 10.0 / C# 13" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
+                                </Grid>
+                                <Grid ColumnDefinitions="115, *">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[About_UI_Terminal]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                                    <TextBlock Grid.Column="1" Text="Avalonia UI 11.2 / ConPTY" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
+                                </Grid>
+                                <Grid ColumnDefinitions="115, *">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[About_License]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                                    <TextBlock Grid.Column="1" Text="Apache-2.0" Foreground="{DynamicResource AppSuccess}" FontSize="12" />
+                                </Grid>
+                                <Grid ColumnDefinitions="115, *">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[About_Built_With]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Loc[About_Built_With_Value]}" Foreground="{DynamicResource AppAccent}" FontWeight="SemiBold" FontSize="12" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Grid.Row="2" Text="{Binding Loc[About_Footer]}" FontSize="11" Foreground="{DynamicResource AppTextMuted}" HorizontalAlignment="Center" Margin="0,0,0,14" />
+
+                        <Button Grid.Row="3" x:Name="OkAboutModalButton" Content="{Binding Loc[About_OK_Button]}" HorizontalAlignment="Center" Padding="24,5" Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" CornerRadius="4" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
