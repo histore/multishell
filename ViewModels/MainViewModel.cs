@@ -19,6 +19,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly ITabStatePersistenceService _persistenceService;
     private readonly IThemeService _themeService;
     private readonly ILocalizationService _localizationService;
+    private readonly IFontSizeService _fontSizeService;
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
@@ -36,12 +37,72 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private string _currentLanguage = "de";
 
     [ObservableProperty]
-    private bool _isGerman = true;
+    private int _appFontSizeLevel = 3;
+
+    [ObservableProperty]
+    private int _terminalFontSizeLevel = 3;
+
+    [ObservableProperty]
+    private double _appFontScale = 1.0;
+
+    [ObservableProperty]
+    private double _terminalFontSize = 12.0;
+
+    public bool IsGerman => string.Equals(CurrentLanguage, "de", StringComparison.OrdinalIgnoreCase);
+    public bool IsEnglish => string.Equals(CurrentLanguage, "en", StringComparison.OrdinalIgnoreCase);
+    public bool IsFrench => string.Equals(CurrentLanguage, "fr", StringComparison.OrdinalIgnoreCase);
+    public bool IsSpanish => string.Equals(CurrentLanguage, "es", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsAppFontSizeLevel1 => AppFontSizeLevel == 1;
+    public bool IsAppFontSizeLevel2 => AppFontSizeLevel == 2;
+    public bool IsAppFontSizeLevel3 => AppFontSizeLevel == 3;
+    public bool IsAppFontSizeLevel4 => AppFontSizeLevel == 4;
+    public bool IsAppFontSizeLevel5 => AppFontSizeLevel == 5;
+
+    public bool IsTerminalFontSizeLevel1 => TerminalFontSizeLevel == 1;
+    public bool IsTerminalFontSizeLevel2 => TerminalFontSizeLevel == 2;
+    public bool IsTerminalFontSizeLevel3 => TerminalFontSizeLevel == 3;
+    public bool IsTerminalFontSizeLevel4 => TerminalFontSizeLevel == 4;
+    public bool IsTerminalFontSizeLevel5 => TerminalFontSizeLevel == 5;
+
+    public string CurrentLanguageUpper => CurrentLanguage.ToUpperInvariant();
+
+    partial void OnCurrentLanguageChanged(string value)
+    {
+        OnPropertyChanged(nameof(CurrentLanguageUpper));
+        OnPropertyChanged(nameof(IsGerman));
+        OnPropertyChanged(nameof(IsEnglish));
+        OnPropertyChanged(nameof(IsFrench));
+        OnPropertyChanged(nameof(IsSpanish));
+    }
+
+    partial void OnAppFontSizeLevelChanged(int value)
+    {
+        OnPropertyChanged(nameof(IsAppFontSizeLevel1));
+        OnPropertyChanged(nameof(IsAppFontSizeLevel2));
+        OnPropertyChanged(nameof(IsAppFontSizeLevel3));
+        OnPropertyChanged(nameof(IsAppFontSizeLevel4));
+        OnPropertyChanged(nameof(IsAppFontSizeLevel5));
+    }
+
+    partial void OnTerminalFontSizeLevelChanged(int value)
+    {
+        OnPropertyChanged(nameof(IsTerminalFontSizeLevel1));
+        OnPropertyChanged(nameof(IsTerminalFontSizeLevel2));
+        OnPropertyChanged(nameof(IsTerminalFontSizeLevel3));
+        OnPropertyChanged(nameof(IsTerminalFontSizeLevel4));
+        OnPropertyChanged(nameof(IsTerminalFontSizeLevel5));
+    }
 
     /// <summary>
     /// Gets the localization service for dynamic XAML string bindings.
     /// </summary>
     public ILocalizationService Loc => _localizationService;
+
+    /// <summary>
+    /// Gets the font size service.
+    /// </summary>
+    public IFontSizeService FontSizeService => _fontSizeService;
 
     /// <summary>
     /// Gets the list of available language options.
@@ -84,12 +145,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     public MainViewModel()
-        : this(new PowerShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService())
+        : this(new PowerShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService())
     {
     }
 
     public MainViewModel(IPowerShellProcessService powerShellProcessService)
-        : this(powerShellProcessService, new TabStatePersistenceService(), new ThemeService(), new LocalizationService())
+        : this(powerShellProcessService, new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService())
     {
     }
 
@@ -97,22 +158,44 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IPowerShellProcessService powerShellProcessService,
         ITabStatePersistenceService persistenceService,
         IThemeService? themeService = null,
-        ILocalizationService? localizationService = null)
+        ILocalizationService? localizationService = null,
+        IFontSizeService? fontSizeService = null)
     {
         _powerShellProcessService = powerShellProcessService ?? throw new ArgumentNullException(nameof(powerShellProcessService));
         _persistenceService = persistenceService ?? throw new ArgumentNullException(nameof(persistenceService));
         _themeService = themeService ?? new ThemeService();
         _localizationService = localizationService ?? new LocalizationService();
+        _fontSizeService = fontSizeService ?? new FontSizeService();
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;
-        _isGerman = _localizationService.IsGerman;
+        _appFontSizeLevel = _fontSizeService.AppFontSizeLevel;
+        _terminalFontSizeLevel = _fontSizeService.TerminalFontSizeLevel;
+        _appFontScale = _fontSizeService.AppFontScale;
+        _terminalFontSize = _fontSizeService.TerminalFontSize;
 
         _localizationService.LanguageChanged += lang =>
         {
             CurrentLanguage = lang;
-            IsGerman = _localizationService.IsGerman;
             OnPropertyChanged(nameof(Loc));
+        };
+
+        _fontSizeService.AppFontSizeLevelChanged += lvl =>
+        {
+            AppFontSizeLevel = lvl;
+            AppFontScale = _fontSizeService.AppFontScale;
+            TriggerSaveState();
+        };
+
+        _fontSizeService.TerminalFontSizeLevelChanged += lvl =>
+        {
+            TerminalFontSizeLevel = lvl;
+            TerminalFontSize = _fontSizeService.TerminalFontSize;
+            foreach (var tab in Tabs)
+            {
+                tab.UpdateFontSize(_fontSizeService.TerminalFontSize);
+            }
+            TriggerSaveState();
         };
 
         _ = InitializeWorkspaceAsync();
@@ -125,6 +208,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (!string.IsNullOrWhiteSpace(state?.SavedLanguage))
         {
             _localizationService.SetLanguage(state.SavedLanguage, isUserSelection: true);
+        }
+
+        if (state != null)
+        {
+            _fontSizeService.SetAppFontSizeLevel(state.AppFontSizeLevel);
+            _fontSizeService.SetTerminalFontSizeLevel(state.TerminalFontSizeLevel);
         }
 
         void ApplyLoadedTabs()
@@ -314,6 +403,56 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         TriggerSaveState();
     }
 
+    [RelayCommand]
+    public void SetAppFontSizeLevel(object? level)
+    {
+        if (level is int intVal)
+        {
+            _fontSizeService.SetAppFontSizeLevel(intVal);
+        }
+        else if (level != null && int.TryParse(level.ToString(), out var parsed))
+        {
+            _fontSizeService.SetAppFontSizeLevel(parsed);
+        }
+    }
+
+    [RelayCommand]
+    public void SetTerminalFontSizeLevel(object? level)
+    {
+        if (level is int intVal)
+        {
+            _fontSizeService.SetTerminalFontSizeLevel(intVal);
+        }
+        else if (level != null && int.TryParse(level.ToString(), out var parsed))
+        {
+            _fontSizeService.SetTerminalFontSizeLevel(parsed);
+        }
+    }
+
+    [RelayCommand]
+    public void IncreaseAppFontSize()
+    {
+        _fontSizeService.SetAppFontSizeLevel(AppFontSizeLevel + 1);
+    }
+
+    [RelayCommand]
+    public void DecreaseAppFontSize()
+    {
+        _fontSizeService.SetAppFontSizeLevel(AppFontSizeLevel - 1);
+    }
+
+    [RelayCommand]
+    public void IncreaseTerminalFontSize()
+    {
+        _fontSizeService.SetTerminalFontSizeLevel(TerminalFontSizeLevel + 1);
+    }
+
+    [RelayCommand]
+    public void DecreaseTerminalFontSize()
+    {
+        _fontSizeService.SetTerminalFontSizeLevel(TerminalFontSizeLevel - 1);
+    }
+
     public void TriggerSaveState()
     {
         if (_isDisposed || !_isInitialized) return;
@@ -325,7 +464,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             t.DirectoryHistory.ToList())).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
-        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage);
+        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage, AppFontSizeLevel, TerminalFontSizeLevel);
 
         _ = _persistenceService.SaveStateAsync(workspaceState);
     }
@@ -341,7 +480,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             t.DirectoryHistory.ToList())).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
-        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage);
+        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage, AppFontSizeLevel, TerminalFontSizeLevel);
 
         try
         {
@@ -358,6 +497,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         tab.DirectoryChanged += OnTabDirectoryChanged;
         tab.HistoryChanged += OnTabHistoryChanged;
         tab.UpdateTheme(IsDarkTerminalTheme);
+        tab.UpdateFontSize(_fontSizeService.TerminalFontSize);
     }
 
     private void OnTabDirectoryChanged(TerminalTabViewModel tab, string newDirectory)

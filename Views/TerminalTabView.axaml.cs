@@ -92,6 +92,14 @@ public partial class TerminalTabView : UserControl
                 {
                     Dispatcher.UIThread.Post(() => ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm));
                 }
+                else if (args.PropertyName == nameof(TerminalTabViewModel.TerminalFontSize))
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        Terminal.FontSize = vm.TerminalFontSize;
+                        ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm);
+                    });
+                }
             };
 
             vm.PropertyChanged += _propChangedHandler;

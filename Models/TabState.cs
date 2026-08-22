@@ -17,4 +17,6 @@ public record TabState(
 public record WorkspaceState(
     List<TabState> Tabs,
     int SelectedIndex,
-    string? SavedLanguage = null);
+    string? SavedLanguage = null,
+    int AppFontSizeLevel = 3,
+    int TerminalFontSizeLevel = 3);

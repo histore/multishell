@@ -19,6 +19,7 @@
                                   HorizontalAlignment="Stretch"
                                   VerticalAlignment="Stretch"
                                   Background="{Binding TerminalBackgroundBrush}"
-                                  CaretBrush="{Binding TerminalCaretBrush}" />
+                                  CaretBrush="{Binding TerminalCaretBrush}"
+                                  FontSize="{Binding TerminalFontSize}" />
     </ThemeVariantScope>
 </UserControl>

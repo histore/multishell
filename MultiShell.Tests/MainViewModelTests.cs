@@ -88,4 +88,60 @@ public class MainViewModelTests
         Assert.True(vm.IsDarkAppTheme);
         Assert.True(vm.IsDarkTerminalTheme);
     }
+
+    [Fact]
+    public void SetFontSizeLevels_UpdatesValuesAndScales()
+    {
+        // Arrange
+        var fontSizeService = new FontSizeService();
+        var vm = new MainViewModel(
+            new PowerShellProcessService(),
+            new TabStatePersistenceService(),
+            new MockThemeService(),
+            new LocalizationService(),
+            fontSizeService);
+
+        Assert.Equal(3, vm.AppFontSizeLevel);
+        Assert.Equal(3, vm.TerminalFontSizeLevel);
+        Assert.Equal(1.0, vm.AppFontScale);
+        Assert.Equal(12.0, vm.TerminalFontSize);
+
+        // Act - Set via command
+        vm.SetAppFontSizeLevelCommand.Execute(5);
+        vm.SetTerminalFontSizeLevelCommand.Execute(1);
+
+        // Assert
+        Assert.Equal(5, vm.AppFontSizeLevel);
+        Assert.Equal(1.25, vm.AppFontScale);
+        Assert.Equal(1, vm.TerminalFontSizeLevel);
+        Assert.Equal(9.5, vm.TerminalFontSize);
+    }
+
+    [Fact]
+    public void IncreaseAndDecreaseFontSize_UpdatesLevelsWithinRange()
+    {
+        // Arrange
+        var fontSizeService = new FontSizeService();
+        var vm = new MainViewModel(
+            new PowerShellProcessService(),
+            new TabStatePersistenceService(),
+            new MockThemeService(),
+            new LocalizationService(),
+            fontSizeService);
+
+        // Act: Increase
+        vm.IncreaseAppFontSizeCommand.Execute(null);
+        vm.IncreaseTerminalFontSizeCommand.Execute(null);
+
+        // Assert
+        Assert.Equal(4, vm.AppFontSizeLevel);
+        Assert.Equal(4, vm.TerminalFontSizeLevel);
+
+        // Act: Decrease
+        vm.DecreaseAppFontSizeCommand.Execute(null);
+        vm.DecreaseAppFontSizeCommand.Execute(null);
+
+        // Assert
+        Assert.Equal(2, vm.AppFontSizeLevel);
+    }
 }

@@ -108,4 +108,27 @@ public class TabStatePersistenceServiceTests : IDisposable
         // Assert
         Assert.Null(state);
     }
+
+    [Fact]
+    public async Task SaveStateAsync_And_LoadStateAsync_PreservesFontSizeLevels()
+    {
+        // Arrange
+        var service = new TabStatePersistenceService(_tempFile);
+        var originalState = new WorkspaceState(
+            new List<TabState> { new("Tab 1", @"C:\projekte") },
+            0,
+            SavedLanguage: "de",
+            AppFontSizeLevel: 4,
+            TerminalFontSizeLevel: 2);
+
+        // Act
+        await service.SaveStateAsync(originalState);
+        var loadedState = await service.LoadStateAsync();
+
+        // Assert
+        Assert.NotNull(loadedState);
+        Assert.Equal(4, loadedState.AppFontSizeLevel);
+        Assert.Equal(2, loadedState.TerminalFontSizeLevel);
+        Assert.Equal("de", loadedState.SavedLanguage);
+    }
 }

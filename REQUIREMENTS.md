@@ -40,6 +40,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-GOV-003` | Requirements Immutability & Conflict Escalation | Governance | **IMPLEMENTED** | Quality Gate / Verification |
 | `REQ-LOC-001` | Dynamic Multi-Language UI (DE, EN, FR, ES) with Persistence | Localization | **IMPLEMENTED** | `LocalizationServiceTests` |
 | `REQ-HIST-002` | Live Fuzzy Search & Type-to-Filter in History Drawer | Interaction | **IMPLEMENTED** | `FuzzySearchServiceTests` |
+| `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | UI | **IMPLEMENTED** | `FontSizeServiceTests`, `MainViewModelTests` |
 
 ---
 
@@ -365,3 +366,17 @@ This document serves as the single source of truth for all functional and non-fu
   - **Then** keystrokes are automatically routed to the active search box, and the list filters in real time using fuzzy subsequence matching and scoring.
   - **When** the user presses `Enter`, the top matching command or directory is executed/navigated.
   - **When** the user presses `Escape`, the active filter query is cleared first or the drawer is closed.
+
+---
+
+### REQ-UI-004: 5-Level Font Size Settings for App and Terminal
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want to adjust the font size of both the application UI and the terminal independently across 5 distinct levels, where level 3 corresponds to the system default standard size, with persistent storage across sessions.
+- **Acceptance Criteria**:
+  - **Given** the Settings menu (⚙),
+  - **When** viewing the font size options,
+  - **Then** 5 selectable levels (1 to 5) are offered for App Font Size and Terminal Font Size, with level 3 marked as standard default.
+  - **When** level 1, 2, 3, 4, or 5 is selected,
+  - **Then** the App UI scale (0.85x, 0.92x, 1.00x, 1.12x, 1.25x) or Terminal font size (9.5pt, 10.5pt, 12.0pt, 14.0pt, 16.5pt) updates immediately.
+  - **When** the application restarts,
+  - **Then** the selected font size levels are loaded and restored from `WorkspaceState`.

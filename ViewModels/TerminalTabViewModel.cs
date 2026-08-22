@@ -48,6 +48,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     private IBrush _terminalCaretBrush = DarkTerminalCaret;
 
     [ObservableProperty]
+    private double _terminalFontSize = 12.0;
+
+    [ObservableProperty]
     private string _commandFilterQuery = string.Empty;
 
     [ObservableProperty]
@@ -61,6 +64,15 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         IsDarkTerminalTheme = isDark;
         TerminalBackgroundBrush = isDark ? DarkTerminalBackground : LightTerminalBackground;
         TerminalCaretBrush = isDark ? DarkTerminalCaret : LightTerminalCaret;
+    }
+
+    /// <summary>
+    /// Updates the terminal font size in points.
+    /// </summary>
+    /// <param name="fontSize">Font size in points.</param>
+    public void UpdateFontSize(double fontSize)
+    {
+        TerminalFontSize = fontSize;
     }
 
     /// <summary>

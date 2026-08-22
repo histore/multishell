@@ -157,4 +157,22 @@ public class LocalizationServiceTests
             }
         }
     }
+
+    [Theory]
+    [InlineData("de", "App-Schriftgröße", "Terminal-Schriftgröße", "Standard (3)")]
+    [InlineData("en", "App Font Size", "Terminal Font Size", "Standard (3)")]
+    [InlineData("fr", "Taille de police de l'app", "Taille de police du terminal", "Standard (3)")]
+    [InlineData("es", "Tamaño de fuente de la app", "Tamaño de fuente del terminal", "Estándar (3)")]
+    public void LocalizationService_FontSizeKeys_AreFullyTranslated(string lang, string expectedAppKey, string expectedTermKey, string expectedLvl3)
+    {
+        // Arrange
+        var service = new LocalizationService(lang);
+
+        // Act & Assert
+        Assert.Equal(expectedAppKey, service["Settings_App_FontSize"]);
+        Assert.Equal(expectedTermKey, service["Settings_Terminal_FontSize"]);
+        Assert.Equal(expectedLvl3, service["FontSize_Level_3"]);
+        Assert.False(string.IsNullOrWhiteSpace(service["FontSize_Level_1"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["FontSize_Level_5"]));
+    }
 }
