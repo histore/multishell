@@ -34,7 +34,8 @@ jobs:
       - name: Run Automated Tests
         run: dotnet test MultiShell.Tests/MultiShell.Tests.csproj --configuration Release --verbosity normal
 
-      - name: Publish Single-File Executable (win-x64)
+      - name: Publish Single-File Executable (win-x64 Release, No Debug Info)
+        shell: pwsh
         run: |
           dotnet publish MultiShell.csproj `
             -c Release `
@@ -42,7 +43,13 @@ jobs:
             --self-contained true `
             -p:PublishSingleFile=true `
             -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
             -o ./publish
+
+          # Ensure no debug symbol files remain
+          Get-ChildItem -Path ./publish -Recurse -Include *.pdb, *.xml | Remove-Item -Force -ErrorAction SilentlyContinue
 
       - name: Create Release Zip Archive
         shell: pwsh
