@@ -86,6 +86,19 @@
                       └──► [Verifikation] ──► Pass Verification
 ```
 
+### On-Demand Git Commit & Push Pipeline (Explicit User Request Only)
+```
+[Explicit User Request: Commit & Push]
+       │
+       ▼
+   [CommitManager] [Reasoning: Medium]
+       ├──► 1. Inspect Diff (`git status`, `git diff`)
+       ├──► 2. Draft Conventional Commit Message
+       ├──► 3. [MANDATORY GATE] Present Message & Files to User for Approval
+       │         └──► Await User Confirmation
+       └──► 4. Post-Approval: `git add`, `git commit`, `git push`
+```
+
 ---
 
 ## Role Summary & Profiles
@@ -104,3 +117,4 @@
 12. **ReleaseManager** (`Reasoning: Medium`): Self-contained single-file publishing, AOT readiness, manifest management.
 13. **Tester** (`Reasoning: Medium`): Automated xUnit tests in `MultiShell.Tests`, AAA pattern, 0 failures.
 14. **Verifikation** (`Reasoning: High`): Rigorous quality gate auditing 100% requirements coverage, Clean Architecture, i18n, performance, and security.
+15. **CommitManager** (`Reasoning: Medium`): Generates conventional commit messages from diffs, stages changes, commits, and pushes strictly on-demand after mandatory interactive user confirmation.

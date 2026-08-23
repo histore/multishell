@@ -124,6 +124,56 @@ public partial class MainWindow : Window
             };
         }
 
+        if (CommandHistorySearchBox != null)
+        {
+            CommandHistorySearchBox.PropertyChanged += (_, e) =>
+            {
+                if (e.Property == TextBox.TextProperty)
+                {
+                    var filterText = CommandHistorySearchBox.Text;
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (CommandHistoryListBox != null && CommandHistoryListBox.ItemCount > 0)
+                        {
+                            CommandHistoryListBox.SelectedIndex = !string.IsNullOrWhiteSpace(filterText)
+                                ? 0
+                                : CommandHistoryListBox.ItemCount - 1;
+
+                            if (CommandHistoryListBox.SelectedItem != null)
+                            {
+                                CommandHistoryListBox.ScrollIntoView(CommandHistoryListBox.SelectedItem);
+                            }
+                        }
+                    }, DispatcherPriority.Input);
+                }
+            };
+        }
+
+        if (DirectoryHistorySearchBox != null)
+        {
+            DirectoryHistorySearchBox.PropertyChanged += (_, e) =>
+            {
+                if (e.Property == TextBox.TextProperty)
+                {
+                    var filterText = DirectoryHistorySearchBox.Text;
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (DirectoryHistoryListBox != null && DirectoryHistoryListBox.ItemCount > 0)
+                        {
+                            DirectoryHistoryListBox.SelectedIndex = !string.IsNullOrWhiteSpace(filterText)
+                                ? 0
+                                : DirectoryHistoryListBox.ItemCount - 1;
+
+                            if (DirectoryHistoryListBox.SelectedItem != null)
+                            {
+                                DirectoryHistoryListBox.ScrollIntoView(DirectoryHistoryListBox.SelectedItem);
+                            }
+                        }
+                    }, DispatcherPriority.Input);
+                }
+            };
+        }
+
         if (CloseHistoryButton != null)
         {
             CloseHistoryButton.Click += (_, _) => HideHistoryDrawerAndFocusTerminal();
@@ -156,7 +206,14 @@ public partial class MainWindow : Window
                 // Only react if the TabControl itself changed tabs, not child ListBoxes bubbling SelectionChanged
                 if (e.Source == HistoryTabControl)
                 {
-                    FocusActiveHistoryList(selectLastItem: false);
+                    var hasFilter = false;
+                    if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+                    {
+                        hasFilter = HistoryTabControl.SelectedIndex == 1
+                            ? !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery)
+                            : !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery);
+                    }
+                    FocusActiveHistoryList(selectLastItem: !hasFilter);
                 }
             };
         }
@@ -271,7 +328,8 @@ public partial class MainWindow : Window
                 if (HistoryTabControl != null)
                 {
                     HistoryTabControl.SelectedIndex = 0;
-                    FocusActiveHistoryList(selectLastItem: true);
+                    var hasFilter = DataContext is MainViewModel vm && vm.SelectedTab != null && !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery);
+                    FocusActiveHistoryList(selectLastItem: !hasFilter);
                 }
                 e.Handled = true;
                 return;
@@ -282,7 +340,8 @@ public partial class MainWindow : Window
                 if (HistoryTabControl != null)
                 {
                     HistoryTabControl.SelectedIndex = 1;
-                    FocusActiveHistoryList(selectLastItem: true);
+                    var hasFilter = DataContext is MainViewModel vm && vm.SelectedTab != null && !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery);
+                    FocusActiveHistoryList(selectLastItem: !hasFilter);
                 }
                 e.Handled = true;
                 return;
@@ -293,7 +352,14 @@ public partial class MainWindow : Window
                 if (HistoryTabControl != null)
                 {
                     HistoryTabControl.SelectedIndex = HistoryTabControl.SelectedIndex == 0 ? 1 : 0;
-                    FocusActiveHistoryList(selectLastItem: true);
+                    var hasFilter = false;
+                    if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+                    {
+                        hasFilter = HistoryTabControl.SelectedIndex == 1
+                            ? !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery)
+                            : !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery);
+                    }
+                    FocusActiveHistoryList(selectLastItem: !hasFilter);
                 }
                 e.Handled = true;
                 return;
@@ -350,10 +416,17 @@ public partial class MainWindow : Window
     {
         if (HistoryDrawer == null) return;
         HistoryDrawer.IsVisible = true;
-        FocusActiveHistoryList(selectLastItem: false);
+        var hasFilter = false;
+        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+        {
+            hasFilter = HistoryTabControl?.SelectedIndex == 1
+                ? !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery)
+                : !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery);
+        }
+        FocusActiveHistoryList(selectLastItem: !hasFilter);
     }
 
-    private void FocusActiveHistoryList(bool selectLastItem = false)
+    private void FocusActiveHistoryList(bool selectLastItem = true)
     {
         Dispatcher.UIThread.Post(() =>
         {
@@ -363,10 +436,15 @@ public partial class MainWindow : Window
 
             if (activeListBox != null && activeListBox.ItemCount > 0)
             {
-                if (activeListBox.SelectedIndex < 0 || activeListBox.SelectedIndex >= activeListBox.ItemCount)
+                if (selectLastItem)
+                {
+                    activeListBox.SelectedIndex = activeListBox.ItemCount - 1;
+                }
+                else
                 {
                     activeListBox.SelectedIndex = 0;
                 }
+
                 if (activeListBox.SelectedItem != null)
                 {
                     activeListBox.ScrollIntoView(activeListBox.SelectedItem);
@@ -388,7 +466,7 @@ public partial class MainWindow : Window
         int currentIndex = activeListBox.SelectedIndex;
         if (currentIndex < 0)
         {
-            currentIndex = activeListBox.ItemCount - 1;
+            currentIndex = delta < 0 ? activeListBox.ItemCount - 1 : 0;
         }
         else
         {
@@ -437,13 +515,15 @@ public partial class MainWindow : Window
         else if (e.Key == Key.Left && HistoryTabControl != null)
         {
             HistoryTabControl.SelectedIndex = 0;
-            FocusActiveHistoryList();
+            var hasFilter = DataContext is MainViewModel vm && vm.SelectedTab != null && !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery);
+            FocusActiveHistoryList(selectLastItem: !hasFilter);
             e.Handled = true;
         }
         else if (e.Key == Key.Right && HistoryTabControl != null)
         {
             HistoryTabControl.SelectedIndex = 1;
-            FocusActiveHistoryList();
+            var hasFilter = DataContext is MainViewModel vm && vm.SelectedTab != null && !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery);
+            FocusActiveHistoryList(selectLastItem: !hasFilter);
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)
@@ -458,9 +538,16 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm && vm.SelectedTab != null)
         {
             var cmd = CommandHistoryListBox?.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(cmd) && vm.SelectedTab.CommandHistory.Count > 0)
+            if (string.IsNullOrWhiteSpace(cmd))
             {
-                cmd = vm.SelectedTab.CommandHistory[^1];
+                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery) && vm.SelectedTab.FilteredCommandHistory.Count > 0)
+                {
+                    cmd = vm.SelectedTab.FilteredCommandHistory[0];
+                }
+                else if (vm.SelectedTab.CommandHistory.Count > 0)
+                {
+                    cmd = vm.SelectedTab.CommandHistory[^1];
+                }
             }
             if (!string.IsNullOrWhiteSpace(cmd))
             {
@@ -475,9 +562,16 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm && vm.SelectedTab != null)
         {
             var dir = DirectoryHistoryListBox?.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(dir) && vm.SelectedTab.DirectoryHistory.Count > 0)
+            if (string.IsNullOrWhiteSpace(dir))
             {
-                dir = vm.SelectedTab.DirectoryHistory[^1];
+                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery) && vm.SelectedTab.FilteredDirectoryHistory.Count > 0)
+                {
+                    dir = vm.SelectedTab.FilteredDirectoryHistory[0];
+                }
+                else if (vm.SelectedTab.DirectoryHistory.Count > 0)
+                {
+                    dir = vm.SelectedTab.DirectoryHistory[^1];
+                }
             }
             if (!string.IsNullOrWhiteSpace(dir))
             {

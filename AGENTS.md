@@ -37,6 +37,7 @@ This workspace employs specialized subagent roles to enforce **Clean Code**, **C
 12. **ReleaseManager** (`Reasoning: Medium`): Manages deployment pipelines, single-file self-contained packaging, Native AOT readiness, and application manifests.
 13. **Tester** (`Reasoning: Medium`): Implements comprehensive automated tests (`MultiShell.Tests`) and executes `dotnet test` (AAA pattern, 0 failures).
 14. **Verifikation** (`Reasoning: High`): Quality gate auditing acceptance criteria, 100% requirements coverage, test pass rate, Clean Code, i18n, performance, security, and architectural compliance.
+15. **CommitManager** (`Reasoning: Medium`): Generates conventional commit messages from diffs, stages changes, commits, and pushes strictly on-demand after mandatory interactive user confirmation.
 
 ## Context Isolation Protocol
 - Subagents must be called with only the minimum context required for their specific role.
