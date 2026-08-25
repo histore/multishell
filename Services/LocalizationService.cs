@@ -110,7 +110,7 @@ public class LocalizationService : ILocalizationService
         ["Drawer_Search_Directories_Placeholder"] = "Verzeichnisse filtern...",
         ["Drawer_Empty_Commands"] = "In diesem Tab wurden noch keine Befehle ausgeführt.",
         ["Drawer_Empty_Directories"] = "In diesem Tab wurden noch keine Verzeichnisse erfasst.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navigieren  |  Enter Ausführen  |  Esc Schließen ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navigieren  |  Klick/Enter Übernehmen  |  Rechtsklick Ausführen  |  Esc Schließen ]",
 
         // Help Modal
         ["Help_Modal_Title"] = "Tastaturkürzel & Bedienung",
@@ -124,7 +124,7 @@ public class LocalizationService : ILocalizationService
         ["Help_Hist_Toggle"] = "Verlaufs-Overlay öffnen/schließen (▲/▼, Enter)",
         ["Help_Nav_F1"] = "Diesen Hilfe-Dialog öffnen",
         ["Help_Nav_Esc"] = "Aktives Overlay/Dialog schließen und Terminal fokussieren",
-        ["Help_Feature_1"] = "• Tab-Verlauf: Linke Kante berühren oder Strg+Umschalt+H drücken. Mit ▲/▼ navigieren und mit Enter ausführen.",
+        ["Help_Feature_1"] = "• Tab-Verlauf: Linke Kante berühren oder Strg+Umschalt+H drücken. Mit Klick/Enter übernehmen, per Rechtsklick direkt ausführen.",
         ["Help_Feature_2"] = "• Drag & Drop: Tabs mit der linken Maustaste per Ziehen neu anordnen.",
         ["Help_Feature_3"] = "• Tab-Überlauf: Scrollbuttons (‹ ›) und Schnellmenü (≡ ▾) bei vielen Tabs.",
         ["Help_Feature_4"] = "• Persistenz: Alle Tabs, Pfade und Verläufe werden automatisch gespeichert.",
@@ -136,6 +136,7 @@ public class LocalizationService : ILocalizationService
         ["About_Framework"] = "Framework:",
         ["About_UI_Terminal"] = "UI & Terminal:",
         ["About_License"] = "Lizenz:",
+        ["About_GitHub"] = "GitHub-Repository:",
         ["About_Built_With"] = "Entwickelt mit:",
         ["About_Built_With_Value"] = "Google Gemini & Antigravity",
         ["About_Footer"] = "Entwickelt nach den Prinzipien von Clean Architecture & Clean Code.",
@@ -208,7 +209,7 @@ public class LocalizationService : ILocalizationService
         ["Drawer_Search_Directories_Placeholder"] = "Filter directories...",
         ["Drawer_Empty_Commands"] = "No commands executed in this tab yet.",
         ["Drawer_Empty_Directories"] = "No directories recorded in this tab yet.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navigate  |  Enter Execute  |  Esc Close ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navigate  |  Click/Enter Insert  |  Right-Click Execute  |  Esc Close ]",
 
         // Help Modal
         ["Help_Modal_Title"] = "Keyboard Shortcuts & Usage",
@@ -222,7 +223,7 @@ public class LocalizationService : ILocalizationService
         ["Help_Hist_Toggle"] = "Toggle History Overlay (Navigate with ▲/▼, Enter)",
         ["Help_Nav_F1"] = "Open this Help dialog",
         ["Help_Nav_Esc"] = "Close active overlay / dialog and focus terminal",
-        ["Help_Feature_1"] = "• Tab History: Hover left edge or press Ctrl+Shift+H. Navigate with ▲/▼ and press Enter to execute.",
+        ["Help_Feature_1"] = "• Tab History: Hover left edge or press Ctrl+Shift+H. Left-click/Enter to insert, right-click to execute.",
         ["Help_Feature_2"] = "• Drag & Drop: Reorder tabs by dragging with left mouse button.",
         ["Help_Feature_3"] = "• Tab Overflow: Scroll buttons (‹ ›) and quick menu (≡ ▾) appear when tab count exceeds window.",
         ["Help_Feature_4"] = "• Persistence: All tabs, working directories, and histories persist automatically across restarts.",
@@ -234,6 +235,7 @@ public class LocalizationService : ILocalizationService
         ["About_Framework"] = "Framework:",
         ["About_UI_Terminal"] = "UI & Terminal:",
         ["About_License"] = "License:",
+        ["About_GitHub"] = "GitHub Repository:",
         ["About_Built_With"] = "Built With:",
         ["About_Built_With_Value"] = "Google Gemini & Antigravity",
         ["About_Footer"] = "Crafted with Clean Architecture & Clean Code principles.",
@@ -306,7 +308,7 @@ public class LocalizationService : ILocalizationService
         ["Drawer_Search_Directories_Placeholder"] = "Filtrer les répertoires...",
         ["Drawer_Empty_Commands"] = "Aucune commande exécutée dans cet onglet.",
         ["Drawer_Empty_Directories"] = "Aucun répertoire enregistré dans cet onglet.",
-        ["Drawer_Hint"] = "[ ▲/▼ Naviguer  |  Entrée Exécuter  |  Échap Fermer ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Naviguer  |  Clic/Entrée Insérer  |  Clic droit Exécuter  |  Échap Fermer ]",
 
         // Help Modal
         ["Help_Modal_Title"] = "Raccourcis clavier & Utilisation",
@@ -320,7 +322,7 @@ public class LocalizationService : ILocalizationService
         ["Help_Hist_Toggle"] = "Afficher/masquer le volet historique (▲/▼, Entrée)",
         ["Help_Nav_F1"] = "Ouvrir cette boîte de dialogue d'aide",
         ["Help_Nav_Esc"] = "Fermer le volet ou la boîte de dialogue et focaliser le terminal",
-        ["Help_Feature_1"] = "• Historique : Survoler le bord gauche ou appuyer sur Ctrl+Maj+H. Naviguer avec ▲/▼ et Entrée pour exécuter.",
+        ["Help_Feature_1"] = "• Historique des onglets : Survolez le bord gauche ou appuyez sur Ctrl+Maj+H. Cliquez/Entrée pour insérer, clic droit pour exécuter.",
         ["Help_Feature_2"] = "• Glisser-déposer : Réorganiser les onglets par glisser avec le bouton gauche.",
         ["Help_Feature_3"] = "• Débordement : Boutons de défilement (‹ ›) et menu rapide (≡ ▾).",
         ["Help_Feature_4"] = "• Persistance : Tous les onglets, répertoires et historiques sont conservés.",
@@ -332,6 +334,7 @@ public class LocalizationService : ILocalizationService
         ["About_Framework"] = "Framework :",
         ["About_UI_Terminal"] = "UI & Terminal :",
         ["About_License"] = "Licence :",
+        ["About_GitHub"] = "Dépôt GitHub :",
         ["About_Built_With"] = "Développé avec :",
         ["About_Built_With_Value"] = "Google Gemini & Antigravity",
         ["About_Footer"] = "Conçu selon les principes de Clean Architecture & Clean Code.",
@@ -404,7 +407,7 @@ public class LocalizationService : ILocalizationService
         ["Drawer_Search_Directories_Placeholder"] = "Filtrar directorios...",
         ["Drawer_Empty_Commands"] = "Aún no se han ejecutado comandos en esta pestaña.",
         ["Drawer_Empty_Directories"] = "Aún no se han registrado directorios en esta pestaña.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navegar  |  Enter Ejecutar  |  Esc Cerrar ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navegar  |  Clic/Enter Insertar  |  Clic derecho Ejecutar  |  Esc Cerrar ]",
 
         // Help Modal
         ["Help_Modal_Title"] = "Atajos de teclado & Uso",
@@ -418,7 +421,7 @@ public class LocalizationService : ILocalizationService
         ["Help_Hist_Toggle"] = "Alternar panel de historial (Navegar con ▲/▼, Enter)",
         ["Help_Nav_F1"] = "Abrir este diálogo de ayuda",
         ["Help_Nav_Esc"] = "Cerrar el diálogo activo y enfocar el terminal",
-        ["Help_Feature_1"] = "• Historial: Pase el ratón por el borde izquierdo o Ctrl+Mayús+H. Navegue con ▲/▼ y Enter para ejecutar.",
+        ["Help_Feature_1"] = "• Historial: Pase el ratón por el borde izquierdo o Ctrl+Mayús+H. Clic/Enter para insertar, clic derecho para ejecutar.",
         ["Help_Feature_2"] = "• Arrastrar y soltar: Reordene las pestañas arrastrándolas con el ratón.",
         ["Help_Feature_3"] = "• Desbordamiento: Botones de desplazamiento (‹ ›) y menú rápido (≡ ▾).",
         ["Help_Feature_4"] = "• Persistencia: Todas las pestañas, directorios e historiales se guardan.",
@@ -430,6 +433,7 @@ public class LocalizationService : ILocalizationService
         ["About_Framework"] = "Framework:",
         ["About_UI_Terminal"] = "UI & Terminal:",
         ["About_License"] = "Licencia:",
+        ["About_GitHub"] = "Repositorio GitHub:",
         ["About_Built_With"] = "Creado con:",
         ["About_Built_With_Value"] = "Google Gemini & Antigravity",
         ["About_Footer"] = "Diseñado con los principios de Clean Architecture & Clean Code.",

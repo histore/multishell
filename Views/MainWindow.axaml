@@ -10,7 +10,7 @@
         WindowStartupLocation="CenterScreen"
         x:Class="MultiShell.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-                Title="MultiShell"
+        Title="{Binding WindowTitle}"
         Icon="/Assets/multishell.ico"
         Background="{DynamicResource AppWindowBackground}">
 
@@ -351,7 +351,8 @@
                                         <DataTemplate x:DataType="vm:TerminalTabViewModel">
                                             <Button Classes="tabBtn"
                                                     Classes.active="{Binding IsSelected}"
-                                                    ToolTip.Tip="{Binding WorkingDirectory}"
+                                                    ToolTip.Tip="{Binding TabTooltip}"
+                                                    ToolTip.ShowDelay="150"
                                                     Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).SelectTabCommand}"
                                                     CommandParameter="{Binding}">
                                                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -366,10 +367,10 @@
                                                                    Foreground="{DynamicResource AppAccent}"
                                                                    VerticalAlignment="Center" />
                                                     </Border>
-                                                    <TextBlock Text="{Binding Title}"
+                                                    <TextBlock Text="{Binding DisplayTitle}"
                                                                VerticalAlignment="Center"
                                                                MaxWidth="180"
-                                                               TextTrimming="PrefixCharacterEllipsis" />
+                                                               TextTrimming="CharacterEllipsis" />
                                                     <Button Classes="tabCloseBtn"
                                                             Content="×"
                                                             Command="{Binding RequestCloseCommand}"
@@ -854,7 +855,7 @@
                                                                        FontFamily="Consolas, Cascadia Code, monospace"
                                                                        FontSize="12"
                                                                        Foreground="{DynamicResource AppTextSecondary}"
-                                                                       TextTrimming="CharacterEllipsis" />
+                                                                       TextWrapping="Wrap" />
                                                         </Grid>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
@@ -924,7 +925,7 @@
                                                                        FontFamily="Consolas, Cascadia Code, monospace"
                                                                        FontSize="12"
                                                                        Foreground="{DynamicResource AppTextSecondary}"
-                                                                       TextTrimming="PrefixCharacterEllipsis" />
+                                                                       TextWrapping="Wrap" />
                                                         </Grid>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
@@ -1061,6 +1062,25 @@
                                 <Grid ColumnDefinitions="115, *">
                                     <TextBlock Grid.Column="0" Text="{Binding Loc[About_License]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
                                     <TextBlock Grid.Column="1" Text="Apache-2.0" Foreground="{DynamicResource AppSuccess}" FontSize="12" />
+                                </Grid>
+                                <Grid ColumnDefinitions="115, *">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[About_GitHub]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" VerticalAlignment="Center" />
+                                    <Button Grid.Column="1"
+                                            Command="{Binding OpenGitHubUrlCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            Margin="0"
+                                            HorizontalAlignment="Left"
+                                            Cursor="Hand"
+                                            ToolTip.Tip="{Binding GitHubUrl}">
+                                        <TextBlock Text="github.com/histore/multishell"
+                                                   Foreground="{DynamicResource AppAccent}"
+                                                   TextDecorations="Underline"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12"
+                                                   VerticalAlignment="Center" />
+                                    </Button>
                                 </Grid>
                                 <Grid ColumnDefinitions="115, *">
                                     <TextBlock Grid.Column="0" Text="{Binding Loc[About_Built_With]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />

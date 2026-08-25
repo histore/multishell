@@ -176,4 +176,18 @@ public class LocalizationServiceTests
         Assert.False(string.IsNullOrWhiteSpace(service["FontSize_Level_1"]));
         Assert.False(string.IsNullOrWhiteSpace(service["FontSize_Level_5"]));
     }
+
+    [Theory]
+    [InlineData("de", "GitHub-Repository:")]
+    [InlineData("en", "GitHub Repository:")]
+    [InlineData("fr", "Dépôt GitHub :")]
+    [InlineData("es", "Repositorio GitHub:")]
+    public void LocalizationService_AboutGitHubKey_IsFullyTranslated(string lang, string expectedText)
+    {
+        // Arrange
+        var service = new LocalizationService(lang);
+
+        // Act & Assert
+        Assert.Equal(expectedText, service["About_GitHub"]);
+    }
 }

@@ -163,15 +163,17 @@ This document serves as the single source of truth for all functional and non-fu
 
 ### REQ-TAB-012: Tab History Hover Overlay (Commands & Directories)
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want a left-side hover area that reveals an overlay displaying the executed command history and visited directory history of the active tab, allowing me to view and re-execute previous commands or navigate to previous folders.
+- **User Story**: As a user, I want a left-side hover area that reveals an overlay displaying the executed command history and visited directory history of the active tab, allowing me to view, insert, or re-execute previous commands or navigate to previous folders.
 - **Acceptance Criteria**:
   - **Given** an active PowerShell terminal tab in MultiShell,
   - **When** commands are executed in the tab,
   - **Then** each executed command is tracked into `CommandHistory` and directory changes into `DirectoryHistory`.
-  - **When** hovering over the left edge of the window,
+  - **When** hovering over the left edge of the window or clicking the History toolbar button,
   - **Then** a flyout overlay displays the command history and directory history of the active tab.
-  - **When** clicking a history entry,
-  - **Then** the command or folder navigation is sent directly to the active terminal.
+  - **When** clicking a history entry with the left mouse button or pressing `Enter`,
+  - **Then** the command or folder navigation is pasted into the active terminal prompt without executing it, and the overlay closes immediately, focusing the terminal.
+  - **When** right-clicking an entry,
+  - **Then** the command or directory navigation is executed directly with Return.
   - **When** moving the pointer out of the overlay,
   - **Then** the overlay closes smoothly.
 

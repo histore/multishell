@@ -201,15 +201,13 @@ public partial class MainWindow : Window
         if (CommandHistoryListBox != null)
         {
             CommandHistoryListBox.KeyDown += OnHistoryListBoxKeyDown;
-            CommandHistoryListBox.DoubleTapped += (_, _) => ExecuteSelectedCommand();
-            CommandHistoryListBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Bubble);
+            CommandHistoryListBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
 
         if (DirectoryHistoryListBox != null)
         {
             DirectoryHistoryListBox.KeyDown += OnHistoryListBoxKeyDown;
-            DirectoryHistoryListBox.DoubleTapped += (_, _) => ExecuteSelectedDirectory();
-            DirectoryHistoryListBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Bubble);
+            DirectoryHistoryListBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
 
         if (HistoryTabControl != null)
@@ -312,11 +310,11 @@ public partial class MainWindow : Window
             {
                 if (HistoryTabControl?.SelectedIndex == 1)
                 {
-                    ExecuteSelectedDirectory();
+                    PasteSelectedDirectory();
                 }
                 else
                 {
-                    ExecuteSelectedCommand();
+                    PasteSelectedCommand();
                 }
                 e.Handled = true;
                 return;
@@ -495,20 +493,45 @@ public partial class MainWindow : Window
 
     private void OnHistoryListBoxPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        var props = e.GetCurrentPoint(this).Properties;
+
+        if (props.IsLeftButtonPressed)
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                if (sender == CommandHistoryListBox)
-                {
-                    ExecuteSelectedCommand();
-                }
-                else if (sender == DirectoryHistoryListBox)
-                {
-                    ExecuteSelectedDirectory();
-                }
-            }, DispatcherPriority.Input);
+            // Left click: paste into prompt without executing
+            var clickedItem = GetHistoryItemFromPointerSource(e.Source as Visual);
+            if (string.IsNullOrWhiteSpace(clickedItem)) return;
+
+            e.Handled = true;
+            if (sender == CommandHistoryListBox)
+                PasteSelectedCommand(clickedItem);
+            else if (sender == DirectoryHistoryListBox)
+                PasteSelectedDirectory(clickedItem);
         }
+        else if (props.IsRightButtonPressed)
+        {
+            // Right click: execute directly
+            var clickedItem = GetHistoryItemFromPointerSource(e.Source as Visual);
+            if (string.IsNullOrWhiteSpace(clickedItem)) return;
+
+            e.Handled = true;
+            if (sender == CommandHistoryListBox)
+                ExecuteSelectedCommand(clickedItem);
+            else if (sender == DirectoryHistoryListBox)
+                ExecuteSelectedDirectory(clickedItem);
+        }
+    }
+
+    private static string? GetHistoryItemFromPointerSource(Visual? visual)
+    {
+        while (visual != null)
+        {
+            if (visual.DataContext is string str && !string.IsNullOrWhiteSpace(str))
+            {
+                return str;
+            }
+            visual = visual.GetVisualParent();
+        }
+        return null;
     }
 
     private void OnHistoryListBoxKeyDown(object? sender, KeyEventArgs e)
@@ -517,11 +540,11 @@ public partial class MainWindow : Window
         {
             if (sender == CommandHistoryListBox || HistoryTabControl?.SelectedIndex == 0)
             {
-                ExecuteSelectedCommand();
+                PasteSelectedCommand();
             }
             else
             {
-                ExecuteSelectedDirectory();
+                PasteSelectedDirectory();
             }
             e.Handled = true;
         }
@@ -546,11 +569,59 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ExecuteSelectedCommand()
+    private void PasteSelectedCommand(string? explicitCommand = null)
     {
         if (DataContext is MainViewModel vm && vm.SelectedTab != null)
         {
-            var cmd = CommandHistoryListBox?.SelectedItem as string;
+            var cmd = explicitCommand ?? CommandHistoryListBox?.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(cmd))
+            {
+                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery) && vm.SelectedTab.FilteredCommandHistory.Count > 0)
+                {
+                    cmd = vm.SelectedTab.FilteredCommandHistory[0];
+                }
+                else if (vm.SelectedTab.CommandHistory.Count > 0)
+                {
+                    cmd = vm.SelectedTab.CommandHistory[^1];
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(cmd))
+            {
+                vm.SelectedTab.PasteHistoryCommand(cmd);
+            }
+            HideHistoryDrawerAndFocusTerminal();
+        }
+    }
+
+    private void PasteSelectedDirectory(string? explicitDirectory = null)
+    {
+        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+        {
+            var dir = explicitDirectory ?? DirectoryHistoryListBox?.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(dir))
+            {
+                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery) && vm.SelectedTab.FilteredDirectoryHistory.Count > 0)
+                {
+                    dir = vm.SelectedTab.FilteredDirectoryHistory[0];
+                }
+                else if (vm.SelectedTab.DirectoryHistory.Count > 0)
+                {
+                    dir = vm.SelectedTab.DirectoryHistory[^1];
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(dir))
+            {
+                vm.SelectedTab.PasteHistoryDirectory(dir);
+            }
+            HideHistoryDrawerAndFocusTerminal();
+        }
+    }
+
+    private void ExecuteSelectedCommand(string? explicitCommand = null)
+    {
+        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+        {
+            var cmd = explicitCommand ?? CommandHistoryListBox?.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(cmd))
             {
                 if (!string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery) && vm.SelectedTab.FilteredCommandHistory.Count > 0)
@@ -570,11 +641,11 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ExecuteSelectedDirectory()
+    private void ExecuteSelectedDirectory(string? explicitDirectory = null)
     {
         if (DataContext is MainViewModel vm && vm.SelectedTab != null)
         {
-            var dir = DirectoryHistoryListBox?.SelectedItem as string;
+            var dir = explicitDirectory ?? DirectoryHistoryListBox?.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(dir))
             {
                 if (!string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery) && vm.SelectedTab.FilteredDirectoryHistory.Count > 0)

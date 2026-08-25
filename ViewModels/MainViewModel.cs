@@ -26,7 +26,28 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool _isInitialized;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(WindowTitle))]
     private TerminalTabViewModel? _selectedTab;
+
+    /// <summary>
+    /// Gets the formatted window title showing the full working directory path, formatting with middle-ellipsis only if excessively long (> 65 chars).
+    /// </summary>
+    public string WindowTitle
+    {
+        get
+        {
+            if (SelectedTab == null) return "MultiShell";
+
+            var rawTitle = !string.IsNullOrWhiteSpace(SelectedTab.WorkingDirectory)
+                ? SelectedTab.WorkingDirectory
+                : SelectedTab.Title;
+
+            if (string.IsNullOrWhiteSpace(rawTitle)) return "MultiShell";
+
+            var formatted = TerminalTabViewModel.FormatMiddleEllipsis(rawTitle, maxLength: 65);
+            return $"MultiShell - {formatted}";
+        }
+    }
 
     [ObservableProperty]
     private bool _isDarkAppTheme = true;
@@ -172,6 +193,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /// Gets the application version dynamically determined from the assembly metadata or Git tag.
     /// </summary>
     public string AppVersion { get; } = DetermineAppVersion();
+
+    /// <summary>
+    /// Gets the official GitHub repository URL.
+    /// </summary>
+    public string GitHubUrl => "https://github.com/histore/multishell";
+
+    /// <summary>
+    /// Opens the official GitHub repository in the default web browser.
+    /// </summary>
+    [RelayCommand]
+    public void OpenGitHubUrl()
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = GitHubUrl,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch
+        {
+        }
+    }
 
     public ObservableCollection<TerminalTabViewModel> Tabs { get; } = new();
 
@@ -743,6 +789,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void OnTabDirectoryChanged(TerminalTabViewModel tab, string newDirectory)
     {
+        if (tab == SelectedTab)
+        {
+            OnPropertyChanged(nameof(WindowTitle));
+        }
         TriggerSaveState();
     }
 

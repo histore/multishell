@@ -17,6 +17,33 @@ public class MainViewModelTests
         Assert.StartsWith("v", vm.AppVersion);
     }
 
+    [Fact]
+    public void GitHubUrl_IsConfiguredCorrectly()
+    {
+        // Arrange
+        var vm = new MainViewModel();
+
+        // Assert
+        Assert.Equal("https://github.com/histore/multishell", vm.GitHubUrl);
+        Assert.NotNull(vm.OpenGitHubUrlCommand);
+    }
+
+    [Fact]
+    public async Task WindowTitle_ReflectsSelectedTabPathWithoutEllipsis_WhenPathIsNotExcessivelyLong()
+    {
+        // Arrange
+        var vm = new MainViewModel();
+        await vm.InitializeWorkspaceAsync();
+
+        // Assert - Title starts with MultiShell - and contains untruncated path when reasonable length
+        Assert.StartsWith("MultiShell - ", vm.WindowTitle);
+        Assert.NotNull(vm.SelectedTab);
+        if (!string.IsNullOrWhiteSpace(vm.SelectedTab.WorkingDirectory) && vm.SelectedTab.WorkingDirectory.Length <= 65)
+        {
+            Assert.Equal($"MultiShell - {vm.SelectedTab.WorkingDirectory}", vm.WindowTitle);
+        }
+    }
+
     private class MockThemeService : IThemeService
     {
         public bool IsDarkAppTheme { get; private set; } = true;

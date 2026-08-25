@@ -86,10 +86,53 @@ public class TerminalTabViewModelTests
 
         // Assert
         Assert.Equal(@"C:\Projects", vm.Title);
+        Assert.Equal(@"C:\Projects", vm.DisplayTitle);
         Assert.Equal(@"C:\Projects", vm.WorkingDirectory);
         Assert.Single(vm.DirectoryHistory);
         Assert.Equal(@"C:\Projects", vm.DirectoryHistory[0]);
         Assert.NotNull(vm.TerminalModel);
+    }
+
+    [Theory]
+    [InlineData(@"C:\short\path", 22, @"C:\short\path")]
+    [InlineData(@"C:\projekte\csharp\multishell", 22, @"C:\...\multishell")]
+    [InlineData(@"C:\projekte\csharp\multishell\Services\Subfolder", 22, @"C:\...\Subfolder")]
+    [InlineData(@"/home/user/workspace/development/multishell", 22, @"/.../multishell")]
+    [InlineData(@"PS 1", 22, @"PS 1")]
+    public void FormatMiddleEllipsis_FormatsPathsCorrectly(string input, int maxLen, string expected)
+    {
+        var actual = TerminalTabViewModel.FormatMiddleEllipsis(input, maxLen);
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void DisplayTitle_UpdatesWhenDirectoryChanges()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        using var vm = new TerminalTabViewModel(session);
+        Assert.Equal("PS 1", vm.DisplayTitle);
+        Assert.Equal("PS 1", vm.TabTooltip);
+
+        // Act
+        session.SimulateDirectoryChange(@"C:\projekte\csharp\multishell\Services\Subfolder");
+
+        // Assert
+        Assert.Equal(@"C:\...\Subfolder", vm.DisplayTitle);
+        Assert.Equal(@"C:\projekte\csharp\multishell\Services\Subfolder", vm.TabTooltip);
+    }
+
+    [Fact]
+    public void TabTooltip_ReturnsFullPathEvenWhenTitleIsTruncated()
+    {
+        // Arrange
+        var fullPath = @"C:\Users\heino\source\repos\very-long-folder-structure\sub\target";
+        var session = new MockPowerShellSession("TestPS", fullPath);
+        using var vm = new TerminalTabViewModel(session);
+
+        // Assert - DisplayTitle is compacted with middle ellipsis, TabTooltip is full untruncated path
+        Assert.Equal(@"C:\...\target", vm.DisplayTitle);
+        Assert.Equal(fullPath, vm.TabTooltip);
     }
 
     [Fact]
@@ -210,7 +253,7 @@ public class TerminalTabViewModelTests
     }
 
     [Fact]
-    public void ExecuteHistoryCommand_SendsCommandToSessionWithoutExecuting()
+    public void ExecuteHistoryCommand_SendsCommandToSessionWithReturn()
     {
         // Arrange
         var session = new MockPowerShellSession("PS 1");
@@ -219,14 +262,46 @@ public class TerminalTabViewModelTests
         // Act
         vm.ExecuteHistoryCommand("dotnet test");
 
-        // Assert - Insert into command line without auto-executing \r\n
+        // Assert - Executes with \r
+        Assert.Single(session.SentData);
+        var sentString = Encoding.UTF8.GetString(session.SentData[0]);
+        Assert.Equal("dotnet test\r", sentString);
+    }
+
+    [Fact]
+    public void PasteHistoryCommand_PastesCommandWithoutReturn()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.PasteHistoryCommand("dotnet test");
+
+        // Assert - Pastes WITHOUT \r
         Assert.Single(session.SentData);
         var sentString = Encoding.UTF8.GetString(session.SentData[0]);
         Assert.Equal("dotnet test", sentString);
     }
 
     [Fact]
-    public void NavigateToHistoryDirectory_SendsSetLocationToSessionWithoutExecuting()
+    public void PasteHistoryDirectory_PastesNavigationWithoutReturn()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.PasteHistoryDirectory(@"C:\projekte\app");
+
+        // Assert - Pastes navigation WITHOUT \r
+        Assert.Single(session.SentData);
+        var sentString = Encoding.UTF8.GetString(session.SentData[0]);
+        Assert.Equal("Set-Location -LiteralPath \"C:\\projekte\\app\"", sentString);
+    }
+
+    [Fact]
+    public void NavigateToHistoryDirectory_SendsSetLocationToSessionWithReturn()
     {
         // Arrange
         var session = new MockPowerShellSession("PS 1");
@@ -235,10 +310,86 @@ public class TerminalTabViewModelTests
         // Act
         vm.NavigateToHistoryDirectory(@"C:\projekte\app");
 
-        // Assert - Insert into command line without auto-executing \r\n
+        // Assert - Executes with \r
         Assert.Single(session.SentData);
         var sentString = Encoding.UTF8.GetString(session.SentData[0]);
-        Assert.Equal("Set-Location -LiteralPath \"C:\\projekte\\app\"", sentString);
+        Assert.Equal("Set-Location -LiteralPath \"C:\\projekte\\app\"\r", sentString);
+    }
+
+    [Fact]
+    public void NavigateToHistoryDirectory_ForCmd_SendsCdCommandWithReturn()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("CMD 1") { ShellType = ShellType.CMD };
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.NavigateToHistoryDirectory(@"C:\projekte\app");
+
+        // Assert - Uses cd /d for CMD
+        Assert.Single(session.SentData);
+        var sentString = Encoding.UTF8.GetString(session.SentData[0]);
+        Assert.Equal("cd /d \"C:\\projekte\\app\"\r", sentString);
+    }
+
+    [Fact]
+    public void OnTerminalUserInput_TracksFullCommandWithQuotesAndArguments()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("CMD 1") { ShellType = ShellType.CMD };
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act - Simulate typing 'Write "llll"' followed by Enter (\r)
+        vm.TerminalModel.Send("Write \"llll\"");
+        vm.TerminalModel.Send(new byte[] { 0x0D });
+
+        // Assert - CommandHistory contains full command with quotes
+        Assert.Single(vm.CommandHistory);
+        Assert.Equal("Write \"llll\"", vm.CommandHistory[0]);
+    }
+
+    [Fact]
+    public void OnTerminalUserInput_TracksLineBufferAndTriggersCommandExecutedOnEnter()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("CMD 1") { ShellType = ShellType.CMD };
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act - Simulate typing "git status" and pressing Enter (\r)
+        vm.TerminalModel.Send("git status");
+        vm.TerminalModel.Send(new byte[] { 0x0D });
+
+        // Assert - "git status" should be added to CommandHistory
+        Assert.Single(vm.CommandHistory);
+        Assert.Equal("git status", vm.CommandHistory[0]);
+    }
+
+    [Fact]
+    public void OnTerminalUserInput_HandlesBackspaceAndCtrlC()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("CMD 1") { ShellType = ShellType.CMD };
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act 1: Type "git abc", Backspace 3 times, type "status", press Enter
+        vm.TerminalModel.Send("git abc");
+        vm.TerminalModel.Send(new byte[] { 0x08, 0x08, 0x08 });
+        vm.TerminalModel.Send("status");
+        vm.TerminalModel.Send(new byte[] { 0x0D });
+
+        // Act 2: Type "failed_cmd", press Ctrl+C (0x03), type "cls", press Enter
+        vm.TerminalModel.Send("failed_cmd");
+        vm.TerminalModel.Send(new byte[] { 0x03 });
+        vm.TerminalModel.Send("cls");
+        vm.TerminalModel.Send(new byte[] { 0x0D });
+
+        // Assert
+        Assert.Equal(2, vm.CommandHistory.Count);
+        Assert.Equal("git status", vm.CommandHistory[0]);
+        Assert.Equal("cls", vm.CommandHistory[1]);
     }
 
     [Fact]

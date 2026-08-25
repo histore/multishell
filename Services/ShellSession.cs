@@ -34,8 +34,7 @@ public sealed class ShellSession : IShellSession
 
     private static readonly Regex Osc9Regex = new(@"\x1b\]9;9;""?([^""\x1b\x07]+)""?(\x1b\\|\x07)", RegexOptions.Compiled);
     private static readonly Regex Osc7Regex = new(@"\x1b\]7;file://[^/\x1b\x07]*/?([^\x1b\x07]+)(\x1b\\|\x07)", RegexOptions.Compiled);
-    private static readonly Regex Osc133ERegex = new(@"\x1b\]133;E;([^\x1b\x07]*)(\x1b\\|\x07)", RegexOptions.Compiled);
-    private static readonly Regex Osc133DRegex = new(@"\x1b\]133;D;([^\x1b\x07]*)(\x1b\\|\x07)", RegexOptions.Compiled);
+    private static readonly Regex Osc133ERegex = new(@"\x1b\]133;E;([A-Za-z0-9+/=]+)\x07|\x1b\]133;E;([A-Za-z0-9+/=]+)\x1b\\", RegexOptions.Compiled);
 
     public Guid SessionId { get; } = Guid.NewGuid();
     public string Title { get; }
@@ -55,9 +54,11 @@ public sealed class ShellSession : IShellSession
         string? customExecutable = null,
         string? customArguments = null)
     {
-        Title = title;
-        _initialWorkingDirectory = string.IsNullOrWhiteSpace(initialWorkingDirectory) ? null : initialWorkingDirectory;
+        _initialWorkingDirectory = !string.IsNullOrWhiteSpace(initialWorkingDirectory)
+            ? initialWorkingDirectory
+            : Environment.CurrentDirectory;
         WorkingDirectory = _initialWorkingDirectory;
+        Title = !string.IsNullOrWhiteSpace(title) ? title : WorkingDirectory;
         _shellType = shellType;
         _customExecutable = string.IsNullOrWhiteSpace(customExecutable) ? null : customExecutable;
         _customArguments = customArguments;
@@ -172,7 +173,7 @@ public sealed class ShellSession : IShellSession
                 if (matches133E.Count > 0)
                 {
                     var lastMatch = matches133E[^1];
-                    string base64 = lastMatch.Groups[1].Value.Trim();
+                    string base64 = (lastMatch.Groups[1].Success ? lastMatch.Groups[1].Value : lastMatch.Groups[2].Value).Trim();
                     try
                     {
                         var bytes = Convert.FromBase64String(base64);
@@ -224,36 +225,44 @@ public sealed class ShellSession : IShellSession
 
         try
         {
-            var attributeListSize = IntPtr.Zero;
-            NativeMethods.InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref attributeListSize);
-            attributeList = Marshal.AllocHGlobal(attributeListSize);
-            NativeMethods.InitializeProcThreadAttributeList(attributeList, 1, 0, ref attributeListSize);
-            NativeMethods.UpdateProcThreadAttribute(attributeList, 0, NativeMethods.PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, pseudoConsole.DangerousGetHandle(), (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero);
+            var size = IntPtr.Zero;
+            NativeMethods.InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref size);
+            attributeList = Marshal.AllocHGlobal(size);
+            if (!NativeMethods.InitializeProcThreadAttributeList(attributeList, 1, 0, ref size))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+
+            if (!NativeMethods.UpdateProcThreadAttribute(attributeList, 0, (IntPtr)NativeMethods.PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, pseudoConsole.DangerousGetHandle(), (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
 
             var startupInfo = new StartupInfoEx();
             startupInfo.StartupInfo.cb = Marshal.SizeOf<StartupInfoEx>();
             startupInfo.lpAttributeList = attributeList;
 
-            var environmentVariables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables()) environmentVariables[(string)entry.Key] = (string?)entry.Value ?? string.Empty;
-            environmentVariables["TERM"] = "xterm-256color";
-            environmentVariables["COLORTERM"] = "truecolor";
-            environmentBlock = Marshal.StringToHGlobalUni(BuildEnvironmentBlock(environmentVariables));
+            var rawCommandLine = GenerateShellCommandLine(workingDir);
+            commandLine = Marshal.StringToHGlobalUni(rawCommandLine);
 
-            string? startDir = (!string.IsNullOrEmpty(workingDir) && Directory.Exists(workingDir)) ? workingDir : null;
-            string fullCommandLine = GenerateShellCommandLine(startDir);
-            commandLine = Marshal.StringToHGlobalUni(fullCommandLine);
-
-            bool success = NativeMethods.CreateProcess(null, commandLine, IntPtr.Zero, IntPtr.Zero, false, NativeMethods.EXTENDED_STARTUPINFO_PRESENT | NativeMethods.CREATE_UNICODE_ENVIRONMENT, environmentBlock, startDir, ref startupInfo, out var processInformation);
-            if (!success || processInformation.dwProcessId == 0)
+            var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                int error = Marshal.GetLastWin32Error();
-                throw new Win32Exception(error, $"Failed to launch process '{fullCommandLine}'. Error code: {error}");
+                ["TERM"] = "xterm-256color",
+                ["COLORTERM"] = "truecolor",
+                ["WT_SESSION"] = SessionId.ToString()
+            };
+            foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
+            {
+                if (de.Key is string k && de.Value is string v && !envVars.ContainsKey(k))
+                    envVars[k] = v;
             }
+            var envString = BuildEnvironmentBlock(envVars);
+            environmentBlock = Marshal.StringToHGlobalUni(envString);
 
-            processHandle = new SafeFileHandle(processInformation.hProcess, ownsHandle: true);
-            threadHandle = new SafeFileHandle(processInformation.hThread, ownsHandle: true);
-            _process = Process.GetProcessById((int)processInformation.dwProcessId);
+            var creationFlags = NativeMethods.EXTENDED_STARTUPINFO_PRESENT | NativeMethods.CREATE_UNICODE_ENVIRONMENT;
+
+            if (!NativeMethods.CreateProcess(null, commandLine, IntPtr.Zero, IntPtr.Zero, false, (uint)creationFlags, environmentBlock, workingDir, ref startupInfo, out var processInfo))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+
+            processHandle = new SafeFileHandle(processInfo.hProcess, ownsHandle: true);
+            threadHandle = new SafeFileHandle(processInfo.hThread, ownsHandle: true);
+            _process = Process.GetProcessById(processInfo.dwProcessId);
         }
         finally
         {
@@ -276,7 +285,26 @@ public sealed class ShellSession : IShellSession
         if (_shellType == ShellType.PowerShell)
         {
             string exePath = ResolveExecutable("pwsh.exe") ?? "powershell.exe";
-            return $"\"{exePath}\" -NoLogo -NoExit";
+
+            // Build the prompt hook script as a plain string (no escaping needed here).
+            // It emits OSC 133;E with Base64-encoded last command for history tracking,
+            // and OSC 9;9 for working-directory tracking (shell integration).
+            const string hookScript = """
+                $function:prompt = {
+                    $loc = $ExecutionContext.SessionState.Path.CurrentLocation.Path
+                    $last = (Get-History -Count 1).CommandLine
+                    if ($last) {
+                        $b = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($last))
+                        [Console]::Write([char]27 + ']133;E;' + $b + [char]7)
+                    }
+                    [Console]::Write([char]27 + ']9;9;"' + $loc + '"' + [char]7)
+                    "PS $loc$('>' * ($nestedPromptLevel + 1)) "
+                }
+                """;
+
+            // Encode as UTF-16LE Base64 for -EncodedCommand; avoids all quoting issues.
+            string encodedHook = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(hookScript));
+            return $"\"{exePath}\" -NoLogo -NoExit -EncodedCommand {encodedHook}";
         }
         else if (_shellType == ShellType.NuShell)
         {
