@@ -3,9 +3,9 @@ using System;
 namespace MultiShell.Services;
 
 /// <summary>
-/// Represents an isolated interactive PowerShell ConPTY terminal session.
+/// Represents an isolated interactive shell ConPTY terminal session.
 /// </summary>
-public interface IPowerShellSession : IDisposable
+public interface IShellSession : IDisposable
 {
     /// <summary>
     /// Unique identifier for this session.
@@ -21,6 +21,11 @@ public interface IPowerShellSession : IDisposable
     /// Current working directory tracked from the shell, or null if unknown.
     /// </summary>
     string? WorkingDirectory { get; }
+
+    /// <summary>
+    /// Type of shell being hosted in this session.
+    /// </summary>
+    ShellType ShellType { get; }
 
     /// <summary>
     /// Whether the underlying shell process is currently running.
@@ -48,7 +53,7 @@ public interface IPowerShellSession : IDisposable
     event Action<string>? CommandExecuted;
 
     /// <summary>
-    /// Starts the underlying ConPTY PowerShell session.
+    /// Starts the underlying shell session.
     /// </summary>
     void Start();
 

@@ -7,7 +7,6 @@ using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MultiShell.ViewModels;
-using SvcSystems.UI.Terminal;
 
 namespace MultiShell.Views;
 
@@ -56,6 +55,18 @@ public partial class MainWindow : Window
             ToggleHistoryToolbarBtn.Click += (_, _) => ToggleHistoryDrawer();
         }
 
+        if (SettingsProfilesMenuItem != null)
+        {
+            SettingsProfilesMenuItem.Click += (_, _) =>
+            {
+                SettingsToolbarBtn?.Flyout?.Hide();
+                if (DataContext is MainViewModel vm)
+                {
+                    vm.OpenProfilesModal();
+                }
+            };
+        }
+
         if (SettingsHelpMenuItem != null)
         {
             SettingsHelpMenuItem.Click += (_, _) =>
@@ -81,6 +92,8 @@ public partial class MainWindow : Window
 
         if (OkAboutModalButton != null) OkAboutModalButton.Click += (_, _) => HideAboutModal();
         if (AboutModal != null) AboutModal.PointerPressed += (_, e) => { if (e.Source == AboutModal) HideAboutModal(); };
+
+        if (ProfilesModal != null) ProfilesModal.PointerPressed += (_, e) => { if (e.Source == ProfilesModal && DataContext is MainViewModel vm) vm.CloseProfilesModal(); };
 
         // History Drawer
         if (HistoryHoverTrigger != null)
@@ -616,7 +629,7 @@ public partial class MainWindow : Window
     {
         Dispatcher.UIThread.Post(() =>
         {
-            var terminal = TabContentControl?.FindDescendantOfType<TerminalControl>();
+            var terminal = TabContentControl?.FindDescendantOfType<SvcSystems.UI.Terminal.TerminalControl>();
             if (terminal != null)
             {
                 terminal.Focus();

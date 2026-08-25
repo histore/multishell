@@ -2,8 +2,12 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Reflection;
+using System.Text;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using MultiShell.ViewModels;
@@ -13,47 +17,48 @@ namespace MultiShell.Views;
 
 public partial class TerminalTabView : UserControl
 {
-    private static readonly SolidColorBrush[] DarkPalette =
+    private static readonly IBrush[] DarkPalette =
     [
-        new(Color.Parse("#0E0F15")), // 0: Dark Background
-        new(Color.Parse("#F7768E")), // 1: Red
-        new(Color.Parse("#9ECE6A")), // 2: Green
-        new(Color.Parse("#E0AF68")), // 3: Yellow
-        new(Color.Parse("#7AA2F7")), // 4: Blue
-        new(Color.Parse("#BB9AF7")), // 5: Magenta
-        new(Color.Parse("#7DCFFF")), // 6: Cyan
-        new(Color.Parse("#C0CAF5")), // 7: Light Foreground Text
-        new(Color.Parse("#565F89")), // 8: Bright Black / Muted
-        new(Color.Parse("#F7768E")), // 9: Bright Red
-        new(Color.Parse("#9ECE6A")), // 10: Bright Green
-        new(Color.Parse("#E0AF68")), // 11: Bright Yellow
-        new(Color.Parse("#7AA2F7")), // 12: Bright Blue
-        new(Color.Parse("#BB9AF7")), // 13: Bright Magenta
-        new(Color.Parse("#7DCFFF")), // 14: Bright Cyan
-        new(Color.Parse("#FFFFFF"))  // 15: Bright White
+        new ImmutableSolidColorBrush(Color.Parse("#0E0F15")), // 0: Dark Background
+        new ImmutableSolidColorBrush(Color.Parse("#F7768E")), // 1: Red
+        new ImmutableSolidColorBrush(Color.Parse("#9ECE6A")), // 2: Green
+        new ImmutableSolidColorBrush(Color.Parse("#E0AF68")), // 3: Yellow
+        new ImmutableSolidColorBrush(Color.Parse("#7AA2F7")), // 4: Blue
+        new ImmutableSolidColorBrush(Color.Parse("#BB9AF7")), // 5: Magenta
+        new ImmutableSolidColorBrush(Color.Parse("#7DCFFF")), // 6: Cyan
+        new ImmutableSolidColorBrush(Color.Parse("#C0CAF5")), // 7: Light Foreground Text
+        new ImmutableSolidColorBrush(Color.Parse("#565F89")), // 8: Bright Black / Muted
+        new ImmutableSolidColorBrush(Color.Parse("#F7768E")), // 9: Bright Red
+        new ImmutableSolidColorBrush(Color.Parse("#9ECE6A")), // 10: Bright Green
+        new ImmutableSolidColorBrush(Color.Parse("#E0AF68")), // 11: Bright Yellow
+        new ImmutableSolidColorBrush(Color.Parse("#7AA2F7")), // 12: Bright Blue
+        new ImmutableSolidColorBrush(Color.Parse("#BB9AF7")), // 13: Bright Magenta
+        new ImmutableSolidColorBrush(Color.Parse("#7DCFFF")), // 14: Bright Cyan
+        new ImmutableSolidColorBrush(Color.Parse("#FFFFFF"))  // 15: Bright White
     ];
 
-    private static readonly SolidColorBrush[] LightPalette =
+    private static readonly IBrush[] LightPalette =
     [
-        new(Color.Parse("#F8F9FC")), // 0: Light Background
-        new(Color.Parse("#D32F2F")), // 1: Red
-        new(Color.Parse("#2E7D32")), // 2: Green
-        new(Color.Parse("#E65100")), // 3: Dark Yellow / Orange
-        new(Color.Parse("#1976D2")), // 4: Blue
-        new(Color.Parse("#7B1FA2")), // 5: Magenta
-        new(Color.Parse("#0097A7")), // 6: Cyan
-        new(Color.Parse("#1A1D2B")), // 7: Dark Foreground Text
-        new(Color.Parse("#757D96")), // 8: Gray
-        new(Color.Parse("#C62828")), // 9: Bright Red
-        new(Color.Parse("#1B5E20")), // 10: Bright Green
-        new(Color.Parse("#BF360C")), // 11: Bright Yellow
-        new(Color.Parse("#0D47A1")), // 12: Bright Blue
-        new(Color.Parse("#4A148C")), // 13: Bright Magenta
-        new(Color.Parse("#006064")), // 14: Bright Cyan
-        new(Color.Parse("#0A0B10"))  // 15: Bright Black / Dark Text
+        new ImmutableSolidColorBrush(Color.Parse("#F8F9FC")), // 0: Light Background
+        new ImmutableSolidColorBrush(Color.Parse("#D32F2F")), // 1: Red
+        new ImmutableSolidColorBrush(Color.Parse("#2E7D32")), // 2: Green
+        new ImmutableSolidColorBrush(Color.Parse("#E65100")), // 3: Dark Yellow / Orange
+        new ImmutableSolidColorBrush(Color.Parse("#1976D2")), // 4: Blue
+        new ImmutableSolidColorBrush(Color.Parse("#7B1FA2")), // 5: Magenta
+        new ImmutableSolidColorBrush(Color.Parse("#0097A7")), // 6: Cyan
+        new ImmutableSolidColorBrush(Color.Parse("#1A1D2B")), // 7: Dark Foreground Text
+        new ImmutableSolidColorBrush(Color.Parse("#757D96")), // 8: Gray
+        new ImmutableSolidColorBrush(Color.Parse("#C62828")), // 9: Bright Red
+        new ImmutableSolidColorBrush(Color.Parse("#1B5E20")), // 10: Bright Green
+        new ImmutableSolidColorBrush(Color.Parse("#BF360C")), // 11: Bright Yellow
+        new ImmutableSolidColorBrush(Color.Parse("#0D47A1")), // 12: Bright Blue
+        new ImmutableSolidColorBrush(Color.Parse("#4A148C")), // 13: Bright Magenta
+        new ImmutableSolidColorBrush(Color.Parse("#006064")), // 14: Bright Cyan
+        new ImmutableSolidColorBrush(Color.Parse("#0A0B10"))  // 15: Bright Black / Dark Text
     ];
 
     private PropertyChangedEventHandler? _propChangedHandler;
+    private TerminalTabViewModel? _currentVm;
 
     public TerminalTabView()
     {
@@ -69,20 +74,86 @@ public partial class TerminalTabView : UserControl
             Terminal.Focus();
         };
 
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property == IsVisibleProperty && IsVisible)
+            {
+                Dispatcher.UIThread.Post(() => Terminal.Focus());
+            }
+        };
+
+        Terminal.AddHandler(InputElement.KeyDownEvent, OnTerminalKeyDown, RoutingStrategies.Tunnel);
+        Terminal.AddHandler(InputElement.KeyUpEvent, OnTerminalKeyUp, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+
         DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnTerminalKeyDown(object? sender, KeyEventArgs e)
+    {
+        var isAltGr = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Alt);
+        if (DataContext is TerminalTabViewModel vm)
+        {
+            vm.IsAltGrActive = isAltGr;
+            if (isAltGr && vm.IsRunning)
+            {
+                var text = ResolveAltGrText(e);
+                if (!string.IsNullOrEmpty(text))
+                {
+                    vm.SendInput(Encoding.UTF8.GetBytes(text));
+                    e.Handled = true;
+                }
+            }
+        }
+    }
+
+    private static string? ResolveAltGrText(KeyEventArgs e)
+    {
+        // 1. Check KeySymbol from Avalonia if available and printable
+        if (!string.IsNullOrEmpty(e.KeySymbol) && !char.IsControl(e.KeySymbol[0]))
+        {
+            return e.KeySymbol;
+        }
+
+        // 2. Direct mapping for German and international AltGr combinations
+        return e.Key switch
+        {
+            Key.Q => "@",
+            Key.E => "€",
+            Key.D7 => "{",
+            Key.D8 => "[",
+            Key.D9 => "]",
+            Key.D0 => "}",
+            Key.OemMinus or Key.OemBackslash or Key.Oem4 => "\\",
+            Key.OemPlus or Key.Oem6 => "~",
+            Key.Oem102 or Key.OemPipe or Key.Oem5 or Key.OemQuestion => "|",
+            Key.M => "µ",
+            Key.D2 => "²",
+            Key.D3 => "³",
+            _ => null
+        };
+    }
+
+    private void OnTerminalKeyUp(object? sender, KeyEventArgs e)
+    {
+        var isAltGr = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Alt);
+        if (DataContext is TerminalTabViewModel vm)
+        {
+            vm.IsAltGrActive = isAltGr;
+        }
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
+        if (_currentVm != null && _propChangedHandler != null)
+        {
+            _currentVm.PropertyChanged -= _propChangedHandler;
+        }
+
         if (DataContext is TerminalTabViewModel vm)
         {
+            _currentVm = vm;
             Terminal.Model = vm.TerminalModel;
             ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm);
-
-            if (_propChangedHandler != null)
-            {
-                vm.PropertyChanged -= _propChangedHandler;
-            }
 
             _propChangedHandler = (_, args) =>
             {
@@ -99,6 +170,10 @@ public partial class TerminalTabView : UserControl
                         Terminal.FontSize = vm.TerminalFontSize;
                         ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm);
                     });
+                }
+                else if (args.PropertyName == nameof(TerminalTabViewModel.IsSelected) && vm.IsSelected)
+                {
+                    Dispatcher.UIThread.Post(() => Terminal.Focus());
                 }
             };
 
@@ -136,7 +211,10 @@ public partial class TerminalTabView : UserControl
             {
                 for (var i = 0; i < palette.Length && i < fallbackArray.Length; i++)
                 {
-                    fallbackArray[i] = palette[i];
+                    if (palette[i] is Brush b)
+                    {
+                        fallbackArray[i] = b;
+                    }
                 }
             }
 

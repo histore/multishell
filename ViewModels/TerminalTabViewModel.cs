@@ -1,24 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Text;
 using Avalonia.Media;
-using SvcSystems.UI.Terminal;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MultiShell.Services;
+using SvcSystems.UI.Terminal;
 
 namespace MultiShell.ViewModels;
 
 /// <summary>
-/// ViewModel representing a terminal tab backed by a real ConPTY PowerShell session and TerminalControlModel.
+/// ViewModel representing a terminal tab backed by a real shell session and native Avalonia TerminalControl.
 /// Tracks live command history and visited directory history for the tab overlay with Fuzzy Search filtering.
 /// </summary>
 public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 {
-    private readonly IPowerShellSession _session;
+    private readonly IShellSession _session;
     private readonly IFuzzySearchService _fuzzySearchService;
     private bool _isDisposed;
 
@@ -33,10 +32,32 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     public bool IsRunning => _session.IsRunning;
 
-    private static readonly IBrush DarkTerminalBackground = new SolidColorBrush(Color.Parse("#0E0F15"));
-    private static readonly IBrush LightTerminalBackground = new SolidColorBrush(Color.Parse("#F8F9FC"));
-    private static readonly IBrush DarkTerminalCaret = new SolidColorBrush(Color.Parse("#7AA2F7"));
-    private static readonly IBrush LightTerminalCaret = new SolidColorBrush(Color.Parse("#2563EB"));
+    /// <summary>
+    /// The type of shell (PowerShell, NuShell, WSL, CMD) running in this tab.
+    /// </summary>
+    public ShellType ShellType => _session.ShellType;
+
+    /// <summary>
+    /// Short badge/tag representing the shell (e.g. "PS", "NU", "WSL", "CMD").
+    /// </summary>
+    public string ShellIconTag => ShellType switch
+    {
+        ShellType.PowerShell => "PS",
+        ShellType.NuShell => "NU",
+        ShellType.WSL => "WSL",
+        ShellType.CMD => "CMD",
+        _ => ">_"
+    };
+
+    /// <summary>
+    /// The terminal control model providing ConPTY VT100/ANSI rendering for the UI.
+    /// </summary>
+    public TerminalControlModel TerminalModel { get; }
+
+    private static readonly IBrush DarkTerminalBackground = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#0E0F15"));
+    private static readonly IBrush LightTerminalBackground = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#F8F9FC"));
+    private static readonly IBrush DarkTerminalCaret = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#7AA2F7"));
+    private static readonly IBrush LightTerminalCaret = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#2563EB"));
 
     [ObservableProperty]
     private bool _isDarkTerminalTheme = true;
@@ -56,9 +77,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _directoryFilterQuery = string.Empty;
 
-    /// <summary>
-    /// Updates the terminal surface colors based on dark/light preference.
-    /// </summary>
     public void UpdateTheme(bool isDark)
     {
         IsDarkTerminalTheme = isDark;
@@ -66,14 +84,25 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         TerminalCaretBrush = isDark ? DarkTerminalCaret : LightTerminalCaret;
     }
 
-    /// <summary>
-    /// Updates the terminal font size in points.
-    /// </summary>
-    /// <param name="fontSize">Font size in points.</param>
     public void UpdateFontSize(double fontSize)
     {
         TerminalFontSize = fontSize;
     }
+
+    /// <summary>
+    /// Event triggered when tab requests closure.
+    /// </summary>
+    public event Action<TerminalTabViewModel>? CloseRequested;
+
+    /// <summary>
+    /// Event triggered when the active working directory changes.
+    /// </summary>
+    public event Action<TerminalTabViewModel, string>? DirectoryChanged;
+
+    /// <summary>
+    /// Event triggered when command or directory history changes.
+    /// </summary>
+    public event Action<TerminalTabViewModel>? HistoryChanged;
 
     /// <summary>
     /// Live history of commands executed in this tab.
@@ -95,27 +124,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     public ObservableCollection<string> FilteredDirectoryHistory { get; } = new();
 
-    /// <summary>
-    /// The terminal model that drives the TerminalControl UI.
-    /// </summary>
-    public TerminalControlModel TerminalModel { get; }
-
-    /// <summary>
-    /// Event triggered when tab requests closure.
-    /// </summary>
-    public event Action<TerminalTabViewModel>? CloseRequested;
-
-    /// <summary>
-    /// Event triggered when the active working directory changes.
-    /// </summary>
-    public event Action<TerminalTabViewModel, string>? DirectoryChanged;
-
-    /// <summary>
-    /// Event triggered when command or directory history changes.
-    /// </summary>
-    public event Action<TerminalTabViewModel>? HistoryChanged;
-
-    public TerminalTabViewModel(IPowerShellSession session, IFuzzySearchService? fuzzySearchService = null)
+    public TerminalTabViewModel(IShellSession session, IFuzzySearchService? fuzzySearchService = null)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _fuzzySearchService = fuzzySearchService ?? new FuzzySearchService();
@@ -179,7 +188,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Starts the underlying ConPTY PowerShell session.
+    /// Starts the underlying ConPTY shell session.
     /// </summary>
     public void StartSession()
     {
@@ -198,14 +207,22 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         }
         catch (Exception ex)
         {
-            TerminalModel.Feed($"Failed to start PowerShell session.\r\n{ex.Message}\r\n");
+            TerminalModel.Feed($"Failed to start shell session.\r\n{ex.Message}\r\n");
             OnPropertyChanged(nameof(IsRunning));
         }
     }
 
     /// <summary>
-    /// Restores previously persisted command and directory history into the tab collections.
+    /// Sends raw input bytes directly to the underlying PTY shell session.
     /// </summary>
+    public void SendInput(byte[] input)
+    {
+        if (IsRunning && input.Length > 0)
+        {
+            _session.Send(input);
+        }
+    }
+
     public void RestoreHistory(IEnumerable<string>? commands, IEnumerable<string>? directories)
     {
         if (commands != null)
@@ -308,11 +325,26 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Indicates whether AltGr (Ctrl+Alt modifier) is currently pressed.
+    /// Used to suppress false-positive Control characters generated by the terminal control during AltGr key combos.
+    /// </summary>
+    public bool IsAltGrActive { get; set; }
+
     private void OnTerminalUserInput(object? sender, TerminalUserInputEventArgs e)
     {
         if (!IsRunning || e.Data.IsEmpty) return;
 
         var bytes = e.Data.ToArray();
+
+        // When AltGr (Ctrl+Alt) is active on international keyboards (e.g. AltGr+Q for '@', AltGr+E for '€'),
+        // SvcSystems.UI.Terminal misidentifies the key as Ctrl+Q (0x11) / Ctrl+E (0x05) in OnKeyDown.
+        // We filter out these single control bytes so only the valid TextInput character (@, €, etc.) is sent.
+        if (IsAltGrActive && bytes.Length == 1 && bytes[0] < 32 && bytes[0] != 9 && bytes[0] != 10 && bytes[0] != 13)
+        {
+            return;
+        }
+
         _session.Send(bytes);
     }
 
@@ -345,7 +377,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-        [RelayCommand]
+    [RelayCommand]
     public void RequestClose() => CloseRequested?.Invoke(this);
 
     [RelayCommand]

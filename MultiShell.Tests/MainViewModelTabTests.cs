@@ -12,11 +12,12 @@ public class MainViewModelTabTests
 {
 
 
-    private class MockPowerShellSession : IPowerShellSession
+    private class MockPowerShellSession : IShellSession
     {
         public Guid SessionId { get; } = Guid.NewGuid();
         public string Title { get; }
         public string? WorkingDirectory { get; set; }
+        public ShellType ShellType { get; set; } = ShellType.PowerShell;
         public bool IsRunning { get; set; } = true;
         public bool Disposed { get; private set; }
         public bool FailOnDispose { get; set; }
@@ -69,13 +70,18 @@ public class MainViewModelTabTests
         }
     }
 
-    private class FakePowerShellProcessService : IPowerShellProcessService
+    private class FakePowerShellProcessService : IShellProcessService
     {
         public List<MockPowerShellSession> CreatedSessions { get; } = new();
 
-        public IPowerShellSession CreateSession(string title, string? workingDirectory = null)
+        public IShellSession CreateSession(
+            string title,
+            string? workingDirectory = null,
+            ShellType shellType = ShellType.PowerShell,
+            string? customExecutable = null,
+            string? customArguments = null)
         {
-            var session = new MockPowerShellSession(title, workingDirectory);
+            var session = new MockPowerShellSession(title, workingDirectory) { ShellType = shellType };
             CreatedSessions.Add(session);
             return session;
         }
@@ -109,7 +115,7 @@ public class MainViewModelTabTests
         var persistenceService = new FakeTabStatePersistenceService();
 
         // Act
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
 
         // Assert
         Assert.Single(mainVm.Tabs);
@@ -135,7 +141,7 @@ public class MainViewModelTabTests
         };
 
         // Act
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         await mainVm.InitializeWorkspaceAsync();
 
         // Assert
@@ -167,7 +173,7 @@ public class MainViewModelTabTests
         };
 
         // Act
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         await mainVm.InitializeWorkspaceAsync();
 
         // Assert - Verify exact order from 0 to 3
@@ -186,7 +192,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
 
         // Act
         mainVm.AddNewTab();
@@ -203,7 +209,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         mainVm.SelectedTab!.WorkingDirectory = @"C:\projekte\quicklaunch";
 
         // Act
@@ -222,7 +228,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         mainVm.AddNewTabWithDirectory(@"C:\projekte\tab1");
         mainVm.AddNewTabWithDirectory(@"C:\projekte\tab2");
         mainVm.AddNewTabWithDirectory(@"C:\projekte\tab3");
@@ -247,7 +253,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         mainVm.AddNewTab();
 
         var tab0 = mainVm.Tabs[0];
@@ -264,7 +270,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         mainVm.AddNewTab(); // Now has PS 1 and PS 2
         var tab2 = mainVm.Tabs[1];
 
@@ -283,7 +289,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         mainVm.AddNewTab(); // PS 1 and PS 2
         var tab2 = mainVm.Tabs[1];
         var session2 = processService.CreatedSessions[1];
@@ -304,7 +310,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         mainVm.AddNewTab(); // PS 1 and PS 2
         var tab2 = mainVm.Tabs[1];
         var session2 = processService.CreatedSessions[1];
@@ -325,7 +331,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         mainVm.AddNewTab(); // PS 1 and PS 2
         var tab2 = mainVm.Tabs[1];
         var session2 = processService.CreatedSessions[1];
@@ -345,7 +351,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         mainVm.AddNewTab();
 
         // Act
@@ -376,7 +382,7 @@ public class MainViewModelTabTests
         };
 
         // Act
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         await mainVm.InitializeWorkspaceAsync();
 
         // Assert
@@ -393,7 +399,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         await mainVm.InitializeWorkspaceAsync();
 
         var session = processService.CreatedSessions[^1];
@@ -422,7 +428,7 @@ public class MainViewModelTabTests
         
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
-        using var mainVm = new MainViewModel(processService, persistenceService);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         await mainVm.InitializeWorkspaceAsync();
 
         mainVm.AddNewTabWithDirectory(@"C:\projekte\tab2");
@@ -442,5 +448,187 @@ public class MainViewModelTabTests
         Assert.Single(persistenceService.SavedState.Tabs);
         var savedTab1 = persistenceService.SavedState.Tabs[0];
         Assert.DoesNotContain("specific-command-for-tab-2", savedTab1.CommandHistory ?? new List<string>());
+    }
+
+    [Fact]
+    public async Task AddNewTabWithShell_CreatesTabWithRequestedShellType()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Act
+        mainVm.AddNewTabWithShell(ShellType.WSL);
+        mainVm.AddNewTabWithShell(ShellType.CMD);
+
+        // Assert
+        Assert.Equal(3, mainVm.Tabs.Count);
+        Assert.Equal(ShellType.PowerShell, mainVm.Tabs[0].ShellType);
+        Assert.Equal(ShellType.WSL, mainVm.Tabs[1].ShellType);
+        Assert.Equal(ShellType.CMD, mainVm.Tabs[2].ShellType);
+        Assert.Equal("WSL", mainVm.Tabs[1].ShellIconTag);
+        Assert.Equal("CMD", mainVm.Tabs[2].ShellIconTag);
+    }
+
+    [Fact]
+    public async Task InitializeWorkspaceAsync_RestoresHeterogeneousShellTypes()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService
+        {
+            StateToReturn = new WorkspaceState(
+                new List<TabState>
+                {
+                    new("PS 1", @"C:\ps", ShellType: ShellType.PowerShell),
+                    new("WSL 2", @"/home/user", ShellType: ShellType.WSL),
+                    new("CMD 3", @"C:\cmd", ShellType: ShellType.CMD)
+                },
+                1)
+        };
+
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+
+        // Act
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Assert
+        Assert.Equal(3, mainVm.Tabs.Count);
+        Assert.Equal(ShellType.PowerShell, mainVm.Tabs[0].ShellType);
+        Assert.Equal(ShellType.WSL, mainVm.Tabs[1].ShellType);
+        Assert.Equal(ShellType.CMD, mainVm.Tabs[2].ShellType);
+        Assert.Equal(mainVm.Tabs[1], mainVm.SelectedTab);
+    }
+
+    [Fact]
+    public async Task DuplicateTab_PreservesSourceTabShellType()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTabWithShell(ShellType.NuShell);
+        var nuTab = mainVm.Tabs[1];
+        mainVm.SelectedTab = nuTab;
+
+        // Act
+        mainVm.DuplicateTab();
+
+        // Assert
+        Assert.Equal(3, mainVm.Tabs.Count);
+        var duplicatedTab = mainVm.Tabs[2];
+        Assert.Equal(ShellType.NuShell, duplicatedTab.ShellType);
+    }
+
+    [Fact]
+    public async Task AddNewTab_UsesLastSelectedShellType_AndPersistsAcrossRestarts()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Act 1 - Select CMD via AddNewTabWithShell
+        mainVm.AddNewTabWithShell(ShellType.CMD);
+        Assert.Equal(ShellType.CMD, mainVm.DefaultShellType);
+
+        // Act 2 - Subsequent click on (+) AddNewTab should create CMD tab
+        mainVm.AddNewTab();
+        Assert.Equal(3, mainVm.Tabs.Count);
+        Assert.Equal(ShellType.CMD, mainVm.Tabs[2].ShellType);
+
+        // Act 3 - Force synchronous save and verify saved WorkspaceState has DefaultShellType
+        mainVm.SaveCurrentStateSynchronously();
+        Assert.NotNull(persistenceService.SavedState);
+        Assert.Equal(ShellType.CMD, persistenceService.SavedState.DefaultShellType);
+    }
+
+    [Fact]
+    public async Task NewTabTooltip_UpdatesDynamically_WhenDefaultShellOrLanguageChanges()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        var locService = new LocalizationService("de", isUserSelection: true);
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), locService, new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Initial default: PowerShell in German
+        Assert.Contains("PowerShell", mainVm.NewTabTooltip);
+        Assert.Contains("Neuer", mainVm.NewTabTooltip);
+
+        // Switch to WSL
+        mainVm.AddNewTabWithShell(ShellType.WSL);
+        Assert.Contains("WSL", mainVm.NewTabTooltip);
+
+        // Switch to English
+        locService.SetLanguage("en", isUserSelection: true);
+        Assert.Contains("New", mainVm.NewTabTooltip);
+        Assert.Contains("WSL", mainVm.NewTabTooltip);
+    }
+
+    [Fact]
+    public async Task AddNewTabWithProfile_SpawnsTabWithProfileSettings()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        var customProfile = new TerminalProfileItemViewModel(new TerminalProfile(
+            Guid.NewGuid(),
+            "Git Bash",
+            @"C:\Program Files\Git\bin\bash.exe",
+            "--login -i",
+            IconTag: "GIT",
+            ShellType: ShellType.PowerShell));
+
+        // Act
+        mainVm.AddNewTabWithProfile(customProfile);
+
+        // Assert
+        Assert.Equal(2, mainVm.Tabs.Count);
+        var tab = mainVm.Tabs[1];
+        Assert.Equal("GIT 2", tab.Title);
+        Assert.Equal(ShellType.PowerShell, tab.ShellType);
+    }
+
+    [Fact]
+    public async Task ProfileModal_SaveAndStartNewProfile_WorkflowWorks()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Act 1 - Open modal
+        mainVm.OpenProfilesModal();
+        Assert.True(mainVm.IsProfilesModalOpen);
+
+        // Act 2 - Start new profile
+        mainVm.StartNewProfile();
+        Assert.True(mainVm.IsEditingProfile);
+        Assert.True(mainVm.IsCreatingNewProfile);
+
+        mainVm.EditingProfileName = "My Custom Shell";
+        mainVm.EditingExecutablePath = @"C:\custom\shell.exe";
+        mainVm.EditingIconTag = "CSH";
+
+        await mainVm.SaveProfileAsync();
+
+        // Assert - editing reset, profile added
+        Assert.False(mainVm.IsEditingProfile);
+        Assert.Contains(mainVm.Profiles, p => p.Name == "My Custom Shell" && p.IconTag == "CSH");
+
+        // Act 3 - Close modal
+        mainVm.CloseProfilesModal();
+        Assert.False(mainVm.IsProfilesModalOpen);
     }
 }

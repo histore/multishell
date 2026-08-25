@@ -9,11 +9,12 @@ namespace MultiShell.Tests;
 
 public class TerminalTabViewModelTests
 {
-    private class MockPowerShellSession : IPowerShellSession
+    private class MockPowerShellSession : IShellSession
     {
         public Guid SessionId { get; } = Guid.NewGuid();
         public string Title { get; }
         public string? WorkingDirectory { get; set; }
+        public ShellType ShellType { get; set; } = ShellType.PowerShell;
         public bool IsRunning { get; set; }
         public bool Disposed { get; private set; }
         public bool Started { get; private set; }
@@ -238,5 +239,45 @@ public class TerminalTabViewModelTests
         Assert.Single(session.SentData);
         var sentString = Encoding.UTF8.GetString(session.SentData[0]);
         Assert.Equal("Set-Location -LiteralPath \"C:\\projekte\\app\"", sentString);
+    }
+
+    [Fact]
+    public void SendInput_SendsRawBytesDirectlyToSession()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act - send '@' as UTF8 bytes (e.g. from AltGr+Q text input)
+        var atBytes = Encoding.UTF8.GetBytes("@");
+        vm.SendInput(atBytes);
+
+        // Assert
+        Assert.Single(session.SentData);
+        Assert.Equal("@", Encoding.UTF8.GetString(session.SentData[0]));
+    }
+
+    [Fact]
+    public void OnTerminalUserInput_WhenAltGrActive_FiltersOutRogueControlCharactersAndAllowsPrintableCharacters()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+        vm.IsAltGrActive = true;
+
+        // Act 1: Simulate TerminalControl.OnKeyDown sending rogue Ctrl+Q (0x11)
+        vm.TerminalModel.Send(new byte[] { 0x11 });
+
+        // Assert 1: The rogue 0x11 is dropped when AltGr is active
+        Assert.Empty(session.SentData);
+
+        // Act 2: Simulate TerminalControl.OnTextInput sending '@' (0x40)
+        vm.TerminalModel.Send("@");
+
+        // Assert 2: The printable character '@' is passed through
+        Assert.Single(session.SentData);
+        Assert.Equal("@", Encoding.UTF8.GetString(session.SentData[0]));
     }
 }

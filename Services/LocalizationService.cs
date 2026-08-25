@@ -71,6 +71,7 @@ public class LocalizationService : ILocalizationService
         ["Settings_Language"] = "Sprache",
         ["Settings_App_FontSize"] = "App-Schriftgröße",
         ["Settings_Terminal_FontSize"] = "Terminal-Schriftgröße",
+        ["Settings_Profiles_Title"] = "Terminal-Profile...",
         ["Settings_Help_Title"] = "Hilfe & Tastaturkürzel",
         ["Settings_About_Title"] = "Über MultiShell",
         ["Theme_Dark"] = "Dunkel",
@@ -88,6 +89,12 @@ public class LocalizationService : ILocalizationService
 
         // Toolbar & Tabs
         ["Btn_New_Tab_Tooltip"] = "Neuer Tab (Strg+Umschalt+T)",
+        ["Btn_New_Tab_With_Shell_Tooltip"] = "Neuer {0}-Tab (Strg+Umschalt+T)",
+        ["Btn_Select_Shell_Tooltip"] = "Terminal-Typ auswählen",
+        ["Shell_PowerShell"] = "PowerShell",
+        ["Shell_NuShell"] = "NuShell",
+        ["Shell_WSL"] = "WSL (Linux)",
+        ["Shell_CMD"] = "Eingabeaufforderung (CMD)",
         ["Btn_Tab_History_Tooltip"] = "Tab-Verlauf (Strg+Umschalt+H)",
         ["Btn_Tab_History_Text"] = "Verlauf",
         ["Btn_Tab_Menu_Tooltip"] = "Alle geöffneten Tabs",
@@ -132,7 +139,25 @@ public class LocalizationService : ILocalizationService
         ["About_Built_With"] = "Entwickelt mit:",
         ["About_Built_With_Value"] = "Google Gemini & Antigravity",
         ["About_Footer"] = "Entwickelt nach den Prinzipien von Clean Architecture & Clean Code.",
-        ["About_OK_Button"] = "OK"
+        ["About_OK_Button"] = "OK",
+
+        // Profiles Modal
+        ["Profiles_Modal_Title"] = "Terminal-Profile",
+        ["Profiles_Modal_Subtitle"] = "Profile konfigurieren, Pfade anpassen und neue Terminals hinzufügen",
+        ["Profiles_Btn_Add"] = "+ Neues Profil",
+        ["Profiles_Btn_Edit"] = "Bearbeiten",
+        ["Profiles_Btn_Delete"] = "Löschen",
+        ["Profiles_Btn_Save"] = "Speichern",
+        ["Profiles_Btn_Cancel"] = "Abbrechen",
+        ["Profiles_Btn_Reset"] = "Standard zurücksetzen",
+        ["Profiles_Field_Name"] = "Profilname",
+        ["Profiles_Field_Path"] = "Pfad zur ausführbaren Datei",
+        ["Profiles_Field_Args"] = "Startargumente (optional)",
+        ["Profiles_Field_Icon"] = "Badge-Kürzel (z. B. PS, CMD, GIT)",
+        ["Profiles_Field_ShellType"] = "Shell-Emulationstyp",
+        ["Profiles_Edit_Title"] = "Profil bearbeiten",
+        ["Profiles_Create_Title"] = "Neues Profil anlegen",
+        ["Profiles_Empty"] = "Keine Profile vorhanden."
     };
 
     private static readonly Dictionary<string, string> EnglishStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -144,6 +169,7 @@ public class LocalizationService : ILocalizationService
         ["Settings_Language"] = "Language",
         ["Settings_App_FontSize"] = "App Font Size",
         ["Settings_Terminal_FontSize"] = "Terminal Font Size",
+        ["Settings_Profiles_Title"] = "Terminal Profiles...",
         ["Settings_Help_Title"] = "Help & Shortcuts",
         ["Settings_About_Title"] = "About MultiShell",
         ["Theme_Dark"] = "Dark",
@@ -161,6 +187,12 @@ public class LocalizationService : ILocalizationService
 
         // Toolbar & Tabs
         ["Btn_New_Tab_Tooltip"] = "New Tab (Ctrl+Shift+T)",
+        ["Btn_New_Tab_With_Shell_Tooltip"] = "New {0} Tab (Ctrl+Shift+T)",
+        ["Btn_Select_Shell_Tooltip"] = "Select Terminal Type",
+        ["Shell_PowerShell"] = "PowerShell",
+        ["Shell_NuShell"] = "NuShell",
+        ["Shell_WSL"] = "WSL (Linux)",
+        ["Shell_CMD"] = "Command Prompt (CMD)",
         ["Btn_Tab_History_Tooltip"] = "Tab History (Ctrl+Shift+H)",
         ["Btn_Tab_History_Text"] = "History",
         ["Btn_Tab_Menu_Tooltip"] = "All Open Tabs",
@@ -205,7 +237,25 @@ public class LocalizationService : ILocalizationService
         ["About_Built_With"] = "Built With:",
         ["About_Built_With_Value"] = "Google Gemini & Antigravity",
         ["About_Footer"] = "Crafted with Clean Architecture & Clean Code principles.",
-        ["About_OK_Button"] = "OK"
+        ["About_OK_Button"] = "OK",
+
+        // Profiles Modal
+        ["Profiles_Modal_Title"] = "Terminal Profiles",
+        ["Profiles_Modal_Subtitle"] = "Configure terminal profiles, paths, arguments and add custom shells",
+        ["Profiles_Btn_Add"] = "+ New Profile",
+        ["Profiles_Btn_Edit"] = "Edit",
+        ["Profiles_Btn_Delete"] = "Delete",
+        ["Profiles_Btn_Save"] = "Save",
+        ["Profiles_Btn_Cancel"] = "Cancel",
+        ["Profiles_Btn_Reset"] = "Reset to Defaults",
+        ["Profiles_Field_Name"] = "Profile Name",
+        ["Profiles_Field_Path"] = "Executable Path",
+        ["Profiles_Field_Args"] = "Arguments (optional)",
+        ["Profiles_Field_Icon"] = "Badge Tag (e.g. PS, CMD, GIT)",
+        ["Profiles_Field_ShellType"] = "Shell Emulation Type",
+        ["Profiles_Edit_Title"] = "Edit Profile",
+        ["Profiles_Create_Title"] = "Create New Profile",
+        ["Profiles_Empty"] = "No profiles configured."
     };
 
     private static readonly Dictionary<string, string> FrenchStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -217,6 +267,7 @@ public class LocalizationService : ILocalizationService
         ["Settings_Language"] = "Langue",
         ["Settings_App_FontSize"] = "Taille de police de l'app",
         ["Settings_Terminal_FontSize"] = "Taille de police du terminal",
+        ["Settings_Profiles_Title"] = "Profils de terminal...",
         ["Settings_Help_Title"] = "Aide & Raccourcis",
         ["Settings_About_Title"] = "À propos de MultiShell",
         ["Theme_Dark"] = "Sombre",
@@ -234,6 +285,12 @@ public class LocalizationService : ILocalizationService
 
         // Toolbar & Tabs
         ["Btn_New_Tab_Tooltip"] = "Nouvel onglet (Ctrl+Maj+T)",
+        ["Btn_New_Tab_With_Shell_Tooltip"] = "Nouvel onglet {0} (Ctrl+Maj+T)",
+        ["Btn_Select_Shell_Tooltip"] = "Sélectionner le type de terminal",
+        ["Shell_PowerShell"] = "PowerShell",
+        ["Shell_NuShell"] = "NuShell",
+        ["Shell_WSL"] = "WSL (Linux)",
+        ["Shell_CMD"] = "Invite de commandes (CMD)",
         ["Btn_Tab_History_Tooltip"] = "Historique des onglets (Ctrl+Maj+H)",
         ["Btn_Tab_History_Text"] = "Historique",
         ["Btn_Tab_Menu_Tooltip"] = "Tous les onglets ouverts",
@@ -278,7 +335,25 @@ public class LocalizationService : ILocalizationService
         ["About_Built_With"] = "Développé avec :",
         ["About_Built_With_Value"] = "Google Gemini & Antigravity",
         ["About_Footer"] = "Conçu selon les principes de Clean Architecture & Clean Code.",
-        ["About_OK_Button"] = "OK"
+        ["About_OK_Button"] = "OK",
+
+        // Profiles Modal
+        ["Profiles_Modal_Title"] = "Profils de terminal",
+        ["Profiles_Modal_Subtitle"] = "Configurer les profils, modifier les chemins et ajouter des terminaux",
+        ["Profiles_Btn_Add"] = "+ Nouveau profil",
+        ["Profiles_Btn_Edit"] = "Modifier",
+        ["Profiles_Btn_Delete"] = "Supprimer",
+        ["Profiles_Btn_Save"] = "Enregistrer",
+        ["Profiles_Btn_Cancel"] = "Annuler",
+        ["Profiles_Btn_Reset"] = "Réinitialiser les paramètres par défaut",
+        ["Profiles_Field_Name"] = "Nom du profil",
+        ["Profiles_Field_Path"] = "Chemin du fichier exécutable",
+        ["Profiles_Field_Args"] = "Arguments de démarrage (facultatif)",
+        ["Profiles_Field_Icon"] = "Étiquette (ex. PS, CMD, GIT)",
+        ["Profiles_Field_ShellType"] = "Type d'émulation de shell",
+        ["Profiles_Edit_Title"] = "Modifier le profil",
+        ["Profiles_Create_Title"] = "Créer un nouveau profil",
+        ["Profiles_Empty"] = "Aucun profil configuré."
     };
 
     private static readonly Dictionary<string, string> SpanishStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -290,6 +365,7 @@ public class LocalizationService : ILocalizationService
         ["Settings_Language"] = "Idioma",
         ["Settings_App_FontSize"] = "Tamaño de fuente de la app",
         ["Settings_Terminal_FontSize"] = "Tamaño de fuente del terminal",
+        ["Settings_Profiles_Title"] = "Perfiles de terminal...",
         ["Settings_Help_Title"] = "Ayuda & Atajos",
         ["Settings_About_Title"] = "Acerca de MultiShell",
         ["Theme_Dark"] = "Oscuro",
@@ -307,6 +383,12 @@ public class LocalizationService : ILocalizationService
 
         // Toolbar & Tabs
         ["Btn_New_Tab_Tooltip"] = "Nueva pestaña (Ctrl+Mayús+T)",
+        ["Btn_New_Tab_With_Shell_Tooltip"] = "Nueva pestaña {0} (Ctrl+Mayús+T)",
+        ["Btn_Select_Shell_Tooltip"] = "Seleccionar tipo de terminal",
+        ["Shell_PowerShell"] = "PowerShell",
+        ["Shell_NuShell"] = "NuShell",
+        ["Shell_WSL"] = "WSL (Linux)",
+        ["Shell_CMD"] = "Símbolo del sistema (CMD)",
         ["Btn_Tab_History_Tooltip"] = "Historial de pestañas (Ctrl+Mayús+H)",
         ["Btn_Tab_History_Text"] = "Historial",
         ["Btn_Tab_Menu_Tooltip"] = "Todas las pestañas abiertas",
@@ -351,7 +433,25 @@ public class LocalizationService : ILocalizationService
         ["About_Built_With"] = "Creado con:",
         ["About_Built_With_Value"] = "Google Gemini & Antigravity",
         ["About_Footer"] = "Diseñado con los principios de Clean Architecture & Clean Code.",
-        ["About_OK_Button"] = "OK"
+        ["About_OK_Button"] = "OK",
+
+        // Profiles Modal
+        ["Profiles_Modal_Title"] = "Perfiles de terminal",
+        ["Profiles_Modal_Subtitle"] = "Configurar perfiles, modificar rutas y agregar terminales personalizados",
+        ["Profiles_Btn_Add"] = "+ Nuevo perfil",
+        ["Profiles_Btn_Edit"] = "Editar",
+        ["Profiles_Btn_Delete"] = "Eliminar",
+        ["Profiles_Btn_Save"] = "Guardar",
+        ["Profiles_Btn_Cancel"] = "Cancelar",
+        ["Profiles_Btn_Reset"] = "Restablecer valores predeterminados",
+        ["Profiles_Field_Name"] = "Nombre del perfil",
+        ["Profiles_Field_Path"] = "Ruta del archivo ejecutable",
+        ["Profiles_Field_Args"] = "Argumentos de inicio (opcional)",
+        ["Profiles_Field_Icon"] = "Etiqueta (ej. PS, CMD, GIT)",
+        ["Profiles_Field_ShellType"] = "Tipo de emulación de shell",
+        ["Profiles_Edit_Title"] = "Editar perfil",
+        ["Profiles_Create_Title"] = "Crear nuevo perfil",
+        ["Profiles_Empty"] = "No hay perfiles configurados."
     };
 
     public string CurrentLanguage

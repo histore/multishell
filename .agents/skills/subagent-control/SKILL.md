@@ -41,6 +41,8 @@ Act as the central orchestrator. Deconstruct complex requests into discrete subt
 | **ReleaseManager** | Publishing configs, single-file packaging, AOT, app manifests | Build/DevOps-optimized model | **Medium** |
 | **Tester** | Test case generation (AAA), boundary & error test coverage | Fast coding / testing model | **Medium** |
 | **Verifikation** | Audit 100% requirement coverage, quality gate, architecture & code compliance | High-precision audit model | **High** |
+| **CommitManager** | Conventional commit authoring, staging, push upon explicit user approval | Structured commit model | **Medium** |
+| **Tiebreaker** | Loop & deadlock detection, strategy pivots, model upgrades, user escalation | High-capacity reasoning & arbitration model | **High** |
 
 ---
 

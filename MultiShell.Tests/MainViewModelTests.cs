@@ -33,7 +33,7 @@ public class MainViewModelTests
     {
         // Arrange
         var mockTheme = new MockThemeService();
-        var vm = new MainViewModel(new PowerShellProcessService(), new TabStatePersistenceService(), mockTheme);
+        var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
 
         Assert.True(vm.IsDarkAppTheme);
         Assert.True(vm.IsDarkTerminalTheme);
@@ -53,7 +53,7 @@ public class MainViewModelTests
     {
         // Arrange
         var mockTheme = new MockThemeService();
-        var vm = new MainViewModel(new PowerShellProcessService(), new TabStatePersistenceService(), mockTheme);
+        var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
 
         // Act
         vm.ToggleTerminalThemeCommand.Execute(null);
@@ -70,7 +70,7 @@ public class MainViewModelTests
     {
         // Arrange
         var mockTheme = new MockThemeService();
-        var vm = new MainViewModel(new PowerShellProcessService(), new TabStatePersistenceService(), mockTheme);
+        var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
 
         // Act
         vm.SetAppTheme(false);
@@ -93,10 +93,11 @@ public class MainViewModelTests
     public void SetFontSizeLevels_UpdatesValuesAndScales()
     {
         // Arrange
+        var tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"multishell_state_test_{System.Guid.NewGuid():N}.json");
         var fontSizeService = new FontSizeService();
         var vm = new MainViewModel(
-            new PowerShellProcessService(),
-            new TabStatePersistenceService(),
+            new ShellProcessService(),
+            new TabStatePersistenceService(tempFile),
             new MockThemeService(),
             new LocalizationService(),
             fontSizeService);
@@ -121,10 +122,11 @@ public class MainViewModelTests
     public void IncreaseAndDecreaseFontSize_UpdatesLevelsWithinRange()
     {
         // Arrange
+        var tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"multishell_state_test_{System.Guid.NewGuid():N}.json");
         var fontSizeService = new FontSizeService();
         var vm = new MainViewModel(
-            new PowerShellProcessService(),
-            new TabStatePersistenceService(),
+            new ShellProcessService(),
+            new TabStatePersistenceService(tempFile),
             new MockThemeService(),
             new LocalizationService(),
             fontSizeService);

@@ -131,4 +131,74 @@ public class TabStatePersistenceServiceTests : IDisposable
         Assert.Equal(2, loadedState.TerminalFontSizeLevel);
         Assert.Equal("de", loadedState.SavedLanguage);
     }
+
+    [Fact]
+    public async Task SaveStateAsync_And_LoadStateAsync_PreservesShellTypes()
+    {
+        // Arrange
+        var service = new TabStatePersistenceService(_tempFile);
+        var originalState = new WorkspaceState(
+            new List<TabState>
+            {
+                new("PS Tab", @"C:\projekte", ShellType: ShellType.PowerShell),
+                new("Nu Tab", @"C:\nu", ShellType: ShellType.NuShell),
+                new("WSL Tab", @"/home/user", ShellType: ShellType.WSL),
+                new("CMD Tab", @"C:\cmd", ShellType: ShellType.CMD)
+            },
+            1);
+
+        // Act
+        await service.SaveStateAsync(originalState);
+        var loadedState = await service.LoadStateAsync();
+
+        // Assert
+        Assert.NotNull(loadedState);
+        Assert.Equal(4, loadedState.Tabs.Count);
+        Assert.Equal(ShellType.PowerShell, loadedState.Tabs[0].ShellType);
+        Assert.Equal(ShellType.NuShell, loadedState.Tabs[1].ShellType);
+        Assert.Equal(ShellType.WSL, loadedState.Tabs[2].ShellType);
+        Assert.Equal(ShellType.CMD, loadedState.Tabs[3].ShellType);
+    }
+
+    [Fact]
+    public async Task LoadStateAsync_LegacyJsonWithoutShellType_DefaultsToPowerShell()
+    {
+        // Arrange
+        var legacyJson = @"{
+            ""Tabs"": [
+                { ""Title"": ""Legacy Tab"", ""WorkingDirectory"": ""C:\\legacy"" }
+            ],
+            ""SelectedIndex"": 0
+        }";
+        await File.WriteAllTextAsync(_tempFile, legacyJson);
+        var service = new TabStatePersistenceService(_tempFile);
+
+        // Act
+        var loadedState = await service.LoadStateAsync();
+
+        // Assert
+        Assert.NotNull(loadedState);
+        Assert.Single(loadedState.Tabs);
+        Assert.Equal(ShellType.PowerShell, loadedState.Tabs[0].ShellType);
+        Assert.Equal(ShellType.PowerShell, loadedState.DefaultShellType);
+    }
+
+    [Fact]
+    public async Task SaveStateAsync_And_LoadStateAsync_PreservesDefaultShellType()
+    {
+        // Arrange
+        var service = new TabStatePersistenceService(_tempFile);
+        var originalState = new WorkspaceState(
+            new List<TabState> { new("CMD Tab", @"C:\cmd", ShellType: ShellType.CMD) },
+            0,
+            DefaultShellType: ShellType.CMD);
+
+        // Act
+        await service.SaveStateAsync(originalState);
+        var loadedState = await service.LoadStateAsync();
+
+        // Assert
+        Assert.NotNull(loadedState);
+        Assert.Equal(ShellType.CMD, loadedState.DefaultShellType);
+    }
 }

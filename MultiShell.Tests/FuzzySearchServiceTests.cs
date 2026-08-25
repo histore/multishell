@@ -9,11 +9,12 @@ namespace MultiShell.Tests;
 
 public class FuzzySearchServiceTests
 {
-    private class MockPowerShellSession : IPowerShellSession
+    private class MockPowerShellSession : IShellSession
     {
         public Guid SessionId { get; } = Guid.NewGuid();
         public string Title { get; } = "PS Test";
         public string? WorkingDirectory { get; set; } = @"C:\projekte\multishell";
+        public ShellType ShellType { get; set; } = ShellType.PowerShell;
         public bool IsRunning { get; set; } = true;
 
         public event Action<byte[]>? DataReceived { add { } remove { } }

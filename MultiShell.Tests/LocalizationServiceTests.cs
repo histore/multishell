@@ -137,10 +137,11 @@ public class LocalizationServiceTests
         try
         {
             var vm = new MainViewModel(
-                new PowerShellProcessService(),
+                new ShellProcessService(),
                 persistence,
                 new ThemeService(),
-                locService);
+                locService,
+                new FontSizeService());
 
             // Act
             vm.SelectLanguageCommand.Execute("es");

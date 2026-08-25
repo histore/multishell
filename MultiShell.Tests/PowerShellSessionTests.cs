@@ -22,7 +22,7 @@ public class PowerShellSessionTests
     {
         if (!OperatingSystem.IsWindows()) return;
 
-        using var session = new PowerShellSession("TestSession");
+        using var session = new ShellSession("TestSession");
         Assert.False(session.IsRunning);
 
         session.Start();
@@ -34,7 +34,7 @@ public class PowerShellSessionTests
     {
         if (!OperatingSystem.IsWindows()) return;
 
-        using var session = new PowerShellSession("SendTestSession");
+        using var session = new ShellSession("SendTestSession");
         var receivedBytes = 0;
         using var signal = new ManualResetEventSlim(false);
 
@@ -62,7 +62,7 @@ public class PowerShellSessionTests
     {
         if (!OperatingSystem.IsWindows()) return;
 
-        using var session = new PowerShellSession("ResizeSession");
+        using var session = new ShellSession("ResizeSession");
         session.Start();
 
         var exception = Record.Exception(() =>
@@ -79,7 +79,7 @@ public class PowerShellSessionTests
     {
         if (!OperatingSystem.IsWindows()) return;
 
-        var session = new PowerShellSession("DisposeSession");
+        var session = new ShellSession("DisposeSession");
         session.Start();
         Assert.True(session.IsRunning);
 
@@ -91,7 +91,7 @@ public class PowerShellSessionTests
     public void Constructor_SetsInitialWorkingDirectory()
     {
         var tempDir = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        using var session = new PowerShellSession("InitDirSession", tempDir);
+        using var session = new ShellSession("InitDirSession", tempDir);
 
         Assert.Equal(tempDir, session.WorkingDirectory);
     }

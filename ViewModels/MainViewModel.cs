@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -15,7 +16,7 @@ namespace MultiShell.ViewModels;
 /// </summary>
 public partial class MainViewModel : ViewModelBase, IDisposable
 {
-    private readonly IPowerShellProcessService _powerShellProcessService;
+    private readonly IShellProcessService _shellProcessService;
     private readonly ITabStatePersistenceService _persistenceService;
     private readonly IThemeService _themeService;
     private readonly ILocalizationService _localizationService;
@@ -47,6 +48,64 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private double _terminalFontSize = 12.0;
+
+    [ObservableProperty]
+    private ShellType _defaultShellType = ShellType.PowerShell;
+
+    [ObservableProperty]
+    private bool _isProfilesModalOpen;
+
+    [ObservableProperty]
+    private bool _isEditingProfile;
+
+    [ObservableProperty]
+    private bool _isCreatingNewProfile;
+
+    [ObservableProperty]
+    private Guid? _editingProfileId;
+
+    [ObservableProperty]
+    private string _editingProfileName = string.Empty;
+
+    [ObservableProperty]
+    private string _editingExecutablePath = string.Empty;
+
+    [ObservableProperty]
+    private string? _editingArguments;
+
+    [ObservableProperty]
+    private string _editingIconTag = "PS";
+
+    [ObservableProperty]
+    private ShellType _editingShellType = ShellType.PowerShell;
+
+    [ObservableProperty]
+    private TerminalProfileItemViewModel? _selectedProfile;
+
+    public ObservableCollection<TerminalProfileItemViewModel> Profiles { get; } = new();
+
+    public string NewTabTooltip
+    {
+        get
+        {
+            var shellKey = DefaultShellType switch
+            {
+                ShellType.PowerShell => "Shell_PowerShell",
+                ShellType.NuShell => "Shell_NuShell",
+                ShellType.WSL => "Shell_WSL",
+                ShellType.CMD => "Shell_CMD",
+                _ => "Shell_PowerShell"
+            };
+            var shellName = _localizationService[shellKey];
+            return string.Format(_localizationService["Btn_New_Tab_With_Shell_Tooltip"], shellName);
+        }
+    }
+
+    partial void OnDefaultShellTypeChanged(ShellType value)
+    {
+        OnPropertyChanged(nameof(NewTabTooltip));
+        TriggerSaveState();
+    }
 
     public bool IsGerman => string.Equals(CurrentLanguage, "de", StringComparison.OrdinalIgnoreCase);
     public bool IsEnglish => string.Equals(CurrentLanguage, "en", StringComparison.OrdinalIgnoreCase);
@@ -144,28 +203,45 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return "v0.0.1";
     }
 
+    private readonly IShellDiscoveryService _shellDiscoveryService;
+    private readonly ITerminalProfileService _terminalProfileService;
+
+    /// <summary>
+    /// Gets all detected shells and their availability on this machine.
+    /// </summary>
+    public IReadOnlyList<ShellOptionInfo> AvailableShells => _shellDiscoveryService.GetAvailableShells();
+
     public MainViewModel()
-        : this(new PowerShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService())
+        : this(new ShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService())
+    {
+    }
+    public MainViewModel(IShellProcessService shellProcessService)
+        : this(shellProcessService, new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService())
     {
     }
 
-    public MainViewModel(IPowerShellProcessService powerShellProcessService)
-        : this(powerShellProcessService, new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService())
+    public MainViewModel(IShellProcessService shellProcessService, ITabStatePersistenceService persistenceService, IThemeService themeService)
+        : this(shellProcessService, persistenceService, themeService, new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService())
     {
     }
 
     public MainViewModel(
-        IPowerShellProcessService powerShellProcessService,
+        IShellProcessService shellProcessService,
         ITabStatePersistenceService persistenceService,
-        IThemeService? themeService = null,
-        ILocalizationService? localizationService = null,
-        IFontSizeService? fontSizeService = null)
+        IThemeService themeService,
+        ILocalizationService localizationService,
+        IFontSizeService fontSizeService,
+        IShellDiscoveryService? shellDiscoveryService = null,
+        ITerminalProfileService? terminalProfileService = null)
     {
-        _powerShellProcessService = powerShellProcessService ?? throw new ArgumentNullException(nameof(powerShellProcessService));
+        _shellProcessService = shellProcessService ?? throw new ArgumentNullException(nameof(shellProcessService));
         _persistenceService = persistenceService ?? throw new ArgumentNullException(nameof(persistenceService));
         _themeService = themeService ?? new ThemeService();
         _localizationService = localizationService ?? new LocalizationService();
         _fontSizeService = fontSizeService ?? new FontSizeService();
+        _shellDiscoveryService = shellDiscoveryService ?? new ShellDiscoveryService(_localizationService);
+        _terminalProfileService = terminalProfileService ?? new TerminalProfileService(localizationService: _localizationService);
+        _terminalProfileService.ProfilesChanged += ReloadProfiles;
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;
@@ -178,6 +254,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             CurrentLanguage = lang;
             OnPropertyChanged(nameof(Loc));
+            OnPropertyChanged(nameof(AvailableShells));
+            OnPropertyChanged(nameof(NewTabTooltip));
         };
 
         _fontSizeService.AppFontSizeLevelChanged += lvl =>
@@ -198,12 +276,35 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             TriggerSaveState();
         };
 
+        ReloadProfiles();
         _ = InitializeWorkspaceAsync();
+    }
+
+    private void ReloadProfiles()
+    {
+        void Update()
+        {
+            var loaded = _terminalProfileService.GetProfiles();
+            Profiles.Clear();
+            foreach (var p in loaded)
+            {
+                Profiles.Add(new TerminalProfileItemViewModel(p));
+            }
+        }
+
+        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            Update();
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
+        }
     }
 
     public async Task InitializeWorkspaceAsync()
     {
-        var state = await _persistenceService.LoadStateAsync().ConfigureAwait(false);
+        var state = await _persistenceService.LoadStateAsync();
 
         if (!string.IsNullOrWhiteSpace(state?.SavedLanguage))
         {
@@ -214,6 +315,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             _fontSizeService.SetAppFontSizeLevel(state.AppFontSizeLevel);
             _fontSizeService.SetTerminalFontSizeLevel(state.TerminalFontSizeLevel);
+            DefaultShellType = state.DefaultShellType;
         }
 
         void ApplyLoadedTabs()
@@ -233,8 +335,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 foreach (var tabState in state.Tabs)
                 {
                     _tabCounter++;
-                    var title = string.IsNullOrWhiteSpace(tabState.Title) ? $"PS {_tabCounter}" : tabState.Title;
-                    var session = _powerShellProcessService.CreateSession(title, tabState.WorkingDirectory);
+                    var title = string.IsNullOrWhiteSpace(tabState.Title) ? GetDefaultTitle(tabState.ShellType, _tabCounter) : tabState.Title;
+                    var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType);
                     var tabVm = new TerminalTabViewModel(session);
                     tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
                     RegisterTabEvents(tabVm);
@@ -278,22 +380,159 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private static string GetDefaultTitle(ShellType shellType, int id) => shellType switch
+    {
+        ShellType.PowerShell => $"PS {id}",
+        ShellType.NuShell => $"NU {id}",
+        ShellType.WSL => $"WSL {id}",
+        ShellType.CMD => $"CMD {id}",
+        _ => $"Shell {id}"
+    };
+
     [RelayCommand]
     public void AddNewTab()
     {
-        AddNewTabWithDirectory(null);
+        AddNewTabWithDirectory(null, DefaultShellType);
     }
 
-    public void AddNewTabWithDirectory(string? workingDirectory)
+    [RelayCommand]
+    public void OpenProfilesModal()
     {
-        _tabCounter++;
-        var title = $"PS {_tabCounter}";
-        var session = _powerShellProcessService.CreateSession(title, workingDirectory);
-        var newTab = new TerminalTabViewModel(session);
+        IsProfilesModalOpen = true;
+        CancelEditProfile();
+    }
+
+    [RelayCommand]
+    public void CloseProfilesModal()
+    {
+        IsProfilesModalOpen = false;
+        CancelEditProfile();
+    }
+
+    [RelayCommand]
+    public void StartNewProfile()
+    {
+        IsCreatingNewProfile = true;
+        IsEditingProfile = true;
+        EditingProfileId = null;
+        EditingProfileName = "Custom Terminal";
+        EditingExecutablePath = "pwsh.exe";
+        EditingArguments = string.Empty;
+        EditingIconTag = "SH";
+        EditingShellType = ShellType.PowerShell;
+    }
+
+    [RelayCommand]
+    public void StartEditProfile(TerminalProfileItemViewModel? item)
+    {
+        if (item == null) return;
+        IsCreatingNewProfile = false;
+        IsEditingProfile = true;
+        EditingProfileId = item.Id;
+        EditingProfileName = item.Name;
+        EditingExecutablePath = item.ExecutablePath;
+        EditingArguments = item.Arguments;
+        EditingIconTag = item.IconTag;
+        EditingShellType = item.ShellType;
+    }
+
+    [RelayCommand]
+    public void CancelEditProfile()
+    {
+        IsEditingProfile = false;
+        IsCreatingNewProfile = false;
+        EditingProfileId = null;
+    }
+
+    [RelayCommand]
+    public async Task SaveProfileAsync()
+    {
+        if (string.IsNullOrWhiteSpace(EditingProfileName) || string.IsNullOrWhiteSpace(EditingExecutablePath))
+        {
+            return;
+        }
+
+        var profile = new TerminalProfile(
+            EditingProfileId ?? Guid.NewGuid(),
+            EditingProfileName.Trim(),
+            EditingExecutablePath.Trim(),
+            string.IsNullOrWhiteSpace(EditingArguments) ? null : EditingArguments.Trim(),
+            null,
+            string.IsNullOrWhiteSpace(EditingIconTag) ? "PS" : EditingIconTag.Trim().ToUpperInvariant(),
+            EditingShellType,
+            IsBuiltIn: false);
+
+        if (IsCreatingNewProfile)
+        {
+            await _terminalProfileService.AddProfileAsync(profile);
+        }
+        else
+        {
+            await _terminalProfileService.UpdateProfileAsync(profile);
+        }
+
+        CancelEditProfile();
+    }
+
+    [RelayCommand]
+    public async Task DeleteProfileAsync(TerminalProfileItemViewModel? item)
+    {
+        if (item == null) return;
+        await _terminalProfileService.DeleteProfileAsync(item.Id);
+        if (EditingProfileId == item.Id)
+        {
+            CancelEditProfile();
+        }
+    }
+
+    [RelayCommand]
+    public async Task ResetProfilesToDefaultAsync()
+    {
+        await _terminalProfileService.ResetToDefaultsAsync();
+        CancelEditProfile();
+    }
+
+    [RelayCommand]
+    public void AddNewTabWithProfile(TerminalProfileItemViewModel? profileVm)
+    {
+        if (profileVm == null) return;
+        DefaultShellType = profileVm.ShellType;
+        int nextId = Tabs.Count + 1;
+        var title = $"{profileVm.IconTag} {nextId}";
+        var session = _shellProcessService.CreateSession(title, null, profileVm.ShellType, profileVm.ExecutablePath, profileVm.Arguments);
+        var tab = new TerminalTabViewModel(session);
+        tab.UpdateTheme(_themeService.IsDarkTerminalTheme);
+        RegisterTabEvents(tab);
+        Tabs.Add(tab);
+        SelectedTab = tab;
+        TriggerSaveState();
+    }
+
+    [RelayCommand]
+    public void AddNewTabWithShell(ShellType shellType)
+    {
+        DefaultShellType = shellType;
+        AddNewTabWithDirectory(null, shellType);
+    }
+
+    public void AddNewTabWithDirectory(string? workingDirectory, ShellType shellType = ShellType.PowerShell)
+    {
+        var newTab = CreateNewTab(workingDirectory, shellType);
         RegisterTabEvents(newTab);
         Tabs.Add(newTab);
         SelectedTab = newTab;
         TriggerSaveState();
+    }
+
+    private TerminalTabViewModel CreateNewTab(string? workingDirectory = null, ShellType shellType = ShellType.PowerShell)
+    {
+        int nextId = Tabs.Count + 1;
+        var title = GetDefaultTitle(shellType, nextId);
+        var session = _shellProcessService.CreateSession(title, workingDirectory, shellType);
+        
+        var tab = new TerminalTabViewModel(session);
+        tab.UpdateTheme(_themeService.IsDarkTerminalTheme);
+        return tab;
     }
 
     [RelayCommand]
@@ -305,7 +544,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        AddNewTabWithDirectory(targetTab.WorkingDirectory);
+        AddNewTabWithDirectory(targetTab.WorkingDirectory, targetTab.ShellType);
     }
 
     [RelayCommand]
@@ -461,10 +700,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             t.Title,
             t.WorkingDirectory,
             t.CommandHistory.ToList(),
-            t.DirectoryHistory.ToList())).ToList();
+            t.DirectoryHistory.ToList(),
+            t.ShellType)).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
-        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage, AppFontSizeLevel, TerminalFontSizeLevel);
+        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage, AppFontSizeLevel, TerminalFontSizeLevel, DefaultShellType);
 
         _ = _persistenceService.SaveStateAsync(workspaceState);
     }
@@ -477,10 +717,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             t.Title,
             t.WorkingDirectory,
             t.CommandHistory.ToList(),
-            t.DirectoryHistory.ToList())).ToList();
+            t.DirectoryHistory.ToList(),
+            t.ShellType)).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
-        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage, AppFontSizeLevel, TerminalFontSizeLevel);
+        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage, AppFontSizeLevel, TerminalFontSizeLevel, DefaultShellType);
 
         try
         {
