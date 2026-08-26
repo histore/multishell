@@ -53,7 +53,7 @@ public class TerminalProfileService : ITerminalProfileService
                 var json = File.ReadAllText(_filePath);
                 if (!string.IsNullOrWhiteSpace(json))
                 {
-                    var loaded = JsonSerializer.Deserialize<List<TerminalProfile>>(json, JsonOptions);
+                    var loaded = JsonSerializer.Deserialize(json, MultiShellJsonSerializerContext.Default.ListTerminalProfile);
                     if (loaded != null && loaded.Count > 0)
                     {
                         lock (_profiles)
@@ -196,7 +196,7 @@ public class TerminalProfileService : ITerminalProfileService
             var json = await File.ReadAllTextAsync(_filePath).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(json))
             {
-                var loaded = JsonSerializer.Deserialize<List<TerminalProfile>>(json, JsonOptions);
+                var loaded = JsonSerializer.Deserialize(json, MultiShellJsonSerializerContext.Default.ListTerminalProfile);
                 if (loaded != null && loaded.Count > 0)
                 {
                     lock (_profiles)
@@ -290,7 +290,7 @@ public class TerminalProfileService : ITerminalProfileService
                 copy = _profiles.ToList();
             }
 
-            var json = JsonSerializer.Serialize(copy, JsonOptions);
+            var json = JsonSerializer.Serialize(copy, MultiShellJsonSerializerContext.Default.ListTerminalProfile);
             var tempPath = _filePath + ".tmp";
             await File.WriteAllTextAsync(tempPath, json).ConfigureAwait(false);
             File.Move(tempPath, _filePath, overwrite: true);

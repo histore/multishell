@@ -46,7 +46,7 @@ public class TabStatePersistenceService : ITabStatePersistenceService
                 Directory.CreateDirectory(directory);
             }
 
-            var json = JsonSerializer.Serialize(state, JsonOptions);
+            var json = JsonSerializer.Serialize(state, MultiShellJsonSerializerContext.Default.WorkspaceState);
             var tempPath = _filePath + ".tmp";
             await File.WriteAllTextAsync(tempPath, json).ConfigureAwait(false);
             File.Move(tempPath, _filePath, overwrite: true);
@@ -77,7 +77,7 @@ public class TabStatePersistenceService : ITabStatePersistenceService
                 return null;
             }
 
-            return JsonSerializer.Deserialize<WorkspaceState>(json, JsonOptions);
+            return JsonSerializer.Deserialize(json, MultiShellJsonSerializerContext.Default.WorkspaceState);
         }
         catch (Exception ex)
         {
