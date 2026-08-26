@@ -95,4 +95,28 @@ public class PowerShellSessionTests
 
         Assert.Equal(tempDir, session.WorkingDirectory);
     }
+
+    [Fact]
+    public void GenerateShellCommandLine_ConfiguresUtf8ConsoleEncoding()
+    {
+        using var session = new ShellSession("Utf8TestSession", shellType: ShellType.PowerShell);
+
+        // Access GenerateShellCommandLine via reflection to verify the hookScript contains UTF-8 encoding commands
+        var method = typeof(ShellSession).GetMethod("GenerateShellCommandLine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(method);
+
+        var cmdLine = (string?)method.Invoke(session, new object?[] { null });
+        Assert.NotNull(cmdLine);
+        Assert.Contains("-EncodedCommand", cmdLine);
+
+        // Extract Base64 encoded payload
+        var parts = cmdLine.Split(" -EncodedCommand ");
+        Assert.Equal(2, parts.Length);
+        var decodedScript = Encoding.Unicode.GetString(Convert.FromBase64String(parts[1]));
+
+        Assert.Contains("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8", decodedScript);
+        Assert.Contains("[Console]::InputEncoding = [System.Text.Encoding]::UTF8", decodedScript);
+        Assert.Contains("$OutputEncoding = [System.Text.Encoding]::UTF8", decodedScript);
+    }
 }
+

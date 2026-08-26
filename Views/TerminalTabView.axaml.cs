@@ -163,11 +163,13 @@ public partial class TerminalTabView : UserControl
                 {
                     Dispatcher.UIThread.Post(() => ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm));
                 }
-                else if (args.PropertyName == nameof(TerminalTabViewModel.TerminalFontSize))
+                else if (args.PropertyName == nameof(TerminalTabViewModel.TerminalFontSize) ||
+                         args.PropertyName == nameof(TerminalTabViewModel.TerminalFontFamily))
                 {
                     Dispatcher.UIThread.Post(() =>
                     {
                         Terminal.FontSize = vm.TerminalFontSize;
+                        Terminal.FontFamily = vm.TerminalFontFamily;
                         ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm);
                     });
                 }

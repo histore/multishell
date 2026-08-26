@@ -8,18 +8,22 @@
              x:Class="MultiShell.Views.TerminalTabView"
              x:DataType="vm:TerminalTabViewModel"
              Focusable="True"
+             UseLayoutRounding="True"
              Background="{Binding TerminalBackgroundBrush}">
 
     <!-- ThemeVariantScope explicitly sets ThemeVariant for the terminal and its color palette -->
-    <ThemeVariantScope x:Name="TerminalScope">
+    <ThemeVariantScope x:Name="TerminalScope" UseLayoutRounding="True">
         <!-- True terminal emulator control backed by ConPTY -->
         <terminal:TerminalControl x:Name="Terminal"
                                   Model="{Binding TerminalModel}"
                                   Focusable="True"
+                                  UseLayoutRounding="True"
                                   HorizontalAlignment="Stretch"
                                   VerticalAlignment="Stretch"
                                   Background="{Binding TerminalBackgroundBrush}"
                                   CaretBrush="{Binding TerminalCaretBrush}"
-                                  FontSize="{Binding TerminalFontSize}" />
+                                  FontSize="{Binding TerminalFontSize}"
+                                  FontFamily="{Binding TerminalFontFamily}"
+                                  Margin="8,6,8,6" />
     </ThemeVariantScope>
 </UserControl>

@@ -36,11 +36,12 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide | UI | **IMPLEMENTED** | `MainWindow` |
 | `REQ-UI-003` | About Dialog & Technology Information | UI | **IMPLEMENTED** | `MainWindow` |
 | `REQ-GOV-001` | Subagent Roles & Context Isolation | Architecture | **IMPLEMENTED** | `.agents/rules/subagents.md` |
-| `REQ-GOV-002` | Dynamic Model & Reasoning Depth Allocation | Architecture | **IMPLEMENTED** | `.agents/skills/subagent-control` |
+| `REQ-GOV-002` | Dynamic Model & Reasoning Depth Allocation | Architecture | **IMPLEMENTED** | `.agents/skills/la-control` |
 | `REQ-GOV-003` | Requirements Immutability & Conflict Escalation | Governance | **IMPLEMENTED** | Quality Gate / Verification |
 | `REQ-LOC-001` | Dynamic Multi-Language UI (DE, EN, FR, ES) with Persistence | Localization | **IMPLEMENTED** | `LocalizationServiceTests` |
 | `REQ-HIST-002` | Live Fuzzy Search & Type-to-Filter in History Drawer | Interaction | **IMPLEMENTED** | `FuzzySearchServiceTests` |
 | `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | UI | **IMPLEMENTED** | `FontSizeServiceTests`, `MainViewModelTests` |
+| `REQ-TERM-001` | Robust UTF-8 Character Streaming & Box-Drawing Monospace Glyph Rendering | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `PowerShellSessionTests` |
 
 ---
 
@@ -382,3 +383,18 @@ This document serves as the single source of truth for all functional and non-fu
   - **Then** the App UI scale (0.85x, 0.92x, 1.00x, 1.12x, 1.25x) or Terminal font size (9.5pt, 10.5pt, 12.0pt, 14.0pt, 16.5pt) updates immediately.
   - **When** the application restarts,
   - **Then** the selected font size levels are loaded and restored from `WorkspaceState`.
+
+---
+
+### REQ-TERM-001: Robust UTF-8 Character Streaming & Box-Drawing Monospace Glyph Rendering
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want graphical characters (such as box-drawing borders `─`, `│`, `┌`, `┐`, `└`, `┘`, powerline glyphs, emojis, and international characters) to render crisply without character corruption, missing glyph replacement blocks, or swallowed characters across stream chunk boundaries.
+- **Acceptance Criteria**:
+  - **Given** terminal output streams containing multi-byte UTF-8 sequences (e.g. 3-byte box-drawing characters or 4-byte emojis) that may be fragmented across arbitrary buffer chunk boundaries,
+  - **When** chunks are processed by `ShellSession` and `TerminalTabViewModel`,
+  - **Then** stateful UTF-8 decoders preserve partial byte sequences across reads without emitting `\uFFFD` replacement blocks or losing adjacent characters.
+  - **When** PowerShell or CMD shell processes are spawned,
+  - **Then** console encoding is initialized to UTF-8 (`[Console]::OutputEncoding = UTF8`, `$OutputEncoding = UTF8`, `chcp 65001`, `PYTHONIOENCODING=utf-8`), ensuring tools emit standard UTF-8.
+  - **When** `TerminalControl` renders text in `TerminalTabView`,
+  - **Then** a dedicated monospace font family chain (`Cascadia Mono, Cascadia Code, Consolas, DejaVu Sans Mono, monospace`) is configured for complete box-drawing character glyph coverage.
+

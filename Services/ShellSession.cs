@@ -153,13 +153,27 @@ public sealed class ShellSession : IShellSession
         catch (OperationCanceledException) { }
     }
 
+    private readonly Decoder _oscDecoder = Encoding.UTF8.GetDecoder();
+
     private void CheckForOscSequences(byte[] data)
     {
         try
         {
-            string text = Encoding.UTF8.GetString(data);
+            string text;
             lock (_oscBuffer)
             {
+                int charCount = _oscDecoder.GetCharCount(data, 0, data.Length, flush: false);
+                if (charCount > 0)
+                {
+                    char[] chars = new char[charCount];
+                    _oscDecoder.GetChars(data, 0, data.Length, chars, 0, flush: false);
+                    text = new string(chars);
+                }
+                else
+                {
+                    return;
+                }
+
                 _oscBuffer.Append(text);
                 var currentBuffer = _oscBuffer.ToString();
 
@@ -245,7 +259,11 @@ public sealed class ShellSession : IShellSession
             {
                 ["TERM"] = "xterm-256color",
                 ["COLORTERM"] = "truecolor",
-                ["WT_SESSION"] = SessionId.ToString()
+                ["WT_SESSION"] = SessionId.ToString(),
+                ["PYTHONIOENCODING"] = "utf-8",
+                ["PYTHONUTF8"] = "1",
+                ["LANG"] = "en_US.UTF-8",
+                ["LC_ALL"] = "en_US.UTF-8"
             };
             foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
             {
@@ -287,9 +305,14 @@ public sealed class ShellSession : IShellSession
             string exePath = ResolveExecutable("pwsh.exe") ?? "powershell.exe";
 
             // Build the prompt hook script as a plain string (no escaping needed here).
-            // It emits OSC 133;E with Base64-encoded last command for history tracking,
+            // Explicitly set UTF-8 console output/input and pipeline encoding to guarantee
+            // box-drawing characters and unicode glyphs are transmitted correctly through ConPTY.
+            // It also emits OSC 133;E with Base64-encoded last command for history tracking,
             // and OSC 9;9 for working-directory tracking (shell integration).
             const string hookScript = """
+                [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+                [Console]::InputEncoding = [System.Text.Encoding]::UTF8
+                $OutputEncoding = [System.Text.Encoding]::UTF8
                 $function:prompt = {
                     $loc = $ExecutionContext.SessionState.Path.CurrentLocation.Path
                     $last = (Get-History -Count 1).CommandLine
@@ -318,7 +341,7 @@ public sealed class ShellSession : IShellSession
         }
         else
         {
-            return "cmd.exe";
+            return "cmd.exe /K \"chcp 65001 >nul\"";
         }
     }
 

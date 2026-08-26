@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -123,6 +124,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private double _terminalFontSize = 12.0;
+
+    [ObservableProperty]
+    private FontFamily _terminalFontFamily = new("Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, DejaVu Sans Mono, monospace");
 
     [ObservableProperty]
     private string _commandFilterQuery = string.Empty;
@@ -364,18 +368,84 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private static readonly Regex OscSequenceRegex = new(@"\x1b\][^\x1b\x07]*(\x1b\\|\x07)", RegexOptions.Compiled);
+    private readonly Decoder _outputDecoder = Encoding.UTF8.GetDecoder();
+    private readonly StringBuilder _streamBuffer = new();
+    private readonly object _decoderLock = new();
+
+    /// <summary>
+    /// Strips unsupported OSC escape sequences (e.g. OSC 8 hyperlinks, OSC 9/133 shell integration)
+    /// to prevent terminal controls from misparsing them and printing stray ']' characters at column 0.
+    /// </summary>
+    public static string SanitizeTerminalText(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        return OscSequenceRegex.Replace(text, string.Empty);
+    }
+
     private void OnSessionDataReceived(byte[] data)
     {
         if (data.Length == 0) return;
 
-        var text = Encoding.UTF8.GetString(data);
+        string textToFeed;
+        lock (_decoderLock)
+        {
+            int charCount = _outputDecoder.GetCharCount(data, 0, data.Length, flush: false);
+            if (charCount > 0)
+            {
+                char[] chars = new char[charCount];
+                _outputDecoder.GetChars(data, 0, data.Length, chars, 0, flush: false);
+                _streamBuffer.Append(chars);
+            }
+            else
+            {
+                return;
+            }
+
+            var current = _streamBuffer.ToString();
+            _streamBuffer.Clear();
+
+            // 1. Strip all complete OSC sequences
+            var sanitized = OscSequenceRegex.Replace(current, string.Empty);
+
+            // 2. Check if there is an unclosed OSC sequence starting near the end
+            int lastEsc = sanitized.LastIndexOf("\x1b]", StringComparison.Ordinal);
+            if (lastEsc >= 0)
+            {
+                int termBel = sanitized.IndexOf('\x07', lastEsc);
+                int termSt = sanitized.IndexOf("\x1b\\", lastEsc, StringComparison.Ordinal);
+                if (termBel < 0 && termSt < 0)
+                {
+                    // Buffer the incomplete OSC sequence for the next incoming chunk
+                    _streamBuffer.Append(sanitized[lastEsc..]);
+                    textToFeed = sanitized[..lastEsc];
+                }
+                else
+                {
+                    textToFeed = sanitized;
+                }
+            }
+            else
+            {
+                textToFeed = sanitized;
+            }
+
+            // Safety boundary on stream buffer
+            if (_streamBuffer.Length > 8192)
+            {
+                _streamBuffer.Clear();
+            }
+        }
+
+        if (string.IsNullOrEmpty(textToFeed)) return;
+
         if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
         {
-            TerminalModel.Feed(text);
+            TerminalModel.Feed(textToFeed);
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => TerminalModel.Feed(text));
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => TerminalModel.Feed(textToFeed));
         }
     }
 
