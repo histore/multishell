@@ -305,11 +305,13 @@ public sealed class ShellSession : IShellSession
             string exePath = ResolveExecutable("pwsh.exe") ?? "powershell.exe";
 
             // Build the prompt hook script as a plain string (no escaping needed here).
-            // Explicitly set UTF-8 console output/input and pipeline encoding to guarantee
-            // box-drawing characters and unicode glyphs are transmitted correctly through ConPTY.
+            // Explicitly set Win32 console code page (65001), UTF-8 console output/input,
+            // and pipeline encoding to guarantee box-drawing characters and unicode glyphs
+            // are transmitted correctly through ConPTY across all CLI tools and sub-processes.
             // It also emits OSC 133;E with Base64-encoded last command for history tracking,
             // and OSC 9;9 for working-directory tracking (shell integration).
             const string hookScript = """
+                chcp 65001 >$null
                 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
                 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
                 $OutputEncoding = [System.Text.Encoding]::UTF8

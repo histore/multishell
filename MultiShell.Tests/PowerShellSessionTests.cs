@@ -114,6 +114,7 @@ public class PowerShellSessionTests
         Assert.Equal(2, parts.Length);
         var decodedScript = Encoding.Unicode.GetString(Convert.FromBase64String(parts[1]));
 
+        Assert.Contains("chcp 65001 >$null", decodedScript);
         Assert.Contains("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8", decodedScript);
         Assert.Contains("[Console]::InputEncoding = [System.Text.Encoding]::UTF8", decodedScript);
         Assert.Contains("$OutputEncoding = [System.Text.Encoding]::UTF8", decodedScript);
