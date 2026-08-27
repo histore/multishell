@@ -24,80 +24,7 @@
    - **Immutability of Existing Requirements**: Existing requirements may only be modified with explicit user instruction.
    - **Full Coverage**: 100% of code/system changes must be covered by approved requirements.
 9. **Maximum User Usability & Aesthetic Excellence**: The dedicated `UIDesigner` role ensures every UI component provides effortless keyboard navigation, intuitive ergonomics, and rich visual aesthetics.
-10. **Strict Stage Gating**: Work flows sequentially through defined checkpoints before acceptance.
-
----
-
-## Defined Roles & Workflow Pipelines
-
-### Feature Development Pipeline
-```
-[User Feature Request]
-       │
-       ▼
-   [Control] (Assigns Models & Reasoning Levels) ◄──────────────────────┐
-       │ (delegates with minimal isolated context)                       │
-       ├──► [RequirementEngineer]   [Reasoning: High]                   │
-       │     └──► Acceptance Criteria (checks duplicates/conflicts)     │
-       │                                                                │
-       ├──► [UIDesigner]            [Reasoning: High]                   │
-       │     └──► Ergonomics, Layout & Aesthetic XAML Blueprint         │
-       │                                                                │
-       ├──► [LocalizationSpecialist][Reasoning: Medium]                 │
-       │     └──► i18n Audit & Bilingual Resources (de/en)              │
-       │                                                                │
-       ├──► [Architekt]             [Reasoning: High]                   │
-       │     └──► Clean Architecture & Interface Contracts              │ (Iterate / Gate)
-       │                                                                │
-       ├──► [Developer]             [Reasoning: Medium]                 │
-       │     └──► Clean Code Implementation                             │
-       │                                                                │
-       ├──► [DocumentationSpecialist][Reasoning: Medium]                │
-       │     └──► XML Doc Comments & Architecture Sync                  │
-       │                                                                │
-       ├──► [Tester]                [Reasoning: Medium]                 │
-       │     └──► Automated Unit & Integration Tests (AAA)              │
-       │                                                                │
-       └──► [Verifikation]          [Reasoning: High]                   │
-             └──► Quality Gate / Compliance Audit ──────────────────────┘
-```
-
-### Bug Fixing & Troubleshooting Pipeline
-```
-[Bug Report / Unexpected Behavior]
-       │
-       ▼
-   [Control] ──► [Troubleshooter] [Reasoning: High]
-                      │ (Root Cause Diagnosis & Remediation Blueprint)
-                      ├──► [Tester]    ──► Failing Reproduction Test
-                      ├──► [Developer] ──► Root Cause Clean Code Fix
-                      └──► [Verifikation] ──► Pass Verification & Quality Gate
-```
-
-### Performance & Security Hardening Pipeline
-```
-[Optimization / Hardening Task]
-       │
-       ▼
-   [Control] ──► [PerformanceOptimizer / SecurityAuditor] [Reasoning: High]
-                      │ (Optimization Directives / Security Patch Blueprint)
-                      ├──► [Developer] ──► Implementation
-                      ├──► [Tester]    ──► Benchmarks & Regression Tests
-                      └──► [Verifikation] ──► Pass Verification
-```
-
-### On-Demand Git Commit & Push Pipeline (Explicit User Request Only)
-```
-[Explicit User Request: Commit & Push]
-       │
-       ▼
-   [CommitManager] [Reasoning: Medium]
-       ├──► 1. Inspect Diff (`git status`, `git diff`)
-       ├──► 2. Draft Conventional Commit Message
-       ├──► 3. [MANDATORY GATE] Present Message & Files to User for Approval
-       │         └──► Await User Confirmation
-       └──► 4. Post-Approval: `git add`, `git commit`, `git push`
-```
+10. **Branch & PR Process Model**: All development must occur on dedicated branches (`feat/`, `fix/`, `refactor/`, `chore/`, `docs/`) and merge into `main` solely via Pull Requests using Squash-and-Merge, verified by CI and approved by the user per [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ---
 
@@ -113,8 +40,10 @@
 8. **RefactoringSpecialist** (`Reasoning: Medium`): Code smell detection, technical debt remediation, Boy Scout rule.
 9. **PerformanceOptimizer** (`Reasoning: High`): Buffer pooling (`ArrayPool`), memory leak auditing, ConPTY stream throughput.
 10. **SecurityAuditor** (`Reasoning: High`): PowerShell command safety, path traversal prevention, secure deserialization.
-11. **DocumentationSpecialist** (`Reasoning: Medium`): English XML doc comments, `ARCHITECTURE.md`, help manual synchronization.
-12. **ReleaseManager** (`Reasoning: Medium`): Self-contained single-file publishing, AOT readiness, manifest management.
-13. **Tester** (`Reasoning: Medium`): Automated xUnit tests in `MultiShell.Tests`, AAA pattern, 0 failures.
-14. **Verifikation** (`Reasoning: High`): Rigorous quality gate auditing 100% requirements coverage, Clean Architecture, i18n, performance, and security.
+11. **DocumentationSpecialist** (`Reasoning: Medium`): Authors XML doc comments (`///`), keeps `ARCHITECTURE.md` synchronized, and maintains user help guides in English.
+12. **ReleaseManager** (`Reasoning: Medium`): Manages deployment pipelines, single-file self-contained packaging, Native AOT readiness, and application manifests.
+13. **Tester** (`Reasoning: Medium`): Implements comprehensive automated tests (`MultiShell.Tests`) and executes `dotnet test` (AAA pattern, 0 failures).
+14. **Verifikation** (`Reasoning: High`): Quality gate auditing acceptance criteria, 100% requirements coverage, test pass rate, Clean Code, i18n, performance, security, and architectural compliance.
 15. **CommitManager** (`Reasoning: Medium`): Generates conventional commit messages from diffs, stages changes, commits, and pushes strictly on-demand after mandatory interactive user confirmation.
+16. **Tiebreaker** (`Reasoning: High`): Monitors active operations, detects loops/deadlocks/thrashing, and enforces remediation via strategy pivots, model upgrades, context purges, or user escalation.
+17. **TerminalEngineSpecialist** (`Reasoning: High`): Deeply analyzes and optimizes Win32 ConPTY handles, ANSI/VT100 streams, OSC 7/9/133 integration, TrueColor palettes, and zero-allocation UTF-8 decoding.

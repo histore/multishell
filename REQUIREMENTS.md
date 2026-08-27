@@ -316,6 +316,8 @@ This document serves as the single source of truth for all functional and non-fu
   - **Then** `.NET 10` dependencies are restored and all automated tests are executed (`dotnet test`).
   - **Given** a version tag `v*.*.*` is pushed,
   - **When** the Release workflow triggers,
+  - **Then** single-file executables and the Inno Setup installer are published as a GitHub Release.
+
 ---
 
 ### REQ-SET-001: Unified Settings Menu & Dynamic Theme Switching
@@ -329,26 +331,6 @@ This document serves as the single source of truth for all functional and non-fu
   - **Then** the application dynamically switches between Dark and Light theme variants.
   - **When** clicking Help or About,
   - **Then** the respective modal dialog opens and the menu closes.
-
----
-
-## 🔮 Future / Backlog Features
-
-### REQ-AI-001: Context-Aware AI Command Generator & Auto-Suggest
-- **Status**: `PLANNED`
-- **User Story**: As a terminal user, I want an integrated AI assistant overlay (triggered via shortcut `Ctrl+I` / `Ctrl+K`) that translates natural language requests into contextual PowerShell commands using local LLMs (Ollama) or Cloud APIs (OpenAI/Gemini), with one-click execution (`Enter`) and inline pasting (`Tab`).
-- **Acceptance Criteria**:
-  - **Given** an active PowerShell terminal tab,
-  - **When** the user presses `Ctrl+I` or `Ctrl+K`,
-  - **Then** a floating AI prompt overlay appears.
-  - **When** entering a natural language request,
-  - **Then** the AI service (Ollama/OpenAI) generates the exact PowerShell command with safety explanations, taking current working directory and recent history into context.
-  - **When** pressing `Enter`,
-  - **Then** the command is executed in the active ConPTY session and the overlay closes.
-  - **When** pressing `Tab`,
-  - **Then** the command is pasted into the active terminal prompt without executing.
-  - **When** pressing `Escape`,
-  - **Then** the overlay closes without modifications.
 
 ---
 
@@ -433,6 +415,26 @@ This document serves as the single source of truth for all functional and non-fu
   - **Then** the current text content of the system clipboard is pasted into the terminal at the cursor position.
   - **When** pressing `Ctrl+V`,
   - **Then** the current text content of the system clipboard is pasted into the terminal at the cursor position.
+
+---
+
+## 🔮 Future / Backlog Features
+
+### REQ-AI-001: Context-Aware AI Command Generator & Auto-Suggest
+- **Status**: `PLANNED`
+- **User Story**: As a terminal user, I want an integrated AI assistant overlay (triggered via shortcut `Ctrl+I` / `Ctrl+K`) that translates natural language requests into contextual PowerShell commands using local LLMs (Ollama) or Cloud APIs (OpenAI/Gemini), with one-click execution (`Enter`) and inline pasting (`Tab`).
+- **Acceptance Criteria**:
+  - **Given** an active PowerShell terminal tab,
+  - **When** the user presses `Ctrl+I` or `Ctrl+K`,
+  - **Then** a floating AI prompt overlay appears.
+  - **When** entering a natural language request,
+  - **Then** the AI service (Ollama/OpenAI) generates the exact PowerShell command with safety explanations, taking current working directory and recent history into context.
+  - **When** pressing `Enter`,
+  - **Then** the command is executed in the active ConPTY session and the overlay closes.
+  - **When** pressing `Tab`,
+  - **Then** the command is pasted into the active terminal prompt without executing.
+  - **When** pressing `Escape`,
+  - **Then** the overlay closes without modifications.
 
 
 
