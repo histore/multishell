@@ -280,6 +280,7 @@ public partial class TerminalTabView : UserControl
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Best-effort reflection on third-party TerminalControl internal cache for runtime theme switching")]
     private void ApplyTerminalTheme(bool isDark, TerminalTabViewModel vm)
     {
         var palette = isDark ? DarkPalette : LightPalette;
@@ -325,10 +326,19 @@ public partial class TerminalTabView : UserControl
             }
 
             var cacheOrderField = typeof(TerminalControl).GetField("_formattedTextCacheOrder", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (cacheOrderField?.GetValue(Terminal) is ICollection cacheOrder)
+            var cacheOrderObj = cacheOrderField?.GetValue(Terminal);
+            if (cacheOrderObj is IList cacheOrderList)
             {
-                var clearMethod = cacheOrder.GetType().GetMethod("Clear");
-                clearMethod?.Invoke(cacheOrder, null);
+                cacheOrderList.Clear();
+            }
+            else if (cacheOrderObj is IDictionary cacheOrderDict)
+            {
+                cacheOrderDict.Clear();
+            }
+            else if (cacheOrderField != null && cacheOrderObj != null)
+            {
+                var clearMethod = cacheOrderField.FieldType.GetMethod("Clear", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                clearMethod?.Invoke(cacheOrderObj, null);
             }
         }
         catch

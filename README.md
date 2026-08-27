@@ -1,7 +1,7 @@
 # MultiShell
 
-[![CI](https://github.com/your-username/multishell/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/multishell/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/your-username/multishell)](https://github.com/your-username/multishell/releases)
+[![CI](https://github.com/histore/multishell/actions/workflows/ci.yml/badge.svg)](https://github.com/histore/multishell/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/histore/multishell)](https://github.com/histore/multishell/releases)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Framework: .NET 10](https://img.shields.io/badge/Framework-.NET_10-purple.svg)](https://dotnet.microsoft.com/)
 [![UI: Avalonia 11.2](https://img.shields.io/badge/UI-Avalonia_11.2-red.svg)](https://avaloniaui.net/)
@@ -27,7 +27,7 @@
 
 ## 🏗️ Architecture
 
-MultiShell adheres strictly to **Clean Architecture**:
+MultiShell adheres strictly to **Clean Architecture** (for detailed design specifications, see [ARCHITECTURE.md](ARCHITECTURE.md)):
 
 ```
 MultiShell
@@ -72,7 +72,7 @@ MultiShell
 ### Clone & Run
 ```powershell
 # Clone repository
-git clone https://github.com/your-username/multishell.git
+git clone https://github.com/histore/multishell.git
 cd multishell
 
 # Build solution
