@@ -16,6 +16,7 @@
         <!-- True terminal emulator control backed by ConPTY -->
         <terminal:TerminalControl x:Name="Terminal"
                                   Model="{Binding TerminalModel}"
+                                  RightClickAction="None"
                                   Focusable="True"
                                   UseLayoutRounding="True"
                                   HorizontalAlignment="Stretch"

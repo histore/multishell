@@ -81,6 +81,22 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         return compact;
     }
 
+    /// <summary>
+    /// Cleans raw text copied from the terminal buffer by trimming trailing spaces from each line
+    /// and removing trailing blank lines caused by fixed rectangular buffer selection.
+    /// </summary>
+    public static string CleanSelectedTerminalText(string? rawSelectedText)
+    {
+        if (string.IsNullOrEmpty(rawSelectedText)) return string.Empty;
+        var lines = rawSelectedText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+        var trimmedLines = lines.Select(l => l.TrimEnd()).ToList();
+        while (trimmedLines.Count > 0 && string.IsNullOrEmpty(trimmedLines[^1]))
+        {
+            trimmedLines.RemoveAt(trimmedLines.Count - 1);
+        }
+        return string.Join(Environment.NewLine, trimmedLines);
+    }
+
     [ObservableProperty]
     private bool _isSelected;
 

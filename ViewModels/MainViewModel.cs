@@ -426,6 +426,34 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Selects the next tab in the tab strip, clamping at the last tab.
+    /// </summary>
+    [RelayCommand]
+    public void SelectNextTab()
+    {
+        if (Tabs.Count <= 1 || SelectedTab == null) return;
+        var currentIndex = Tabs.IndexOf(SelectedTab);
+        if (currentIndex >= 0 && currentIndex < Tabs.Count - 1)
+        {
+            SelectedTab = Tabs[currentIndex + 1];
+        }
+    }
+
+    /// <summary>
+    /// Selects the previous tab in the tab strip, clamping at the first tab.
+    /// </summary>
+    [RelayCommand]
+    public void SelectPreviousTab()
+    {
+        if (Tabs.Count <= 1 || SelectedTab == null) return;
+        var currentIndex = Tabs.IndexOf(SelectedTab);
+        if (currentIndex > 0)
+        {
+            SelectedTab = Tabs[currentIndex - 1];
+        }
+    }
+
     private static string GetDefaultTitle(ShellType shellType, int id) => shellType switch
     {
         ShellType.PowerShell => $"PS {id}",

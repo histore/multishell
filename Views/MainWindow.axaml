@@ -323,7 +323,7 @@
             <Border Background="{DynamicResource AppHeaderBackground}" BorderBrush="{DynamicResource AppBorderSubtle}" BorderThickness="0,0,0,1" Padding="6,4,6,0">
             <Grid ColumnDefinitions="*, Auto">
                 <!-- Tab Bar with Overflow Navigation -->
-                <Grid Grid.Column="0" ColumnDefinitions="Auto, *, Auto, Auto" Margin="0,0,6,0">
+                <Grid x:Name="TabBarContainer" Grid.Column="0" ColumnDefinitions="Auto, *, Auto, Auto" Margin="0,0,6,0" Background="Transparent">
                     <!-- Left Scroll Arrow Button -->
                     <Button x:Name="TabScrollLeftBtn"
                             Grid.Column="0"

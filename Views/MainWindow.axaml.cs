@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     private TerminalTabViewModel? _draggedTab;
     private Point _dragStartPos;
     private bool _isDragging;
+    private double _tabWheelAccumulator;
 
     public MainWindow()
     {
@@ -28,10 +29,16 @@ public partial class MainWindow : Window
             TabsItemsControl.AddHandler(InputElement.PointerCaptureLostEvent, OnTabsPointerCaptureLost, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
 
+        if (TabBarContainer != null)
+        {
+            TabBarContainer.AddHandler(InputElement.PointerWheelChangedEvent, OnTabsPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
+        }
+
         if (TabsScrollViewer != null)
         {
             TabsScrollViewer.ScrollChanged += (_, _) => UpdateTabOverflowIndicators();
             TabsScrollViewer.SizeChanged += (_, _) => UpdateTabOverflowIndicators();
+            TabsScrollViewer.AddHandler(InputElement.PointerWheelChangedEvent, OnTabsPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
         }
 
         if (TabScrollLeftBtn != null)
@@ -863,6 +870,40 @@ public partial class MainWindow : Window
     {
         _draggedTab = null;
         _isDragging = false;
+    }
+
+    private void OnTabsPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm || vm.Tabs.Count <= 1) return;
+
+        // Extract wheel movement (Delta.Y for vertical wheel, Delta.X for horizontal wheel/tilt)
+        var delta = e.Delta.Y != 0 ? e.Delta.Y : -e.Delta.X;
+        if (Math.Abs(delta) < 0.001) return;
+
+        // Reset accumulator if scrolling direction changed
+        if ((_tabWheelAccumulator > 0 && delta < 0) || (_tabWheelAccumulator < 0 && delta > 0))
+        {
+            _tabWheelAccumulator = 0;
+        }
+
+        _tabWheelAccumulator += delta;
+
+        // Process discrete notches: each step consumes ~1.0 notch
+        while (_tabWheelAccumulator >= 0.90)
+        {
+            vm.SelectPreviousTab();
+            _tabWheelAccumulator -= 1.0;
+            if (_tabWheelAccumulator < 0) _tabWheelAccumulator = 0;
+        }
+
+        while (_tabWheelAccumulator <= -0.90)
+        {
+            vm.SelectNextTab();
+            _tabWheelAccumulator += 1.0;
+            if (_tabWheelAccumulator > 0) _tabWheelAccumulator = 0;
+        }
+
+        e.Handled = true;
     }
 
     private static TerminalTabViewModel? FindTabViewModel(Visual? visual)

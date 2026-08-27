@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using MultiShell.Services;
 using MultiShell.ViewModels;
@@ -544,6 +546,34 @@ public class TerminalTabViewModelTests
         // Assert
         Assert.NotNull(vm.TerminalModel);
     }
+
+    [Theory]
+    [InlineData(null, "")]
+    [InlineData("", "")]
+    [InlineData("   ", "")]
+    [InlineData("Single line without padding", "Single line without padding")]
+    [InlineData("Line with trailing spaces   \t   ", "Line with trailing spaces")]
+    public void CleanSelectedTerminalText_SingleLine_TrimsTrailingSpaces(string? input, string expected)
+    {
+        // Act
+        var result = TerminalTabViewModel.CleanSelectedTerminalText(input);
+
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void CleanSelectedTerminalText_MultiLine_PreservesContentAndRemovesPadding()
+    {
+        // Arrange
+        var rawText = "Hello World                                                                     \r\n" +
+                      "Second Line                                                                     \r\n" +
+                      "                                                                                \r\n" +
+                      "                                                                                \r\n";
+
+        // Act
+        var result = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
+        var expected = $"Hello World{Environment.NewLine}Second Line";
+        Assert.Equal(expected, result);
+    }
 }
-
-

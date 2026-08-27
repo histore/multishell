@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
@@ -84,17 +85,66 @@ public partial class TerminalTabView : UserControl
 
         Terminal.AddHandler(InputElement.KeyDownEvent, OnTerminalKeyDown, RoutingStrategies.Tunnel);
         Terminal.AddHandler(InputElement.KeyUpEvent, OnTerminalKeyUp, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+        Terminal.AddHandler(InputElement.PointerPressedEvent, OnTerminalPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
 
         DataContextChanged += OnDataContextChanged;
     }
 
-    private void OnTerminalKeyDown(object? sender, KeyEventArgs e)
+    private async void OnTerminalPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        var isAltGr = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Alt);
-        if (DataContext is TerminalTabViewModel vm)
+        var point = e.GetCurrentPoint(Terminal);
+        if (point.Properties.IsRightButtonPressed)
         {
-            vm.IsAltGrActive = isAltGr;
-            if (isAltGr && vm.IsRunning)
+            if (DataContext is TerminalTabViewModel vm)
+            {
+                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+
+                if (vm.TerminalModel.HasSelection)
+                {
+                    // Copy selection to clipboard and clear selection
+                    var rawText = vm.TerminalModel.SelectedText;
+                    var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
+                    if (!string.IsNullOrEmpty(text) && clipboard != null)
+                    {
+                        await clipboard.SetTextAsync(text);
+                    }
+                    vm.TerminalModel.ClearSelection();
+                    Terminal.InvalidateVisual();
+                    e.Handled = true;
+                }
+                else
+                {
+                    // No selection: paste clipboard content into terminal
+                    if (clipboard != null)
+                    {
+                        var text = await clipboard.TryGetTextAsync();
+                        if (!string.IsNullOrEmpty(text) && vm.IsRunning)
+                        {
+                            vm.SendInput(Encoding.UTF8.GetBytes(text));
+                        }
+                    }
+                    e.Handled = true;
+                }
+            }
+        }
+    }
+
+    private async void OnTerminalKeyDown(object? sender, KeyEventArgs e)
+    {
+        // 1. Prevent standalone modifier keys (Ctrl, Shift, Alt, Meta) from destroying active text selection
+        if (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        var isAltGr = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Alt);
+        if (DataContext is not TerminalTabViewModel vm) return;
+
+        if (isAltGr)
+        {
+            vm.IsAltGrActive = true;
+            if (vm.IsRunning)
             {
                 var text = ResolveAltGrText(e);
                 if (!string.IsNullOrEmpty(text))
@@ -103,6 +153,44 @@ public partial class TerminalTabView : UserControl
                     e.Handled = true;
                 }
             }
+            return;
+        }
+
+        // 2. Ctrl+C with active selection -> Copy to clipboard and prevent sending \x03
+        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.C)
+        {
+            if (vm.TerminalModel.HasSelection)
+            {
+                var rawText = vm.TerminalModel.SelectedText;
+                var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
+                if (!string.IsNullOrEmpty(text))
+                {
+                    var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+                    if (clipboard != null)
+                    {
+                        await clipboard.SetTextAsync(text);
+                    }
+                }
+                e.Handled = true;
+                return;
+            }
+            // Without selection: let default handler send \x03 (SIGINT)
+        }
+
+        // 3. Ctrl+V -> Paste from clipboard into terminal
+        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.V)
+        {
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard != null)
+            {
+                var text = await clipboard.TryGetTextAsync();
+                if (!string.IsNullOrEmpty(text) && vm.IsRunning)
+                {
+                    vm.SendInput(Encoding.UTF8.GetBytes(text));
+                }
+            }
+            e.Handled = true;
+            return;
         }
     }
 
@@ -135,6 +223,12 @@ public partial class TerminalTabView : UserControl
 
     private void OnTerminalKeyUp(object? sender, KeyEventArgs e)
     {
+        if (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin)
+        {
+            e.Handled = true;
+            return;
+        }
+
         var isAltGr = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Alt);
         if (DataContext is TerminalTabViewModel vm)
         {
@@ -197,6 +291,9 @@ public partial class TerminalTabView : UserControl
 
         Terminal.Background = palette[0];
         Terminal.CaretBrush = vm.TerminalCaretBrush;
+        Terminal.SelectionBrush = isDark
+            ? new ImmutableSolidColorBrush(Color.FromArgb(120, 122, 162, 247))
+            : new ImmutableSolidColorBrush(Color.FromArgb(120, 25, 118, 210));
 
         // 1. Populate Terminal.Resources dictionary with explicit Xterm colors
         for (var i = 0; i < palette.Length; i++)

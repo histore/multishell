@@ -42,6 +42,8 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-HIST-002` | Live Fuzzy Search & Type-to-Filter in History Drawer | Interaction | **IMPLEMENTED** | `FuzzySearchServiceTests` |
 | `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | UI | **IMPLEMENTED** | `FontSizeServiceTests`, `MainViewModelTests` |
 | `REQ-TERM-001` | Robust UTF-8 Character Streaming & Box-Drawing Monospace Glyph Rendering | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `PowerShellSessionTests` |
+| `REQ-TAB-016` | Tab Navigation & Cycling via Mouse Wheel over Tab Bar | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
+| `REQ-TAB-017` | Terminal Text Selection, Copy (Right-Click / Ctrl+C), and Paste (Right-Click / Ctrl+V) | Interaction | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
 
 ---
 
@@ -397,4 +399,40 @@ This document serves as the single source of truth for all functional and non-fu
   - **Then** console encoding is initialized to UTF-8 (`[Console]::OutputEncoding = UTF8`, `$OutputEncoding = UTF8`, `chcp 65001`, `PYTHONIOENCODING=utf-8`), ensuring tools emit standard UTF-8.
   - **When** `TerminalControl` renders text in `TerminalTabView`,
   - **Then** a dedicated monospace font family chain (`Cascadia Mono, Cascadia Code, Consolas, DejaVu Sans Mono, monospace`) is configured for complete box-drawing character glyph coverage.
+
+---
+
+### REQ-TAB-016: Tab Navigation & Cycling via Mouse Wheel over Tab Bar
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want to cycle through open terminal tabs by rotating the mouse wheel over the tab bar area, so that I can quickly switch between active tabs without clicking each individual tab button.
+- **Acceptance Criteria**:
+  - **Given** multiple open terminal tabs in MultiShell,
+  - **When** the user rotates the mouse wheel upwards (or scrolls left) over the tab bar area,
+  - **Then** the previous tab in the tab list is selected (clamped to the first tab).
+  - **When** the user rotates the mouse wheel downwards (or scrolls right) over the tab bar area,
+  - **Then** the next tab in the tab list is selected (clamped to the last tab).
+  - **When** the selected tab changes via mouse wheel scrolling,
+  - **Then** the tab bar automatically scrolls to ensure the newly selected tab is fully visible.
+
+---
+
+### REQ-TAB-017: Terminal Text Selection, Copy (Right-Click / Ctrl+C), and Paste (Right-Click / Ctrl+V)
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want to select text within terminal tabs, copy selections to the clipboard via Right-Click or Ctrl+C, and paste clipboard content via Right-Click (when no selection is active) or Ctrl+V.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab in MultiShell,
+  - **When** the user selects text using the pointer/mouse,
+  - **Then** the selected characters are visually highlighted with a high-contrast selection brush (`SelectionBrush`).
+  - **When** right-clicking on the terminal while text is selected,
+  - **Then** the selected text is copied to the system clipboard and the selection is cleared.
+  - **When** pressing `Ctrl+C` while text is selected,
+  - **Then** the selected text is copied to the system clipboard and no interrupt sequence (`\x03`) is sent to the shell.
+  - **When** pressing `Ctrl+C` without any active selection,
+  - **Then** the interrupt sequence (`\x03` / SIGINT) is passed to the underlying shell session.
+  - **When** right-clicking on the terminal without any active selection,
+  - **Then** the current text content of the system clipboard is pasted into the terminal at the cursor position.
+  - **When** pressing `Ctrl+V`,
+  - **Then** the current text content of the system clipboard is pasted into the terminal at the cursor position.
+
+
 
