@@ -21,6 +21,7 @@ This workspace employs specialized subagent roles to enforce **Clean Code**, **C
 7. **Immutability of Existing Requirements**: Existing requirements may only be modified with explicit user instruction.
 8. **100% Coverage**: 100% of code/system changes must be covered by approved requirements.
 9. **Dynamic Model & Reasoning Allocation**: The `Control` agent assigns appropriate LLM models and reasoning depth per role.
+10. **Branch & PR Process Model**: All development must occur on dedicated branches (`feat/`, `fix/`, `refactor/`, `chore/`, `docs/`) and merge into `main` solely via Pull Requests using Squash-and-Merge, verified by CI and approved by the user per [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Subagent Roles & Model Profiles
 1. **Control**: Orchestrates workflow pipelines, breaks down tasks, assigns model/reasoning levels, and provides strictly minimal context packages.
