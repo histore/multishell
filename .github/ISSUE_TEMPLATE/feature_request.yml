@@ -1,0 +1,36 @@
+name: 🚀 Feature Request
+description: Propose a new feature or enhancement for MultiShell
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please fill out the sections below to help specify and track requirements.
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Problem Statement / Context
+      description: What problem does this solve or what workflow does it enhance?
+      placeholder: Describe the current limitation or user need...
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution / User Story
+      description: How should the feature work? (e.g. As a user, I want... so that...)
+      placeholder: Describe your desired solution...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria (Given-When-Then)
+      description: Specify criteria that can be added to REQUIREMENTS.md.
+      placeholder: |
+        - Given <condition>
+        - When <action>
+        - Then <expected result>
+    validations:
+      required: false

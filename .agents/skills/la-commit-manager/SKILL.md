@@ -60,3 +60,9 @@ Once explicit user confirmation is received:
 ### Step 5: Verification & Status Output
 - Execute `git status` to verify clean working tree and confirm successful push.
 - Report completion summary to the user.
+
+### Step 6: Pull Request Preparation (Optional / On-Demand)
+If the active branch is a feature or fix branch (not `main`), draft the Pull Request content following `.github/pull_request_template.md` and offer the `gh pr create` command to the user:
+```powershell
+gh pr create --title "<type>(<scope>): <summary>" --body "<filled-pr-template>"
+```
