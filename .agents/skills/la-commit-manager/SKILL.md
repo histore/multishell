@@ -10,8 +10,8 @@ Analyze workspace modifications, generate clear and standardized conventional co
 
 ## Critical Operating Constraints
 1. **On-Demand Execution Only**: This skill/role must **NEVER** run automatically or unsolicited. It executes **ONLY** when explicitly requested by the user.
-2. **Pre-PR Developer Testing & Review Prerequisite**: Commit creation, pushing, and Pull Request staging must occur **ONLY** after the developer has tested and reviewed the functionality and confirmed that no pre-PR corrections are needed.
-3. **Mandatory User Confirmation Gate**: The drafted commit message, affected files, and PR description must **ALWAYS** be presented to the user. Execution of `git commit`, `git push`, and `gh pr create` is strictly prohibited until the user explicitly confirms and approves.
+2. **Mandatory User Confirmation Gate**: The drafted commit message and list of affected files must **ALWAYS** be presented to the user. Execution of `git commit` and `git push` is strictly prohibited until the user explicitly confirms and approves the message.
+3. **Separation of Concerns**: CommitManager is responsible for atomic commits, staging, and branch pushing. Pull Request creation and lifecycle management are delegated to the dedicated **`PRManager`** role.
 
 ## Workflow & Step-by-Step Execution
 
@@ -56,14 +56,9 @@ Display the proposed commit message and list of modified files clearly in markdo
 Once explicit user confirmation is received:
 1. Stage intended changes: `git add <files>` (or `git add -A` as appropriate).
 2. Commit with the approved message: `git commit -m "<approved-message>"`.
-3. Push to upstream branch: `git push`.
+3. Push to upstream branch: `git push` (or `git push -u origin <branch>` if first push).
 
 ### Step 5: Verification & Status Output
 - Execute `git status` to verify clean working tree and confirm successful push.
 - Report completion summary to the user.
-
-### Step 6: Pull Request Preparation (Optional / On-Demand)
-If the active branch is a feature or fix branch (not `main`), draft the Pull Request content following `.github/pull_request_template.md` and offer the `gh pr create` command to the user:
-```powershell
-gh pr create --title "<type>(<scope>): <summary>" --body "<filled-pr-template>"
-```
+- Hand over to `PRManager` when the developer is ready to open a Pull Request.
