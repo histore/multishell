@@ -46,6 +46,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TAB-017` | Terminal Text Selection, Copy (Right-Click / Ctrl+C), and Paste (Right-Click / Ctrl+V) | Interaction | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
 | `REQ-TAB-018` | Comprehensive Tab Keyboard Navigation & Reordering Shortcuts | Interaction | **IMPLEMENTED** | `MainViewModelTabNavigationTests`, `MainWindow` |
 | `REQ-TERM-002` | Multi-line Newline Insertion via `Ctrl+Enter` and `Shift+Enter` | Terminal | **IMPLEMENTED** | `TerminalTabView`, `TerminalTabViewModelTests` |
+| `REQ-TERM-004` | Multi-Chunk ANSI/VT100 Sequence Preservation & Color Bleed Prevention | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests` |
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts | UI | **BACKLOG** | TBD |
 | `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | Terminal | **BACKLOG** | TBD |
 
@@ -454,6 +455,19 @@ This document serves as the single source of truth for all functional and non-fu
   - **And** the shell enters a multi-line continuation prompt without executing the command prematurely.
   - **When** the user presses standard `Enter` (without modifiers),
   - **Then** carriage return (`\r`) is sent and the command is executed as usual.
+
+---
+
+### REQ-TERM-004: Multi-Chunk ANSI/VT100 Sequence Preservation & Color Bleed Prevention
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user running interactive CLI/TUI applications (e.g. GitHub Copilot CLI, Neovim with Markdown/Tree-sitter highlighting, Ink, Bubbletea), I want ANSI escape sequences (CSI colors, cursor positioning, SGR resets, OSC sequences) to be processed cleanly across arbitrary stream chunk boundaries without fragments printing as raw text or causing color bleeding across entire text blocks.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab in MultiShell streaming high-throughput or chunked output,
+  - **When** an ANSI/VT100 escape sequence (such as TrueColor `\x1b[38;2;...m`, `\x1b[48;2;...m`, SGR reset `\x1b[0m`, cursor movements `\x1b[...H`, `\x1b[...K`, or OSC sequences) is split across buffer chunk boundaries,
+  - **Then** the terminal stream sanitizer buffers the incomplete sequence header until the final terminator byte arrives,
+  - **And** only complete, valid sequences or clean text chunks are passed to the terminal model (`TerminalModel.Feed()`),
+  - **And** no stray escape codes, orphan brackets, or parameter fragments are printed to the terminal screen,
+  - **And** background colors and text styles reset promptly at token boundaries without bleeding into following paragraphs or lines.
 
 ---
 
