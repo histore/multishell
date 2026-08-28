@@ -22,9 +22,10 @@ Implement concrete, maintainable, and high-performance source code according to 
    - **Avalonia UI 11.2 & MVVM**: Compiled bindings (`x:DataType`), CommunityToolkit source generators (`[ObservableProperty]`, `[RelayCommand]`), Dispatcher-safe UI updates (`Dispatcher.UIThread`).
    - **Resource Management**: Deterministic cleanup with `Dispose()`, avoiding memory leaks with event handlers.
 4. **Code Comments**: All source code comments and docstrings must be written in English.
+5. **Pre-PR Developer Feedback & Fast Iterations**: Implement requested corrections, design adjustments, or edge-case handling arising directly from the Developer Testing & Review Gate prior to PR creation.
 
 ## Input
-- Architecture design, interface contracts, UI blueprints, localization keys, and target file paths.
+- Architecture design, interface contracts, UI blueprints, localization keys, target file paths, and Developer Review feedback.
 - Relevant file snippets only (strictly isolated context).
 
 ## Output Format

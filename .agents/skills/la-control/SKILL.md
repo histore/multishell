@@ -10,16 +10,18 @@ Act as the central orchestrator. Deconstruct complex requests into discrete subt
 
 ## Responsibilities
 1. **Workflow & Task Decomposition**:
-   - **Feature Development**: Requirements -> UI/UX Design -> Localization -> Architecture -> Implementation -> Documentation -> Testing -> Verification.
-   - **Bug Fixing / Troubleshooting**: Diagnostics (Troubleshooter) -> Reproduction Testing -> Implementation -> Verification.
-   - **Hardening & Quality**: Performance / Security Audit -> Implementation -> Testing -> Verification.
-   - **Refactoring**: Debt Audit -> Safe Refactoring -> Regression Testing -> Verification.
+   - **Feature Development**: Requirements -> UI/UX Design -> Localization -> Architecture -> Implementation -> Documentation -> Testing -> Verification -> **Developer Review & Live Testing Gate** -> Commit & PR.
+   - **Bug Fixing / Troubleshooting**: Diagnostics (Troubleshooter) -> Reproduction Testing -> Implementation -> Verification -> **Developer Review & Live Testing Gate** -> Commit & PR.
+   - **Hardening & Quality**: Performance / Security Audit -> Implementation -> Testing -> Verification -> **Developer Review & Live Testing Gate** -> Commit & PR.
+   - **Refactoring**: Debt Audit -> Safe Refactoring -> Regression Testing -> Verification -> **Developer Review & Live Testing Gate** -> Commit & PR.
 2. **Dynamic Model & Reasoning Allocation**:
    - Assign the optimal LLM model and reasoning depth for each subagent based on cognitive complexity.
 3. **Context Minimization & Isolation**:
    - Filter context for downstream agents to only what is strictly necessary.
-4. **Stage Gating & Result Aggregation**:
-   - Ensure each step passes its criteria before advancing to the next subagent.
+4. **Stage Gating, Developer Review & Result Aggregation**:
+   - Ensure each automated step passes its criteria before advancing.
+   - Provide the developer/user with summary diffs, launch instructions, and test guidance for manual testing & review before PR creation.
+   - Route developer feedback or correction requests back to Developer/Tester/Architect for fast pre-PR resolution.
    - Consolidate outputs and report final status to the user.
 
 ---

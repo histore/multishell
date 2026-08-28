@@ -25,19 +25,21 @@ All changes must be developed in dedicated feature, fix, or maintenance branches
 
 ## 2. End-to-End Development Lifecycle
 
-Every code change moves through a structured, quality-gated 7-stage lifecycle:
+Every code change moves through a structured, quality-gated 8-stage lifecycle:
 
 ```mermaid
 flowchart TD
-    A[1. Requirement / Issue] -->|RequirementEngineer| B[2. Create Branch]
-    B -->|Architect & Developer| C[3. Implement Clean Code & MVVM]
-    C -->|Tester| D[4. Automated Tests MultiShell.Tests]
-    D -->|Verification Agent| E[5. Quality Gate Audit]
-    E -->|CommitManager| F[6. Conventional Commit & Open PR]
-    F -->|GitHub Actions CI| G{CI Build & Test Pass?}
-    G -- No --> C
-    G -- Yes --> H[7. Maintainer Review & Squash Merge]
-    H -->|ReleaseManager| I[SemVer Tag vX.Y.Z & GitHub Release]
+    A["1. Requirement / Issue"] -->|"RequirementEngineer"| B["2. Create Branch"]
+    B -->|"Architect & Developer"| C["3. Implement Clean Code & MVVM"]
+    C -->|"Tester"| D["4. Automated Tests (MultiShell.Tests)"]
+    D -->|"Verifikation"| E["5. Quality Gate Audit"]
+    E -->|"Pass"| F["6. Developer Review & Live Testing Gate"]
+    F -->|"Needs Changes / Corrections"| C
+    F -->|"Approved"| G["7. Commit & Open PR via CommitManager"]
+    G -->|"GitHub Actions CI"| H{"CI Build & Test Pass?"}
+    H -->|"No"| C
+    H -->|"Yes"| I["8. Maintainer Review & Squash Merge"]
+    I -->|"ReleaseManager"| J["SemVer Tag vX.Y.Z & GitHub Release"]
 ```
 
 ### Stage 1: Requirement Specification (`RequirementEngineer`)
@@ -71,7 +73,14 @@ git checkout -b feat/REQ-025-tab-split-view
 - Verify 0 test failures, 0 compiler warnings, and clean formatting.
 - Confirm full requirement coverage and bilingual localization resources.
 
-### Stage 6: Commit & Pull Request (`CommitManager`)
+### Stage 6: Developer Review & Live Testing Gate (Manual Verification & Pre-PR Iteration)
+- Prior to staging commits and creating a Pull Request, the working state is presented to the developer/user for interactive review:
+  - **Manual/Interactive Testing**: The developer can launch and run the application locally to verify real-world ergonomics, keyboard workflows, and terminal behavior.
+  - **Code Review & Feedback**: The developer inspects code diffs and can request modifications, design adjustments, or edge-case handling.
+  - **Pre-PR Corrections**: If issues are found, the subagents (`Developer`, `UIDesigner`, `Architekt`, `Tester`) immediately iterate and apply corrections before any PR is created or merged.
+  - **Explicit Approval**: Once the developer confirms that the feature functions as expected, the workflow proceeds to Stage 7.
+
+### Stage 7: Commit & Pull Request (`CommitManager`)
 - Stage and commit changes using the **Conventional Commits** specification:
   - Format: `<type>(<scope>): <summary>`
   - Example: `feat(terminal): add tab split view and layout persistence`
@@ -81,7 +90,7 @@ git checkout -b feat/REQ-025-tab-split-view
   gh pr create --fill
   ```
 
-### Stage 7: CI Check, Review & Squash Merge (Maintainer)
+### Stage 8: CI Check, Review & Squash Merge (Maintainer)
 - GitHub Actions CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) automatically runs builds and tests on Windows.
 - The project maintainer reviews the PR and executes a **Squash and Merge**.
 

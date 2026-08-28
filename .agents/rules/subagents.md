@@ -24,26 +24,26 @@
    - **Immutability of Existing Requirements**: Existing requirements may only be modified with explicit user instruction.
    - **Full Coverage**: 100% of code/system changes must be covered by approved requirements.
 9. **Maximum User Usability & Aesthetic Excellence**: The dedicated `UIDesigner` role ensures every UI component provides effortless keyboard navigation, intuitive ergonomics, and rich visual aesthetics.
-10. **Branch & PR Process Model**: All development must occur on dedicated branches (`feat/`, `fix/`, `refactor/`, `chore/`, `docs/`) and merge into `main` solely via Pull Requests using Squash-and-Merge, verified by CI and approved by the user per [CONTRIBUTING.md](../../CONTRIBUTING.md).
+10. **Branch & PR Process Model with Developer Testing & Review Gate**: All development must occur on dedicated branches (`feat/`, `fix/`, `refactor/`, `chore/`, `docs/`). Prior to Pull Request creation, the developer is provided with the opportunity to review the code, test application functionality interactively/manually, and request adjustments or fixes. Merging into `main` occurs solely via Pull Requests using Squash-and-Merge after explicit user sign-off and passing CI per [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ---
 
 ## Role Summary & Profiles
 
-1. **Control**: Central workflow orchestrator, model/reasoning dispatcher, and minimal-context packager.
+1. **Control**: Central workflow orchestrator, model/reasoning dispatcher, minimal-context packager, and coordinator of the Developer Testing & Review gate before PR creation.
 2. **RequirementEngineer** (`Reasoning: High`): Given-When-Then criteria, conflict detection, requirement integrity.
 3. **Troubleshooter** (`Reasoning: High`): RCA, stack trace analysis, event bubbling & race condition diagnostics.
 4. **UIDesigner** (`Reasoning: High`): Usability, keyboard workflows, visual aesthetics (Catppuccin Mocha), XAML styles.
 5. **LocalizationSpecialist** (`Reasoning: Medium`): i18n audits, 0% hardcoded strings, bilingual dictionaries (`de`/`en`).
 6. **Architekt** (`Reasoning: High`): Clean Architecture, SOLID interfaces, layer boundaries, dependency inversion.
-7. **Developer** (`Reasoning: Medium`): Clean Code implementation, C# 13, .NET 10, Avalonia 11.2, English comments.
+7. **Developer** (`Reasoning: Medium`): Clean Code implementation, C# 13, .NET 10, Avalonia 11.2, English comments, iterative refinements from developer review.
 8. **RefactoringSpecialist** (`Reasoning: Medium`): Code smell detection, technical debt remediation, Boy Scout rule.
 9. **PerformanceOptimizer** (`Reasoning: High`): Buffer pooling (`ArrayPool`), memory leak auditing, ConPTY stream throughput.
 10. **SecurityAuditor** (`Reasoning: High`): PowerShell command safety, path traversal prevention, secure deserialization.
 11. **DocumentationSpecialist** (`Reasoning: Medium`): Authors XML doc comments (`///`), keeps `ARCHITECTURE.md` synchronized, and maintains user help guides in English.
 12. **ReleaseManager** (`Reasoning: Medium`): Manages deployment pipelines, single-file self-contained packaging, Native AOT readiness, and application manifests.
 13. **Tester** (`Reasoning: Medium`): Implements comprehensive automated tests (`MultiShell.Tests`) and executes `dotnet test` (AAA pattern, 0 failures).
-14. **Verifikation** (`Reasoning: High`): Quality gate auditing acceptance criteria, 100% requirements coverage, test pass rate, Clean Code, i18n, performance, security, and architectural compliance.
-15. **CommitManager** (`Reasoning: Medium`): Generates conventional commit messages from diffs, stages changes, commits, and pushes strictly on-demand after mandatory interactive user confirmation.
+14. **Verifikation** (`Reasoning: High`): Quality gate auditing acceptance criteria, 100% requirements coverage, test pass rate, Clean Code, i18n, performance, security, and architectural compliance prior to developer testing.
+15. **CommitManager** (`Reasoning: Medium`): Generates conventional commit messages from diffs, stages changes, commits, and pushes strictly on-demand after mandatory interactive user confirmation and developer testing sign-off.
 16. **Tiebreaker** (`Reasoning: High`): Monitors active operations, detects loops/deadlocks/thrashing, and enforces remediation via strategy pivots, model upgrades, context purges, or user escalation.
 17. **TerminalEngineSpecialist** (`Reasoning: High`): Deeply analyzes and optimizes Win32 ConPTY handles, ANSI/VT100 streams, OSC 7/9/133 integration, TrueColor palettes, and zero-allocation UTF-8 decoding.
