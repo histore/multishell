@@ -97,10 +97,16 @@ public class LocalizationService : ILocalizationService
         ["Shell_CMD"] = "Eingabeaufforderung (CMD)",
         ["Btn_Tab_History_Tooltip"] = "Tab-Verlauf (Strg+Umschalt+H)",
         ["Btn_Tab_History_Text"] = "Verlauf",
-        ["Btn_Tab_Menu_Tooltip"] = "Alle geöffneten Tabs",
+        ["Btn_Tab_Menu_Tooltip"] = "Tab-Übersicht (Strg+Tab)",
         ["Btn_Tab_Scroll_Left"] = "Tabs nach links scrollen",
         ["Btn_Tab_Scroll_Right"] = "Tabs nach rechts scrollen",
         ["Btn_Tab_Close_Tooltip"] = "Tab schließen (Strg+Umschalt+W)",
+
+        // Tab Switcher Overlay
+        ["Tab_Switcher_Title"] = "TAB-ÜBERSICHT",
+        ["Tab_Switcher_Hint_Keyboard"] = "[ Tab ▾  |  Umschalt+Tab ▴  |  Strg loslassen zum Öffnen  |  Esc Abbrechen ]",
+        ["Tab_Switcher_Hint_Click"] = "[ ▲/▼ Navigieren  |  Klick/Enter Öffnen  |  Esc Schließen ]",
+        ["Tab_Switcher_Count"] = "{0} von {1} Tabs",
 
         // Drawer
         ["Drawer_Title"] = "VERLAUF",
@@ -201,10 +207,16 @@ public class LocalizationService : ILocalizationService
         ["Shell_CMD"] = "Command Prompt (CMD)",
         ["Btn_Tab_History_Tooltip"] = "Tab History (Ctrl+Shift+H)",
         ["Btn_Tab_History_Text"] = "History",
-        ["Btn_Tab_Menu_Tooltip"] = "All Open Tabs",
+        ["Btn_Tab_Menu_Tooltip"] = "Open Tabs Overview (Ctrl+Tab)",
         ["Btn_Tab_Scroll_Left"] = "Scroll Tabs Left",
         ["Btn_Tab_Scroll_Right"] = "Scroll Tabs Right",
         ["Btn_Tab_Close_Tooltip"] = "Close Tab (Ctrl+Shift+W)",
+
+        // Tab Switcher Overlay
+        ["Tab_Switcher_Title"] = "OPEN TABS",
+        ["Tab_Switcher_Hint_Keyboard"] = "[ Tab ▾  |  Shift+Tab ▴  |  Release Ctrl to Open  |  Esc Cancel ]",
+        ["Tab_Switcher_Hint_Click"] = "[ ▲/▼ Navigate  |  Click/Enter Open  |  Esc Close ]",
+        ["Tab_Switcher_Count"] = "{0} of {1} Tabs",
 
         // Drawer
         ["Drawer_Title"] = "HISTORY",
@@ -305,10 +317,16 @@ public class LocalizationService : ILocalizationService
         ["Shell_CMD"] = "Invite de commandes (CMD)",
         ["Btn_Tab_History_Tooltip"] = "Historique des onglets (Ctrl+Maj+H)",
         ["Btn_Tab_History_Text"] = "Historique",
-        ["Btn_Tab_Menu_Tooltip"] = "Tous les onglets ouverts",
+        ["Btn_Tab_Menu_Tooltip"] = "Aperçu des onglets (Ctrl+Tab)",
         ["Btn_Tab_Scroll_Left"] = "Faire défiler les onglets à gauche",
         ["Btn_Tab_Scroll_Right"] = "Faire défiler les onglets à droite",
         ["Btn_Tab_Close_Tooltip"] = "Fermer l'onglet (Ctrl+Maj+W)",
+
+        // Tab Switcher Overlay
+        ["Tab_Switcher_Title"] = "APERÇU DES ONGLETS",
+        ["Tab_Switcher_Hint_Keyboard"] = "[ Tab ▾  |  Maj+Tab ▴  |  Relâcher Ctrl pour ouvrir  |  Échap Annuler ]",
+        ["Tab_Switcher_Hint_Click"] = "[ ▲/▼ Naviguer  |  Clic/Entrée Ouvrir  |  Échap Fermer ]",
+        ["Tab_Switcher_Count"] = "{0} sur {1} onglets",
 
         // Drawer
         ["Drawer_Title"] = "HISTORIQUE",
@@ -409,10 +427,16 @@ public class LocalizationService : ILocalizationService
         ["Shell_CMD"] = "Símbolo del sistema (CMD)",
         ["Btn_Tab_History_Tooltip"] = "Historial de pestañas (Ctrl+Mayús+H)",
         ["Btn_Tab_History_Text"] = "Historial",
-        ["Btn_Tab_Menu_Tooltip"] = "Todas las pestañas abiertas",
+        ["Btn_Tab_Menu_Tooltip"] = "Vista general de pestañas (Ctrl+Tab)",
         ["Btn_Tab_Scroll_Left"] = "Desplazar pestañas a la izquierda",
         ["Btn_Tab_Scroll_Right"] = "Desplazar pestañas a la derecha",
         ["Btn_Tab_Close_Tooltip"] = "Cerrar pestaña (Ctrl+Mayús+W)",
+
+        // Tab Switcher Overlay
+        ["Tab_Switcher_Title"] = "VISTA GENERAL DE PESTAÑAS",
+        ["Tab_Switcher_Hint_Keyboard"] = "[ Tab ▾  |  Mayús+Tab ▴  |  Soltar Ctrl para abrir  |  Esc Cancelar ]",
+        ["Tab_Switcher_Hint_Click"] = "[ ▲/▼ Navegar  |  Clic/Enter Abrir  |  Esc Cerrar ]",
+        ["Tab_Switcher_Count"] = "{0} de {1} pestañas",
 
         // Drawer
         ["Drawer_Title"] = "HISTORIAL",

@@ -47,6 +47,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TAB-018` | Comprehensive Tab Keyboard Navigation & Reordering Shortcuts | Interaction | **IMPLEMENTED** | `MainViewModelTabNavigationTests`, `MainWindow` |
 | `REQ-TERM-002` | Multi-line Newline Insertion via `Ctrl+Enter` and `Shift+Enter` | Terminal | **IMPLEMENTED** | `TerminalTabView`, `TerminalTabViewModelTests` |
 | `REQ-TERM-004` | Multi-Chunk ANSI/VT100 Sequence Preservation & Color Bleed Prevention | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests` |
+| `REQ-TAB-019` | Unified Interactive Tab Switcher Overlay (Ctrl+Tab & Tab Bar Menu Button) | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts | UI | **BACKLOG** | TBD |
 | `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | Terminal | **BACKLOG** | TBD |
 
@@ -468,6 +469,26 @@ This document serves as the single source of truth for all functional and non-fu
   - **And** only complete, valid sequences or clean text chunks are passed to the terminal model (`TerminalModel.Feed()`),
   - **And** no stray escape codes, orphan brackets, or parameter fragments are printed to the terminal screen,
   - **And** background colors and text styles reset promptly at token boundaries without bleeding into following paragraphs or lines.
+
+---
+
+### REQ-TAB-019: Unified Interactive Tab Switcher Overlay (Ctrl+Tab & Tab Bar Menu Button)
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want a single, unified, and aesthetically outstanding Tab Switcher HUD overlay that can be triggered either via keyboard (`Ctrl+Tab` / `Ctrl+Shift+Tab`) or via the tab bar menu button (`≡ ▾`), allowing me to quickly preview and switch between all open terminal tabs.
+- **Acceptance Criteria**:
+  - **Given** multiple open terminal tabs in MultiShell,
+  - **When** pressing `Ctrl+Tab` (or `Ctrl+Shift+Tab`),
+  - **Then** a centered floating Quick Tab Switcher HUD overlay appears, showing the list of open tabs with their shell icon badges, titles, and working directories.
+  - **When** holding `Ctrl` and pressing `Tab` (or `PageDown` / `Down Arrow`) repeatedly,
+  - **Then** the highlight moves forward through the tab list (wrapping around to the first tab at the end).
+  - **When** holding `Ctrl` and pressing `Shift+Tab` (or `PageUp` / `Up Arrow`) repeatedly,
+  - **Then** the highlight moves backward through the tab list (wrapping around to the last tab at the beginning).
+  - **When** the user releases the `Ctrl` key,
+  - **Then** the currently highlighted tab is activated, the overlay closes automatically, and the terminal receives focus.
+  - **When** pressing `Escape` while the overlay is open,
+  - **Then** the overlay closes without changing the active tab.
+  - **When** clicking the `≡ ▾` button in the tab bar,
+  - **Then** the same unified Tab Switcher HUD overlay opens in persistent mode, allowing tab selection via mouse click, `Enter`, or dismissal via `Escape`.
 
 ---
 

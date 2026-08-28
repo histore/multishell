@@ -839,4 +839,142 @@ public class MainViewModelTabTests
         Assert.DoesNotContain(tab1, mainVm.Tabs);
         Assert.NotNull(mainVm.SelectedTab);
     }
+
+    [Fact]
+    public async Task ShowTabSwitcher_OpensAndHighlightsNextTab_WhenTriggeredByKeyboard()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        mainVm.SelectedTab = mainVm.Tabs[0];
+
+        // Act
+        mainVm.ShowTabSwitcher(forward: true, isKeyboardTriggered: true);
+
+        // Assert
+        Assert.True(mainVm.IsTabSwitcherOpen);
+        Assert.True(mainVm.TabSwitcherIsKeyboardTriggered);
+        Assert.Equal(1, mainVm.TabSwitcherSelectedIndex);
+    }
+
+    [Fact]
+    public async Task AdvanceTabSwitcher_ForwardAndBackward_WrapsAround()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        mainVm.SelectedTab = mainVm.Tabs[0];
+
+        // Act & Assert
+        mainVm.ShowTabSwitcher(forward: true, isKeyboardTriggered: true);
+        Assert.Equal(1, mainVm.TabSwitcherSelectedIndex);
+
+        mainVm.AdvanceTabSwitcher(forward: true);
+        Assert.Equal(2, mainVm.TabSwitcherSelectedIndex);
+
+        mainVm.AdvanceTabSwitcher(forward: true); // Wraps to 0
+        Assert.Equal(0, mainVm.TabSwitcherSelectedIndex);
+
+        mainVm.AdvanceTabSwitcher(forward: false); // Wraps back to 2
+        Assert.Equal(2, mainVm.TabSwitcherSelectedIndex);
+    }
+
+    [Fact]
+    public async Task CommitTabSwitcher_AppliesSelectionAndCloses()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        mainVm.SelectedTab = mainVm.Tabs[0];
+
+        mainVm.ShowTabSwitcher(forward: true, isKeyboardTriggered: true);
+        mainVm.AdvanceTabSwitcher(forward: true); // index 2
+
+        // Act
+        mainVm.CommitTabSwitcher();
+
+        // Assert
+        Assert.False(mainVm.IsTabSwitcherOpen);
+        Assert.Same(mainVm.Tabs[2], mainVm.SelectedTab);
+    }
+
+    [Fact]
+    public async Task CancelTabSwitcher_RevertsToOriginalTabAndCloses()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        mainVm.SelectedTab = mainVm.Tabs[0];
+
+        mainVm.ShowTabSwitcher(forward: true, isKeyboardTriggered: true);
+        mainVm.AdvanceTabSwitcher(forward: true);
+
+        // Act
+        mainVm.CancelTabSwitcher();
+
+        // Assert
+        Assert.False(mainVm.IsTabSwitcherOpen);
+        Assert.Same(mainVm.Tabs[0], mainVm.SelectedTab);
+    }
+
+    [Fact]
+    public async Task ToggleTabSwitcher_OpensAndCloses()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Act 1: Open
+        mainVm.ToggleTabSwitcher();
+        Assert.True(mainVm.IsTabSwitcherOpen);
+        Assert.False(mainVm.TabSwitcherIsKeyboardTriggered);
+
+        // Act 2: Close
+        mainVm.ToggleTabSwitcher();
+        Assert.False(mainVm.IsTabSwitcherOpen);
+    }
+
+    [Fact]
+    public async Task SelectTabFromSwitcher_ActivatesClickedTabAndCloses()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+
+        mainVm.ShowTabSwitcher(forward: false, isKeyboardTriggered: false);
+
+        // Act
+        mainVm.SelectTabFromSwitcher(mainVm.Tabs[1]);
+
+        // Assert
+        Assert.False(mainVm.IsTabSwitcherOpen);
+        Assert.Same(mainVm.Tabs[1], mainVm.SelectedTab);
+    }
 }
