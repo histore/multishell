@@ -10,7 +10,8 @@ Analyze workspace modifications, generate clear and standardized conventional co
 
 ## Critical Operating Constraints
 1. **On-Demand Execution Only**: This skill/role must **NEVER** run automatically or unsolicited. It executes **ONLY** when explicitly requested by the user.
-2. **Mandatory User Confirmation Gate**: The drafted commit message and affected files must **ALWAYS** be presented to the user. Execution of `git commit` and `git push` is strictly prohibited until the user explicitly confirms and approves the message.
+2. **Pre-PR Developer Testing & Review Prerequisite**: Commit creation, pushing, and Pull Request staging must occur **ONLY** after the developer has tested and reviewed the functionality and confirmed that no pre-PR corrections are needed.
+3. **Mandatory User Confirmation Gate**: The drafted commit message, affected files, and PR description must **ALWAYS** be presented to the user. Execution of `git commit`, `git push`, and `gh pr create` is strictly prohibited until the user explicitly confirms and approves.
 
 ## Workflow & Step-by-Step Execution
 
