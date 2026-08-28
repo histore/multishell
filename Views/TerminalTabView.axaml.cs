@@ -192,6 +192,17 @@ public partial class TerminalTabView : UserControl
             e.Handled = true;
             return;
         }
+
+        // 4. Ctrl+Enter or Shift+Enter -> Send Linefeed (\n / 0x0A) for multi-line script continuation without executing command
+        if (e.Key == Key.Enter && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) != 0)
+        {
+            if (vm.IsRunning)
+            {
+                vm.SendInput([0x0A]);
+            }
+            e.Handled = true;
+            return;
+        }
     }
 
     private static string? ResolveAltGrText(KeyEventArgs e)

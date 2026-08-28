@@ -708,4 +708,135 @@ public class MainViewModelTabTests
         mainVm.CloseProfilesModal();
         Assert.False(mainVm.IsProfilesModalOpen);
     }
+
+    [Fact]
+    public async Task TabCycling_NextAndPreviousWithWrapAround_WorksProperly()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Create 3 tabs
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        Assert.Equal(3, mainVm.Tabs.Count);
+
+        mainVm.SelectedTab = mainVm.Tabs[0];
+
+        // Act & Assert 1: Next tab
+        mainVm.CycleNextTab();
+        Assert.Same(mainVm.Tabs[1], mainVm.SelectedTab);
+
+        mainVm.CycleNextTab();
+        Assert.Same(mainVm.Tabs[2], mainVm.SelectedTab);
+
+        // Wrap around to first
+        mainVm.CycleNextTab();
+        Assert.Same(mainVm.Tabs[0], mainVm.SelectedTab);
+
+        // Cycle previous wraps around to last
+        mainVm.CyclePreviousTab();
+        Assert.Same(mainVm.Tabs[2], mainVm.SelectedTab);
+
+        mainVm.CyclePreviousTab();
+        Assert.Same(mainVm.Tabs[1], mainVm.SelectedTab);
+    }
+
+    [Fact]
+    public async Task SelectTabByIndex_DirectJumpsAndLastTab_WorksProperly()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Create 5 tabs
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        Assert.Equal(5, mainVm.Tabs.Count);
+
+        // Act & Assert: Select index 2 (3rd tab)
+        mainVm.SelectTabByIndex(2);
+        Assert.Same(mainVm.Tabs[2], mainVm.SelectedTab);
+
+        // Select index 0 (1st tab)
+        mainVm.SelectTabByIndex(0);
+        Assert.Same(mainVm.Tabs[0], mainVm.SelectedTab);
+
+        // Select index -1 (last tab)
+        mainVm.SelectTabByIndex(-1);
+        Assert.Same(mainVm.Tabs[4], mainVm.SelectedTab);
+
+        // Out of bounds does nothing
+        mainVm.SelectTabByIndex(99);
+        Assert.Same(mainVm.Tabs[4], mainVm.SelectedTab);
+    }
+
+    [Fact]
+    public async Task MoveSelectedTab_ReordersTabsCorrectly()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        Assert.Equal(3, mainVm.Tabs.Count);
+
+        var tab0 = mainVm.Tabs[0];
+        var tab1 = mainVm.Tabs[1];
+        var tab2 = mainVm.Tabs[2];
+
+        mainVm.SelectedTab = tab1;
+
+        // Move right (+1)
+        mainVm.MoveSelectedTab(1);
+        Assert.Equal(3, mainVm.Tabs.Count);
+        Assert.Same(tab0, mainVm.Tabs[0]);
+        Assert.Same(tab2, mainVm.Tabs[1]);
+        Assert.Same(tab1, mainVm.Tabs[2]);
+        Assert.Same(tab1, mainVm.SelectedTab);
+
+        // Move right again (already at end) -> no change
+        mainVm.MoveSelectedTab(1);
+        Assert.Same(tab1, mainVm.Tabs[2]);
+
+        // Move left twice (-1, -1) -> moves to index 0
+        mainVm.MoveSelectedTab(-1);
+        Assert.Same(tab1, mainVm.Tabs[1]);
+        mainVm.MoveSelectedTab(-1);
+        Assert.Same(tab1, mainVm.Tabs[0]);
+    }
+
+    [Fact]
+    public async Task CloseSelectedTab_ClosesActiveTabAndSelectsAdjacent()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        Assert.Equal(3, mainVm.Tabs.Count);
+
+        var tab1 = mainVm.Tabs[1];
+        mainVm.SelectedTab = tab1;
+
+        // Act
+        mainVm.CloseSelectedTab();
+
+        // Assert
+        Assert.Equal(2, mainVm.Tabs.Count);
+        Assert.DoesNotContain(tab1, mainVm.Tabs);
+        Assert.NotNull(mainVm.SelectedTab);
+    }
 }

@@ -100,7 +100,7 @@ public class LocalizationService : ILocalizationService
         ["Btn_Tab_Menu_Tooltip"] = "Alle geöffneten Tabs",
         ["Btn_Tab_Scroll_Left"] = "Tabs nach links scrollen",
         ["Btn_Tab_Scroll_Right"] = "Tabs nach rechts scrollen",
-        ["Btn_Tab_Close_Tooltip"] = "Tab schließen",
+        ["Btn_Tab_Close_Tooltip"] = "Tab schließen (Strg+Umschalt+W)",
 
         // Drawer
         ["Drawer_Title"] = "VERLAUF",
@@ -121,6 +121,11 @@ public class LocalizationService : ILocalizationService
         ["Help_Close_Button"] = "Schließen",
         ["Help_Tab_New"] = "Neuen PowerShell-Tab öffnen",
         ["Help_Tab_Dup"] = "Aktiven Tab im aktuellen Verzeichnis duplizieren",
+        ["Help_Tab_Next_Prev"] = "Nächsten / vorherigen Tab auswählen (zyklisch)",
+        ["Help_Tab_Jump"] = "Direkt zu Tab 1..8 bzw. letztem Tab (9) springen",
+        ["Help_Tab_Close"] = "Aktiven Tab schließen",
+        ["Help_Tab_Move"] = "Aktiven Tab nach links / rechts verschieben",
+        ["Help_Term_Newline"] = "Zeilenumbruch im Terminal einfügen (ohne Ausführung)",
         ["Help_Hist_Toggle"] = "Verlaufs-Overlay öffnen/schließen (▲/▼, Enter)",
         ["Help_Nav_F1"] = "Diesen Hilfe-Dialog öffnen",
         ["Help_Nav_Esc"] = "Aktives Overlay/Dialog schließen und Terminal fokussieren",
@@ -199,7 +204,7 @@ public class LocalizationService : ILocalizationService
         ["Btn_Tab_Menu_Tooltip"] = "All Open Tabs",
         ["Btn_Tab_Scroll_Left"] = "Scroll Tabs Left",
         ["Btn_Tab_Scroll_Right"] = "Scroll Tabs Right",
-        ["Btn_Tab_Close_Tooltip"] = "Close Tab",
+        ["Btn_Tab_Close_Tooltip"] = "Close Tab (Ctrl+Shift+W)",
 
         // Drawer
         ["Drawer_Title"] = "HISTORY",
@@ -220,6 +225,11 @@ public class LocalizationService : ILocalizationService
         ["Help_Close_Button"] = "Close",
         ["Help_Tab_New"] = "Open new PowerShell tab",
         ["Help_Tab_Dup"] = "Duplicate active tab in current directory",
+        ["Help_Tab_Next_Prev"] = "Select next / previous tab (cycle)",
+        ["Help_Tab_Jump"] = "Jump directly to tab 1..8 or last tab (9)",
+        ["Help_Tab_Close"] = "Close active tab",
+        ["Help_Tab_Move"] = "Move active tab left / right",
+        ["Help_Term_Newline"] = "Insert newline in terminal without executing command",
         ["Help_Hist_Toggle"] = "Toggle History Overlay (Navigate with ▲/▼, Enter)",
         ["Help_Nav_F1"] = "Open this Help dialog",
         ["Help_Nav_Esc"] = "Close active overlay / dialog and focus terminal",
@@ -298,7 +308,7 @@ public class LocalizationService : ILocalizationService
         ["Btn_Tab_Menu_Tooltip"] = "Tous les onglets ouverts",
         ["Btn_Tab_Scroll_Left"] = "Faire défiler les onglets à gauche",
         ["Btn_Tab_Scroll_Right"] = "Faire défiler les onglets à droite",
-        ["Btn_Tab_Close_Tooltip"] = "Fermer l'onglet",
+        ["Btn_Tab_Close_Tooltip"] = "Fermer l'onglet (Ctrl+Maj+W)",
 
         // Drawer
         ["Drawer_Title"] = "HISTORIQUE",
@@ -319,6 +329,11 @@ public class LocalizationService : ILocalizationService
         ["Help_Close_Button"] = "Fermer",
         ["Help_Tab_New"] = "Ouvrir un nouvel onglet PowerShell",
         ["Help_Tab_Dup"] = "Dupliquer l'onglet actif dans le répertoire actuel",
+        ["Help_Tab_Next_Prev"] = "Sélectionner l'onglet suivant / précédent (cycle)",
+        ["Help_Tab_Jump"] = "Aller directement à l'onglet 1..8 ou au dernier (9)",
+        ["Help_Tab_Close"] = "Fermer l'onglet actif",
+        ["Help_Tab_Move"] = "Déplacer l'onglet actif à gauche / droite",
+        ["Help_Term_Newline"] = "Insérer un saut de ligne sans exécuter la commande",
         ["Help_Hist_Toggle"] = "Afficher/masquer le volet historique (▲/▼, Entrée)",
         ["Help_Nav_F1"] = "Ouvrir cette boîte de dialogue d'aide",
         ["Help_Nav_Esc"] = "Fermer le volet ou la boîte de dialogue et focaliser le terminal",
@@ -397,7 +412,7 @@ public class LocalizationService : ILocalizationService
         ["Btn_Tab_Menu_Tooltip"] = "Todas las pestañas abiertas",
         ["Btn_Tab_Scroll_Left"] = "Desplazar pestañas a la izquierda",
         ["Btn_Tab_Scroll_Right"] = "Desplazar pestañas a la derecha",
-        ["Btn_Tab_Close_Tooltip"] = "Cerrar pestaña",
+        ["Btn_Tab_Close_Tooltip"] = "Cerrar pestaña (Ctrl+Mayús+W)",
 
         // Drawer
         ["Drawer_Title"] = "HISTORIAL",
@@ -418,6 +433,11 @@ public class LocalizationService : ILocalizationService
         ["Help_Close_Button"] = "Cerrar",
         ["Help_Tab_New"] = "Abrir una nueva pestaña PowerShell",
         ["Help_Tab_Dup"] = "Duplicar la pestaña activa en el directorio actual",
+        ["Help_Tab_Next_Prev"] = "Seleccionar siguiente / anterior pestaña (cíclico)",
+        ["Help_Tab_Jump"] = "Ir directamente a la pestaña 1..8 o a la última (9)",
+        ["Help_Tab_Close"] = "Cerrar pestaña activa",
+        ["Help_Tab_Move"] = "Mover pestaña activa a la izquierda / derecha",
+        ["Help_Term_Newline"] = "Insertar salto de línea en el terminal sin ejecutar",
         ["Help_Hist_Toggle"] = "Alternar panel de historial (Navegar con ▲/▼, Enter)",
         ["Help_Nav_F1"] = "Abrir este diálogo de ayuda",
         ["Help_Nav_Esc"] = "Cerrar el diálogo activo y enfocar el terminal",

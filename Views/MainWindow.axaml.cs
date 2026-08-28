@@ -407,11 +407,102 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
+            if (ProfilesModal?.IsVisible == true && DataContext is MainViewModel pvm)
+            {
+                pvm.CloseProfilesModal();
+                e.Handled = true;
+                return;
+            }
             if (HistoryDrawer?.IsVisible == true)
             {
                 HideHistoryDrawerAndFocusTerminal();
                 e.Handled = true;
                 return;
+            }
+        }
+
+        // Only process Tab management shortcuts if modal dialogs are not capturing input
+        if (HelpModal?.IsVisible != true && AboutModal?.IsVisible != true && ProfilesModal?.IsVisible != true)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+                var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+                // 1. Ctrl+Shift+PageUp / Ctrl+Shift+PageDown: Move Tab Left/Right
+                if (isCtrl && isShift && e.Key == Key.PageUp)
+                {
+                    vm.MoveSelectedTab(-1);
+                    e.Handled = true;
+                    return;
+                }
+                if (isCtrl && isShift && e.Key == Key.PageDown)
+                {
+                    vm.MoveSelectedTab(1);
+                    e.Handled = true;
+                    return;
+                }
+
+                // 2. Ctrl+Shift+W: Close active tab
+                if (isCtrl && isShift && e.Key == Key.W)
+                {
+                    vm.CloseSelectedTab();
+                    e.Handled = true;
+                    return;
+                }
+
+                // 3. Ctrl+Tab / Ctrl+Shift+Tab: Cycle tabs (wrap around)
+                if (isCtrl && e.Key == Key.Tab)
+                {
+                    if (isShift)
+                    {
+                        vm.CyclePreviousTab();
+                    }
+                    else
+                    {
+                        vm.CycleNextTab();
+                    }
+                    e.Handled = true;
+                    return;
+                }
+
+                // 4. Ctrl+PageUp / Ctrl+PageDown: Previous / Next Tab
+                if (isCtrl && !isShift && e.Key == Key.PageUp)
+                {
+                    vm.CyclePreviousTab();
+                    e.Handled = true;
+                    return;
+                }
+                if (isCtrl && !isShift && e.Key == Key.PageDown)
+                {
+                    vm.CycleNextTab();
+                    e.Handled = true;
+                    return;
+                }
+
+                // 5. Ctrl+1 .. Ctrl+8: Jump to specific tab index (0..7)
+                if (isCtrl && !isShift)
+                {
+                    if (e.Key >= Key.D1 && e.Key <= Key.D8)
+                    {
+                        vm.SelectTabByIndex(e.Key - Key.D1);
+                        e.Handled = true;
+                        return;
+                    }
+                    if (e.Key >= Key.NumPad1 && e.Key <= Key.NumPad8)
+                    {
+                        vm.SelectTabByIndex(e.Key - Key.NumPad1);
+                        e.Handled = true;
+                        return;
+                    }
+                    // 6. Ctrl+9: Jump to last tab
+                    if (e.Key is Key.D9 or Key.NumPad9)
+                    {
+                        vm.SelectTabByIndex(-1);
+                        e.Handled = true;
+                        return;
+                    }
+                }
             }
         }
     }

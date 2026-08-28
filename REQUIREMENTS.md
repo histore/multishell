@@ -44,6 +44,10 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TERM-001` | Robust UTF-8 Character Streaming & Box-Drawing Monospace Glyph Rendering | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `PowerShellSessionTests` |
 | `REQ-TAB-016` | Tab Navigation & Cycling via Mouse Wheel over Tab Bar | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-TAB-017` | Terminal Text Selection, Copy (Right-Click / Ctrl+C), and Paste (Right-Click / Ctrl+V) | Interaction | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
+| `REQ-TAB-018` | Comprehensive Tab Keyboard Navigation & Reordering Shortcuts | Interaction | **IMPLEMENTED** | `MainViewModelTabNavigationTests`, `MainWindow` |
+| `REQ-TERM-002` | Multi-line Newline Insertion via `Ctrl+Enter` and `Shift+Enter` | Terminal | **IMPLEMENTED** | `TerminalTabView`, `TerminalTabViewModelTests` |
+| `REQ-UI-005` | Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts | UI | **BACKLOG** | TBD |
+| `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | Terminal | **BACKLOG** | TBD |
 
 ---
 
@@ -418,6 +422,41 @@ This document serves as the single source of truth for all functional and non-fu
 
 ---
 
+### REQ-TAB-018: Comprehensive Tab Keyboard Navigation & Reordering Shortcuts
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want complete keyboard shortcuts to cycle through tabs (`Ctrl+Tab`, `Ctrl+Shift+Tab`, `Ctrl+PageDown`, `Ctrl+PageUp`), jump directly to numbered tabs (`Ctrl+1` through `Ctrl+8`), jump to the last tab (`Ctrl+9`), close the active tab (`Ctrl+Shift+W`), and reorder tabs left/right (`Ctrl+Shift+PageUp`, `Ctrl+Shift+PageDown`).
+- **Acceptance Criteria**:
+  - **Given** multiple open tabs,
+  - **When** pressing `Ctrl+Tab` or `Ctrl+PageDown`,
+  - **Then** the next tab is selected (wrapping around to the first tab when at the end).
+  - **When** pressing `Ctrl+Shift+Tab` or `Ctrl+PageUp`,
+  - **Then** the previous tab is selected (wrapping around to the last tab when at the beginning).
+  - **When** pressing `Ctrl+1` through `Ctrl+8`,
+  - **Then** the tab at corresponding index (1st to 8th) is selected if it exists.
+  - **When** pressing `Ctrl+9`,
+  - **Then** the last tab in the tab bar is selected.
+  - **When** pressing `Ctrl+Shift+W`,
+  - **Then** the currently active tab is closed and an adjacent tab is selected.
+  - **When** pressing `Ctrl+Shift+PageUp`,
+  - **Then** the active tab is moved one position to the left in the tab collection.
+  - **When** pressing `Ctrl+Shift+PageDown`,
+  - **Then** the active tab is moved one position to the right in the tab collection.
+
+---
+
+### REQ-TERM-002: Multi-line Newline Insertion via `Ctrl+Enter` and `Shift+Enter`
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user writing multi-line PowerShell scripts or commands, I want `Ctrl+Enter` (and `Shift+Enter`) to insert a newline / line continuation (`\n`) without immediately executing the command.
+- **Acceptance Criteria**:
+  - **Given** an active terminal session,
+  - **When** the user presses `Ctrl+Enter` or `Shift+Enter`,
+  - **Then** a linefeed (`\n` / `0x0A`) is sent to the ConPTY shell instead of carriage return (`\r` / `0x0D`),
+  - **And** the shell enters a multi-line continuation prompt without executing the command prematurely.
+  - **When** the user presses standard `Enter` (without modifiers),
+  - **Then** carriage return (`\r`) is sent and the command is executed as usual.
+
+---
+
 ## 🔮 Future / Backlog Features
 
 ### REQ-AI-001: Context-Aware AI Command Generator & Auto-Suggest
@@ -436,5 +475,26 @@ This document serves as the single source of truth for all functional and non-fu
   - **When** pressing `Escape`,
   - **Then** the overlay closes without modifications.
 
+---
 
+### REQ-UI-005: Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts
+- **Status**: `PLANNED`
+- **User Story**: As a user, I want quick zoom shortcuts (`Ctrl++`, `Ctrl+-`, `Ctrl+0`, and `Ctrl+MouseWheel`) to dynamically adjust terminal and UI font sizes on the fly.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab,
+  - **When** pressing `Ctrl++` or `Ctrl+NumpadPlus`, the font size increments to the next level.
+  - **When** pressing `Ctrl+-` or `Ctrl+NumpadMinus`, the font size decrements to the previous level.
+  - **When** pressing `Ctrl+0` or `Ctrl+Numpad0`, the font size resets to default Level 3 (12pt / 100%).
+  - **When** scrolling the mouse wheel while holding `Ctrl` over the terminal, font size zooms in or out.
+
+---
+
+### REQ-TERM-003: Terminal Scrollback & Buffer Control Shortcuts
+- **Status**: `PLANNED`
+- **User Story**: As a user, I want standard keyboard shortcuts (`Shift+PageUp`, `Shift+PageDown`, `Ctrl+Shift+K`, `Ctrl+Shift+C`, `Ctrl+Shift+V`) to navigate and manage the terminal scrollback buffer.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab with scrollback history,
+  - **When** pressing `Shift+PageUp` or `Shift+PageDown`, the viewport scrolls through previous output.
+  - **When** pressing `Ctrl+Shift+K`, the terminal buffer is cleared.
+  - **When** pressing `Ctrl+Shift+C` or `Ctrl+Shift+V`, text is copied or pasted without interfering with Unix signals.
 

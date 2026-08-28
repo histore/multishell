@@ -93,8 +93,13 @@ dotnet run
 | :--- | :--- |
 | `Ctrl + Shift + T` | Open new PowerShell terminal tab |
 | `Ctrl + Shift + D` | Duplicate current tab (same working directory) |
-| `Ctrl + W` | Close active terminal tab |
-| `Ctrl + Tab` / `Ctrl + Shift + Tab` | Switch to next / previous tab |
+| `Ctrl + Tab` / `Ctrl + Shift + Tab` | Cycle to next / previous tab (wrap-around) |
+| `Ctrl + PageDown` / `Ctrl + PageUp` | Switch to next / previous tab |
+| `Ctrl + 1` .. `Ctrl + 8` | Jump directly to tab index 1 through 8 |
+| `Ctrl + 9` | Jump directly to the last tab |
+| `Ctrl + Shift + W` | Close active terminal tab |
+| `Ctrl + Shift + PageUp` / `PageDown` | Reorder / move active tab left or right |
+| `Ctrl + Enter` / `Shift + Enter` | Insert newline (`\n`) without executing command (multi-line scripts) |
 | `Ctrl + Shift + H` | Toggle live Command & Directory History drawer |
 | `F1` | Open Help & Keyboard Shortcuts guide |
 | `Escape` | Clear search filter / close active overlay / dialog and focus terminal |
