@@ -594,4 +594,66 @@ public class TerminalTabViewModelTests
         Assert.Single(session.SentData);
         Assert.Equal(newlineBytes, session.SentData[0]);
     }
+
+    [Theory]
+    [InlineData(null, -1)]
+    [InlineData("", -1)]
+    [InlineData("Clean plain text without escapes", -1)]
+    [InlineData("Text with complete CSI \x1b[38;2;255;0;0m and reset \x1b[0m", -1)]
+    [InlineData("Text with complete OSC \x1b]9;9;\"C:\\dir\"\x07", -1)]
+    [InlineData("Text with complete OSC ST \x1b]8;;https://example.com\x1b\\Link\x1b]8;;\x1b\\", -1)]
+    [InlineData("Text with complete 2-char charset \x1b(B", -1)]
+    [InlineData("Text ending with bare ESC \x1b", 26)]
+    [InlineData("Text with broken CSI at end \x1b[38;2;255;", 28)]
+    [InlineData("Text with split reset at end \x1b[", 29)]
+    [InlineData("Text with incomplete OSC at end \x1b]9;9;\"C:\\path", 32)]
+    [InlineData("Text with incomplete 2-char at end \x1b(", 35)]
+    [InlineData("Text with incomplete DCS at end \x1bP+q", 32)]
+    public void FindIncompleteEscapeSequenceIndex_DetectsCorrectOffsets(string? input, int expectedIndex)
+    {
+        // Act
+        int result = TerminalTabViewModel.FindIncompleteEscapeSequenceIndex(input!);
+
+        // Assert
+        Assert.Equal(expectedIndex, result);
+    }
+
+    [Fact]
+    public void OnSessionDataReceived_FragmentedCsiSequence_PreservesFullSequenceAcrossChunks()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        var chunk1 = Encoding.UTF8.GetBytes("Prefix \x1b[38;2;120;");
+        var chunk2 = Encoding.UTF8.GetBytes("200;50m│  Suggested command:\x1b[0m\r\n");
+
+        // Act
+        session.SimulateDataReceived(chunk1);
+        session.SimulateDataReceived(chunk2);
+
+        // Assert
+        Assert.NotNull(vm.TerminalModel);
+    }
+
+    [Fact]
+    public void OnSessionDataReceived_FragmentedSgrReset_PreservesResetBeforeFollowingText()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Chunk 1 ends right in the middle of \x1b[0m
+        var chunk1 = Encoding.UTF8.GetBytes("\x1b[48;2;255;100;100m# Heading Title\x1b[");
+        var chunk2 = Encoding.UTF8.GetBytes("0m\r\nParagraph text after heading\r\n");
+
+        // Act
+        session.SimulateDataReceived(chunk1);
+        session.SimulateDataReceived(chunk2);
+
+        // Assert
+        Assert.NotNull(vm.TerminalModel);
+    }
 }

@@ -142,7 +142,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     private double _terminalFontSize = 12.0;
 
     [ObservableProperty]
-    private FontFamily _terminalFontFamily = new("Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, DejaVu Sans Mono, monospace");
+    private FontFamily _terminalFontFamily = new("Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace");
 
     [ObservableProperty]
     private string _commandFilterQuery = string.Empty;
@@ -321,10 +321,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
                     DirectoryHistory.Add(dir);
                 }
             }
-            if (!string.IsNullOrWhiteSpace(WorkingDirectory) && !DirectoryHistory.Contains(WorkingDirectory))
-            {
-                DirectoryHistory.Add(WorkingDirectory);
-            }
         }
 
         RefreshFilteredCommands();
@@ -399,6 +395,80 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         return OscSequenceRegex.Replace(text, string.Empty);
     }
 
+    /// <summary>
+    /// Finds the start index of an incomplete ANSI/VT100 escape sequence at the end of the text stream,
+    /// or -1 if the text ends with complete escape sequences / plain characters.
+    /// Used to buffer fragmented sequences across stream chunks and prevent color bleeding and render corruption.
+    /// </summary>
+    public static int FindIncompleteEscapeSequenceIndex(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return -1;
+
+        int lastEsc = text.LastIndexOf('\x1b');
+        if (lastEsc < 0) return -1;
+
+        // If ESC is the very last character in the buffer, it is definitely incomplete
+        if (lastEsc == text.Length - 1) return lastEsc;
+
+        char nextChar = text[lastEsc + 1];
+
+        // 1. CSI sequence: \x1b[ ...
+        if (nextChar == '[')
+        {
+            // Scan subsequent characters up to end of string for a final byte (0x40..0x7E, e.g. 'm', 'H', 'K', 'J', 'h', 'l', etc.)
+            for (int i = lastEsc + 2; i < text.Length; i++)
+            {
+                char ch = text[i];
+                if (ch >= 0x40 && ch <= 0x7E)
+                {
+                    // CSI is complete!
+                    return -1;
+                }
+            }
+            // No final byte found -> CSI is incomplete
+            return lastEsc;
+        }
+
+        // 2. OSC sequence: \x1b] ... (terminated by BEL \x07 or ST \x1b\)
+        if (nextChar == ']')
+        {
+            int bel = text.IndexOf('\x07', lastEsc + 2);
+            int st = text.IndexOf("\x1b\\", lastEsc + 2, StringComparison.Ordinal);
+            if (bel < 0 && st < 0)
+            {
+                return lastEsc;
+            }
+            return -1;
+        }
+
+        // 3. DCS / APC / PM / SOS sequences (\x1bP, \x1b_, \x1b^, \x1bX) terminated by ST (\x1b\) or BEL (\x07)
+        if (nextChar is 'P' or '_' or '^' or 'X')
+        {
+            int bel = text.IndexOf('\x07', lastEsc + 2);
+            int st = text.IndexOf("\x1b\\", lastEsc + 2, StringComparison.Ordinal);
+            if (bel < 0 && st < 0)
+            {
+                return lastEsc;
+            }
+            return -1;
+        }
+
+        // 4. Two-character designation sequences: \x1b(, \x1b), \x1b*, \x1b+, \x1b#, \x1b%
+        if (nextChar is '(' or ')' or '*' or '+' or '#' or '%')
+        {
+            // Requires 1 more character after nextChar
+            if (lastEsc + 2 >= text.Length)
+            {
+                return lastEsc;
+            }
+            return -1;
+        }
+
+        // 5. Standalone 2-character escape sequences (e.g. \x1bM, \x1bD, \x1bE, \x1b7, \x1b8, \x1bc, \x1b=, \x1b>)
+        // Since lastEsc < text.Length - 1, the 2nd character is already present.
+        return -1;
+    }
+
     private void OnSessionDataReceived(byte[] data)
     {
         if (data.Length == 0) return;
@@ -421,33 +491,20 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             var current = _streamBuffer.ToString();
             _streamBuffer.Clear();
 
-            // 1. Strip all complete OSC sequences
-            var sanitized = OscSequenceRegex.Replace(current, string.Empty);
+            // 1. Check if there is an incomplete ANSI/VT100 escape sequence at the end of the current stream
+            int incompleteIndex = FindIncompleteEscapeSequenceIndex(current);
+            if (incompleteIndex >= 0)
+            {
+                // Buffer the incomplete tail for the next incoming chunk
+                _streamBuffer.Append(current[incompleteIndex..]);
+                current = current[..incompleteIndex];
+            }
 
-            // 2. Check if there is an unclosed OSC sequence starting near the end
-            int lastEsc = sanitized.LastIndexOf("\x1b]", StringComparison.Ordinal);
-            if (lastEsc >= 0)
-            {
-                int termBel = sanitized.IndexOf('\x07', lastEsc);
-                int termSt = sanitized.IndexOf("\x1b\\", lastEsc, StringComparison.Ordinal);
-                if (termBel < 0 && termSt < 0)
-                {
-                    // Buffer the incomplete OSC sequence for the next incoming chunk
-                    _streamBuffer.Append(sanitized[lastEsc..]);
-                    textToFeed = sanitized[..lastEsc];
-                }
-                else
-                {
-                    textToFeed = sanitized;
-                }
-            }
-            else
-            {
-                textToFeed = sanitized;
-            }
+            // 2. Strip unsupported complete OSC sequences (e.g. OSC 133 / OSC 9;9 shell integration)
+            textToFeed = SanitizeTerminalText(current);
 
             // Safety boundary on stream buffer
-            if (_streamBuffer.Length > 8192)
+            if (_streamBuffer.Length > 16384)
             {
                 _streamBuffer.Clear();
             }
