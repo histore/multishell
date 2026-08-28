@@ -656,4 +656,32 @@ public class TerminalTabViewModelTests
         // Assert
         Assert.NotNull(vm.TerminalModel);
     }
+
+    [Fact]
+    public void InspectTerminalBuffer_InspectsLineExtraction()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        vm.TerminalModel.Feed("echo https://github.com/histore/multishell\r\n");
+
+        var term = vm.TerminalModel.Terminal;
+        var buffer = term.GetType().GetProperty("Buffer")?.GetValue(term);
+        Assert.NotNull(buffer);
+
+        var getLineMethod = buffer!.GetType().GetMethod("GetLine", [typeof(int)]);
+        Assert.NotNull(getLineMethod);
+
+        var yDisp = Convert.ToInt32(buffer.GetType().GetProperty("YDisp")?.GetValue(buffer) ?? 0);
+        var line0 = getLineMethod!.Invoke(buffer, new object[] { yDisp });
+        Assert.NotNull(line0);
+
+        var strMethod = line0!.GetType().GetMethod("TranslateToString", [typeof(bool), typeof(int), typeof(int)]);
+        Assert.NotNull(strMethod);
+
+        var text = strMethod!.Invoke(line0, new object[] { true, 0, term.Cols })?.ToString();
+        Assert.Equal("echo https://github.com/histore/multishell", text);
+    }
 }
