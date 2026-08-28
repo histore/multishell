@@ -576,4 +576,22 @@ public class TerminalTabViewModelTests
         var expected = $"Hello World{Environment.NewLine}Second Line";
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void SendInput_NewlineByte_PassesLinefeedDirectlyToShell()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        var newlineBytes = new byte[] { 0x0A };
+
+        // Act
+        vm.SendInput(newlineBytes);
+
+        // Assert
+        Assert.Single(session.SentData);
+        Assert.Equal(newlineBytes, session.SentData[0]);
+    }
 }
