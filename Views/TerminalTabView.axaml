@@ -13,18 +13,30 @@
 
     <!-- ThemeVariantScope explicitly sets ThemeVariant for the terminal and its color palette -->
     <ThemeVariantScope x:Name="TerminalScope" UseLayoutRounding="True">
-        <!-- True terminal emulator control backed by ConPTY -->
-        <terminal:TerminalControl x:Name="Terminal"
-                                  Model="{Binding TerminalModel}"
-                                  RightClickAction="None"
-                                  Focusable="True"
-                                  UseLayoutRounding="True"
-                                  HorizontalAlignment="Stretch"
-                                  VerticalAlignment="Stretch"
-                                  Background="{Binding TerminalBackgroundBrush}"
-                                  CaretBrush="{Binding TerminalCaretBrush}"
-                                  FontSize="{Binding TerminalFontSize}"
-                                  FontFamily="{Binding TerminalFontFamily}"
-                                  Margin="8,6,8,6" />
+        <Grid>
+            <!-- True terminal emulator control backed by ConPTY -->
+            <terminal:TerminalControl x:Name="Terminal"
+                                      Model="{Binding TerminalModel}"
+                                      RightClickAction="None"
+                                      Focusable="True"
+                                      UseLayoutRounding="True"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      Background="{Binding TerminalBackgroundBrush}"
+                                      CaretBrush="{Binding TerminalCaretBrush}"
+                                      FontSize="{Binding TerminalFontSize}"
+                                      FontFamily="{Binding TerminalFontFamily}"
+                                      Margin="8,6,8,6" />
+
+            <!-- Interactive Link / File Path Hover Highlighting Adorner (REQ-TERM-005) -->
+            <Canvas IsHitTestVisible="False" Margin="8,6,8,6">
+                <Border x:Name="HoverLinkBorder"
+                        IsVisible="False"
+                        Background="#253B82F6"
+                        BorderBrush="#803B82F6"
+                        BorderThickness="0,0,0,1.5"
+                        CornerRadius="2" />
+            </Canvas>
+        </Grid>
     </ThemeVariantScope>
 </UserControl>

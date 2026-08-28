@@ -48,8 +48,15 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TERM-002` | Multi-line Newline Insertion via `Ctrl+Enter` and `Shift+Enter` | Terminal | **IMPLEMENTED** | `TerminalTabView`, `TerminalTabViewModelTests` |
 | `REQ-TERM-004` | Multi-Chunk ANSI/VT100 Sequence Preservation & Color Bleed Prevention | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests` |
 | `REQ-TAB-019` | Unified Interactive Tab Switcher Overlay (Ctrl+Tab & Tab Bar Menu Button) | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
+| `REQ-TERM-005` | Clickable Hyperlinks & Local File Paths via `Ctrl+Click` | Terminal | **IMPLEMENTED** | `LinkDetectionHelperTests`, `TerminalTabView` |
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts | UI | **BACKLOG** | TBD |
 | `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | Terminal | **BACKLOG** | TBD |
+| `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
+| `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
+| `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
+| `REQ-TERM-007` | Broadcast / Multi-Input Mode across Tabs / Panes | Terminal | **BACKLOG** | TBD |
+| `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | Interaction | **BACKLOG** | TBD |
+| `REQ-UI-007` | Windows 11 Acrylic & Mica Window Backdrop Effects | UI | **BACKLOG** | TBD |
 
 ---
 
@@ -492,6 +499,20 @@ This document serves as the single source of truth for all functional and non-fu
 
 ---
 
+### REQ-TERM-005: Clickable Hyperlinks & Local File Paths via `Ctrl+Click`
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want Web URLs (`http://`, `https://`) and local file paths (`C:\...`, relative paths, line numbers `:42`) in terminal output to be interactively clickable via `Ctrl + Left-Click`, automatically opening the URL in my default browser or the file in my default editor.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab in MultiShell displaying command output containing links or file paths,
+  - **When** the user holds `Ctrl` and left-clicks on an `http://` or `https://` URL (or text selection containing a URL),
+  - **Then** the URL is launched in the default system web browser.
+  - **When** the user holds `Ctrl` and left-clicks on an existing file path (absolute or relative to the tab's working directory, with or without `:line` suffix),
+  - **Then** the file is opened with the system default application or editor.
+  - **When** holding `Ctrl` while moving the mouse over a detected hyperlink or file path in the terminal,
+  - **Then** the mouse cursor switches to a Hand pointer (`Cursor="Hand"`).
+
+---
+
 ## 🔮 Future / Backlog Features
 
 ### REQ-AI-001: Context-Aware AI Command Generator & Auto-Suggest
@@ -532,4 +553,67 @@ This document serves as the single source of truth for all functional and non-fu
   - **When** pressing `Shift+PageUp` or `Shift+PageDown`, the viewport scrolls through previous output.
   - **When** pressing `Ctrl+Shift+K`, the terminal buffer is cleared.
   - **When** pressing `Ctrl+Shift+C` or `Ctrl+Shift+V`, text is copied or pasted without interfering with Unix signals.
+
+---
+
+### REQ-UI-006: Split Panes (Horizontal & Vertical Session Splits within Tab)
+- **Status**: `PLANNED`
+- **User Story**: As a power user, I want to split a tab into multiple horizontal or vertical terminal panes (`Alt+Shift++` / `Alt+Shift+-`), navigating between them with `Alt+ArrowKeys` and resizing separators with the mouse.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab,
+  - **When** triggering vertical split, a new independent shell session is created side-by-side in the same tab.
+  - **When** triggering horizontal split, a new session is created stacked below.
+  - **When** closing a split pane, remaining panes expand to fill the available space.
+
+---
+
+### REQ-TERM-006: In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`)
+- **Status**: `PLANNED`
+- **User Story**: As a user, I want an in-terminal search bar overlay (`Ctrl+Shift+F`) with real-time match highlighting, `F3` / `Shift+F3` next/prev navigation, and regex support.
+- **Acceptance Criteria**:
+  - **Given** terminal output with scrollback,
+  - **When** pressing `Ctrl+Shift+F`, a search bar opens in the upper right corner.
+  - **When** typing a query, all occurrences in the terminal viewport and buffer are highlighted with active match counter (`Match 3 of 12`).
+  - **When** pressing `Enter` or `F3`, viewport jumps to the next match; `Shift+F3` jumps to previous.
+  - **When** pressing `Escape`, search bar closes and highlights clear.
+
+---
+
+### REQ-TAB-020: Custom Tab Renaming & Tab Color Palette Tagging
+- **Status**: `PLANNED`
+- **User Story**: As a user, I want to assign custom titles and color badges to tabs via right-click context menu (e.g. Red for Production/SSH, Green for Tests, Blue for Dev).
+- **Acceptance Criteria**:
+  - **Given** an open tab in the tab bar,
+  - **When** right-clicking a tab and selecting "Rename Tab" or double-clicking the tab title, an inline edit box appears.
+  - **When** selecting a color from the tab context menu, a color indicator dot or accent border is applied to that tab.
+  - **When** restarting the app, custom titles and color tags are restored from persistent workspace state.
+
+---
+
+### REQ-TERM-007: Broadcast / Multi-Input Mode across Tabs / Panes
+- **Status**: `PLANNED`
+- **User Story**: As a systems operator, I want a broadcast input toggle (`Ctrl+Shift+B`) that mirrors keyboard input simultaneously to all open tabs or split panes.
+- **Acceptance Criteria**:
+  - **Given** multiple open tabs,
+  - **When** activating broadcast mode, a prominent status badge indicates broadcast is active.
+  - **When** typing in the active terminal, identical keystrokes and escape codes are dispatched to all active PTY sessions.
+
+---
+
+### REQ-SNIP-001: Customizable Snippet & Quick Command Launcher
+- **Status**: `PLANNED`
+- **User Story**: As a developer, I want a quick snippet drawer or overlay with tagged PowerShell scripts and Docker/Git commands that can be inserted or executed with a single click.
+- **Acceptance Criteria**:
+  - **Given** configured snippets in settings,
+  - **When** opening the snippet bar, items are categorized and filterable.
+  - **When** clicking a snippet, it is pasted into the terminal prompt.
+
+---
+
+### REQ-UI-007: Windows 11 Acrylic & Mica Window Backdrop Effects
+- **Status**: `PLANNED`
+- **User Story**: As a user on Windows 11, I want native Mica / Acrylic window transparency blur effects with configurable background opacity.
+- **Acceptance Criteria**:
+  - **Given** Windows 11 OS,
+  - **When** enabling transparency in Settings, the window background enables `Mica` or `Acrylic` blur backdrop with dark/light theme harmonization.
 
