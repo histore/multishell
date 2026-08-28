@@ -236,8 +236,34 @@ public partial class MainWindow : Window
             };
         }
 
+        if (TabSwitcherOverlay != null)
+        {
+            TabSwitcherOverlay.PointerPressed += (_, e) =>
+            {
+                if (e.Source == TabSwitcherOverlay && DataContext is MainViewModel vm)
+                {
+                    vm.CancelTabSwitcher();
+                    FocusActiveTerminal();
+                }
+            };
+        }
+
+        if (TabSwitcherListBox != null)
+        {
+            TabSwitcherListBox.PointerPressed += (_, e) =>
+            {
+                if (DataContext is MainViewModel vm && TabSwitcherListBox.SelectedItem is TerminalTabViewModel tab)
+                {
+                    vm.SelectTabFromSwitcher(tab);
+                    FocusActiveTerminal();
+                    e.Handled = true;
+                }
+            };
+        }
+
         // Window-level Keyboard Filter
         AddHandler(InputElement.KeyDownEvent, OnWindowKeyDown, RoutingStrategies.Tunnel);
+        AddHandler(InputElement.KeyUpEvent, OnWindowKeyUp, RoutingStrategies.Tunnel);
 
         DataContextChanged += (_, _) =>
         {
@@ -280,6 +306,39 @@ public partial class MainWindow : Window
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
+        // Tab Switcher Active Keyboard Handling (REQ-TAB-019)
+        if (DataContext is MainViewModel switcherVm && switcherVm.IsTabSwitcherOpen)
+        {
+            var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+            if (e.Key == Key.Tab || e.Key == Key.PageDown || e.Key == Key.Down)
+            {
+                switcherVm.AdvanceTabSwitcher(forward: !isShift);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.PageUp || e.Key == Key.Up)
+            {
+                switcherVm.AdvanceTabSwitcher(forward: false);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.Enter)
+            {
+                switcherVm.CommitTabSwitcher();
+                FocusActiveTerminal();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.Escape)
+            {
+                switcherVm.CancelTabSwitcher();
+                FocusActiveTerminal();
+                e.Handled = true;
+                return;
+            }
+        }
+
         // Ctrl+Shift+H: Toggle History Drawer
         if (e.Key == Key.H && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift))
         {
@@ -395,6 +454,13 @@ public partial class MainWindow : Window
         // Escape: Close active dialog or drawer
         if (e.Key == Key.Escape)
         {
+            if (DataContext is MainViewModel dvm && dvm.IsTabSwitcherOpen)
+            {
+                dvm.CancelTabSwitcher();
+                FocusActiveTerminal();
+                e.Handled = true;
+                return;
+            }
             if (HelpModal?.IsVisible == true)
             {
                 HideHelpModal();
@@ -451,17 +517,10 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                // 3. Ctrl+Tab / Ctrl+Shift+Tab: Cycle tabs (wrap around)
+                // 3. Ctrl+Tab / Ctrl+Shift+Tab: Unified Tab Switcher HUD (REQ-TAB-019)
                 if (isCtrl && e.Key == Key.Tab)
                 {
-                    if (isShift)
-                    {
-                        vm.CyclePreviousTab();
-                    }
-                    else
-                    {
-                        vm.CycleNextTab();
-                    }
+                    vm.ShowTabSwitcher(forward: !isShift, isKeyboardTriggered: true);
                     e.Handled = true;
                     return;
                 }
@@ -503,6 +562,20 @@ public partial class MainWindow : Window
                         return;
                     }
                 }
+            }
+        }
+    }
+
+    private void OnWindowKeyUp(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is MainViewModel vm && vm.IsTabSwitcherOpen && vm.TabSwitcherIsKeyboardTriggered)
+        {
+            // When Ctrl key is released (or Ctrl is no longer present in modifier flags), commit tab switch
+            if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl || (e.KeyModifiers & KeyModifiers.Control) == 0)
+            {
+                vm.CommitTabSwitcher();
+                FocusActiveTerminal();
+                e.Handled = true;
             }
         }
     }

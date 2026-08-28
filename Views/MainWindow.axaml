@@ -158,22 +158,30 @@
             <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
         </Style>
 
-        <!-- Tab Menu Items Style inside Flyout -->
-        <Style Selector="Button.tabMenuItemBtn">
+        <!-- Tab Switcher ListBox Styles -->
+        <Style Selector="ListBox.tabSwitcherListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        </Style>
+        <Style Selector="ListBox.tabSwitcherListBox ListBoxItem">
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="Padding" Value="8,6" />
-            <Setter Property="Margin" Value="0,1" />
         </Style>
-        <Style Selector="Button.tabMenuItemBtn:pointerover">
+        <Style Selector="ListBox.tabSwitcherListBox ListBoxItem:pointerover">
             <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
             <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
         </Style>
-        <Style Selector="Button.tabMenuItemBtn.active">
+        <Style Selector="ListBox.tabSwitcherListBox ListBoxItem:selected">
             <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
-            <Setter Property="Foreground" Value="{DynamicResource AppAccent}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
         </Style>
 
         <!-- Header Action Buttons (History, Settings) -->
@@ -484,45 +492,18 @@
                             VerticalAlignment="Bottom"
                             Margin="2,0,2,0" />
 
-                    <!-- Quick Tab List Dropdown Button -->
+                    <!-- Quick Tab List / Tab Switcher Button -->
                     <Button x:Name="TabListMenuButton"
                             Grid.Column="3"
                             Classes="tabMenuBtn"
                             ToolTip.Tip="{Binding Loc[Btn_Tab_Menu_Tooltip]}"
+                            Command="{Binding ToggleTabSwitcherCommand}"
                             VerticalAlignment="Bottom"
                             Margin="2,0,0,0">
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock Text="≡" FontSize="11" VerticalAlignment="Center" />
                             <TextBlock Text="▾" FontSize="9" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
                         </StackPanel>
-                        <Button.Flyout>
-                            <Flyout Placement="BottomEdgeAlignedRight">
-                                <Border Background="{DynamicResource AppSurfaceSubtle}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="6" Padding="6" MinWidth="260" MaxHeight="350">
-                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                        <ItemsControl ItemsSource="{Binding Tabs}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="vm:TerminalTabViewModel">
-                                                    <Button Classes="tabMenuItemBtn"
-                                                            Classes.active="{Binding IsSelected}"
-                                                            Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).SelectTabCommand}"
-                                                            CommandParameter="{Binding}"
-                                                            HorizontalAlignment="Stretch">
-                                                        <Grid ColumnDefinitions="Auto, *, Auto">
-                                                            <TextBlock Grid.Column="0" Text=">_" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
-                                                                <TextBlock Text="{Binding WorkingDirectory}" FontSize="10" Foreground="{DynamicResource AppTextMuted}" TextTrimming="PrefixCharacterEllipsis" />
-                                                            </StackPanel>
-                                                            <TextBlock Grid.Column="2" Text="●" FontSize="8" Foreground="{DynamicResource AppSuccess}" IsVisible="{Binding IsSelected}" Margin="8,0,0,0" VerticalAlignment="Center" />
-                                                        </Grid>
-                                                    </Button>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </ScrollViewer>
-                                </Border>
-                            </Flyout>
-                        </Button.Flyout>
                     </Button>
                 </Grid>
 
@@ -1252,6 +1233,116 @@
                             <Button Grid.Column="0" Content="{Binding Loc[Profiles_Btn_Reset]}" Command="{Binding ResetProfilesToDefaultCommand}" FontSize="11" Padding="8,4" Background="Transparent" Foreground="{DynamicResource AppTextMuted}" />
                             <Button Grid.Column="2" Content="{Binding Loc[Profiles_Btn_Add]}" Command="{Binding StartNewProfileCommand}" FontSize="11" FontWeight="Bold" Padding="14,5" Background="{DynamicResource AppAccent}" Foreground="#FFFFFF" CornerRadius="4" />
                         </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ========================================== -->
+            <!-- Unified Tab Switcher HUD Overlay (Ctrl+Tab & Tab Bar Button) -->
+            <!-- ========================================== -->
+            <Grid x:Name="TabSwitcherOverlay"
+                  x:DataType="vm:MainViewModel"
+                  Background="#66000000"
+                  IsVisible="{Binding IsTabSwitcherOpen}"
+                  ZIndex="45"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch">
+                <Border Width="520"
+                        MaxHeight="420"
+                        Background="{DynamicResource AppSurfaceModal}"
+                        BorderBrush="{DynamicResource AppBorder}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        BoxShadow="0 8 32 0 #88000000"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="16">
+                    <Grid RowDefinitions="Auto, *, Auto">
+                        <!-- Switcher Header -->
+                        <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" Margin="0,0,0,12">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <TextBlock Text="📑" FontSize="14" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Loc[Tab_Switcher_Title]}"
+                                           FontWeight="Bold"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource AppAccent}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding TabSwitcherCountText}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource AppTextMuted}"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0,0,0" />
+                            <Button Grid.Column="2"
+                                    Content="✕"
+                                    Classes="tabCloseBtn"
+                                    Command="{Binding CancelTabSwitcherCommand}"
+                                    Width="22" Height="22"
+                                    FontSize="11"
+                                    Padding="0" />
+                        </Grid>
+
+                        <!-- Switcher Tab List -->
+                        <Border Grid.Row="1" Classes="modalSection" Margin="0,0,0,10" Padding="4">
+                            <ListBox x:Name="TabSwitcherListBox"
+                                     Classes="tabSwitcherListBox"
+                                     ItemsSource="{Binding Tabs}"
+                                     SelectedIndex="{Binding TabSwitcherSelectedIndex, Mode=TwoWay}"
+                                     MaxHeight="280">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:TerminalTabViewModel">
+                                        <Grid ColumnDefinitions="Auto, *, Auto"
+                                              Background="Transparent">
+                                            <!-- Shell Badge Icon -->
+                                            <Border Grid.Column="0"
+                                                    Background="{DynamicResource AppSurfaceSubtle}"
+                                                    BorderBrush="{DynamicResource AppBorder}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4"
+                                                    Padding="6,3"
+                                                    Margin="0,0,10,0"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text=">_"
+                                                           FontFamily="Consolas, monospace"
+                                                           FontSize="11"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource AppAccent}" />
+                                            </Border>
+
+                                            <!-- Tab Title & Directory -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                <TextBlock Text="{Binding Title}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource AppTextPrimary}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding WorkingDirectory}"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource AppTextMuted}"
+                                                           TextTrimming="PrefixCharacterEllipsis" />
+                                            </StackPanel>
+
+                                            <!-- Active Badge Indicator -->
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="8,0,4,0">
+                                                <TextBlock Text="●"
+                                                           FontSize="9"
+                                                           Foreground="{DynamicResource AppSuccess}"
+                                                           IsVisible="{Binding IsSelected}"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+
+                        <!-- Switcher Footer (Shortcuts / Navigation Hint) -->
+                        <TextBlock Grid.Row="2"
+                                   Text="{Binding TabSwitcherHintText}"
+                                   FontSize="10"
+                                   Foreground="{DynamicResource AppTextMuted}"
+                                   HorizontalAlignment="Center" />
                     </Grid>
                 </Border>
             </Grid>
