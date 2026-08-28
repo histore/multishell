@@ -25,7 +25,7 @@ All changes must be developed in dedicated feature, fix, or maintenance branches
 
 ## 2. End-to-End Development Lifecycle
 
-Every code change moves through a structured, quality-gated 8-stage lifecycle:
+Every code change moves through a structured, quality-gated 9-stage lifecycle:
 
 ```mermaid
 flowchart TD
@@ -35,11 +35,12 @@ flowchart TD
     D -->|"Verifikation"| E["5. Quality Gate Audit"]
     E -->|"Pass"| F["6. Developer Review & Live Testing Gate"]
     F -->|"Needs Changes / Corrections"| C
-    F -->|"Approved"| G["7. Commit & Open PR via CommitManager"]
-    G -->|"GitHub Actions CI"| H{"CI Build & Test Pass?"}
-    H -->|"No"| C
-    H -->|"Yes"| I["8. Maintainer Review & Squash Merge"]
-    I -->|"ReleaseManager"| J["SemVer Tag vX.Y.Z & GitHub Release"]
+    F -->|"Approved"| G["7. Commit & Push via CommitManager"]
+    G -->|"PRManager"| H["8. Open PR & CI Check"]
+    H -->|"GitHub Actions CI"| I{"CI Build & Test Pass?"}
+    I -->|"No"| C
+    I -->|"Yes"| J["9. Maintainer Review & Squash Merge (PRManager)"]
+    J -->|"ReleaseManager"| K["SemVer Tag vX.Y.Z & GitHub Release"]
 ```
 
 ### Stage 1: Requirement Specification (`RequirementEngineer`)
@@ -80,19 +81,31 @@ git checkout -b feat/REQ-025-tab-split-view
   - **Pre-PR Corrections**: If issues are found, the subagents (`Developer`, `UIDesigner`, `Architekt`, `Tester`) immediately iterate and apply corrections before any PR is created or merged.
   - **Explicit Approval**: Once the developer confirms that the feature functions as expected, the workflow proceeds to Stage 7.
 
-### Stage 7: Commit & Pull Request (`CommitManager`)
+### Stage 7: Conventional Commit & Push (`CommitManager`)
 - Stage and commit changes using the **Conventional Commits** specification:
   - Format: `<type>(<scope>): <summary>`
   - Example: `feat(terminal): add tab split view and layout persistence`
-- Push branch and create a Pull Request against `main`:
+- Push to the upstream feature branch:
   ```powershell
   git push -u origin feat/REQ-025-tab-split-view
-  gh pr create --fill
   ```
 
-### Stage 8: CI Check, Review & Squash Merge (Maintainer)
-- GitHub Actions CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) automatically runs builds and tests on Windows.
-- The project maintainer reviews the PR and executes a **Squash and Merge**.
+### Stage 8: Pull Request Creation & CI Check (`PRManager`)
+- Open a Pull Request targeting `main` using the structured template [`.github/pull_request_template.md`](.github/pull_request_template.md):
+  ```powershell
+  gh pr create --title "feat(terminal): add tab split view" --body "<filled-pr-template>"
+  ```
+- Monitor GitHub Actions CI build and test results:
+  ```powershell
+  gh pr checks
+  ```
+
+### Stage 9: Maintainer Review, Squash Merge & Release (`PRManager` & `ReleaseManager`)
+- The project maintainer reviews the PR and executes a **Squash and Merge** with branch deletion:
+  ```powershell
+  gh pr merge --squash --delete-branch
+  ```
+- `ReleaseManager` verifies milestones and tags releases upon user confirmation per [Section 4](#4-release--versioning-policy-releasemanager).
 
 ---
 

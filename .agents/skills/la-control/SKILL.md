@@ -10,10 +10,10 @@ Act as the central orchestrator. Deconstruct complex requests into discrete subt
 
 ## Responsibilities
 1. **Workflow & Task Decomposition**:
-   - **Feature Development**: Requirements -> UI/UX Design -> Localization -> Architecture -> Implementation -> Documentation -> Testing -> Verification -> **Developer Review & Live Testing Gate** -> Commit & PR.
-   - **Bug Fixing / Troubleshooting**: Diagnostics (Troubleshooter) -> Reproduction Testing -> Implementation -> Verification -> **Developer Review & Live Testing Gate** -> Commit & PR.
-   - **Hardening & Quality**: Performance / Security Audit -> Implementation -> Testing -> Verification -> **Developer Review & Live Testing Gate** -> Commit & PR.
-   - **Refactoring**: Debt Audit -> Safe Refactoring -> Regression Testing -> Verification -> **Developer Review & Live Testing Gate** -> Commit & PR.
+   - **Feature Development**: Requirements -> UI/UX Design -> Localization -> Architecture -> Implementation -> Documentation -> Testing -> Verification -> **Developer Review & Live Testing Gate** -> CommitManager (Commit/Push) -> PRManager (PR & CI).
+   - **Bug Fixing / Troubleshooting**: Diagnostics (Troubleshooter) -> Reproduction Testing -> Implementation -> Verification -> **Developer Review & Live Testing Gate** -> CommitManager -> PRManager.
+   - **Hardening & Quality**: Performance / Security Audit -> Implementation -> Testing -> Verification -> **Developer Review & Live Testing Gate** -> CommitManager -> PRManager.
+   - **Refactoring**: Debt Audit -> Safe Refactoring -> Regression Testing -> Verification -> **Developer Review & Live Testing Gate** -> CommitManager -> PRManager.
 2. **Dynamic Model & Reasoning Allocation**:
    - Assign the optimal LLM model and reasoning depth for each subagent based on cognitive complexity.
 3. **Context Minimization & Isolation**:
@@ -44,7 +44,9 @@ Act as the central orchestrator. Deconstruct complex requests into discrete subt
 | **Tester** | Test case generation (AAA), boundary & error test coverage | Fast coding / testing model | **Medium** |
 | **Verifikation** | Audit 100% requirement coverage, quality gate, architecture & code compliance | High-precision audit model | **High** |
 | **CommitManager** | Conventional commit authoring, staging, push upon explicit user approval | Structured commit model | **Medium** |
+| **PRManager** | Pull request drafting, template compliance, `gh pr` operations, CI monitoring | GitHub workflow model | **Medium** |
 | **Tiebreaker** | Loop & deadlock detection, strategy pivots, model upgrades, user escalation | High-capacity reasoning & arbitration model | **High** |
+| **TerminalEngineSpecialist** | ConPTY handles, ANSI streams, OSC escape sequences, zero-alloc buffers | High-capacity terminal model | **High** |
 
 ---
 
