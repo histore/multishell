@@ -684,4 +684,77 @@ public class TerminalTabViewModelTests
         var text = strMethod!.Invoke(line0, new object[] { true, 0, term.Cols })?.ToString();
         Assert.Equal("echo https://github.com/histore/multishell", text);
     }
+
+    [Theory]
+    [InlineData("chcp 65001", true)]
+    [InlineData("chcp 65001 >$null", true)]
+    [InlineData("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8", true)]
+    [InlineData("$OutputEncoding = [System.Text.Encoding]::UTF8", true)]
+    [InlineData("$function:prompt = { ... }", true)]
+    [InlineData("Set-PSReadLineOption -AddToHistoryHandler { ... }", true)]
+    [InlineData("__multishell_init", true)]
+    [InlineData("git status", false)]
+    [InlineData("dotnet test", false)]
+    [InlineData("dir", false)]
+    [InlineData("npm run build", false)]
+    [InlineData("cd src", false)]
+    [InlineData("cls", false)]
+    [InlineData("clear", false)]
+    public void IsInternalConfigurationCommand_ValidatesCommandPatterns(string cmd, bool expectedIgnored)
+    {
+        // Act
+        bool result = TerminalTabViewModel.IsInternalConfigurationCommand(cmd);
+
+        // Assert
+        Assert.Equal(expectedIgnored, result);
+    }
+
+    [Fact]
+    public void OnSessionCommandExecuted_FiltersInternalCommandsAndKeepsUserCommands()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        session.SimulateCommandExecuted("chcp 65001 >$null");
+        session.SimulateCommandExecuted("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8");
+        session.SimulateCommandExecuted("git status");
+        session.SimulateCommandExecuted("dotnet build");
+        session.SimulateCommandExecuted("Set-PSReadLineOption -AddToHistoryHandler { ... }");
+
+        // Assert
+        Assert.Equal(2, vm.CommandHistory.Count);
+        Assert.Contains("git status", vm.CommandHistory);
+        Assert.Contains("dotnet build", vm.CommandHistory);
+        Assert.DoesNotContain("chcp 65001 >$null", vm.CommandHistory);
+        Assert.DoesNotContain("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8", vm.CommandHistory);
+    }
+
+    [Fact]
+    public void RestoreHistory_FiltersInternalCommands()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        using var vm = new TerminalTabViewModel(session);
+        var rawHistory = new[]
+        {
+            "chcp 65001",
+            "git status",
+            "[Console]::OutputEncoding = UTF8",
+            "cargo build",
+            "$OutputEncoding = UTF8"
+        };
+
+        // Act
+        vm.RestoreHistory(rawHistory, null);
+
+        // Assert
+        Assert.Equal(2, vm.CommandHistory.Count);
+        Assert.Contains("git status", vm.CommandHistory);
+        Assert.Contains("cargo build", vm.CommandHistory);
+        Assert.DoesNotContain("chcp 65001", vm.CommandHistory);
+        Assert.DoesNotContain("$OutputEncoding = UTF8", vm.CommandHistory);
+    }
 }
+

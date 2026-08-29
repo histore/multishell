@@ -297,6 +297,19 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private static readonly Regex InternalConfigCommandRegex = new(
+        @"^(chcp(\s+.*)?|\[Console\]::.*|\$OutputEncoding.*|\$function:prompt.*|Set-PSReadLineOption.*|__multishell_.*)$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// Checks if a command is an internal configuration, setup, or prompt-hook command that should be excluded from CommandHistory.
+    /// </summary>
+    public static bool IsInternalConfigurationCommand(string? command)
+    {
+        if (string.IsNullOrWhiteSpace(command)) return true;
+        return InternalConfigCommandRegex.IsMatch(command.Trim());
+    }
+
     public void RestoreHistory(IEnumerable<string>? commands, IEnumerable<string>? directories)
     {
         if (commands != null)
@@ -304,7 +317,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             CommandHistory.Clear();
             foreach (var cmd in commands)
             {
-                if (!string.IsNullOrWhiteSpace(cmd) && !CommandHistory.Contains(cmd))
+                if (!string.IsNullOrWhiteSpace(cmd) && !IsInternalConfigurationCommand(cmd) && !CommandHistory.Contains(cmd))
                 {
                     CommandHistory.Add(cmd);
                 }
@@ -329,7 +342,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     private void OnSessionCommandExecuted(string command)
     {
-        if (string.IsNullOrWhiteSpace(command)) return;
+        if (string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
 
         void AddCommand()
         {

@@ -643,4 +643,16 @@ This document serves as the single source of truth for all functional and non-fu
   - **When** the CI workflow runs,
   - **Then** Gitleaks secret scanning and NuGet package vulnerability audits execute and fail the build if secrets or known CVEs are detected.
 
+---
+
+### REQ-HIST-003: Filter Internal & Automated Configuration Commands from History
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a terminal user, I want internal setup and environment configuration commands (e.g. `chcp 65001`, `[Console]::OutputEncoding`, `Set-PSReadLineOption`, prompt hooks) to be excluded from both the in-app command history and the persistent PSReadLine history, so that only intentional user-executed commands appear in search and recall.
+- **Acceptance Criteria**:
+  - **Given** a running PowerShell or ConPTY shell session,
+  - **When** the application or session executes internal setup commands (e.g. `chcp 65001 >$null`, `[Console]::OutputEncoding`, `$OutputEncoding`, `$function:prompt`, `Set-PSReadLineOption`),
+  - **Then** these commands are not added to `TerminalTabViewModel.CommandHistory` and do not appear in the `Ctrl+H` history overlay.
+  - **Then** PSReadLine's `AddToHistoryHandler` ignores these configuration commands, preventing them from being written to `ConsoleHost_history.txt`.
+
+
 
