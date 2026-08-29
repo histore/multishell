@@ -18,6 +18,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify Tag is on main Branch
+        shell: pwsh
+        run: |
+          Write-Host "Verifying that tag '${{ github.ref_name }}' (commit ${{ github.sha }}) belongs to 'origin/main'..."
+          git merge-base --is-ancestor ${{ github.sha }} origin/main
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Release build aborted: Tag '${{ github.ref_name }}' was pushed on a non-main commit or branch. Releases must only be created from 'main'."
+            exit 1
+          }
+          Write-Host "Verification successful: Tag is an ancestor of or directly on 'origin/main'."
+
       - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v4
         with:

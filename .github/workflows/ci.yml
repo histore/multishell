@@ -25,6 +25,15 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore MultiShell.slnx
 
+      - name: Run Secret Scanning (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Audit NuGet Package Vulnerabilities (CVE Check)
+        shell: pwsh
+        run: dotnet list MultiShell.slnx package --vulnerable --include-transitive
+
       - name: Build Solution
         run: dotnet build MultiShell.slnx --configuration Release --no-restore
 

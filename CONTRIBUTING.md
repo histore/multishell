@@ -70,15 +70,21 @@ git checkout -b feat/REQ-025-tab-split-view
   dotnet test MultiShell.Tests/MultiShell.Tests.csproj
   ```
 
-### Stage 5: Local Quality Gate Audit (`Verifikation`)
+### Stage 5: Local Quality & Security Gate Audit (`Verifikation` & `SecurityAuditor`)
 - Verify 0 test failures, 0 compiler warnings, and clean formatting.
 - Confirm full requirement coverage and bilingual localization resources.
+- **Security & Secret Audit (`SecurityAuditor`)**:
+  - Audit staged diffs for accidental credentials, tokens, or private keys.
+  - Verify dependency health and CVE status:
+    ```powershell
+    dotnet list MultiShell.slnx package --vulnerable --include-transitive
+    ```
 
 ### Stage 6: Developer Review & Live Testing Gate (Manual Verification & Pre-PR Iteration)
 - Prior to staging commits and creating a Pull Request, the working state is presented to the developer/user for interactive review:
   - **Manual/Interactive Testing**: The developer can launch and run the application locally to verify real-world ergonomics, keyboard workflows, and terminal behavior.
   - **Code Review & Feedback**: The developer inspects code diffs and can request modifications, design adjustments, or edge-case handling.
-  - **Pre-PR Corrections**: If issues are found, the subagents (`Developer`, `UIDesigner`, `Architekt`, `Tester`) immediately iterate and apply corrections before any PR is created or merged.
+  - **Pre-PR Corrections**: If issues are found, the subagents (`Developer`, `UIDesigner`, `Architekt`, `Tester`, `SecurityAuditor`) immediately iterate and apply corrections before any PR is created or merged.
   - **Explicit Approval**: Once the developer confirms that the feature functions as expected, the workflow proceeds to Stage 7.
 
 ### Stage 7: Conventional Commit & Push (`CommitManager`)
@@ -126,7 +132,12 @@ MultiShell adheres to **Semantic Versioning 2.0.0** (`MAJOR.MINOR.PATCH`):
 - **MINOR**: Backward-compatible new features (`feat`).
 - **PATCH**: Backward-compatible bug fixes (`fix`, `perf`).
 
+### 4.1 Main-Branch Release Enforcement
+Releases must **strictly and exclusively** be tagged and created from the `main` branch:
+1. **Local Pre-Check (`ReleaseManager`)**: Before calculating versions and creating tags, the working branch is checked to ensure it is `main` and fully synchronized with `origin/main`.
+2. **CI/CD Pipeline Gate ([.github/workflows/release.yml](.github/workflows/release.yml))**: When a tag (`v*.*.*`) is pushed, the GitHub Actions release workflow validates that the tag commit is an ancestor of `origin/main` (`git merge-base --is-ancestor`). Any release build triggered by non-main tags is immediately aborted.
+
 When a release milestone is reached on `main`:
-1. `ReleaseManager` verifies all merged PRs and proposes the SemVer version bump.
-2. Upon user confirmation, a Git tag (e.g. `v1.2.0`) is created and pushed.
-3. [.github/workflows/release.yml](.github/workflows/release.yml) automatically triggers, compiles single-file self-contained executables, builds the Inno Setup installer (`installer.iss`), and generates a GitHub Release.
+1. `ReleaseManager` verifies all merged PRs on `main` and proposes the SemVer version bump.
+2. Upon user confirmation, an annotated Git tag (e.g. `v1.2.0`) is created and pushed on `main`.
+3. [.github/workflows/release.yml](.github/workflows/release.yml) automatically triggers, validates that the tag belongs to `origin/main`, compiles single-file self-contained executables, builds the Inno Setup installer (`installer.iss`), and generates a GitHub Release.
