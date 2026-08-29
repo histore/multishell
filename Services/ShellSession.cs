@@ -315,10 +315,21 @@ public sealed class ShellSession : IShellSession
                 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
                 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
                 $OutputEncoding = [System.Text.Encoding]::UTF8
+                if (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) {
+                    Set-PSReadLineOption -AddToHistoryHandler {
+                        param($cmd)
+                        if ([string]::IsNullOrWhiteSpace($cmd)) { return $false }
+                        $t = $cmd.Trim()
+                        if ($t -match '^(chcp(\s|$)|\[Console\]::|\$OutputEncoding|\$function:prompt|Set-PSReadLineOption|__multishell_)') {
+                            return $false
+                        }
+                        return $true
+                    }
+                }
                 $function:prompt = {
                     $loc = $ExecutionContext.SessionState.Path.CurrentLocation.Path
                     $last = (Get-History -Count 1).CommandLine
-                    if ($last) {
+                    if ($last -and ($last.Trim() -notmatch '^(chcp(\s|$)|\[Console\]::|\$OutputEncoding|\$function:prompt|Set-PSReadLineOption|__multishell_)')) {
                         $b = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($last))
                         [Console]::Write([char]27 + ']133;E;' + $b + [char]7)
                     }
