@@ -33,7 +33,7 @@ This workspace employs specialized subagent roles to enforce **Clean Code**, **C
 7. **Developer** (`Reasoning: Medium`): Implements clean, maintainable C# / Avalonia code (English comments) strictly adhering to architectural blueprints, UI designs, requirements, and developer review feedback.
 8. **RefactoringSpecialist** (`Reasoning: Medium`): Audits code smells and technical debt, designing safe, test-backed refactorings.
 9. **PerformanceOptimizer** (`Reasoning: High`): Identifies allocation hotspots, memory leaks, and ConPTY streaming bottlenecks, optimizing data throughput and UI responsiveness.
-10. **SecurityAuditor** (`Reasoning: High`): Audits process execution safety, command injection risks, safe path handling, and state serialization security.
+10. **SecurityAuditor** (`Reasoning: High`): Audits process execution safety, secret leak prevention, dependency CVEs (NuGetAudit), command injection risks, safe path handling, and state serialization security.
 11. **DocumentationSpecialist** (`Reasoning: Medium`): Authors XML doc comments (`///`), keeps `ARCHITECTURE.md` synchronized, and maintains user help guides in English.
 12. **ReleaseManager** (`Reasoning: Medium`): Manages deployment pipelines, single-file self-contained packaging, Native AOT readiness, and application manifests.
 13. **Tester** (`Reasoning: Medium`): Implements comprehensive automated tests (`MultiShell.Tests`) and executes `dotnet test` (AAA pattern, 0 failures).

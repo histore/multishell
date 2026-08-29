@@ -7,6 +7,20 @@ on:
     branches: [ main ]
 
 jobs:
+  secret-scan:
+    name: Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build-and-test:
     name: Build & Test (.NET 10 on Windows)
     runs-on: windows-latest
@@ -25,8 +39,13 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore MultiShell.slnx
 
+      - name: Audit NuGet Package Vulnerabilities (CVE Check)
+        shell: pwsh
+        run: dotnet list MultiShell.slnx package --vulnerable --include-transitive
+
       - name: Build Solution
         run: dotnet build MultiShell.slnx --configuration Release --no-restore
 
       - name: Run Automated Tests
         run: dotnet test MultiShell.Tests/MultiShell.Tests.csproj --configuration Release --no-build --verbosity normal
+

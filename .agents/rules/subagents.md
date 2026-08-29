@@ -39,7 +39,7 @@
 7. **Developer** (`Reasoning: Medium`): Clean Code implementation, C# 13, .NET 10, Avalonia 11.2, English comments, iterative refinements from developer review.
 8. **RefactoringSpecialist** (`Reasoning: Medium`): Code smell detection, technical debt remediation, Boy Scout rule.
 9. **PerformanceOptimizer** (`Reasoning: High`): Buffer pooling (`ArrayPool`), memory leak auditing, ConPTY stream throughput.
-10. **SecurityAuditor** (`Reasoning: High`): PowerShell command safety, path traversal prevention, secure deserialization.
+10. **SecurityAuditor** (`Reasoning: High`): PowerShell command safety, secret leak prevention, dependency CVE audits (NuGetAudit), path traversal prevention, secure deserialization.
 11. **DocumentationSpecialist** (`Reasoning: Medium`): Authors XML doc comments (`///`), keeps `ARCHITECTURE.md` synchronized, and maintains user help guides in English.
 12. **ReleaseManager** (`Reasoning: Medium`): Manages deployment pipelines, single-file self-contained packaging, Native AOT readiness, and application manifests.
 13. **Tester** (`Reasoning: Medium`): Implements comprehensive automated tests (`MultiShell.Tests`) and executes `dotnet test` (AAA pattern, 0 failures).

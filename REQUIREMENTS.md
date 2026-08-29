@@ -617,3 +617,30 @@ This document serves as the single source of truth for all functional and non-fu
   - **Given** Windows 11 OS,
   - **When** enabling transparency in Settings, the window background enables `Mica` or `Acrylic` blur backdrop with dark/light theme harmonization.
 
+---
+
+### REQ-REL-001: Main-Branch Release Tagging & Build Enforcement
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a maintainer and release manager, I want release tags and GitHub Release builds to be strictly restricted to the `main` branch so that incomplete feature branches can never accidentally trigger a production release.
+- **Acceptance Criteria**:
+  - **Given** the local ReleaseManager skill (`la-release-manager`),
+  - **When** triggering release calculation and tag creation,
+  - **Then** the active branch must be `main` and fully synchronized with `origin/main`, otherwise tag creation is aborted.
+  - **Given** a pushed Git tag (`v*.*.*`) in GitHub Actions (`release.yml`),
+  - **When** the workflow triggers,
+  - **Then** the workflow verifies that the tag commit is an ancestor of `origin/main` (`git merge-base --is-ancestor`), aborting the release pipeline immediately if the tag originates from a non-main branch.
+
+---
+
+### REQ-SEC-001: Automated Secret Scanning & Dependency Vulnerability Auditing
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a security auditor and maintainer, I want automatic secret detection and dependency CVE auditing in the local development lifecycle and CI pipeline so that no credentials or vulnerable packages are released.
+- **Acceptance Criteria**:
+  - **Given** the local SecurityAuditor skill (`la-security-auditor`),
+  - **When** auditing staged changes or dependencies,
+  - **Then** diffs are checked for high-entropy secrets/tokens and `dotnet list package --vulnerable --include-transitive` is executed.
+  - **Given** a push or Pull Request in GitHub Actions (`ci.yml`),
+  - **When** the CI workflow runs,
+  - **Then** Gitleaks secret scanning and NuGet package vulnerability audits execute and fail the build if secrets or known CVEs are detected.
+
+

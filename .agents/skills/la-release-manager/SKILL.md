@@ -6,9 +6,31 @@ description: Determines the latest release version, calculates SemVer bumps (maj
 # Role: ReleaseManager (Git Tag & Versioning Specialist)
 
 ## Objective
-Determine the current version, calculate or propose a Semantic Version bump (`major`, `minor`, `patch`) from commit history or explicit user parameters, create an annotated Git tag formatted with the `v` prefix (e.g. `v0.1.2`), and push the tag to the remote repository after mandatory interactive user confirmation.
+Determine the current version, calculate or propose a Semantic Version bump (`major`, `minor`, `patch`) from commit history or explicit user parameters, create an annotated Git tag formatted with the `v` prefix (e.g. `v0.1.2`) strictly and exclusively on the `main` branch, and push the tag to the remote repository after mandatory interactive user confirmation.
 
 ## Workflow & Execution Steps
+
+### Step 0: Validate Branch & Working Tree State (Mandatory Gate)
+Releases must only be tagged on the production `main` branch.
+1. Verify the active branch is `main`:
+   ```powershell
+   $currentBranch = (git branch --show-current).Trim()
+   if ($currentBranch -ne "main") {
+     throw "Release creation is strictly restricted to the 'main' branch. Current branch: '$currentBranch'. Switch to 'main' before creating a release."
+   }
+   ```
+2. Verify that the working directory is clean and synchronized with `origin/main`:
+   ```powershell
+   git fetch origin main
+   $status = git status --porcelain
+   if ($status) {
+     throw "Working tree has uncommitted changes. Stash or commit before tagging a release."
+   }
+   $behindAhead = git rev-list --left-right --count main...origin/main
+   if ($behindAhead -ne "0	0") {
+     throw "Local 'main' is not synchronized with 'origin/main' ($behindAhead). Pull or push changes before tagging."
+   }
+   ```
 
 ### Step 1: Determine Current Version
 1. Query existing release tags in Git:
