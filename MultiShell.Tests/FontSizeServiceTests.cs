@@ -99,4 +99,39 @@ public class FontSizeServiceTests
         service.SetTerminalFontSizeLevel(2);
         Assert.Equal(1, eventCallCount);
     }
+
+    [Fact]
+    public void ResetLevels_ResetsBothLevelsToDefaultLevel3()
+    {
+        var service = new FontSizeService(initialAppLevel: 5, initialTerminalLevel: 1);
+        Assert.Equal(5, service.AppFontSizeLevel);
+        Assert.Equal(1, service.TerminalFontSizeLevel);
+
+        service.ResetLevels();
+
+        Assert.Equal(IFontSizeService.DefaultLevel, service.AppFontSizeLevel);
+        Assert.Equal(IFontSizeService.DefaultLevel, service.TerminalFontSizeLevel);
+    }
+
+    [Fact]
+    public void ResetTerminalFontSizeLevel_ResetsOnlyTerminalLevel()
+    {
+        var service = new FontSizeService(initialAppLevel: 5, initialTerminalLevel: 1);
+
+        service.ResetTerminalFontSizeLevel();
+
+        Assert.Equal(5, service.AppFontSizeLevel);
+        Assert.Equal(IFontSizeService.DefaultLevel, service.TerminalFontSizeLevel);
+    }
+
+    [Fact]
+    public void ResetAppFontSizeLevel_ResetsOnlyAppLevel()
+    {
+        var service = new FontSizeService(initialAppLevel: 5, initialTerminalLevel: 1);
+
+        service.ResetAppFontSizeLevel();
+
+        Assert.Equal(IFontSizeService.DefaultLevel, service.AppFontSizeLevel);
+        Assert.Equal(1, service.TerminalFontSizeLevel);
+    }
 }

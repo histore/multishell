@@ -561,6 +561,26 @@ public partial class MainWindow : Window
                         e.Handled = true;
                         return;
                     }
+
+                    // 7. Zoom & Font-Size Shortcuts (REQ-UI-005)
+                    if (e.Key is Key.OemPlus or Key.Add)
+                    {
+                        vm.IncreaseTerminalFontSize();
+                        e.Handled = true;
+                        return;
+                    }
+                    if (e.Key is Key.OemMinus or Key.Subtract)
+                    {
+                        vm.DecreaseTerminalFontSize();
+                        e.Handled = true;
+                        return;
+                    }
+                    if (e.Key is Key.D0 or Key.NumPad0)
+                    {
+                        vm.ResetTerminalFontSize();
+                        e.Handled = true;
+                        return;
+                    }
                 }
             }
         }

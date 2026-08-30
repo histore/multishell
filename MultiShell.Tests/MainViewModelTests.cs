@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using MultiShell.Services;
 using MultiShell.ViewModels;
 using Xunit;
@@ -9,10 +12,10 @@ public class MainViewModelTests
     [Fact]
     public void AppVersion_IsNotNullOrEmpty_AndStartsWithV()
     {
-        // Arrange
-        var vm = new MainViewModel();
+        // Arrange & Act
+        using var vm = new MainViewModel();
 
-        // Act & Assert
+        // Assert
         Assert.False(string.IsNullOrWhiteSpace(vm.AppVersion));
         Assert.StartsWith("v", vm.AppVersion);
     }
@@ -20,8 +23,8 @@ public class MainViewModelTests
     [Fact]
     public void GitHubUrl_IsConfiguredCorrectly()
     {
-        // Arrange
-        var vm = new MainViewModel();
+        // Arrange & Act
+        using var vm = new MainViewModel();
 
         // Assert
         Assert.Equal("https://github.com/histore/multishell", vm.GitHubUrl);
@@ -32,7 +35,7 @@ public class MainViewModelTests
     public async Task WindowTitle_ReflectsSelectedTabPathWithoutEllipsis_WhenPathIsNotExcessivelyLong()
     {
         // Arrange
-        var vm = new MainViewModel();
+        using var vm = new MainViewModel();
         await vm.InitializeWorkspaceAsync();
 
         // Assert - Title starts with MultiShell - and contains untruncated path when reasonable length
@@ -60,7 +63,7 @@ public class MainViewModelTests
     {
         // Arrange
         var mockTheme = new MockThemeService();
-        var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
+        using var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
 
         Assert.True(vm.IsDarkAppTheme);
         Assert.True(vm.IsDarkTerminalTheme);
@@ -80,7 +83,7 @@ public class MainViewModelTests
     {
         // Arrange
         var mockTheme = new MockThemeService();
-        var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
+        using var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
 
         // Act
         vm.ToggleTerminalThemeCommand.Execute(null);
@@ -97,7 +100,7 @@ public class MainViewModelTests
     {
         // Arrange
         var mockTheme = new MockThemeService();
-        var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
+        using var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
 
         // Act
         vm.SetAppTheme(false);
@@ -120,57 +123,145 @@ public class MainViewModelTests
     public void SetFontSizeLevels_UpdatesValuesAndScales()
     {
         // Arrange
-        var tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"multishell_state_test_{System.Guid.NewGuid():N}.json");
-        var fontSizeService = new FontSizeService();
-        var vm = new MainViewModel(
-            new ShellProcessService(),
-            new TabStatePersistenceService(tempFile),
-            new MockThemeService(),
-            new LocalizationService(),
-            fontSizeService);
+        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        try
+        {
+            var fontSizeService = new FontSizeService();
+            using var vm = new MainViewModel(
+                new ShellProcessService(),
+                new TabStatePersistenceService(tempFile),
+                new MockThemeService(),
+                new LocalizationService(),
+                fontSizeService);
 
-        Assert.Equal(3, vm.AppFontSizeLevel);
-        Assert.Equal(3, vm.TerminalFontSizeLevel);
-        Assert.Equal(1.0, vm.AppFontScale);
-        Assert.Equal(12.0, vm.TerminalFontSize);
+            Assert.Equal(3, vm.AppFontSizeLevel);
+            Assert.Equal(3, vm.TerminalFontSizeLevel);
+            Assert.Equal(1.0, vm.AppFontScale);
+            Assert.Equal(12.0, vm.TerminalFontSize);
 
-        // Act - Set via command
-        vm.SetAppFontSizeLevelCommand.Execute(5);
-        vm.SetTerminalFontSizeLevelCommand.Execute(1);
+            // Act - Set via command
+            vm.SetAppFontSizeLevelCommand.Execute(5);
+            vm.SetTerminalFontSizeLevelCommand.Execute(1);
 
-        // Assert
-        Assert.Equal(5, vm.AppFontSizeLevel);
-        Assert.Equal(1.25, vm.AppFontScale);
-        Assert.Equal(1, vm.TerminalFontSizeLevel);
-        Assert.Equal(9.5, vm.TerminalFontSize);
+            // Assert
+            Assert.Equal(5, vm.AppFontSizeLevel);
+            Assert.Equal(1.25, vm.AppFontScale);
+            Assert.Equal(1, vm.TerminalFontSizeLevel);
+            Assert.Equal(9.5, vm.TerminalFontSize);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
     }
 
     [Fact]
     public void IncreaseAndDecreaseFontSize_UpdatesLevelsWithinRange()
     {
         // Arrange
-        var tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"multishell_state_test_{System.Guid.NewGuid():N}.json");
-        var fontSizeService = new FontSizeService();
-        var vm = new MainViewModel(
-            new ShellProcessService(),
-            new TabStatePersistenceService(tempFile),
-            new MockThemeService(),
-            new LocalizationService(),
-            fontSizeService);
+        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        try
+        {
+            var fontSizeService = new FontSizeService();
+            using var vm = new MainViewModel(
+                new ShellProcessService(),
+                new TabStatePersistenceService(tempFile),
+                new MockThemeService(),
+                new LocalizationService(),
+                fontSizeService);
 
-        // Act: Increase
-        vm.IncreaseAppFontSizeCommand.Execute(null);
-        vm.IncreaseTerminalFontSizeCommand.Execute(null);
+            // Act: Increase
+            vm.IncreaseAppFontSizeCommand.Execute(null);
+            vm.IncreaseTerminalFontSizeCommand.Execute(null);
 
-        // Assert
-        Assert.Equal(4, vm.AppFontSizeLevel);
-        Assert.Equal(4, vm.TerminalFontSizeLevel);
+            // Assert
+            Assert.Equal(4, vm.AppFontSizeLevel);
+            Assert.Equal(4, vm.TerminalFontSizeLevel);
 
-        // Act: Decrease
-        vm.DecreaseAppFontSizeCommand.Execute(null);
-        vm.DecreaseAppFontSizeCommand.Execute(null);
+            // Act: Decrease
+            vm.DecreaseAppFontSizeCommand.Execute(null);
+            vm.DecreaseAppFontSizeCommand.Execute(null);
 
-        // Assert
-        Assert.Equal(2, vm.AppFontSizeLevel);
+            // Assert
+            Assert.Equal(2, vm.AppFontSizeLevel);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public void ResetFontSizeLevels_ResetsBothLevelsToDefault()
+    {
+        // Arrange
+        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        try
+        {
+            var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 5);
+            using var vm = new MainViewModel(
+                new ShellProcessService(),
+                new TabStatePersistenceService(tempFile),
+                new MockThemeService(),
+                new LocalizationService(),
+                fontSizeService);
+
+            Assert.Equal(1, vm.AppFontSizeLevel);
+            Assert.Equal(5, vm.TerminalFontSizeLevel);
+
+            // Act
+            vm.ResetFontSizeLevels();
+
+            // Assert
+            Assert.Equal(3, vm.AppFontSizeLevel);
+            Assert.Equal(3, vm.TerminalFontSizeLevel);
+            Assert.Equal(12.0, vm.TerminalFontSize);
+            Assert.Equal(1.0, vm.AppFontScale);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public void ResetTerminalFontSize_ResetsOnlyTerminalLevelToDefault()
+    {
+        // Arrange
+        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        try
+        {
+            var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 5);
+            using var vm = new MainViewModel(
+                new ShellProcessService(),
+                new TabStatePersistenceService(tempFile),
+                new MockThemeService(),
+                new LocalizationService(),
+                fontSizeService);
+
+            // Act
+            vm.ResetTerminalFontSize();
+
+            // Assert
+            Assert.Equal(1, vm.AppFontSizeLevel);
+            Assert.Equal(3, vm.TerminalFontSizeLevel);
+            Assert.Equal(12.0, vm.TerminalFontSize);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
     }
 }

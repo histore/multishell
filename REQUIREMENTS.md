@@ -49,8 +49,8 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TERM-004` | Multi-Chunk ANSI/VT100 Sequence Preservation & Color Bleed Prevention | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests` |
 | `REQ-TAB-019` | Unified Interactive Tab Switcher Overlay (Ctrl+Tab & Tab Bar Menu Button) | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-TERM-005` | Clickable Hyperlinks & Local File Paths via `Ctrl+Click` | Terminal | **IMPLEMENTED** | `LinkDetectionHelperTests`, `TerminalTabView` |
-| `REQ-UI-005` | Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts | UI | **BACKLOG** | TBD |
-| `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | Terminal | **BACKLOG** | TBD |
+| `REQ-UI-005` | Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts | UI | **IMPLEMENTED** | `FontSizeServiceTests`, `MainViewModelTests`, `TerminalTabView` |
+| `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
@@ -513,6 +513,29 @@ This document serves as the single source of truth for all functional and non-fu
 
 ---
 
+### REQ-UI-005: Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want quick zoom shortcuts (`Ctrl++`, `Ctrl+-`, `Ctrl+0`, and `Ctrl+MouseWheel`) to dynamically adjust terminal and UI font sizes on the fly.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab,
+  - **When** pressing `Ctrl++` or `Ctrl+NumpadPlus`, the font size increments to the next level.
+  - **When** pressing `Ctrl+-` or `Ctrl+NumpadMinus`, the font size decrements to the previous level.
+  - **When** pressing `Ctrl+0` or `Ctrl+Numpad0`, the font size resets to default Level 3 (12pt / 100%).
+  - **When** scrolling the mouse wheel while holding `Ctrl` over the terminal, font size zooms in or out.
+
+---
+
+### REQ-TERM-003: Terminal Scrollback & Buffer Control Shortcuts
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want standard keyboard shortcuts (`Shift+PageUp`, `Shift+PageDown`, `Ctrl+Shift+K`, `Ctrl+Shift+C`, `Ctrl+Shift+V`) to navigate and manage the terminal scrollback buffer.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab with scrollback history,
+  - **When** pressing `Shift+PageUp` or `Shift+PageDown`, the viewport scrolls through previous output.
+  - **When** pressing `Ctrl+Shift+K`, the terminal buffer is cleared.
+  - **When** pressing `Ctrl+Shift+C` or `Ctrl+Shift+V`, text is copied or pasted without interfering with Unix signals.
+
+---
+
 ## 🔮 Future / Backlog Features
 
 ### REQ-AI-001: Context-Aware AI Command Generator & Auto-Suggest
@@ -530,29 +553,6 @@ This document serves as the single source of truth for all functional and non-fu
   - **Then** the command is pasted into the active terminal prompt without executing.
   - **When** pressing `Escape`,
   - **Then** the overlay closes without modifications.
-
----
-
-### REQ-UI-005: Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts
-- **Status**: `PLANNED`
-- **User Story**: As a user, I want quick zoom shortcuts (`Ctrl++`, `Ctrl+-`, `Ctrl+0`, and `Ctrl+MouseWheel`) to dynamically adjust terminal and UI font sizes on the fly.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab,
-  - **When** pressing `Ctrl++` or `Ctrl+NumpadPlus`, the font size increments to the next level.
-  - **When** pressing `Ctrl+-` or `Ctrl+NumpadMinus`, the font size decrements to the previous level.
-  - **When** pressing `Ctrl+0` or `Ctrl+Numpad0`, the font size resets to default Level 3 (12pt / 100%).
-  - **When** scrolling the mouse wheel while holding `Ctrl` over the terminal, font size zooms in or out.
-
----
-
-### REQ-TERM-003: Terminal Scrollback & Buffer Control Shortcuts
-- **Status**: `PLANNED`
-- **User Story**: As a user, I want standard keyboard shortcuts (`Shift+PageUp`, `Shift+PageDown`, `Ctrl+Shift+K`, `Ctrl+Shift+C`, `Ctrl+Shift+V`) to navigate and manage the terminal scrollback buffer.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab with scrollback history,
-  - **When** pressing `Shift+PageUp` or `Shift+PageDown`, the viewport scrolls through previous output.
-  - **When** pressing `Ctrl+Shift+K`, the terminal buffer is cleared.
-  - **When** pressing `Ctrl+Shift+C` or `Ctrl+Shift+V`, text is copied or pasted without interfering with Unix signals.
 
 ---
 

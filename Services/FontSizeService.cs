@@ -68,4 +68,20 @@ public class FontSizeService : IFontSizeService
         _terminalFontSizeLevel = clamped;
         TerminalFontSizeLevelChanged?.Invoke(_terminalFontSizeLevel);
     }
+
+    public void ResetLevels()
+    {
+        SetAppFontSizeLevel(IFontSizeService.DefaultLevel);
+        SetTerminalFontSizeLevel(IFontSizeService.DefaultLevel);
+    }
+
+    public void ResetAppFontSizeLevel()
+    {
+        SetAppFontSizeLevel(IFontSizeService.DefaultLevel);
+    }
+
+    public void ResetTerminalFontSizeLevel()
+    {
+        SetTerminalFontSizeLevel(IFontSizeService.DefaultLevel);
+    }
 }

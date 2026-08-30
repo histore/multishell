@@ -91,6 +91,7 @@ public partial class TerminalTabView : UserControl
         Terminal.AddHandler(InputElement.KeyUpEvent, OnTerminalKeyUp, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
         Terminal.AddHandler(InputElement.PointerPressedEvent, OnTerminalPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         Terminal.AddHandler(InputElement.PointerMovedEvent, OnTerminalPointerMoved, RoutingStrategies.Tunnel);
+        Terminal.AddHandler(InputElement.PointerWheelChangedEvent, OnTerminalPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
         Terminal.PointerExited += (_, _) =>
         {
             HideLinkHighlight();
@@ -98,6 +99,26 @@ public partial class TerminalTabView : UserControl
         };
 
         DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnTerminalPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+        if (!isCtrl) return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.DataContext is MainViewModel mainVm)
+        {
+            if (e.Delta.Y > 0)
+            {
+                mainVm.IncreaseTerminalFontSize();
+            }
+            else if (e.Delta.Y < 0)
+            {
+                mainVm.DecreaseTerminalFontSize();
+            }
+            e.Handled = true;
+        }
     }
 
     private void OnTerminalPointerMoved(object? sender, PointerEventArgs e)
@@ -311,7 +332,104 @@ public partial class TerminalTabView : UserControl
             return;
         }
 
-        // 2. Ctrl+C with active selection -> Copy to clipboard and prevent sending \x03
+        var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+        var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+        // 2. Zoom & Font-Size Shortcuts (REQ-UI-005)
+        if (isCtrl && !isShift)
+        {
+            if (e.Key is Key.OemPlus or Key.Add)
+            {
+                var topLevel = TopLevel.GetTopLevel(this);
+                if (topLevel?.DataContext is MainViewModel mainVm)
+                {
+                    mainVm.IncreaseTerminalFontSize();
+                    e.Handled = true;
+                    return;
+                }
+            }
+            if (e.Key is Key.OemMinus or Key.Subtract)
+            {
+                var topLevel = TopLevel.GetTopLevel(this);
+                if (topLevel?.DataContext is MainViewModel mainVm)
+                {
+                    mainVm.DecreaseTerminalFontSize();
+                    e.Handled = true;
+                    return;
+                }
+            }
+            if (e.Key is Key.D0 or Key.NumPad0)
+            {
+                var topLevel = TopLevel.GetTopLevel(this);
+                if (topLevel?.DataContext is MainViewModel mainVm)
+                {
+                    mainVm.ResetTerminalFontSize();
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
+        // 3. Terminal Scrollback & Buffer Control Shortcuts (REQ-TERM-003)
+        // 3a. Shift+PageUp / Shift+PageDown: Scroll viewport through scrollback buffer
+        if (isShift && !isCtrl)
+        {
+            if (e.Key == Key.PageUp)
+            {
+                vm.PageUp();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.PageDown)
+            {
+                vm.PageDown();
+                e.Handled = true;
+                return;
+            }
+        }
+
+        // 3b. Ctrl+Shift+K: Clear terminal buffer and screen
+        if (isCtrl && isShift && e.Key == Key.K)
+        {
+            vm.ClearBuffer();
+            e.Handled = true;
+            return;
+        }
+
+        // 3c. Ctrl+Shift+C: Copy selected text without sending interrupt signals
+        if (isCtrl && isShift && e.Key == Key.C)
+        {
+            var rawText = vm.TerminalModel.HasSelection ? vm.TerminalModel.SelectedText : string.Empty;
+            var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
+            if (!string.IsNullOrEmpty(text))
+            {
+                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+                if (clipboard != null)
+                {
+                    await clipboard.SetTextAsync(text);
+                }
+            }
+            e.Handled = true;
+            return;
+        }
+
+        // 3d. Ctrl+Shift+V: Paste from clipboard without sending interrupt signals
+        if (isCtrl && isShift && e.Key == Key.V)
+        {
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard != null)
+            {
+                var text = await clipboard.TryGetTextAsync();
+                if (!string.IsNullOrEmpty(text) && vm.IsRunning)
+                {
+                    vm.SendInput(Encoding.UTF8.GetBytes(text));
+                }
+            }
+            e.Handled = true;
+            return;
+        }
+
+        // 4. Ctrl+C with active selection -> Copy to clipboard and prevent sending \x03
         if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.C)
         {
             if (vm.TerminalModel.HasSelection)
@@ -332,7 +450,7 @@ public partial class TerminalTabView : UserControl
             // Without selection: let default handler send \x03 (SIGINT)
         }
 
-        // 3. Ctrl+V -> Paste from clipboard into terminal
+        // 5. Ctrl+V -> Paste from clipboard into terminal
         if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.V)
         {
             var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
@@ -348,7 +466,7 @@ public partial class TerminalTabView : UserControl
             return;
         }
 
-        // 4. Ctrl+Enter or Shift+Enter -> Send Linefeed (\n / 0x0A) for multi-line script continuation without executing command
+        // 6. Ctrl+Enter or Shift+Enter -> Send Linefeed (\n / 0x0A) for multi-line script continuation without executing command
         if (e.Key == Key.Enter && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) != 0)
         {
             if (vm.IsRunning)

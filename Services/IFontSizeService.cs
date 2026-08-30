@@ -76,4 +76,19 @@ public interface IFontSizeService
     /// Sets the Terminal font size level with clamping to [1, 5].
     /// </summary>
     void SetTerminalFontSizeLevel(int level);
+
+    /// <summary>
+    /// Resets both App UI and Terminal font size levels to DefaultLevel (3).
+    /// </summary>
+    void ResetLevels();
+
+    /// <summary>
+    /// Resets the App UI font size level to DefaultLevel (3).
+    /// </summary>
+    void ResetAppFontSizeLevel();
+
+    /// <summary>
+    /// Resets the Terminal font size level to DefaultLevel (3).
+    /// </summary>
+    void ResetTerminalFontSizeLevel();
 }
