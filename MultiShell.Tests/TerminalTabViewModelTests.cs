@@ -756,5 +756,33 @@ public class TerminalTabViewModelTests
         Assert.DoesNotContain("chcp 65001", vm.CommandHistory);
         Assert.DoesNotContain("$OutputEncoding = UTF8", vm.CommandHistory);
     }
+
+    [Fact]
+    public void PageUp_And_PageDown_CanBeCalledWithoutException()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act & Assert (ensure methods invoke on underlying TerminalControlModel safely)
+        var exUp = Record.Exception(() => vm.PageUp());
+        var exDown = Record.Exception(() => vm.PageDown());
+
+        Assert.Null(exUp);
+        Assert.Null(exDown);
+    }
+
+    [Fact]
+    public void ClearBuffer_ExecutesWithoutException()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act & Assert
+        var ex = Record.Exception(() => vm.ClearBuffer());
+
+        Assert.Null(ex);
+    }
 }
 

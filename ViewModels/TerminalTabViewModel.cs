@@ -780,6 +780,44 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void NavigateToDirectory(string? directory) => NavigateToHistoryDirectory(directory);
 
+    /// <summary>
+    /// Scrolls the terminal scrollback buffer up by one page (REQ-TERM-003).
+    /// </summary>
+    public void PageUp()
+    {
+        TerminalModel.PageUp();
+    }
+
+    /// <summary>
+    /// Scrolls the terminal scrollback buffer down by one page (REQ-TERM-003).
+    /// </summary>
+    public void PageDown()
+    {
+        TerminalModel.PageDown();
+    }
+
+    /// <summary>
+    /// Clears the terminal screen and scrollback buffer (REQ-TERM-003).
+    /// </summary>
+    public void ClearBuffer()
+    {
+        // ANSI sequence: \x1b[2J (erase screen), \x1b[3J (erase scrollback), \x1b[H (cursor home)
+        const string clearSequence = "\x1b[2J\x1b[3J\x1b[H";
+        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            TerminalModel.Feed(clearSequence);
+            TerminalModel.ClearSelection();
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                TerminalModel.Feed(clearSequence);
+                TerminalModel.ClearSelection();
+            });
+        }
+    }
+
     public void Dispose()
     {
         if (_isDisposed) return;

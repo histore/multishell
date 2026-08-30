@@ -999,6 +999,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _fontSizeService.SetTerminalFontSizeLevel(TerminalFontSizeLevel - 1);
     }
 
+    [RelayCommand]
+    public void ResetFontSizeLevels()
+    {
+        _fontSizeService.ResetLevels();
+    }
+
+    [RelayCommand]
+    public void ResetTerminalFontSize()
+    {
+        _fontSizeService.ResetTerminalFontSizeLevel();
+    }
+
     public void TriggerSaveState()
     {
         if (_isDisposed || !_isInitialized) return;
@@ -1091,7 +1103,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (_isDisposed) return;
         _isDisposed = true;
 
-        foreach (var tab in Tabs)
+        var tabsToDispose = Tabs.ToArray();
+        foreach (var tab in tabsToDispose)
         {
             tab.CloseRequested -= CloseTab;
             tab.DirectoryChanged -= OnTabDirectoryChanged;
