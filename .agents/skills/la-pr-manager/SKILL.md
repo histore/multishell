@@ -48,10 +48,12 @@ When checking the status of an open PR or its continuous integration pipeline:
    ```powershell
    gh pr view
    ```
-2. Check CI build and test results:
-   ```powershell
-   gh pr checks
-   ```
+2. Check CI build and test results efficiently:
+   - **Preferred (Native Blocking Wait)**: Use `gh pr checks --watch` (with appropriate `WaitMsBeforeAsync` or as a background task). This natively waits until all CI checks finish without generating repetitive polling tool-call loops:
+     ```powershell
+     gh pr checks --watch
+     ```
+   - **Deadtime / Delayed Polling Rule**: A complete CI run (.NET 10 on Windows + Gitleaks) typically takes **~75–80 seconds**. **Never** execute tight polling loops (`gh pr checks` every few seconds). If polling or waiting asynchronously, schedule a timer of at least 75 seconds (`DurationSeconds=75` via the `schedule` tool) before querying status.
 3. Report pass/fail status and any failed test logs clearly to the developer.
 
 ---
