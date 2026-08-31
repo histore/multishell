@@ -693,5 +693,41 @@ This document serves as the single source of truth for all functional and non-fu
   - **When** the application saves state,
   - **Then** `ClosedTabs` is persisted in `tabs_state.json` and restored on subsequent application launches.
 
+---
+
+### REQ-TERM-009: Embedded Monospace Nerd Font (FiraCode Nerd Font Mono)
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a terminal user, I want an embedded monospace Nerd Font (`FiraCode Nerd Font Mono`) bundled directly into the application assets, so that powerline symbols, git branch icons, folder glyphs, and developer prompts render flawlessly without requiring manual font installation on the host OS.
+- **Acceptance Criteria**:
+  - **Given** a clean Windows installation without custom Nerd Fonts installed,
+  - **When** starting MultiShell,
+  - **Then** `TerminalTabViewModel.TerminalFontFamily` resolves the embedded `avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono` resource with fallback to system fonts.
+  - **Then** powerline glyphs, git branch icons, and box-drawing characters render sharply and in fixed monospace alignment without character distortion.
+
+---
+
+### REQ-REL-003: Multi-Target Release Packaging (Self-Contained & Framework-Dependent)
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user with an existing .NET 10 desktop runtime, I want an optional lightweight, framework-dependent release archive alongside the standard self-contained installer and portable builds, minimizing download sizes.
+- **Acceptance Criteria**:
+  - **Given** a production release workflow in `.github/workflows/release.yml`,
+  - **When** a release tag is pushed,
+  - **Then** the pipeline produces both:
+    1. A self-contained portable archive and Inno Setup installer (`--self-contained true`).
+    2. A lightweight framework-dependent single-file archive (`--self-contained false`, under 20 MB).
+  - **Then** both artifacts are published to the GitHub Release.
+
+---
+
+### REQ-LEGAL-001: Third-Party License Notices & Font Attribution
+- **Status**: `IMPLEMENTED`
+- **User Story**: As an open-source contributor and user, I want comprehensive third-party software and font license notices easily accessible in the repository and referenced in the application's About dialog to ensure complete legal compliance (e.g. SIL Open Font License 1.1).
+- **Acceptance Criteria**:
+  - **Given** the project repository,
+  - **Then** `THIRD_PARTY_NOTICES.md` provides full license texts and copyright attributions for all third-party dependencies and fonts (Fira Code, Nerd Fonts, Avalonia, CommunityToolkit, SvcSystems.UI.Terminal, MinVer, .NET Runtime).
+  - **When** opening the About dialog in MultiShell,
+  - **Then** font attribution (`FiraCode Nerd Font Mono (OFL-1.1)`) and third-party notice references are clearly displayed across all supported languages.
+
+
 
 

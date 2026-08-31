@@ -1417,6 +1417,14 @@
                                     <TextBlock Grid.Column="1" Text="Apache-2.0" Foreground="{DynamicResource AppSuccess}" FontSize="12" />
                                 </Grid>
                                 <Grid ColumnDefinitions="115, *">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[About_Font]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Loc[About_Font_Value]}" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
+                                </Grid>
+                                <Grid ColumnDefinitions="115, *">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[About_Third_Party]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Loc[About_Third_Party_Value]}" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
+                                </Grid>
+                                <Grid ColumnDefinitions="115, *">
                                     <TextBlock Grid.Column="0" Text="{Binding Loc[About_GitHub]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" VerticalAlignment="Center" />
                                     <Button Grid.Column="1"
                                             Command="{Binding OpenGitHubUrlCommand}"
