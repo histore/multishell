@@ -331,8 +331,9 @@ public partial class MainWindow : Window
             }
         }
 
-        // Ctrl+Shift+H: Toggle History Drawer
-        if (e.Key == Key.H && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift))
+        // Ctrl+Shift+H: Toggle History Drawer (ensure Alt/AltGr is not pressed)
+        var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+        if (!isAlt && e.Key == Key.H && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift))
         {
             ToggleHistoryDrawer();
             e.Handled = true;
@@ -484,7 +485,8 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainViewModel vm)
             {
-                var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+                var isAltGrOrAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+                var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0 && !isAltGrOrAlt;
                 var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
 
                 // 1. Ctrl+Shift+PageUp / Ctrl+Shift+PageDown: Move Tab Left/Right

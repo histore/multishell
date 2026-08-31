@@ -332,7 +332,8 @@ public partial class TerminalTabView : UserControl
             return;
         }
 
-        var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+        var isAltGrOrAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+        var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0 && !isAltGrOrAlt;
         var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
 
         // 2. Zoom & Font-Size Shortcuts (REQ-UI-005)
