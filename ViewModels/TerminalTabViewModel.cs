@@ -142,7 +142,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     private double _terminalFontSize = 12.0;
 
     [ObservableProperty]
-    private FontFamily _terminalFontFamily = new("Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace");
+    private FontFamily _terminalFontFamily = new("avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace");
 
     [ObservableProperty]
     private string _commandFilterQuery = string.Empty;

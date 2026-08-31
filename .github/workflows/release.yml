@@ -83,13 +83,36 @@ jobs:
           Write-Output "SETUP_EXE=dist/$setupExe" >> $env:GITHUB_OUTPUT
         id: inno
 
-      - name: Create Portable Zip Archive
+      - name: Create Portable Zip Archive (Self-Contained)
         shell: pwsh
         run: |
           $zipName = "MultiShell-Portable-win-x64-${{ steps.vars.outputs.TAG_NAME }}.zip"
           Compress-Archive -Path ./publish/* -DestinationPath "./$zipName"
           Write-Output "ZIP_NAME=$zipName" >> $env:GITHUB_OUTPUT
         id: package
+
+      - name: Publish Single-File Executable (win-x64 Release Framework-Dependent)
+        shell: pwsh
+        run: |
+          dotnet publish MultiShell.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained false `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            -o ./publish-fd
+
+          # Ensure no debug symbol files remain
+          Get-ChildItem -Path ./publish-fd -Recurse -Include *.pdb, *.xml | Remove-Item -Force -ErrorAction SilentlyContinue
+
+      - name: Create Portable Zip Archive (Framework-Dependent)
+        shell: pwsh
+        run: |
+          $zipFdName = "MultiShell-FrameworkDependent-win-x64-${{ steps.vars.outputs.TAG_NAME }}.zip"
+          Compress-Archive -Path ./publish-fd/* -DestinationPath "./$zipFdName"
+          Write-Output "ZIP_FD_NAME=$zipFdName" >> $env:GITHUB_OUTPUT
+        id: package_fd
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -102,3 +125,4 @@ jobs:
           files: |
             dist/*.exe
             ${{ steps.package.outputs.ZIP_NAME }}
+            ${{ steps.package_fd.outputs.ZIP_FD_NAME }}

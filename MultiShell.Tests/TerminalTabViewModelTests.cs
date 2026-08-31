@@ -443,7 +443,7 @@ public class TerminalTabViewModelTests
 
         // Assert
         Assert.NotNull(vm.TerminalFontFamily);
-        Assert.Contains(vm.TerminalFontFamily.FamilyNames, f => f.Contains("Cascadia") || f.Contains("Consolas"));
+        Assert.Contains(vm.TerminalFontFamily.FamilyNames, f => f.Contains("FiraCode") || f.Contains("Cascadia") || f.Contains("Consolas"));
     }
 
     [Fact]
