@@ -174,7 +174,21 @@ public class LocalizationService : ILocalizationService
         ["Profiles_Field_ShellType"] = "Shell-Emulationstyp",
         ["Profiles_Edit_Title"] = "Profil bearbeiten",
         ["Profiles_Create_Title"] = "Neues Profil anlegen",
-        ["Profiles_Empty"] = "Keine Profile vorhanden."
+        ["Profiles_Empty"] = "Keine Profile vorhanden.",
+
+        // Empty State Welcome Dashboard (REQ-UI-008)
+        ["EmptyState_Title"] = "Keine aktiven Terminal-Tabs",
+        ["EmptyState_Description"] = "Wähle ein Terminal-Profil aus oder starte eine neue Sitzung per Tastenkürzel.",
+        ["EmptyState_QuickLaunch"] = "SCHNELLSTART",
+        ["EmptyState_ShortcutsHint"] = "[ Strg+T Neuer Tab  |  Strg+Umschalt+T Profilauswahl  |  F1 Hilfe ]",
+
+        // Recently Closed Tabs History (REQ-TAB-021)
+        ["ClosedTabs_Title"] = "Zuletzt geschlossene Tabs",
+        ["ClosedTabs_RestoreTooltip"] = "Tab mit Verlauf wiederherstellen",
+        ["ClosedTabs_RemoveTooltip"] = "Aus Verlauf entfernen",
+        ["ClosedTabs_ClearAll"] = "Verlauf leeren",
+        ["ClosedTabs_EmptyStateTitle"] = "Zuletzt geschlossene Tabs",
+        ["ClosedTabs_EmptyHint"] = "Keine geschlossenen Tabs im Verlauf"
     };
 
     private static readonly Dictionary<string, string> EnglishStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -289,7 +303,21 @@ public class LocalizationService : ILocalizationService
         ["Profiles_Field_ShellType"] = "Shell Emulation Type",
         ["Profiles_Edit_Title"] = "Edit Profile",
         ["Profiles_Create_Title"] = "Create New Profile",
-        ["Profiles_Empty"] = "No profiles configured."
+        ["Profiles_Empty"] = "No profiles configured.",
+
+        // Empty State Welcome Dashboard (REQ-UI-008)
+        ["EmptyState_Title"] = "No Active Terminal Tabs",
+        ["EmptyState_Description"] = "Select a terminal profile below or start a new session using shortcuts.",
+        ["EmptyState_QuickLaunch"] = "QUICK LAUNCH",
+        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T New Tab  |  Ctrl+Shift+T Profile Menu  |  F1 Help ]",
+
+        // Recently Closed Tabs History (REQ-TAB-021)
+        ["ClosedTabs_Title"] = "Recently Closed Tabs",
+        ["ClosedTabs_RestoreTooltip"] = "Restore tab with history",
+        ["ClosedTabs_RemoveTooltip"] = "Remove from history",
+        ["ClosedTabs_ClearAll"] = "Clear History",
+        ["ClosedTabs_EmptyStateTitle"] = "Recently Closed Tabs",
+        ["ClosedTabs_EmptyHint"] = "No closed tabs in history"
     };
 
     private static readonly Dictionary<string, string> FrenchStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -404,7 +432,21 @@ public class LocalizationService : ILocalizationService
         ["Profiles_Field_ShellType"] = "Type d'émulation de shell",
         ["Profiles_Edit_Title"] = "Modifier le profil",
         ["Profiles_Create_Title"] = "Créer un nouveau profil",
-        ["Profiles_Empty"] = "Aucun profil configuré."
+        ["Profiles_Empty"] = "Aucun profil configuré.",
+
+        // Empty State Welcome Dashboard (REQ-UI-008)
+        ["EmptyState_Title"] = "Aucun onglet de terminal actif",
+        ["EmptyState_Description"] = "Sélectionnez un profil de terminal ci-dessous ou démarrez une nouvelle session avec les raccourcis.",
+        ["EmptyState_QuickLaunch"] = "LANCEMENT RAPIDE",
+        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nouvel onglet  |  Ctrl+Shift+T Menu profils  |  F1 Aide ]",
+
+        // Recently Closed Tabs History (REQ-TAB-021)
+        ["ClosedTabs_Title"] = "Onglets récemment fermés",
+        ["ClosedTabs_RestoreTooltip"] = "Restaurer l'onglet avec l'historique",
+        ["ClosedTabs_RemoveTooltip"] = "Supprimer de l'historique",
+        ["ClosedTabs_ClearAll"] = "Effacer l'historique",
+        ["ClosedTabs_EmptyStateTitle"] = "Onglets récemment fermés",
+        ["ClosedTabs_EmptyHint"] = "Aucun onglet fermé dans l'historique"
     };
 
     private static readonly Dictionary<string, string> SpanishStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -519,7 +561,21 @@ public class LocalizationService : ILocalizationService
         ["Profiles_Field_ShellType"] = "Tipo de emulación de shell",
         ["Profiles_Edit_Title"] = "Editar perfil",
         ["Profiles_Create_Title"] = "Crear nuevo perfil",
-        ["Profiles_Empty"] = "No hay perfiles configurados."
+        ["Profiles_Empty"] = "No hay perfiles configurados.",
+
+        // Empty State Welcome Dashboard (REQ-UI-008)
+        ["EmptyState_Title"] = "No hay pestañas de terminal activas",
+        ["EmptyState_Description"] = "Seleccione un perfil de terminal a continuación o inicie una nueva sesión mediante atajos.",
+        ["EmptyState_QuickLaunch"] = "INICIO RÁPIDO",
+        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nueva pestaña  |  Ctrl+Shift+T Menú de perfiles  |  F1 Ayuda ]",
+
+        // Recently Closed Tabs History (REQ-TAB-021)
+        ["ClosedTabs_Title"] = "Pestañas cerradas recientemente",
+        ["ClosedTabs_RestoreTooltip"] = "Restaurar pestaña con historial",
+        ["ClosedTabs_RemoveTooltip"] = "Eliminar del historial",
+        ["ClosedTabs_ClearAll"] = "Borrar historial",
+        ["ClosedTabs_EmptyStateTitle"] = "Pestañas cerradas recientemente",
+        ["ClosedTabs_EmptyHint"] = "No hay pestañas cerradas en el historial"
     };
 
     public string CurrentLanguage

@@ -22,4 +22,5 @@ public record WorkspaceState(
     string? SavedLanguage = null,
     int AppFontSizeLevel = 3,
     int TerminalFontSizeLevel = 3,
-    ShellType DefaultShellType = ShellType.PowerShell);
+    ShellType DefaultShellType = ShellType.PowerShell,
+    List<TabState>? ClosedTabs = null);

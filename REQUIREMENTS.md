@@ -51,6 +51,8 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TERM-005` | Clickable Hyperlinks & Local File Paths via `Ctrl+Click` | Terminal | **IMPLEMENTED** | `LinkDetectionHelperTests`, `TerminalTabView` |
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts | UI | **IMPLEMENTED** | `FontSizeServiceTests`, `MainViewModelTests`, `TerminalTabView` |
 | `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
+| `REQ-UI-008` | Empty State Welcome & Terminal Profile Selector Dashboard | UI | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
+| `REQ-TAB-021` | Recently Closed Tabs History & Restoration (Max 10 FIFO) | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
@@ -216,6 +218,8 @@ This document serves as the single source of truth for all functional and non-fu
   - **Given** many open tabs exceeding the visible horizontal space of the tab bar,
   - **When** overflow occurs,
   - **Then** visual edge gradient indicators and scroll buttons (`◀` and `▶`) appear to indicate overflow to the left and right.
+  - **When** the tab bar is displayed,
+  - **Then** the Add Tab (`+`) and shell dropdown (`▾`) button group is permanently docked on the right side outside the scrollable tab area, and the right scroll overflow button (`›`) appears immediately to its left.
   - **When** the user clicks `◀` or `▶`,
   - **Then** the tab bar scrolls smoothly in the respective direction.
   - **When** the user clicks the tab list button (`▼`),
@@ -536,6 +540,19 @@ This document serves as the single source of truth for all functional and non-fu
 
 ---
 
+### REQ-UI-008: Empty State Welcome & Terminal Profile Selector Dashboard
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, when all terminal tabs are closed (`Tabs.Count == 0`), I want an attractive welcome dashboard with instructions and interactive quick-launch cards for all available terminal types/profiles so that I can immediately start a new session.
+- **Acceptance Criteria**:
+  - **Given** all open terminal tabs are closed,
+  - **Then** the empty state dashboard becomes visible, presenting a logo, title, and descriptive guidance.
+  - **When** clicking on any profile card (e.g. PowerShell, Command Prompt, Git Bash, WSL),
+  - **Then** a new tab with that terminal profile is opened and the empty state dashboard closes.
+  - **When** pressing `Ctrl+T` or clicking the new tab button on the tab bar,
+  - **Then** a new default terminal tab is created and the workspace enters active state.
+
+---
+
 ## 🔮 Future / Backlog Features
 
 ### REQ-AI-001: Context-Aware AI Command Generator & Auto-Suggest
@@ -653,6 +670,28 @@ This document serves as the single source of truth for all functional and non-fu
   - **When** the application or session executes internal setup commands (e.g. `chcp 65001 >$null`, `[Console]::OutputEncoding`, `$OutputEncoding`, `$function:prompt`, `Set-PSReadLineOption`),
   - **Then** these commands are not added to `TerminalTabViewModel.CommandHistory` and do not appear in the `Ctrl+H` history overlay.
   - **Then** PSReadLine's `AddToHistoryHandler` ignores these configuration commands, preventing them from being written to `ConsoleHost_history.txt`.
+
+---
+
+### REQ-TAB-021: Recently Closed Tabs History & Restoration (Max 10 FIFO)
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want a persistent history of my recently closed tabs (capped at 10 items) accessible both from the shell selector dropdown (`▾`) and the empty-state welcome dashboard, so that I can quickly restore closed sessions with their complete command and directory histories or permanently purge them.
+- **Acceptance Criteria**:
+  - **Given** an open tab with command and directory history,
+  - **When** the tab is closed (via `×`, `Ctrl+W`, or `exit`),
+  - **Then** its metadata and histories are captured as a `ClosedTabItemViewModel` and pushed to the top of `ClosedTabs`.
+  - **Given** more than 10 closed tabs,
+  - **When** a new tab is closed,
+  - **Then** the oldest closed tab (at index 10) is evicted and its data permanently purged (FIFO limit of 10).
+  - **Given** one or more closed tabs in history,
+  - **When** opening the shell selector dropdown (`▾`) or when all tabs are closed (`HasNoTabs`),
+  - **Then** the list of recently closed tabs is displayed with shell badge, title, working directory, and close time.
+  - **When** clicking a closed tab item or its restore action,
+  - **Then** a new tab is created restoring the saved title, working directory, shell type, and full command/directory histories, and the item is removed from `ClosedTabs`.
+  - **When** clicking the delete (`×`) button on a closed tab item or clicking "Clear History",
+  - **Then** the item(s) are removed from `ClosedTabs` and permanently purged.
+  - **When** the application saves state,
+  - **Then** `ClosedTabs` is persisted in `tabs_state.json` and restored on subsequent application launches.
 
 
 
