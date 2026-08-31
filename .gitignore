@@ -22,6 +22,7 @@
 
 # Visual Studio / Visual Studio Code / JetBrains IDEs
 .vs/
+.vscode/
 .idea/
 .fleet/
 *.ionide

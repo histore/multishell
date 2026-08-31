@@ -102,7 +102,7 @@ public class MainViewModelTabTests
 
         public Task<WorkspaceState?> LoadStateAsync()
         {
-            return Task.FromResult(StateToReturn);
+            return Task.FromResult(StateToReturn ?? SavedState);
         }
     }
 
@@ -976,5 +976,199 @@ public class MainViewModelTabTests
         // Assert
         Assert.False(mainVm.IsTabSwitcherOpen);
         Assert.Same(mainVm.Tabs[1], mainVm.SelectedTab);
+    }
+
+    [Fact]
+    public async Task HasNoTabs_And_HasOpenTabs_ReflectTabStateTransitions()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Initially with 1 restored tab
+        Assert.Single(mainVm.Tabs);
+        Assert.True(mainVm.HasOpenTabs);
+        Assert.False(mainVm.HasNoTabs);
+
+        // Close the only tab -> Empty state
+        mainVm.CloseTab(mainVm.Tabs[0]);
+        Assert.Empty(mainVm.Tabs);
+        Assert.False(mainVm.HasOpenTabs);
+        Assert.True(mainVm.HasNoTabs);
+
+        // Add a new tab -> Active state
+        mainVm.AddNewTab();
+        Assert.Single(mainVm.Tabs);
+        Assert.True(mainVm.HasOpenTabs);
+        Assert.False(mainVm.HasNoTabs);
+    }
+
+    [Fact]
+    public async Task AddNewTabWithProfile_FromEmptyState_RestoresActiveState()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Close tab to enter empty state
+        mainVm.CloseTab(mainVm.Tabs[0]);
+        Assert.True(mainVm.HasNoTabs);
+
+        // Act: Open profile from empty state
+        var cmdProfile = mainVm.Profiles.FirstOrDefault(p => p.ShellType == ShellType.CMD) ?? mainVm.Profiles.First();
+        mainVm.AddNewTabWithProfile(cmdProfile);
+
+        // Assert
+        Assert.Single(mainVm.Tabs);
+        Assert.True(mainVm.HasOpenTabs);
+        Assert.False(mainVm.HasNoTabs);
+        Assert.NotNull(mainVm.SelectedTab);
+    }
+
+    [Fact]
+    public async Task CloseTab_AddsToClosedTabs_AndCapsAt10Entries()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Create and close 12 tabs
+        for (int i = 1; i <= 12; i++)
+        {
+            mainVm.AddNewTabWithDirectory($@"C:\projects\tab{i}");
+            var session = processService.CreatedSessions[^1];
+            session.TriggerCommandExecuted($"command-{i}");
+            var tab = mainVm.Tabs[^1];
+            mainVm.CloseTab(tab);
+        }
+
+        // Assert - Max 10 items, newest first
+        Assert.Equal(10, mainVm.ClosedTabs.Count);
+        Assert.True(mainVm.HasClosedTabs);
+        Assert.Equal(@"C:\projects\tab12", mainVm.ClosedTabs[0].WorkingDirectory);
+        Assert.Contains("command-12", mainVm.ClosedTabs[0].CommandHistory);
+        // The oldest ones (tab 1 and tab 2) should have been evicted
+        Assert.DoesNotContain(mainVm.ClosedTabs, c => c.WorkingDirectory == @"C:\projects\tab1");
+        Assert.DoesNotContain(mainVm.ClosedTabs, c => c.WorkingDirectory == @"C:\projects\tab2");
+        Assert.Equal(@"C:\projects\tab3", mainVm.ClosedTabs[^1].WorkingDirectory);
+    }
+
+    [Fact]
+    public async Task RestoreClosedTab_OpensTabWithRestoredHistory_AndRemovesFromClosedTabs()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTabWithDirectory(@"C:\projects\custom-workdir", ShellType.WSL);
+        var session = processService.CreatedSessions[^1];
+        session.TriggerCommandExecuted("git status");
+        session.TriggerCommandExecuted("dotnet build");
+
+        var tabToClose = mainVm.Tabs[^1];
+        mainVm.CloseTab(tabToClose);
+
+        Assert.Single(mainVm.ClosedTabs);
+        var closedItem = mainVm.ClosedTabs[0];
+
+        // Act - Restore
+        mainVm.RestoreClosedTab(closedItem);
+
+        // Assert
+        Assert.Empty(mainVm.ClosedTabs);
+        Assert.False(mainVm.HasClosedTabs);
+        var restoredTab = mainVm.SelectedTab;
+        Assert.NotNull(restoredTab);
+        Assert.Equal(ShellType.WSL, restoredTab.ShellType);
+        Assert.Equal(@"C:\projects\custom-workdir", restoredTab.WorkingDirectory);
+        Assert.Equal(2, restoredTab.CommandHistory.Count);
+        Assert.Contains("git status", restoredTab.CommandHistory);
+        Assert.Contains("dotnet build", restoredTab.CommandHistory);
+    }
+
+    [Fact]
+    public async Task RemoveClosedTab_PurgesSpecificClosedTab()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTabWithDirectory(@"C:\dir1");
+        mainVm.AddNewTabWithDirectory(@"C:\dir2");
+        mainVm.CloseTab(mainVm.Tabs[1]);
+        mainVm.CloseTab(mainVm.Tabs[1]);
+
+        Assert.Equal(2, mainVm.ClosedTabs.Count);
+        var targetToRemove = mainVm.ClosedTabs[0];
+
+        // Act
+        mainVm.RemoveClosedTab(targetToRemove);
+
+        // Assert
+        Assert.Single(mainVm.ClosedTabs);
+        Assert.DoesNotContain(targetToRemove, mainVm.ClosedTabs);
+    }
+
+    [Fact]
+    public async Task ClearClosedTabs_RemovesAllClosedTabs()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTabWithDirectory(@"C:\dir1");
+        mainVm.AddNewTabWithDirectory(@"C:\dir2");
+        mainVm.CloseTab(mainVm.Tabs[1]);
+        mainVm.CloseTab(mainVm.Tabs[1]);
+        Assert.True(mainVm.HasClosedTabs);
+
+        // Act
+        mainVm.ClearClosedTabs();
+
+        // Assert
+        Assert.Empty(mainVm.ClosedTabs);
+        Assert.False(mainVm.HasClosedTabs);
+    }
+
+    [Fact]
+    public async Task Persistence_SavesAndRestoresClosedTabs()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm1 = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm1.InitializeWorkspaceAsync();
+
+        mainVm1.AddNewTabWithDirectory(@"C:\persist-test", ShellType.NuShell);
+        var session = processService.CreatedSessions[^1];
+        session.TriggerCommandExecuted("nu-command-1");
+        var tab = mainVm1.Tabs[^1];
+        mainVm1.CloseTab(tab);
+
+        mainVm1.SaveCurrentStateSynchronously();
+
+        // Act - Start second workspace session with persisted state
+        using var mainVm2 = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm2.InitializeWorkspaceAsync();
+
+        // Assert
+        Assert.Single(mainVm2.ClosedTabs);
+        Assert.True(mainVm2.HasClosedTabs);
+        var restoredClosedItem = mainVm2.ClosedTabs[0];
+        Assert.Equal(ShellType.NuShell, restoredClosedItem.ShellType);
+        Assert.Equal(@"C:\persist-test", restoredClosedItem.WorkingDirectory);
+        Assert.Contains("nu-command-1", restoredClosedItem.CommandHistory);
     }
 }

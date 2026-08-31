@@ -261,6 +261,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public ObservableCollection<TerminalTabViewModel> Tabs { get; } = new();
 
+    /// <summary>
+    /// Gets the collection of recently closed tabs (max 10 entries FIFO).
+    /// </summary>
+    public ObservableCollection<ClosedTabItemViewModel> ClosedTabs { get; } = new();
+
+    /// <summary>
+    /// Maximum number of closed tabs retained in history.
+    /// </summary>
+    public const int MaxClosedTabsCount = 10;
+
+    /// <summary>
+    /// Gets a value indicating whether there are any open terminal tabs.
+    /// </summary>
+    public bool HasOpenTabs => Tabs.Count > 0;
+
+    /// <summary>
+    /// Gets a value indicating whether all tabs are closed (empty workspace state).
+    /// </summary>
+    public bool HasNoTabs => Tabs.Count == 0;
+
+    /// <summary>
+    /// Gets a value indicating whether there are any recently closed tabs in history.
+    /// </summary>
+    public bool HasClosedTabs => ClosedTabs.Count > 0;
+
     private static string DetermineAppVersion()
     {
         var informationalVersion = typeof(MainViewModel).Assembly
@@ -335,6 +360,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _terminalFontSizeLevel = _fontSizeService.TerminalFontSizeLevel;
         _appFontScale = _fontSizeService.AppFontScale;
         _terminalFontSize = _fontSizeService.TerminalFontSize;
+
+        Tabs.CollectionChanged += (s, e) =>
+        {
+            OnPropertyChanged(nameof(HasOpenTabs));
+            OnPropertyChanged(nameof(HasNoTabs));
+        };
+
+        ClosedTabs.CollectionChanged += (s, e) =>
+        {
+            OnPropertyChanged(nameof(HasClosedTabs));
+        };
 
         _localizationService.LanguageChanged += lang =>
         {
@@ -435,6 +471,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             else
             {
                 AddNewTab();
+            }
+
+            if (state?.ClosedTabs != null && state.ClosedTabs.Count > 0)
+            {
+                ClosedTabs.Clear();
+                foreach (var closedState in state.ClosedTabs.Take(MaxClosedTabsCount))
+                {
+                    ClosedTabs.Add(ClosedTabItemViewModel.FromTabState(closedState));
+                }
             }
 
             _isInitialized = true;
@@ -862,6 +907,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        // Capture closed tab state before disposing
+        var closedItem = new ClosedTabItemViewModel(
+            tab.Title,
+            tab.WorkingDirectory,
+            tab.ShellType,
+            tab.CommandHistory,
+            tab.DirectoryHistory,
+            DateTime.Now);
+
         try
         {
             tab.Dispose();
@@ -882,6 +936,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         tab.DirectoryChanged -= OnTabDirectoryChanged;
         tab.HistoryChanged -= OnTabHistoryChanged;
 
+        // Push to recently closed history (newest at index 0, capped at MaxClosedTabsCount)
+        ClosedTabs.Insert(0, closedItem);
+        while (ClosedTabs.Count > MaxClosedTabsCount)
+        {
+            ClosedTabs.RemoveAt(ClosedTabs.Count - 1);
+        }
+
         if (SelectedTab == tab)
         {
             SelectedTab = Tabs.Count > 0
@@ -889,6 +950,49 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 : null;
         }
 
+        TriggerSaveState();
+    }
+
+    /// <summary>
+    /// Restores a previously closed tab with its full command and directory histories.
+    /// </summary>
+    [RelayCommand]
+    public void RestoreClosedTab(ClosedTabItemViewModel? closedItem)
+    {
+        if (closedItem == null) return;
+
+        ClosedTabs.Remove(closedItem);
+
+        _tabCounter++;
+        var session = _shellProcessService.CreateSession(closedItem.Title, closedItem.WorkingDirectory, closedItem.ShellType);
+        var tabVm = new TerminalTabViewModel(session);
+        tabVm.RestoreHistory(closedItem.CommandHistory, closedItem.DirectoryHistory);
+        RegisterTabEvents(tabVm);
+        Tabs.Add(tabVm);
+        SelectedTab = tabVm;
+
+        TriggerSaveState();
+    }
+
+    /// <summary>
+    /// Removes a closed tab item from history permanently.
+    /// </summary>
+    [RelayCommand]
+    public void RemoveClosedTab(ClosedTabItemViewModel? closedItem)
+    {
+        if (closedItem == null) return;
+
+        ClosedTabs.Remove(closedItem);
+        TriggerSaveState();
+    }
+
+    /// <summary>
+    /// Clears all closed tab items from history permanently.
+    /// </summary>
+    [RelayCommand]
+    public void ClearClosedTabs()
+    {
+        ClosedTabs.Clear();
         TriggerSaveState();
     }
 
@@ -1021,9 +1125,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             t.CommandHistory.ToList(),
             t.DirectoryHistory.ToList(),
             t.ShellType)).ToList();
+        var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
-        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage, AppFontSizeLevel, TerminalFontSizeLevel, DefaultShellType);
+        var workspaceState = new WorkspaceState(
+            tabStates,
+            selectedIndex,
+            savedLanguage,
+            AppFontSizeLevel,
+            TerminalFontSizeLevel,
+            DefaultShellType,
+            closedTabStates);
 
         _ = _persistenceService.SaveStateAsync(workspaceState);
     }
@@ -1038,9 +1150,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             t.CommandHistory.ToList(),
             t.DirectoryHistory.ToList(),
             t.ShellType)).ToList();
+        var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
-        var workspaceState = new WorkspaceState(tabStates, selectedIndex, savedLanguage, AppFontSizeLevel, TerminalFontSizeLevel, DefaultShellType);
+        var workspaceState = new WorkspaceState(
+            tabStates,
+            selectedIndex,
+            savedLanguage,
+            AppFontSizeLevel,
+            TerminalFontSizeLevel,
+            DefaultShellType,
+            closedTabStates);
 
         try
         {

@@ -250,15 +250,7 @@ public partial class MainWindow : Window
 
         if (TabSwitcherListBox != null)
         {
-            TabSwitcherListBox.PointerPressed += (_, e) =>
-            {
-                if (DataContext is MainViewModel vm && TabSwitcherListBox.SelectedItem is TerminalTabViewModel tab)
-                {
-                    vm.SelectTabFromSwitcher(tab);
-                    FocusActiveTerminal();
-                    e.Handled = true;
-                }
-            };
+            TabSwitcherListBox.AddHandler(InputElement.PointerPressedEvent, OnTabSwitcherListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
 
         // Window-level Keyboard Filter
@@ -339,8 +331,9 @@ public partial class MainWindow : Window
             }
         }
 
-        // Ctrl+Shift+H: Toggle History Drawer
-        if (e.Key == Key.H && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift))
+        // Ctrl+Shift+H: Toggle History Drawer (ensure Alt/AltGr is not pressed)
+        var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+        if (!isAlt && e.Key == Key.H && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift))
         {
             ToggleHistoryDrawer();
             e.Handled = true;
@@ -492,7 +485,8 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainViewModel vm)
             {
-                var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+                var isAltGrOrAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+                var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0 && !isAltGrOrAlt;
                 var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
 
                 // 1. Ctrl+Shift+PageUp / Ctrl+Shift+PageDown: Move Tab Left/Right
@@ -719,6 +713,34 @@ public partial class MainWindow : Window
             if (visual.DataContext is string str && !string.IsNullOrWhiteSpace(str))
             {
                 return str;
+            }
+            visual = visual.GetVisualParent();
+        }
+        return null;
+    }
+
+    private void OnTabSwitcherListBoxPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var props = e.GetCurrentPoint(this).Properties;
+        if (props.IsLeftButtonPressed)
+        {
+            var clickedTab = GetTabItemFromPointerSource(e.Source as Visual);
+            if (clickedTab != null && DataContext is MainViewModel vm)
+            {
+                e.Handled = true;
+                vm.SelectTabFromSwitcher(clickedTab);
+                FocusActiveTerminal();
+            }
+        }
+    }
+
+    private static TerminalTabViewModel? GetTabItemFromPointerSource(Visual? visual)
+    {
+        while (visual != null)
+        {
+            if (visual.DataContext is TerminalTabViewModel tab)
+            {
+                return tab;
             }
             visual = visual.GetVisualParent();
         }
