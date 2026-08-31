@@ -10,19 +10,21 @@ namespace MultiShell.ViewModels;
 /// Observable ViewModel representing a previously closed terminal tab.
 /// Encapsulates tab state and history for 1-click restoration or removal.
 /// </summary>
-public partial class ClosedTabItemViewModel : ObservableObject
+public partial class ClosedTabItemViewModel : ViewModelBase
 {
     [ObservableProperty]
-    private string _title;
+    private string _title = string.Empty;
 
     [ObservableProperty]
     private string? _workingDirectory;
 
     [ObservableProperty]
-    private ShellType _shellType;
+    [NotifyPropertyChangedFor(nameof(ShellIconTag))]
+    private ShellType _shellType = ShellType.PowerShell;
 
     [ObservableProperty]
-    private DateTime _closedAt;
+    [NotifyPropertyChangedFor(nameof(FormattedClosedTime))]
+    private DateTime _closedAt = DateTime.Now;
 
     public List<string> CommandHistory { get; }
     public List<string> DirectoryHistory { get; }
@@ -37,6 +39,12 @@ public partial class ClosedTabItemViewModel : ObservableObject
     };
 
     public string FormattedClosedTime => ClosedAt.ToString("HH:mm");
+
+    public ClosedTabItemViewModel()
+    {
+        CommandHistory = [];
+        DirectoryHistory = [];
+    }
 
     public ClosedTabItemViewModel(
         string title,
