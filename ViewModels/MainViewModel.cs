@@ -732,6 +732,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _tabSwitcherOriginalTab = null;
     }
 
+    /// <summary>
+    /// Closes a tab directly from the Tab Switcher overlay, keeping the overlay open if remaining tabs exist (REQ-TAB-023).
+    /// </summary>
+    [RelayCommand]
+    public void CloseTabFromSwitcher(TerminalTabViewModel? tab)
+    {
+        if (tab == null || !Tabs.Contains(tab)) return;
+
+        CloseTab(tab);
+
+        if (Tabs.Count == 0)
+        {
+            IsTabSwitcherOpen = false;
+            _tabSwitcherOriginalTab = null;
+        }
+        else
+        {
+            if (TabSwitcherSelectedIndex >= Tabs.Count)
+            {
+                TabSwitcherSelectedIndex = Tabs.Count - 1;
+            }
+            OnPropertyChanged(nameof(TabSwitcherCountText));
+        }
+    }
+
     private static string GetDefaultTitle(ShellType shellType, int id) => shellType switch
     {
         ShellType.PowerShell => $"PS {id}",
