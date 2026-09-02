@@ -53,6 +53,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
 | `REQ-UI-008` | Empty State Welcome & Terminal Profile Selector Dashboard | UI | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-TAB-021` | Recently Closed Tabs History & Restoration (Max 10 FIFO) | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
+| `REQ-TAB-022` | Dynamic Tab Creation via Double-Click on Empty Tab Bar Area | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
@@ -186,14 +187,16 @@ This document serves as the single source of truth for all functional and non-fu
   - **Given** an active PowerShell terminal tab in MultiShell,
   - **When** commands are executed in the tab,
   - **Then** each executed command is tracked into `CommandHistory` and directory changes into `DirectoryHistory`.
-  - **When** hovering over the left edge of the window or clicking the History toolbar button,
+  - **When** hovering and dwelling in the left edge trigger area of the window (dwell delay 300ms) or clicking the History toolbar button,
   - **Then** a flyout overlay displays the command history and directory history of the active tab.
+  - **When** moving the pointer swiftly across the trigger area without dwelling,
+  - **Then** the overlay does not open.
   - **When** clicking a history entry with the left mouse button or pressing `Enter`,
   - **Then** the command or folder navigation is pasted into the active terminal prompt without executing it, and the overlay closes immediately, focusing the terminal.
   - **When** right-clicking an entry,
   - **Then** the command or directory navigation is executed directly with Return.
-  - **When** moving the pointer out of the overlay,
-  - **Then** the overlay closes smoothly.
+  - **When** moving the pointer out of the overlay or the window,
+  - **Then** the overlay closes smoothly and focuses the terminal.
 
 ---
 
@@ -727,6 +730,19 @@ This document serves as the single source of truth for all functional and non-fu
   - **Then** `THIRD_PARTY_NOTICES.md` provides full license texts and copyright attributions for all third-party dependencies and fonts (Fira Code, Nerd Fonts, Avalonia, CommunityToolkit, SvcSystems.UI.Terminal, MinVer, .NET Runtime).
   - **When** opening the About dialog in MultiShell,
   - **Then** font attribution (`FiraCode Nerd Font Mono (OFL-1.1)`) and third-party notice references are clearly displayed across all supported languages.
+
+---
+
+### REQ-TAB-022: Dynamic Tab Creation via Double-Click on Empty Tab Bar Area
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want to double-click in the empty/free area of the tab bar (e.g. to the right of the open tabs) to quickly open a new terminal tab, matching standard modern browser and terminal ergonomics.
+- **Acceptance Criteria**:
+  - **Given** MultiShell is running with one or more open tabs,
+  - **When** the user performs a left-button double-click in the empty space of the tab bar (outside of tab buttons, close buttons, scroll arrows, and toolbar controls),
+  - **Then** a new tab is created with the default shell and immediately selected.
+  - **When** the user double-clicks directly on an interactive control (such as a tab button, close button, or scroll button),
+  - **Then** a new tab is NOT created.
+
 
 
 

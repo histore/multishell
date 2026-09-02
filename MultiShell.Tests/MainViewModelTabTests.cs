@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using MultiShell.Models;
 using MultiShell.Services;
 using MultiShell.ViewModels;
+using MultiShell.Views;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -1170,5 +1171,49 @@ public class MainViewModelTabTests
         Assert.Equal(ShellType.NuShell, restoredClosedItem.ShellType);
         Assert.Equal(@"C:\persist-test", restoredClosedItem.WorkingDirectory);
         Assert.Contains("nu-command-1", restoredClosedItem.CommandHistory);
+    }
+
+    [Fact]
+    public void IsInteractiveTabControl_CorrectlyIdentifiesButtonsAndFreeSpace()
+    {
+        // Button is interactive
+        var button = new Avalonia.Controls.Button();
+        Assert.True(MainWindow.IsInteractiveTabControl(button));
+
+        // Child of Button (e.g. TextBlock inside tab button) is interactive
+        var textBlock = new Avalonia.Controls.TextBlock();
+        button.Content = textBlock;
+        Assert.True(MainWindow.IsInteractiveTabControl(textBlock));
+
+        // Empty space controls (Grid, ScrollViewer, StackPanel) are NOT interactive
+        var scrollViewer = new Avalonia.Controls.ScrollViewer();
+        var grid = new Avalonia.Controls.Grid();
+        var stackPanel = new Avalonia.Controls.StackPanel();
+        grid.Children.Add(stackPanel);
+
+        Assert.False(MainWindow.IsInteractiveTabControl(scrollViewer));
+        Assert.False(MainWindow.IsInteractiveTabControl(grid));
+        Assert.False(MainWindow.IsInteractiveTabControl(stackPanel));
+        Assert.False(MainWindow.IsInteractiveTabControl(null));
+    }
+
+    [Fact]
+    public async Task AddNewTabCommand_ExecutedFromEmptyTabBarArea_CreatesAndSelectsNewTab()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        var initialCount = mainVm.Tabs.Count;
+        Assert.Equal(1, initialCount);
+
+        // Act: Simulating double-click on free area which executes AddNewTabCommand
+        mainVm.AddNewTabCommand.Execute(null);
+
+        // Assert: New tab added and selected
+        Assert.Equal(initialCount + 1, mainVm.Tabs.Count);
+        Assert.Equal(mainVm.Tabs[^1], mainVm.SelectedTab);
     }
 }

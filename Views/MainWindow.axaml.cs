@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Controls;
@@ -16,6 +17,7 @@ public partial class MainWindow : Window
     private Point _dragStartPos;
     private bool _isDragging;
     private double _tabWheelAccumulator;
+    private DispatcherTimer? _historyHoverTimer;
 
     public MainWindow()
     {
@@ -32,6 +34,7 @@ public partial class MainWindow : Window
         if (TabBarContainer != null)
         {
             TabBarContainer.AddHandler(InputElement.PointerWheelChangedEvent, OnTabsPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
+            TabBarContainer.AddHandler(InputElement.PointerPressedEvent, OnTabBarPointerPressed, RoutingStrategies.Bubble);
         }
 
         if (TabsScrollViewer != null)
@@ -102,10 +105,35 @@ public partial class MainWindow : Window
 
         if (ProfilesModal != null) ProfilesModal.PointerPressed += (_, e) => { if (e.Source == ProfilesModal && DataContext is MainViewModel vm) vm.CloseProfilesModal(); };
 
-        // History Drawer
+        // History Drawer Hover Trigger with Dwell Delay (REQ-TAB-012)
         if (HistoryHoverTrigger != null)
         {
-            HistoryHoverTrigger.PointerEntered += (_, _) => ShowHistoryDrawer();
+            HistoryHoverTrigger.PointerEntered += (_, _) =>
+            {
+                _historyHoverTimer?.Stop();
+                if (HistoryDrawer?.IsVisible == true) return;
+
+                _historyHoverTimer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(300)
+                };
+                _historyHoverTimer.Tick += (_, _) =>
+                {
+                    _historyHoverTimer?.Stop();
+                    _historyHoverTimer = null;
+                    if (HistoryDrawer != null && !HistoryDrawer.IsVisible)
+                    {
+                        ShowHistoryDrawer();
+                    }
+                };
+                _historyHoverTimer.Start();
+            };
+
+            HistoryHoverTrigger.PointerExited += (_, _) =>
+            {
+                _historyHoverTimer?.Stop();
+                _historyHoverTimer = null;
+            };
         }
 
         if (HistoryDrawer != null)
@@ -113,12 +141,23 @@ public partial class MainWindow : Window
             HistoryDrawer.PointerExited += (_, e) =>
             {
                 var pos = e.GetPosition(HistoryDrawer);
-                if (pos.X < 0 || pos.X >= HistoryDrawer.Bounds.Width || pos.Y < 0 || pos.Y >= HistoryDrawer.Bounds.Height)
+                if (pos.X <= 0 || pos.X >= HistoryDrawer.Bounds.Width - 1 || pos.Y <= 0 || pos.Y >= HistoryDrawer.Bounds.Height - 1)
                 {
                     HideHistoryDrawerAndFocusTerminal();
                 }
             };
         }
+
+        // Close History Drawer when pointer leaves the main window in any direction
+        PointerExited += (_, _) =>
+        {
+            _historyHoverTimer?.Stop();
+            _historyHoverTimer = null;
+            if (HistoryDrawer?.IsVisible == true)
+            {
+                HideHistoryDrawerAndFocusTerminal();
+            }
+        };
 
                 if (ClearCommandFilterBtn != null)
         {
@@ -610,6 +649,8 @@ public partial class MainWindow : Window
 
     public void ShowHistoryDrawer()
     {
+        _historyHoverTimer?.Stop();
+        _historyHoverTimer = null;
         if (HistoryDrawer == null) return;
         HistoryDrawer.IsVisible = true;
         var hasFilter = false;
@@ -902,6 +943,8 @@ public partial class MainWindow : Window
 
     private void HideHistoryDrawerAndFocusTerminal()
     {
+        _historyHoverTimer?.Stop();
+        _historyHoverTimer = null;
         if (HistoryDrawer != null)
         {
             HistoryDrawer.IsVisible = false;
@@ -1138,6 +1181,36 @@ public partial class MainWindow : Window
                 return false;
             }
             visual = visual.GetVisualParent();
+        }
+        return false;
+    }
+
+    internal void OnTabBarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var props = e.GetCurrentPoint(this).Properties;
+        if (!props.IsLeftButtonPressed || e.ClickCount != 2) return;
+
+        var visual = e.Source as Visual;
+        if (IsInteractiveTabControl(visual)) return;
+
+        if (DataContext is MainViewModel vm)
+        {
+            e.Handled = true;
+            Dispatcher.UIThread.Post(() => vm.AddNewTabCommand.Execute(null));
+        }
+    }
+
+    internal static bool IsInteractiveTabControl(Visual? visual)
+    {
+        int depth = 0;
+        var visited = new HashSet<Visual>();
+        while (visual != null && depth++ < 50 && visited.Add(visual))
+        {
+            if (visual is Button)
+            {
+                return true;
+            }
+            visual = visual.GetVisualParent() ?? (visual as Avalonia.LogicalTree.ILogical)?.LogicalParent as Visual;
         }
         return false;
     }
