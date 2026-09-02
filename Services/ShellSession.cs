@@ -257,14 +257,21 @@ public sealed class ShellSession : IShellSession
 
             var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["TERM"] = "xterm-256color",
-                ["COLORTERM"] = "truecolor",
-                ["WT_SESSION"] = SessionId.ToString(),
                 ["PYTHONIOENCODING"] = "utf-8",
                 ["PYTHONUTF8"] = "1",
                 ["LANG"] = "en_US.UTF-8",
                 ["LC_ALL"] = "en_US.UTF-8"
             };
+
+            // Only inject Unix-style xterm terminal emulation for WSL/Linux sessions.
+            // Native Windows shells (PowerShell, CMD, NuShell) run in standard Windows ConPTY
+            // mode (win32con), preventing applications like Neovim from emitting colon-separated
+            // SGR TrueColor sequences and unhandled terminal queries.
+            if (_shellType == ShellType.WSL)
+            {
+                envVars["TERM"] = "xterm-256color";
+                envVars["COLORTERM"] = "truecolor";
+            }
             foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
             {
                 if (de.Key is string k && de.Value is string v && !envVars.ContainsKey(k))

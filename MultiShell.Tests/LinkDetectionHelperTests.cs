@@ -109,4 +109,21 @@ public class LinkDetectionHelperTests
             Directory.Delete(tempDir, recursive: true);
         }
     }
+
+    [Fact]
+    public void OpenTarget_UnverifiedNonExistentFileOrBinary_ReturnsFalse()
+    {
+        // Act
+        var result = LinkDetectionHelper.OpenTarget("malicious_command.exe");
+
+        // Assert - Disallows launching unverified arbitrary binaries
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void OpenTarget_EmptyOrWhitespace_ReturnsFalse()
+    {
+        Assert.False(LinkDetectionHelper.OpenTarget(""));
+        Assert.False(LinkDetectionHelper.OpenTarget("   "));
+    }
 }
