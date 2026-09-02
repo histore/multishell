@@ -768,11 +768,31 @@ public partial class MainWindow : Window
             var clickedTab = GetTabItemFromPointerSource(e.Source as Visual);
             if (clickedTab != null && DataContext is MainViewModel vm)
             {
+                if (IsTabSwitcherCloseButton(e.Source as Visual))
+                {
+                    e.Handled = true;
+                    vm.CloseTabFromSwitcher(clickedTab);
+                    return;
+                }
+
                 e.Handled = true;
                 vm.SelectTabFromSwitcher(clickedTab);
                 FocusActiveTerminal();
             }
         }
+    }
+
+    private static bool IsTabSwitcherCloseButton(Visual? visual)
+    {
+        while (visual != null && visual is not ListBoxItem)
+        {
+            if (visual is Button btn && btn.Classes.Contains("tabSwitcherCloseBtn"))
+            {
+                return true;
+            }
+            visual = visual.GetVisualParent();
+        }
+        return false;
     }
 
     private static TerminalTabViewModel? GetTabItemFromPointerSource(Visual? visual)

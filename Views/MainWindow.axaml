@@ -183,6 +183,34 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
         </Style>
+        <Style Selector="Button.tabSwitcherCloseBtn">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource AppTextMuted}" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                    <BrushTransition Property="Foreground" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="ListBox.tabSwitcherListBox ListBoxItem:pointerover Button.tabSwitcherCloseBtn">
+            <Setter Property="Opacity" Value="0.6" />
+        </Style>
+        <Style Selector="ListBox.tabSwitcherListBox ListBoxItem Button.tabSwitcherCloseBtn:pointerover">
+            <Setter Property="Opacity" Value="1.0" />
+            <Setter Property="Background" Value="{DynamicResource AppDangerSubtle}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppDanger}" />
+        </Style>
 
         <!-- Header Action Buttons (History, Settings) -->
         <Style Selector="Button.toolbarActionBtn">
@@ -1647,7 +1675,7 @@
                                      MaxHeight="280">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate x:DataType="vm:TerminalTabViewModel">
-                                        <Grid ColumnDefinitions="Auto, *, Auto"
+                                        <Grid ColumnDefinitions="Auto, *, Auto, Auto"
                                               Background="Transparent">
                                             <!-- Shell Badge Icon -->
                                             <Border Grid.Column="0"
@@ -1686,6 +1714,20 @@
                                                            IsVisible="{Binding IsSelected}"
                                                            VerticalAlignment="Center" />
                                             </StackPanel>
+
+                                            <!-- Close Tab Button (REQ-TAB-023) -->
+                                            <Button Grid.Column="3"
+                                                    Classes="tabSwitcherCloseBtn"
+                                                    Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).CloseTabFromSwitcherCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip.Tip="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Btn_Tab_Close_Tooltip]}"
+                                                    Margin="6,0,2,0">
+                                                <TextBlock Text="✕"
+                                                           FontSize="10"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                            </Button>
                                         </Grid>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>

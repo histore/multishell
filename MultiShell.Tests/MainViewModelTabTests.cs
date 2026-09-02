@@ -1216,4 +1216,81 @@ public class MainViewModelTabTests
         Assert.Equal(initialCount + 1, mainVm.Tabs.Count);
         Assert.Equal(mainVm.Tabs[^1], mainVm.SelectedTab);
     }
+
+    [Fact]
+    public async Task CloseTabFromSwitcher_WhenMultipleTabs_ClosesTargetTabAndKeepsSwitcherOpen()
+    {
+        // Arrange (REQ-TAB-023)
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTabCommand.Execute(null);
+        mainVm.AddNewTabCommand.Execute(null);
+        Assert.Equal(3, mainVm.Tabs.Count);
+
+        mainVm.ShowTabSwitcher(isKeyboardTriggered: false);
+        Assert.True(mainVm.IsTabSwitcherOpen);
+
+        var tabToClose = mainVm.Tabs[1];
+
+        // Act
+        mainVm.CloseTabFromSwitcherCommand.Execute(tabToClose);
+
+        // Assert
+        Assert.Equal(2, mainVm.Tabs.Count);
+        Assert.DoesNotContain(tabToClose, mainVm.Tabs);
+        Assert.True(mainVm.IsTabSwitcherOpen); // Switcher remains open!
+        Assert.NotEmpty(mainVm.ClosedTabs); // Tab saved in recently closed history
+        Assert.Equal(tabToClose.Title, mainVm.ClosedTabs[0].Title);
+    }
+
+    [Fact]
+    public async Task CloseTabFromSwitcher_WhenLastTabClosed_ClosesTabSwitcher()
+    {
+        // Arrange (REQ-TAB-023)
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+        Assert.Single(mainVm.Tabs);
+
+        mainVm.ShowTabSwitcher(isKeyboardTriggered: false);
+        Assert.True(mainVm.IsTabSwitcherOpen);
+
+        var lastTab = mainVm.Tabs[0];
+
+        // Act
+        mainVm.CloseTabFromSwitcherCommand.Execute(lastTab);
+
+        // Assert
+        Assert.Empty(mainVm.Tabs);
+        Assert.False(mainVm.IsTabSwitcherOpen); // Closes when no tabs remain
+    }
+
+    [Fact]
+    public async Task CloseTabFromSwitcher_WhenSelectedTabIsLastIndex_AdjustsSelectedIndex()
+    {
+        // Arrange (REQ-TAB-023)
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+        mainVm.AddNewTabCommand.Execute(null);
+        mainVm.AddNewTabCommand.Execute(null);
+
+        mainVm.ShowTabSwitcher(isKeyboardTriggered: false);
+        mainVm.TabSwitcherSelectedIndex = 2;
+
+        var lastTab = mainVm.Tabs[2];
+
+        // Act
+        mainVm.CloseTabFromSwitcherCommand.Execute(lastTab);
+
+        // Assert
+        Assert.Equal(2, mainVm.Tabs.Count);
+        Assert.Equal(1, mainVm.TabSwitcherSelectedIndex); // Clamped within bounds
+        Assert.True(mainVm.IsTabSwitcherOpen);
+    }
 }
