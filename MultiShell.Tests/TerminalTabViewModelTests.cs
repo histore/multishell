@@ -784,5 +784,59 @@ public class TerminalTabViewModelTests
 
         Assert.Null(ex);
     }
+
+    [Fact]
+    public void CheckAndRespondToOscColorQueries_WhenDarkTheme_RepliesWithDarkRgbBackground()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+        vm.UpdateTheme(isDark: true);
+
+        // Act - Simulate incoming OSC 11 background query from Neovim
+        vm.CheckAndRespondToOscColorQueries("\x1b]11;?\x07");
+
+        // Assert
+        Assert.Single(session.SentData);
+        var reply = Encoding.ASCII.GetString(session.SentData[0]);
+        Assert.Equal("\x1b]11;rgb:0e0e/0f0f/1515\x1b\\", reply);
+    }
+
+    [Fact]
+    public void CheckAndRespondToOscColorQueries_WhenLightTheme_RepliesWithLightRgbBackground()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+        vm.UpdateTheme(isDark: false);
+
+        // Act - Simulate incoming OSC 11 background query from Neovim
+        vm.CheckAndRespondToOscColorQueries("\x1b]11;?\x1b\\");
+
+        // Assert
+        Assert.Single(session.SentData);
+        var reply = Encoding.ASCII.GetString(session.SentData[0]);
+        Assert.Equal("\x1b]11;rgb:f8f8/f9f9/fcfc\x1b\\", reply);
+    }
+
+    [Fact]
+    public void CheckAndRespondToOscColorQueries_Osc10ForegroundQuery_RepliesWithRgbForeground()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+        vm.UpdateTheme(isDark: true);
+
+        // Act - Simulate incoming OSC 10 foreground query
+        vm.CheckAndRespondToOscColorQueries("\x1b]10;?\x07");
+
+        // Assert
+        Assert.Single(session.SentData);
+        var reply = Encoding.ASCII.GetString(session.SentData[0]);
+        Assert.Equal("\x1b]10;rgb:c0c0/caca/f5f5\x1b\\", reply);
+    }
 }
 

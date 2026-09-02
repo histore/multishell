@@ -220,13 +220,19 @@ public static class LinkDetectionHelper
                 return true;
             }
 
-            // 3. Fallback for shell-executable URIs (e.g. mailto: or custom protocols)
-            Process.Start(new ProcessStartInfo
+            // 3. Fallback for safe known schemes (e.g. mailto: or tel:)
+            if (Uri.TryCreate(target, UriKind.Absolute, out var customUri) &&
+                (customUri.Scheme == "mailto" || customUri.Scheme == "tel"))
             {
-                FileName = target,
-                UseShellExecute = true
-            });
-            return true;
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = target,
+                    UseShellExecute = true
+                });
+                return true;
+            }
+
+            return false;
         }
         catch
         {

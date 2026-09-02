@@ -394,9 +394,48 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     }
 
     private static readonly Regex OscSequenceRegex = new(@"\x1b\][^\x1b\x07]*(\x1b\\|\x07)", RegexOptions.Compiled);
+    private static readonly Regex OscColorQueryRegex = new(@"\x1b\](10|11);\?(\x07|\x1b\\)", RegexOptions.Compiled);
     private readonly Decoder _outputDecoder = Encoding.UTF8.GetDecoder();
     private readonly StringBuilder _streamBuffer = new();
     private readonly object _decoderLock = new();
+
+    /// <summary>
+    /// Checks if incoming text from the shell contains terminal color queries (OSC 10 foreground, OSC 11 background)
+    /// emitted by TUIs such as Neovim, and responds back to the shell with the active theme RGB colors.
+    /// </summary>
+    internal void CheckAndRespondToOscColorQueries(string text)
+    {
+        if (string.IsNullOrEmpty(text) || !text.Contains("\x1b]")) return;
+
+        var matches = OscColorQueryRegex.Matches(text);
+        if (matches.Count == 0) return;
+
+        foreach (Match match in matches)
+        {
+            var code = match.Groups[1].Value;
+            string response;
+            if (code == "11")
+            {
+                // Background color query (X11 16-bit-per-channel RGB format)
+                response = IsDarkTerminalTheme
+                    ? "\x1b]11;rgb:0e0e/0f0f/1515\x1b\\"
+                    : "\x1b]11;rgb:f8f8/f9f9/fcfc\x1b\\";
+            }
+            else
+            {
+                // Foreground color query
+                response = IsDarkTerminalTheme
+                    ? "\x1b]10;rgb:c0c0/caca/f5f5\x1b\\"
+                    : "\x1b]10;rgb:1a1a/1d1d/2b2b\x1b\\";
+            }
+
+            try
+            {
+                _session.Send(Encoding.ASCII.GetBytes(response));
+            }
+            catch { }
+        }
+    }
 
     /// <summary>
     /// Strips unsupported OSC escape sequences (e.g. OSC 8 hyperlinks, OSC 9/133 shell integration)
@@ -513,7 +552,10 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
                 current = current[..incompleteIndex];
             }
 
-            // 2. Strip unsupported complete OSC sequences (e.g. OSC 133 / OSC 9;9 shell integration)
+            // 2. Intercept and respond to OSC 10 / OSC 11 color queries (e.g. Neovim background detection)
+            CheckAndRespondToOscColorQueries(current);
+
+            // 3. Strip unsupported complete OSC sequences (e.g. OSC 133 / OSC 9;9 shell integration)
             textToFeed = SanitizeTerminalText(current);
 
             // Safety boundary on stream buffer
