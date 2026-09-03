@@ -47,6 +47,7 @@ Act as the central orchestrator. Deconstruct complex requests into discrete subt
 | **PRManager** | Pull request drafting, template compliance, `gh pr` operations, CI monitoring | GitHub workflow model | **Medium** |
 | **Tiebreaker** | Loop & deadlock detection, strategy pivots, model upgrades, user escalation | High-capacity reasoning & arbitration model | **High** |
 | **TerminalEngineSpecialist** | ConPTY handles, ANSI streams, OSC escape sequences, zero-alloc buffers | High-capacity terminal model | **High** |
+| **CodeExplainer** | Code deconstruction, control/data flow analysis, OS-language didactic comments | High-capacity didactic analysis model | **High** |
 
 ---
 

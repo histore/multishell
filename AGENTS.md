@@ -42,6 +42,7 @@ This workspace employs specialized subagent roles to enforce **Clean Code**, **C
 16. **PRManager** (`Reasoning: Medium`): Manages the Pull Request lifecycle (template drafting, `gh pr create`, efficient CI checks audit via `gh pr checks --watch` with ~75-80s deadtime, squash-merge, and branch cleanup) strictly on-demand after developer review approval.
 17. **Tiebreaker** (`Reasoning: High`): Monitors active operations, detects loops/deadlocks/thrashing, and enforces remediation via strategy pivots, model upgrades, context purges, or user escalation.
 18. **TerminalEngineSpecialist** (`Reasoning: High`): Deeply analyzes and optimizes Win32 ConPTY handles, ANSI/VT100 streams, OSC 7/9/133 integration, TrueColor palettes, and zero-allocation UTF-8 decoding.
+19. **CodeExplainer** (`Reasoning: High`): Analyzes and explains source code, control/data flows, and architectural decisions, formatting explanations and explanatory code comments in the user's operating system language.
 
 ## Context Isolation Protocol
 - Subagents must be called with only the minimum context required for their specific role.
