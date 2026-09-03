@@ -69,8 +69,11 @@ public partial class TerminalTabView : UserControl
         InitializeComponent();
         _hoverLinkBorder = this.FindControl<Border>("HoverLinkBorder");
 
+        ConfigureOverlayScrollBar();
+
         Loaded += (_, _) =>
         {
+            ConfigureOverlayScrollBar();
             Dispatcher.UIThread.Post(() => Terminal.Focus());
         };
 
@@ -99,6 +102,45 @@ public partial class TerminalTabView : UserControl
         };
 
         DataContextChanged += OnDataContextChanged;
+    }
+
+    /// <summary>
+    /// Decouples the vertical scrollbar from grid column sizing by converting it into an overlay scrollbar (REQ-TERM-011).
+    /// Prevents TerminalSurface from losing width and resizing ConPTY when output reaches the bottom of the screen.
+    /// </summary>
+    private void ConfigureOverlayScrollBar()
+    {
+        try
+        {
+            Avalonia.Controls.Primitives.ScrollBar? scrollBar = null;
+            foreach (var child in Terminal.Children)
+            {
+                if (child is Avalonia.Controls.Primitives.ScrollBar sb)
+                {
+                    scrollBar = sb;
+                    break;
+                }
+            }
+
+            if (scrollBar != null)
+            {
+                // Move scrollbar to column 0 so it floats as an overlay on top of the terminal surface
+                Grid.SetColumn(scrollBar, 0);
+                scrollBar.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right;
+                scrollBar.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch;
+                scrollBar.Margin = new Thickness(0, 0, 1, 0);
+                scrollBar.Width = 10;
+            }
+
+            if (Terminal.ColumnDefinitions.Count > 1)
+            {
+                Terminal.ColumnDefinitions[1].Width = new GridLength(0);
+            }
+        }
+        catch
+        {
+            // Gracefully ignore layout adjustments if internal structure differs
+        }
     }
 
     private void OnTerminalPointerWheelChanged(object? sender, PointerWheelEventArgs e)

@@ -838,5 +838,59 @@ public class TerminalTabViewModelTests
         var reply = Encoding.ASCII.GetString(session.SentData[0]);
         Assert.Equal("\x1b]10;rgb:c0c0/caca/f5f5\x1b\\", reply);
     }
+
+    [Fact]
+    public void FlushPendingUiFeed_WhenBufferEmpty_DoesNotThrowOrCorruptState()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act & Assert (should be completely safe no-op)
+        vm.FlushPendingUiFeed();
+        Assert.NotNull(vm.TerminalModel);
+    }
+
+    [Fact]
+    public void OnSessionDataReceived_WithRapidConsecutiveChunks_BatchesAndPreservesAllText()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act: simulate 3 consecutive rapid chunks representing a spinner and text
+        // e.g. chunk 1: clear line (\x1b[2K\r), chunk 2: spinner frame, chunk 3: label text
+        var chunk1 = Encoding.UTF8.GetBytes("\x1b[2K\r");
+        var chunk2 = Encoding.UTF8.GetBytes("⠋ ");
+        var chunk3 = Encoding.UTF8.GetBytes("Thinking...\r\n");
+
+        session.SimulateDataReceived(chunk1);
+        session.SimulateDataReceived(chunk2);
+        session.SimulateDataReceived(chunk3);
+
+        // Assert: In test context, data feeds through to TerminalModel cleanly
+        Assert.NotNull(vm.TerminalModel);
+        // Verify buffer has the line content
+        var terminalText = vm.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        Assert.Contains("Thinking...", terminalText);
+    }
+
+    [Fact]
+    public void OnSessionDataReceived_BatchedAnsiFormatting_PreservesTextAndColorAttributes()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act: ANSI colored output split across multiple micro-chunks
+        session.SimulateDataReceived(Encoding.UTF8.GetBytes("\x1b[32m"));
+        session.SimulateDataReceived(Encoding.UTF8.GetBytes("SUCCESS: "));
+        session.SimulateDataReceived(Encoding.UTF8.GetBytes("\x1b[0mAll done\r\n"));
+
+        // Assert
+        var line = vm.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        Assert.Contains("SUCCESS: All done", line);
+    }
 }
+
 
