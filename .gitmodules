@@ -1,0 +1,4 @@
+[submodule "agent-skills"]
+	path = .agents
+	url = https://github.com/histore/agent-skills.git
+	branch = main
