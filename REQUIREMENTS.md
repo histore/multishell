@@ -56,6 +56,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TAB-022` | Dynamic Tab Creation via Double-Click on Empty Tab Bar Area | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-TAB-023` | Tab Switcher Direct Tab Closure via Hover Close Button | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-TERM-010` | Native Windows ConPTY Environment & OSC 11 Background Color Negotiation | Terminal | **IMPLEMENTED** | `ShellSession`, `TerminalTabViewModelTests` |
+| `REQ-TERM-011` | Smooth Terminal Rendering, PTY Output Batching & Overlay Scrollbar Anti-Flicker | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
@@ -776,6 +777,22 @@ This document serves as the single source of truth for all functional and non-fu
   - **And** if the closed tab was selected, the switcher selection automatically adjusts to the next available tab.
   - **When** the last remaining tab in the switcher is closed,
   - **Then** the Tab Switcher overlay closes and the empty workspace dashboard is displayed.
+
+---
+
+### REQ-TERM-011: Smooth Terminal Rendering, PTY Output Batching & Overlay Scrollbar Anti-Flicker
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a developer using interactive TUIs and animated CLI tools (such as `agy`, Git status/spinners, progress bars, and full-screen terminal editors) in MultiShell, I want terminal rendering to be flicker-free and the scrollbar to float as a non-intrusive overlay without dynamically stealing character surface width, so that output streaming is silky smooth and reaching the bottom of the screen never causes infinite resize / ConPTY reflow thrashing.
+- **Acceptance Criteria**:
+  - **Given** an active terminal session where the shell or an interactive CLI outputs micro-chunks of text and ANSI sequences (such as clearing lines and printing animated spinners),
+  - **When** the output stream is received by MultiShell,
+  - **Then** consecutive chunks are coalesced and dispatched on the UI thread at render priority, eliminating intermediate blank/erased frames and full-screen flashing.
+  - **Given** a terminal tab whose buffer reaches and exceeds the bottom row of the viewport (`MaxScrollback > 0`),
+  - **When** the vertical scrollbar becomes visible,
+  - **Then** it renders as an overlay in Column 0 aligned to the right edge without reducing the width of the terminal character surface (`_surface`),
+  - **And** `_surface.OnSizeChanged` does not fire merely due to the scrollbar appearing or disappearing,
+  - **And** no spurious `SIGWINCH` or ConPTY resize events are emitted when text scrolls into scrollback.
+
 
 
 

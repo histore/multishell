@@ -569,12 +569,44 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
         if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
         {
+            // Direct synchronous feed when running in unit tests or already on UI thread
             TerminalModel.Feed(textToFeed);
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => TerminalModel.Feed(textToFeed));
+            // Coalesce rapid PTY chunks onto the UI thread at Render priority to eliminate intermediate blank frames and flicker (REQ-TERM-011)
+            lock (_pendingUiFeedLock)
+            {
+                _pendingUiFeedBuffer.Append(textToFeed);
+                if (!_isUiFeedScheduled)
+                {
+                    _isUiFeedScheduled = true;
+                    Avalonia.Threading.Dispatcher.UIThread.Post(FlushPendingUiFeed, Avalonia.Threading.DispatcherPriority.Render);
+                }
+            }
         }
+    }
+
+    private readonly StringBuilder _pendingUiFeedBuffer = new();
+    private readonly object _pendingUiFeedLock = new();
+    private bool _isUiFeedScheduled;
+
+    /// <summary>
+    /// Flushes all accumulated PTY stream chunks to the terminal model in a single batched pass on the UI thread.
+    /// Eliminates TUI flicker caused by separate rendering of line-erase and text-write chunks.
+    /// </summary>
+    internal void FlushPendingUiFeed()
+    {
+        string batchText;
+        lock (_pendingUiFeedLock)
+        {
+            _isUiFeedScheduled = false;
+            if (_pendingUiFeedBuffer.Length == 0) return;
+            batchText = _pendingUiFeedBuffer.ToString();
+            _pendingUiFeedBuffer.Clear();
+        }
+
+        TerminalModel.Feed(batchText);
     }
 
     private readonly StringBuilder _inputLineBuffer = new();
@@ -873,5 +905,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         TerminalModel.SizeChanged -= OnTerminalSizeChanged;
 
         _session.Dispose();
+
+        lock (_pendingUiFeedLock)
+        {
+            _pendingUiFeedBuffer.Clear();
+            _isUiFeedScheduled = false;
+        }
     }
 }
