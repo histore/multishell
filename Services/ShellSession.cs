@@ -288,7 +288,17 @@ public sealed class ShellSession : IShellSession
 
             var creationFlags = NativeMethods.EXTENDED_STARTUPINFO_PRESENT | NativeMethods.CREATE_UNICODE_ENVIRONMENT;
 
-            if (!NativeMethods.CreateProcess(null, commandLine, IntPtr.Zero, IntPtr.Zero, false, (uint)creationFlags, environmentBlock, workingDir, ref startupInfo, out var processInfo))
+            string? effectiveWorkingDir = workingDir;
+            if (!string.IsNullOrWhiteSpace(effectiveWorkingDir) && !Directory.Exists(effectiveWorkingDir))
+            {
+                effectiveWorkingDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                if (string.IsNullOrWhiteSpace(effectiveWorkingDir) || !Directory.Exists(effectiveWorkingDir))
+                {
+                    effectiveWorkingDir = Environment.CurrentDirectory;
+                }
+            }
+
+            if (!NativeMethods.CreateProcess(null, commandLine, IntPtr.Zero, IntPtr.Zero, false, (uint)creationFlags, environmentBlock, effectiveWorkingDir, ref startupInfo, out var processInfo))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
             processHandle = new SafeFileHandle(processInfo.hProcess, ownsHandle: true);
@@ -310,6 +320,10 @@ public sealed class ShellSession : IShellSession
         if (!string.IsNullOrWhiteSpace(_customExecutable))
         {
             var args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments}";
+            if (_shellType == ShellType.WSL && !string.IsNullOrWhiteSpace(workingDir) && !args.Contains("--cd"))
+            {
+                return $"\"{_customExecutable}\" --cd \"{workingDir}\"{args}";
+            }
             return $"\"{_customExecutable}\"{args}";
         }
 
@@ -363,6 +377,10 @@ public sealed class ShellSession : IShellSession
         else if (_shellType == ShellType.WSL)
         {
             string exePath = ResolveExecutable("wsl.exe") ?? "wsl.exe";
+            if (!string.IsNullOrWhiteSpace(workingDir))
+            {
+                return $"\"{exePath}\" --cd \"{workingDir}\"";
+            }
             return $"\"{exePath}\"";
         }
         else
