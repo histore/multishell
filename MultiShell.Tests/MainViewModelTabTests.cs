@@ -764,6 +764,73 @@ public class MainViewModelTabTests
     }
 
     [Fact]
+    public async Task AddNewTab_UsesMatchingProfileWorkingDirectory_WhenWorkingDirectoryNotExplicitlyProvided()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        var customDir = @"C:\CustomPowerShellDir";
+        var psProfile = mainVm.Profiles.FirstOrDefault(p => p.ShellType == ShellType.PowerShell);
+        Assert.NotNull(psProfile);
+        psProfile.WorkingDirectory = customDir;
+
+        // Act
+        mainVm.AddNewTab();
+
+        // Assert
+        var lastSession = processService.CreatedSessions.LastOrDefault();
+        Assert.NotNull(lastSession);
+        Assert.Equal(customDir, lastSession.WorkingDirectory);
+    }
+
+    [Fact]
+    public async Task AddNewTabWithShell_UsesMatchingProfileWorkingDirectory_WhenWorkingDirectoryNotExplicitlyProvided()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        var customCmdDir = @"C:\CustomCmdDir";
+        var cmdProfile = mainVm.Profiles.FirstOrDefault(p => p.ShellType == ShellType.CMD);
+        Assert.NotNull(cmdProfile);
+        cmdProfile.WorkingDirectory = customCmdDir;
+
+        // Act
+        mainVm.AddNewTabWithShell(ShellType.CMD);
+
+        // Assert
+        var lastSession = processService.CreatedSessions.LastOrDefault();
+        Assert.NotNull(lastSession);
+        Assert.Equal(customCmdDir, lastSession.WorkingDirectory);
+        Assert.Equal(ShellType.CMD, lastSession.ShellType);
+    }
+
+    [Fact]
+    public async Task AddNewTabWithDirectory_OverridesProfileWorkingDirectory_WhenExplicitlyProvided()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        var explicitDir = @"C:\ExplicitOverrideDir";
+
+        // Act
+        mainVm.AddNewTabWithDirectory(explicitDir, ShellType.PowerShell);
+
+        // Assert
+        var lastSession = processService.CreatedSessions.LastOrDefault();
+        Assert.NotNull(lastSession);
+        Assert.Equal(explicitDir, lastSession.WorkingDirectory);
+    }
+
+    [Fact]
     public async Task StartEditProfile_PopulatesEditingWorkingDirectory()
     {
         // Arrange

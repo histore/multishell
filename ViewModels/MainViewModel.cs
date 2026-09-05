@@ -896,6 +896,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var workingDir = profileVm.WorkingDirectory;
         var session = _shellProcessService.CreateSession(title, workingDir, profileVm.ShellType, profileVm.ExecutablePath, profileVm.Arguments);
         var tab = new TerminalTabViewModel(session);
+        tab.Title = title;
         tab.UpdateTheme(_themeService.IsDarkTerminalTheme);
         RegisterTabEvents(tab);
         Tabs.Add(tab);
@@ -923,9 +924,48 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         int nextId = Tabs.Count + 1;
         var title = GetDefaultTitle(shellType, nextId);
-        var session = _shellProcessService.CreateSession(title, workingDirectory, shellType);
+
+        string? targetDir = workingDirectory;
+        string? customExe = null;
+        string? customArgs = null;
+
+        var profileVm = Profiles.FirstOrDefault(p => p.ShellType == shellType);
+        if (profileVm != null)
+        {
+            if (string.IsNullOrWhiteSpace(targetDir) && !string.IsNullOrWhiteSpace(profileVm.WorkingDirectory))
+            {
+                targetDir = profileVm.WorkingDirectory;
+            }
+            if (!profileVm.IsBuiltIn)
+            {
+                customExe = profileVm.ExecutablePath;
+                customArgs = profileVm.Arguments;
+            }
+        }
+        else
+        {
+            var profileModel = _terminalProfileService.GetProfiles().FirstOrDefault(p => p.ShellType == shellType);
+            if (profileModel != null)
+            {
+                if (string.IsNullOrWhiteSpace(targetDir) && !string.IsNullOrWhiteSpace(profileModel.WorkingDirectory))
+                {
+                    targetDir = profileModel.WorkingDirectory;
+                }
+                if (!profileModel.IsBuiltIn)
+                {
+                    customExe = profileModel.ExecutablePath;
+                    customArgs = profileModel.Arguments;
+                }
+            }
+        }
+
+        var session = _shellProcessService.CreateSession(title, targetDir, shellType, customExe, customArgs);
         
         var tab = new TerminalTabViewModel(session);
+        if (workingDirectory == null)
+        {
+            tab.Title = title;
+        }
         tab.UpdateTheme(_themeService.IsDarkTerminalTheme);
         return tab;
     }
