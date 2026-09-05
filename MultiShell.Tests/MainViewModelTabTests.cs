@@ -681,33 +681,106 @@ public class MainViewModelTabTests
     public async Task ProfileModal_SaveAndStartNewProfile_WorkflowWorks()
     {
         // Arrange
+        var tempFile = Path.Combine(Path.GetTempPath(), $"test_profiles_{Guid.NewGuid():N}.json");
+        try
+        {
+            var processService = new FakePowerShellProcessService();
+            var persistenceService = new FakeTabStatePersistenceService();
+            var profileService = new TerminalProfileService(tempFile);
+            using var mainVm = new MainViewModel(
+                processService,
+                persistenceService,
+                new ThemeService(),
+                new LocalizationService(),
+                new FontSizeService(),
+                terminalProfileService: profileService);
+            await mainVm.InitializeWorkspaceAsync();
+
+            // Act 1 - Open modal
+            mainVm.OpenProfilesModal();
+            Assert.True(mainVm.IsProfilesModalOpen);
+
+            // Act 2 - Start new profile
+            mainVm.StartNewProfile();
+            Assert.True(mainVm.IsEditingProfile);
+            Assert.True(mainVm.IsCreatingNewProfile);
+            Assert.Equal(TerminalProfileService.GetDefaultWorkingDirectory(), mainVm.EditingWorkingDirectory);
+
+            mainVm.EditingProfileName = "My Custom Shell";
+            mainVm.EditingExecutablePath = @"C:\custom\shell.exe";
+            mainVm.EditingWorkingDirectory = @"C:\custom\projects";
+            mainVm.EditingIconTag = "CSH";
+
+            await mainVm.SaveProfileAsync();
+
+            // Assert - editing reset, profile added
+            Assert.False(mainVm.IsEditingProfile);
+            var added = mainVm.Profiles.FirstOrDefault(p => p.Name == "My Custom Shell" && p.IconTag == "CSH");
+            Assert.NotNull(added);
+            Assert.Equal(@"C:\custom\projects", added.WorkingDirectory);
+
+            // Act 3 - Close modal
+            mainVm.CloseProfilesModal();
+            Assert.False(mainVm.IsProfilesModalOpen);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                try { File.Delete(tempFile); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public async Task AddNewTabWithProfile_UsesConfiguredProfileWorkingDirectory()
+    {
+        // Arrange
         var processService = new FakePowerShellProcessService();
         var persistenceService = new FakeTabStatePersistenceService();
         using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
         await mainVm.InitializeWorkspaceAsync();
 
-        // Act 1 - Open modal
-        mainVm.OpenProfilesModal();
-        Assert.True(mainVm.IsProfilesModalOpen);
+        var customDir = @"C:\MyWorkspace\App";
+        var customProfile = new TerminalProfile(
+            Guid.NewGuid(),
+            "Node Shell",
+            "pwsh.exe",
+            Arguments: null,
+            WorkingDirectory: customDir,
+            IconTag: "NODE",
+            ShellType: ShellType.PowerShell);
 
-        // Act 2 - Start new profile
-        mainVm.StartNewProfile();
+        var profileVm = new TerminalProfileItemViewModel(customProfile);
+
+        // Act
+        mainVm.AddNewTabWithProfile(profileVm);
+
+        // Assert
+        Assert.NotNull(mainVm.SelectedTab);
+        var session = processService.CreatedSessions.LastOrDefault();
+        Assert.NotNull(session);
+        Assert.Equal(customDir, session.WorkingDirectory);
+    }
+
+    [Fact]
+    public async Task StartEditProfile_PopulatesEditingWorkingDirectory()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        var profileItem = mainVm.Profiles.First();
+
+        // Act
+        mainVm.StartEditProfile(profileItem);
+
+        // Assert
         Assert.True(mainVm.IsEditingProfile);
-        Assert.True(mainVm.IsCreatingNewProfile);
-
-        mainVm.EditingProfileName = "My Custom Shell";
-        mainVm.EditingExecutablePath = @"C:\custom\shell.exe";
-        mainVm.EditingIconTag = "CSH";
-
-        await mainVm.SaveProfileAsync();
-
-        // Assert - editing reset, profile added
-        Assert.False(mainVm.IsEditingProfile);
-        Assert.Contains(mainVm.Profiles, p => p.Name == "My Custom Shell" && p.IconTag == "CSH");
-
-        // Act 3 - Close modal
-        mainVm.CloseProfilesModal();
-        Assert.False(mainVm.IsProfilesModalOpen);
+        Assert.False(mainVm.IsCreatingNewProfile);
+        Assert.Equal(profileItem.WorkingDirectory, mainVm.EditingWorkingDirectory);
     }
 
     [Fact]

@@ -140,4 +140,84 @@ public class TerminalProfileServiceTests : IDisposable
         Assert.NotEmpty(defaults);
         Assert.All(defaults, p => Assert.True(p.IsBuiltIn));
     }
+
+    [Fact]
+    public async Task DefaultProfiles_HaveUserDirectoryAsWorkingDirectory()
+    {
+        // Arrange
+        var service = new TerminalProfileService(_tempFile);
+
+        // Act
+        await service.LoadProfilesAsync();
+        var profiles = service.GetProfiles();
+
+        // Assert
+        var expectedUserDir = TerminalProfileService.GetDefaultWorkingDirectory();
+        Assert.NotEmpty(profiles);
+        Assert.All(profiles, p => Assert.Equal(expectedUserDir, p.WorkingDirectory));
+    }
+
+    [Fact]
+    public async Task AddProfileAsync_WithCustomWorkingDirectory_PersistsAndLoadsCorrectly()
+    {
+        // Arrange
+        var service = new TerminalProfileService(_tempFile);
+        await service.LoadProfilesAsync();
+
+        var customDir = Path.Combine(Path.GetTempPath(), "CustomWorkDir");
+        var customProfile = new TerminalProfile(
+            Guid.NewGuid(),
+            "Project Shell",
+            "pwsh.exe",
+            Arguments: "-NoProfile",
+            WorkingDirectory: customDir,
+            IconTag: "PRJ",
+            ShellType: ShellType.PowerShell);
+
+        // Act
+        await service.AddProfileAsync(customProfile);
+
+        // Assert
+        var added = service.GetProfile(customProfile.Id);
+        Assert.NotNull(added);
+        Assert.Equal(customDir, added.WorkingDirectory);
+
+        // Reload fresh from file
+        var reloadedService = new TerminalProfileService(_tempFile);
+        await reloadedService.LoadProfilesAsync();
+        var reloadedProfile = reloadedService.GetProfile(customProfile.Id);
+        Assert.NotNull(reloadedProfile);
+        Assert.Equal(customDir, reloadedProfile.WorkingDirectory);
+    }
+
+    [Fact]
+    public async Task LoadProfilesAsync_WhenWorkingDirectoryIsNull_NormalizesToUserDirectory()
+    {
+        // Arrange: Write profile JSON missing WorkingDirectory
+        var jsonWithNullDir = """
+        [
+          {
+            "Id": "99999999-9999-9999-9999-999999999999",
+            "Name": "Legacy Shell",
+            "ExecutablePath": "cmd.exe",
+            "Arguments": null,
+            "WorkingDirectory": null,
+            "IconTag": "LEG",
+            "ShellType": 3,
+            "IsBuiltIn": false
+          }
+        ]
+        """;
+        await File.WriteAllTextAsync(_tempFile, jsonWithNullDir);
+
+        var service = new TerminalProfileService(_tempFile);
+
+        // Act
+        await service.LoadProfilesAsync();
+
+        // Assert
+        var legacy = service.GetProfile(Guid.Parse("99999999-9999-9999-9999-999999999999"));
+        Assert.NotNull(legacy);
+        Assert.Equal(TerminalProfileService.GetDefaultWorkingDirectory(), legacy.WorkingDirectory);
+    }
 }

@@ -1529,6 +1529,7 @@
                                                                     <TextBlock Text="✓" Foreground="{DynamicResource AppSuccess}" FontSize="10" IsVisible="{Binding IsAvailable}" VerticalAlignment="Center" />
                                                                 </StackPanel>
                                                                 <TextBlock Text="{Binding ExecutablePath}" FontSize="10" Foreground="{DynamicResource AppTextMuted}" TextTrimming="CharacterEllipsis" MaxWidth="320" />
+                                                                <TextBlock Text="{Binding WorkingDirectory}" FontSize="9" Foreground="{DynamicResource AppTextSecondary}" TextTrimming="CharacterEllipsis" MaxWidth="320" IsVisible="{Binding WorkingDirectory, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                                             </StackPanel>
                                                             <Button Grid.Column="2"
                                                                     Content="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Profiles_Btn_Edit]}"
@@ -1561,7 +1562,7 @@
 
                             <!-- Profile Edit / Create Form (when IsEditingProfile == true) -->
                             <Border Grid.Row="0" Classes="modalSection" Margin="0,0,0,8" Padding="10" IsVisible="{Binding IsEditingProfile}">
-                                <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto">
+                                <ScrollViewer MaxHeight="380" VerticalScrollBarVisibility="Auto">
                                     <StackPanel Spacing="8">
                                         <TextBlock Text="{Binding Loc[Profiles_Edit_Title]}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource AppAccent}" IsVisible="{Binding !IsCreatingNewProfile}" />
                                         <TextBlock Text="{Binding Loc[Profiles_Create_Title]}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource AppAccent}" IsVisible="{Binding IsCreatingNewProfile}" />
@@ -1575,7 +1576,35 @@
                                         <!-- Executable Path -->
                                         <StackPanel Spacing="2">
                                             <TextBlock Text="{Binding Loc[Profiles_Field_Path]}" FontSize="11" Foreground="{DynamicResource AppTextSecondary}" />
-                                            <TextBox Text="{Binding EditingExecutablePath, Mode=TwoWay}" FontSize="12" />
+                                            <Grid ColumnDefinitions="*, Auto">
+                                                <TextBox Grid.Column="0" Text="{Binding EditingExecutablePath, Mode=TwoWay}" FontSize="12" />
+                                                <Button Grid.Column="1"
+                                                        x:Name="BrowseExecutableBtn"
+                                                        Content="{Binding Loc[Profiles_Btn_Browse]}"
+                                                        Margin="6,0,0,0"
+                                                        Padding="10,4"
+                                                        FontSize="11"
+                                                        Background="{DynamicResource AppSurfaceSubtle}"
+                                                        Foreground="{DynamicResource AppTextPrimary}"
+                                                        CornerRadius="3" />
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <!-- Working Directory -->
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="{Binding Loc[Profiles_Field_WorkingDir]}" FontSize="11" Foreground="{DynamicResource AppTextSecondary}" />
+                                            <Grid ColumnDefinitions="*, Auto">
+                                                <TextBox Grid.Column="0" Text="{Binding EditingWorkingDirectory, Mode=TwoWay}" FontSize="12" />
+                                                <Button Grid.Column="1"
+                                                        x:Name="BrowseWorkingDirBtn"
+                                                        Content="{Binding Loc[Profiles_Btn_Browse]}"
+                                                        Margin="6,0,0,0"
+                                                        Padding="10,4"
+                                                        FontSize="11"
+                                                        Background="{DynamicResource AppSurfaceSubtle}"
+                                                        Foreground="{DynamicResource AppTextPrimary}"
+                                                        CornerRadius="3" />
+                                            </Grid>
                                         </StackPanel>
 
                                         <!-- Arguments -->

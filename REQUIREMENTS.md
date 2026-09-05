@@ -57,6 +57,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TAB-023` | Tab Switcher Direct Tab Closure via Hover Close Button | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-TERM-010` | Native Windows ConPTY Environment & OSC 11 Background Color Negotiation | Terminal | **IMPLEMENTED** | `ShellSession`, `TerminalTabViewModelTests` |
 | `REQ-TERM-011` | Smooth Terminal Rendering, PTY Output Batching & Overlay Scrollbar Anti-Flicker | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
+| `REQ-PROF-001` | Configurable Working Directory per Profile (Default: User Profile Directory) | Profiles | **IMPLEMENTED** | `TerminalProfileServiceTests`, `MainViewModelTabTests`, `MainWindow` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
@@ -790,11 +791,28 @@ This document serves as the single source of truth for all functional and non-fu
   - **Given** a terminal tab whose buffer reaches and exceeds the bottom row of the viewport (`MaxScrollback > 0`),
   - **When** the vertical scrollbar becomes visible,
   - **Then** it renders as an overlay in Column 0 aligned to the right edge without reducing the width of the terminal character surface (`_surface`),
-  - **And** `_surface.OnSizeChanged` does not fire merely due to the scrollbar appearing or disappearing,
-  - **And** no spurious `SIGWINCH` or ConPTY resize events are emitted when text scrolls into scrollback.
+    - **And** `_surface.OnSizeChanged` does not fire merely due to the scrollbar appearing or disappearing,
+    - **And** no spurious `SIGWINCH` or ConPTY resize events are emitted when text scrolls into scrollback.
 
+---
 
-
-
-
-
+### REQ-PROF-001: Configurable Startup Working Directory per Profile (Default: User Profile Directory)
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a terminal user, I want each terminal profile to support a configurable startup working directory, with the user's home/profile directory (`%USERPROFILE%`) serving as the universal default, so that custom or built-in shell profiles can automatically launch in their dedicated project or home directories.
+- **Acceptance Criteria**:
+  - **Given** default terminal profiles (PowerShell, CMD, WSL, NuShell) created by `TerminalProfileService`,
+  - **When** default profiles are initialized,
+  - **Then** their `WorkingDirectory` is set to the user profile directory (`Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)`).
+  - **Given** existing or serialized profiles where `WorkingDirectory` is null or whitespace,
+  - **When** profiles are loaded by `TerminalProfileService`,
+  - **Then** `WorkingDirectory` defaults to the user profile directory.
+  - **Given** the Profile Editor modal in MultiShell,
+  - **When** creating a new profile,
+  - **Then** the working directory input is pre-populated with the user profile directory.
+  - **When** editing an existing profile,
+  - **Then** the working directory input reflects the profile's configured working directory (or user profile directory if previously unset).
+  - **When** saving a profile with a specified directory,
+  - **Then** that directory is persisted in `profiles.json`.
+  - **Given** a terminal tab opened via `AddNewTabWithProfile`,
+  - **When** the shell session is launched,
+  - **Then** the session begins at the configured `WorkingDirectory` of that profile (or user profile directory fallback).
