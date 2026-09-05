@@ -59,7 +59,7 @@ public class TerminalProfileService : ITerminalProfileService
                         lock (_profiles)
                         {
                             _profiles.Clear();
-                            _profiles.AddRange(loaded);
+                            _profiles.AddRange(loaded.Select(NormalizeProfile));
                         }
                         return;
                     }
@@ -94,12 +94,13 @@ public class TerminalProfileService : ITerminalProfileService
 
     public async Task AddProfileAsync(TerminalProfile profile)
     {
+        var normalized = NormalizeProfile(profile);
         await _semaphore.WaitAsync().ConfigureAwait(false);
         try
         {
             lock (_profiles)
             {
-                _profiles.Add(profile);
+                _profiles.Add(normalized);
             }
             await SaveInternalAsync().ConfigureAwait(false);
         }
@@ -112,15 +113,16 @@ public class TerminalProfileService : ITerminalProfileService
 
     public async Task UpdateProfileAsync(TerminalProfile profile)
     {
+        var normalized = NormalizeProfile(profile);
         await _semaphore.WaitAsync().ConfigureAwait(false);
         try
         {
             lock (_profiles)
             {
-                var index = _profiles.FindIndex(p => p.Id == profile.Id);
+                var index = _profiles.FindIndex(p => p.Id == normalized.Id);
                 if (index >= 0)
                 {
-                    _profiles[index] = profile;
+                    _profiles[index] = normalized;
                 }
             }
             await SaveInternalAsync().ConfigureAwait(false);
@@ -202,7 +204,7 @@ public class TerminalProfileService : ITerminalProfileService
                     lock (_profiles)
                     {
                         _profiles.Clear();
-                        _profiles.AddRange(loaded);
+                        _profiles.AddRange(loaded.Select(NormalizeProfile));
                     }
                 }
             }
@@ -214,9 +216,25 @@ public class TerminalProfileService : ITerminalProfileService
         ProfilesChanged?.Invoke();
     }
 
+    public static string GetDefaultWorkingDirectory()
+    {
+        var userDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        return !string.IsNullOrWhiteSpace(userDir) ? userDir : Environment.CurrentDirectory;
+    }
+
+    private static TerminalProfile NormalizeProfile(TerminalProfile profile)
+    {
+        if (string.IsNullOrWhiteSpace(profile.WorkingDirectory))
+        {
+            return profile with { WorkingDirectory = GetDefaultWorkingDirectory() };
+        }
+        return profile;
+    }
+
     private List<TerminalProfile> CreateDefaultProfiles()
     {
         var list = new List<TerminalProfile>();
+        var defaultDir = GetDefaultWorkingDirectory();
 
         // 1. PowerShell 7 / Windows PowerShell
         var pwshPath = ShellDiscoveryService.ResolveExecutable("pwsh.exe");
@@ -228,6 +246,7 @@ public class TerminalProfileService : ITerminalProfileService
             psName,
             psPath,
             Arguments: "-NoLogo",
+            WorkingDirectory: defaultDir,
             IconTag: "PS",
             ShellType: ShellType.PowerShell,
             IsBuiltIn: true));
@@ -239,6 +258,7 @@ public class TerminalProfileService : ITerminalProfileService
             _localizationService?["Shell_CMD"] ?? "Command Prompt",
             cmdPath,
             Arguments: null,
+            WorkingDirectory: defaultDir,
             IconTag: "CMD",
             ShellType: ShellType.CMD,
             IsBuiltIn: true));
@@ -252,6 +272,7 @@ public class TerminalProfileService : ITerminalProfileService
                 "WSL (Linux)",
                 wslPath,
                 Arguments: null,
+                WorkingDirectory: defaultDir,
                 IconTag: "WSL",
                 ShellType: ShellType.WSL,
                 IsBuiltIn: true));
@@ -266,6 +287,7 @@ public class TerminalProfileService : ITerminalProfileService
                 "NuShell",
                 nuPath,
                 Arguments: null,
+                WorkingDirectory: defaultDir,
                 IconTag: "NU",
                 ShellType: ShellType.NuShell,
                 IsBuiltIn: true));

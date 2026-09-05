@@ -54,9 +54,15 @@ public sealed class ShellSession : IShellSession
         string? customExecutable = null,
         string? customArguments = null)
     {
+        var defaultDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (string.IsNullOrWhiteSpace(defaultDir))
+        {
+            defaultDir = Environment.CurrentDirectory;
+        }
+
         _initialWorkingDirectory = !string.IsNullOrWhiteSpace(initialWorkingDirectory)
             ? initialWorkingDirectory
-            : Environment.CurrentDirectory;
+            : defaultDir;
         WorkingDirectory = _initialWorkingDirectory;
         Title = !string.IsNullOrWhiteSpace(title) ? title : WorkingDirectory;
         _shellType = shellType;

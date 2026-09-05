@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MultiShell.ViewModels;
@@ -104,6 +106,16 @@ public partial class MainWindow : Window
         if (AboutModal != null) AboutModal.PointerPressed += (_, e) => { if (e.Source == AboutModal) HideAboutModal(); };
 
         if (ProfilesModal != null) ProfilesModal.PointerPressed += (_, e) => { if (e.Source == ProfilesModal && DataContext is MainViewModel vm) vm.CloseProfilesModal(); };
+
+        if (BrowseExecutableBtn != null)
+        {
+            BrowseExecutableBtn.Click += async (_, _) => await BrowseExecutablePathAsync();
+        }
+
+        if (BrowseWorkingDirBtn != null)
+        {
+            BrowseWorkingDirBtn.Click += async (_, _) => await BrowseWorkingDirectoryAsync();
+        }
 
         // History Drawer Hover Trigger with Dwell Delay (REQ-TAB-012)
         if (HistoryHoverTrigger != null)
@@ -1233,5 +1245,95 @@ public partial class MainWindow : Window
             visual = visual.GetVisualParent() ?? (visual as Avalonia.LogicalTree.ILogical)?.LogicalParent as Visual;
         }
         return false;
+    }
+
+    private async Task BrowseExecutablePathAsync()
+    {
+        if (DataContext is not MainViewModel vm) return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider == null) return;
+
+        var options = new FilePickerOpenOptions
+        {
+            Title = vm.Loc["Profiles_Browse_Exe_Title"],
+            AllowMultiple = false,
+            FileTypeFilter = new List<FilePickerFileType>
+            {
+                new("Executables (*.exe, *.cmd, *.bat)")
+                {
+                    Patterns = new[] { "*.exe", "*.cmd", "*.bat", "*.*" }
+                },
+                FilePickerFileTypes.All
+            }
+        };
+
+        if (!string.IsNullOrWhiteSpace(vm.EditingExecutablePath))
+        {
+            try
+            {
+                var dir = System.IO.Path.GetDirectoryName(vm.EditingExecutablePath);
+                if (!string.IsNullOrEmpty(dir) && System.IO.Directory.Exists(dir))
+                {
+                    var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(dir);
+                    if (folder != null)
+                    {
+                        options.SuggestedStartLocation = folder;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        var results = await topLevel.StorageProvider.OpenFilePickerAsync(options);
+        if (results.Count > 0)
+        {
+            var path = results[0].TryGetLocalPath();
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                vm.EditingExecutablePath = path;
+            }
+        }
+    }
+
+    private async Task BrowseWorkingDirectoryAsync()
+    {
+        if (DataContext is not MainViewModel vm) return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider == null) return;
+
+        var options = new FolderPickerOpenOptions
+        {
+            Title = vm.Loc["Profiles_Browse_Dir_Title"],
+            AllowMultiple = false
+        };
+
+        var initialDir = !string.IsNullOrWhiteSpace(vm.EditingWorkingDirectory)
+            ? vm.EditingWorkingDirectory
+            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        if (!string.IsNullOrWhiteSpace(initialDir) && System.IO.Directory.Exists(initialDir))
+        {
+            try
+            {
+                var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(initialDir);
+                if (folder != null)
+                {
+                    options.SuggestedStartLocation = folder;
+                }
+            }
+            catch { }
+        }
+
+        var results = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
+        if (results.Count > 0)
+        {
+            var path = results[0].TryGetLocalPath();
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                vm.EditingWorkingDirectory = path;
+            }
+        }
     }
 }

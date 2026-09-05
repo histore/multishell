@@ -91,6 +91,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _editingExecutablePath = string.Empty;
 
+    private string? _editingWorkingDirectory;
+
+    public string? EditingWorkingDirectory
+    {
+        get => _editingWorkingDirectory;
+        set => SetProperty(ref _editingWorkingDirectory, value);
+    }
+
     [ObservableProperty]
     private string? _editingArguments;
 
@@ -794,6 +802,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         EditingProfileId = null;
         EditingProfileName = "Custom Terminal";
         EditingExecutablePath = "pwsh.exe";
+        EditingWorkingDirectory = TerminalProfileService.GetDefaultWorkingDirectory();
         EditingArguments = string.Empty;
         EditingIconTag = "SH";
         EditingShellType = ShellType.PowerShell;
@@ -808,6 +817,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         EditingProfileId = item.Id;
         EditingProfileName = item.Name;
         EditingExecutablePath = item.ExecutablePath;
+        EditingWorkingDirectory = !string.IsNullOrWhiteSpace(item.WorkingDirectory)
+            ? item.WorkingDirectory
+            : TerminalProfileService.GetDefaultWorkingDirectory();
         EditingArguments = item.Arguments;
         EditingIconTag = item.IconTag;
         EditingShellType = item.ShellType;
@@ -819,6 +831,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IsEditingProfile = false;
         IsCreatingNewProfile = false;
         EditingProfileId = null;
+        EditingWorkingDirectory = null;
     }
 
     [RelayCommand]
@@ -829,12 +842,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        var workingDir = !string.IsNullOrWhiteSpace(EditingWorkingDirectory)
+            ? EditingWorkingDirectory.Trim()
+            : TerminalProfileService.GetDefaultWorkingDirectory();
+
         var profile = new TerminalProfile(
             EditingProfileId ?? Guid.NewGuid(),
             EditingProfileName.Trim(),
             EditingExecutablePath.Trim(),
             string.IsNullOrWhiteSpace(EditingArguments) ? null : EditingArguments.Trim(),
-            null,
+            workingDir,
             string.IsNullOrWhiteSpace(EditingIconTag) ? "PS" : EditingIconTag.Trim().ToUpperInvariant(),
             EditingShellType,
             IsBuiltIn: false);
@@ -876,7 +893,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         DefaultShellType = profileVm.ShellType;
         int nextId = Tabs.Count + 1;
         var title = $"{profileVm.IconTag} {nextId}";
-        var session = _shellProcessService.CreateSession(title, null, profileVm.ShellType, profileVm.ExecutablePath, profileVm.Arguments);
+        var workingDir = profileVm.WorkingDirectory;
+        var session = _shellProcessService.CreateSession(title, workingDir, profileVm.ShellType, profileVm.ExecutablePath, profileVm.Arguments);
         var tab = new TerminalTabViewModel(session);
         tab.UpdateTheme(_themeService.IsDarkTerminalTheme);
         RegisterTabEvents(tab);
