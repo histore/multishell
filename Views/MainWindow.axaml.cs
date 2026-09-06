@@ -93,23 +93,24 @@ public partial class MainWindow : Window
         }
 
         // Modals
-        if (CloseHelpModalButton != null) CloseHelpModalButton.Click += (_, _) => HideHelpModal();
-        if (OkHelpModalButton != null) OkHelpModalButton.Click += (_, _) => HideHelpModal();
-        if (HelpModal != null) HelpModal.PointerPressed += (_, e) => { if (e.Source == HelpModal) HideHelpModal(); };
-
-        if (OkAboutModalButton != null) OkAboutModalButton.Click += (_, _) => HideAboutModal();
-        if (AboutModal != null) AboutModal.PointerPressed += (_, e) => { if (e.Source == AboutModal) HideAboutModal(); };
-
-        if (ProfilesModal != null) ProfilesModal.PointerPressed += (_, e) => { if (e.Source == ProfilesModal && DataContext is MainViewModel vm) vm.CloseProfilesModal(); };
-
-        if (BrowseExecutableBtn != null)
+        if (HelpModal != null)
         {
-            BrowseExecutableBtn.Click += async (_, _) => await BrowseExecutablePathAsync();
+            HelpModal.CloseRequested += (_, _) => HideHelpModal();
         }
 
-        if (BrowseWorkingDirBtn != null)
+        if (AboutModal != null)
         {
-            BrowseWorkingDirBtn.Click += async (_, _) => await BrowseWorkingDirectoryAsync();
+            AboutModal.CloseRequested += (_, _) => HideAboutModal();
+        }
+
+        if (ProfilesModal != null)
+        {
+            ProfilesModal.CloseRequested += (_, _) =>
+            {
+                if (DataContext is MainViewModel vm) vm.CloseProfilesModal();
+            };
+            ProfilesModal.BrowseExecutableRequested += async (_, _) => await BrowseExecutablePathAsync();
+            ProfilesModal.BrowseWorkingDirRequested += async (_, _) => await BrowseWorkingDirectoryAsync();
         }
 
         // History Drawer Hover Trigger with Dwell Delay (REQ-TAB-012)

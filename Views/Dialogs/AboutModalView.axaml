@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MultiShell.ViewModels"
+             x:Class="MultiShell.Views.Dialogs.AboutModalView"
+             x:DataType="vm:MainViewModel">
+    <Grid x:Name="AboutModalOverlay"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Background="{DynamicResource AppModalOverlay}">
+        <Border Classes="modalDialog"
+                Width="450"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Padding="20">
+            <Grid RowDefinitions="Auto, Auto, Auto, Auto">
+                <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="4" Margin="0,0,0,14">
+                    <Image Source="/Assets/multishell.png" Width="56" Height="56" Margin="0,0,0,4" HorizontalAlignment="Center" />
+                    <TextBlock Text="MultiShell" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding Loc[About_Modal_Subtitle]}" FontSize="11" Foreground="{DynamicResource AppAccent}" HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <Border Grid.Row="1" Classes="modalSection" Margin="0,0,0,14">
+                    <StackPanel Spacing="5">
+                        <Grid ColumnDefinitions="115, *">
+                            <TextBlock Grid.Column="0" Text="{Binding Loc[About_Version]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                            <TextBlock Grid.Column="1" Text="{Binding AppVersion}" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" />
+                        </Grid>
+                        <Grid ColumnDefinitions="115, *">
+                            <TextBlock Grid.Column="0" Text="{Binding Loc[About_Framework]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                            <TextBlock Grid.Column="1" Text=".NET 10.0 / C# 13" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
+                        </Grid>
+                        <Grid ColumnDefinitions="115, *">
+                            <TextBlock Grid.Column="0" Text="{Binding Loc[About_UI_Terminal]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                            <TextBlock Grid.Column="1" Text="Avalonia UI 11.2 / ConPTY" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
+                        </Grid>
+                        <Grid ColumnDefinitions="115, *">
+                            <TextBlock Grid.Column="0" Text="{Binding Loc[About_License]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                            <TextBlock Grid.Column="1" Text="Apache-2.0" Foreground="{DynamicResource AppSuccess}" FontSize="12" />
+                        </Grid>
+                        <Grid ColumnDefinitions="115, *">
+                            <TextBlock Grid.Column="0" Text="{Binding Loc[About_Font]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                            <TextBlock Grid.Column="1" Text="{Binding Loc[About_Font_Value]}" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
+                        </Grid>
+                        <Grid ColumnDefinitions="115, *">
+                            <TextBlock Grid.Column="0" Text="{Binding Loc[About_Third_Party]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                            <TextBlock Grid.Column="1" Text="{Binding Loc[About_Third_Party_Value]}" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
+                        </Grid>
+                        <Grid ColumnDefinitions="115, *">
+                            <TextBlock Grid.Column="0" Text="{Binding Loc[About_GitHub]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" VerticalAlignment="Center" />
+                            <Button Grid.Column="1"
+                                    Command="{Binding OpenGitHubUrlCommand}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="0"
+                                    Margin="0"
+                                    HorizontalAlignment="Left"
+                                    Cursor="Hand"
+                                    ToolTip.Tip="{Binding GitHubUrl}">
+                                <TextBlock Text="github.com/histore/multishell"
+                                           Foreground="{DynamicResource AppAccent}"
+                                           TextDecorations="Underline"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"
+                                           VerticalAlignment="Center" />
+                            </Button>
+                        </Grid>
+                        <Grid ColumnDefinitions="115, *">
+                            <TextBlock Grid.Column="0" Text="{Binding Loc[About_Built_With]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
+                            <TextBlock Grid.Column="1" Text="{Binding Loc[About_Built_With_Value]}" Foreground="{DynamicResource AppAccent}" FontWeight="SemiBold" FontSize="12" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Grid.Row="2" Text="{Binding Loc[About_Footer]}" FontSize="11" Foreground="{DynamicResource AppTextMuted}" HorizontalAlignment="Center" Margin="0,0,0,14" />
+
+                <Button Grid.Row="3" x:Name="OkAboutModalButton" Content="{Binding Loc[About_OK_Button]}" HorizontalAlignment="Center" Padding="24,5" Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" Foreground="{DynamicResource AppTextPrimary}" FontSize="12" CornerRadius="4" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

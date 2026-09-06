@@ -102,5 +102,8 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="/Styles/TabStyles.axaml" />
+        <StyleInclude Source="/Styles/HistoryStyles.axaml" />
+        <StyleInclude Source="/Styles/DialogStyles.axaml" />
     </Application.Styles>
 </Application>
