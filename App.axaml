@@ -102,8 +102,8 @@
 
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="/Styles/TabStyles.axaml" />
-        <StyleInclude Source="/Styles/HistoryStyles.axaml" />
-        <StyleInclude Source="/Styles/DialogStyles.axaml" />
+        <StyleInclude Source="avares://MultiShell/Styles/TabStyles.axaml" />
+        <StyleInclude Source="avares://MultiShell/Styles/HistoryStyles.axaml" />
+        <StyleInclude Source="avares://MultiShell/Styles/DialogStyles.axaml" />
     </Application.Styles>
 </Application>

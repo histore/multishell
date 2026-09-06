@@ -14,6 +14,13 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(WindowTitle))]
     private TerminalTabViewModel? _selectedTab;
 
+    partial void OnSelectedTabChanged(TerminalTabViewModel? oldValue, TerminalTabViewModel? newValue)
+    {
+        if (oldValue != null) oldValue.IsSelected = false;
+        if (newValue != null) newValue.IsSelected = true;
+        TriggerSaveState();
+    }
+
     /// <summary>
     /// Gets the formatted window title showing the full working directory path, formatting with middle-ellipsis only if excessively long (> 65 chars).
     /// </summary>
