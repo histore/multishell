@@ -67,7 +67,7 @@ MultiShell
 
 ### Prerequisites
 - Windows 10 / 11 (64-bit)
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [.NET 10.0 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) *(or .NET 10.0 SDK when building from source)*
 
 ### Clone & Run
 ```powershell

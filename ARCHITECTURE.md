@@ -71,6 +71,56 @@ MultiShell Solution
   * Terminal view hosting `SvcSystems.UI.Terminal`.
   * Manages Xterm 16-color and 24-bit TrueColor palette synchronization, right-click copy/paste, and focus dispatch.
 
+### 2.5 MVVM Composition & UI Component Wiring
+
+The visual frame and child UI components are wired via Avalonia's MVVM architecture, compiled bindings (`x:DataType`), and declarative data templates:
+
+```
+Program.cs (Desktop Lifetime)
+   │
+   ▼
+App.axaml / App.axaml.cs (Global Resources, Themes, ViewLocator)
+   │
+   ▼ Instantiates
+MainWindow.axaml ◄────── DataContext (Binding) ──────► MainViewModel.cs
+   │                                                         │
+   ├─► TabsItemsControl (Tab Headers)                        ├─► ObservableCollection<TerminalTabViewModel> Tabs
+   │        │                                                │
+   │        ▼ DataTemplate (vm:TerminalTabViewModel)         │
+   │    Tab Button (Title, Icon, Close Command)              │
+   │                                                         ▼
+   └─► TabContentControl (Persistent Panel)           TerminalTabViewModel.cs
+            │                                                │
+            ▼ DataTemplate (vm:TerminalTabViewModel)         ├─► TerminalControlModel (Screen Buffer)
+       TerminalTabView.axaml ◄────── binds to ───────┤
+       (IsVisible = IsSelected)                              └─► IShellSession (ConPTY / Windows Pipes)
+```
+
+1. **Application Bootstrap & Lifetime (`App.axaml` / `App.axaml.cs`)**:
+   * `App.axaml` defines global theme dictionaries (Light/Dark Xterm color brushes, surface colors), font configurations (`InterFont`), and registers the global `ViewLocator` in `Application.DataTemplates`.
+   * `App.axaml.cs` intercepts `OnFrameworkInitializationCompleted()`, instantiating the desktop `MainWindow` and assigning its root `DataContext = new MainViewModel()`.
+
+2. **Root View-ViewModel Binding (`MainWindow.axaml`)**:
+   * Employs compiled binding `x:DataType="vm:MainViewModel"` for compile-time safety and zero-reflection performance.
+   * Window title, keyboard shortcuts (`Ctrl+Shift+T`, `Ctrl+Shift+W`), dynamic theme brushes, and top-level action commands (settings, profile switcher, history drawer) bind directly to properties and `[RelayCommand]` methods on `MainViewModel`.
+
+3. **Dynamic Tab Headers (`ItemsControl`)**:
+   * The tab bar (`TabsItemsControl`) binds its `ItemsSource` to `MainViewModel.Tabs` (`ObservableCollection<TerminalTabViewModel>`).
+   * A scoped `DataTemplate DataType="vm:TerminalTabViewModel"` projects each model into an interactive tab button displaying `ShellIconTag` and `DisplayTitle`, while delegating tab selection to `SelectTabCommand` and closure to `RequestCloseCommand`.
+
+4. **Persistent Multi-Tab Terminal Content (`TabContentControl`)**:
+   * The main content host (`TabContentControl`) also binds to `ItemsSource="{Binding Tabs}"` using a virtualized `<Panel />` layout panel.
+   * Inside its `DataTemplate`, each tab instantiates a `TerminalTabView` with `IsVisible="{Binding IsSelected}"`. By toggling visibility rather than unmounting controls, ConPTY pipe streams, ANSI scrollback buffers, and terminal caret positions remain fully intact when switching tabs.
+
+5. **Terminal View & Shell Session Bridge (`TerminalTabView.axaml`)**:
+   * Each `TerminalTabView` receives an individual `TerminalTabViewModel` as its `DataContext`.
+   * The embedded `terminal:TerminalControl` binds to `TerminalModel`, font parameters, and theme brushes.
+   * In the background, `TerminalTabViewModel` connects the terminal engine with `IShellSession` (ConPTY Win32 pipes), decoding UTF-8 streams and dispatching keyboard input.
+
+6. **Automated View Resolution (`ViewLocator.cs`)**:
+   * Registered globally in `App.axaml`, `ViewLocator` implements `IDataTemplate`.
+   * Directly resolves `TerminalTabViewModel` to `TerminalTabView` (without reflection for Native AOT readiness) and serves as a convention-based fallback (`*ViewModel` -> `*View`) for dynamic content containers.
+
 ---
 
 ## 3. Win32 ConPTY Streaming & Data Flow
