@@ -1,0 +1,86 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Modal Dialog Styles -->
+    <Style Selector="Border.modalDialog">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceModal}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="BoxShadow" Value="0 12 32 0 #99000000" />
+    </Style>
+    <Style Selector="Border.modalSection">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtle}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style Selector="Border.kbdBadge">
+        <Setter Property="Background" Value="{DynamicResource AppBorder}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorderHover}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="5,2" />
+    </Style>
+
+    <!-- Level Button Style for Font Size 1..5 Selectors -->
+    <Style Selector="Button.levelBtn">
+        <Setter Property="Height" Value="26" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.levelBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+    </Style>
+    <Style Selector="Button.levelBtn.active">
+        <Setter Property="Background" Value="{DynamicResource AppAccent}" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <!-- Language Button Style -->
+    <Style Selector="Button.langBtn">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="0,3" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.langBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+    </Style>
+    <Style Selector="Button.langBtn.active">
+        <Setter Property="Background" Value="{DynamicResource AppAccent}" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <!-- Empty State Profile Card Button Styles (REQ-UI-008) -->
+    <Style Selector="Button.profileCardBtn">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.profileCardBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+        <Setter Property="RenderTransform" Value="scale(1.02)" />
+    </Style>
+
+</Styles>
