@@ -1,0 +1,56 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- History Drawer TabControl Styles -->
+    <Style Selector="TabControl.historyTabs">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="12,8,12,12" />
+    </Style>
+    <Style Selector="TabControl.historyTabs TabItem">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextMuted}" />
+        <Setter Property="Padding" Value="14,6" />
+        <Setter Property="Margin" Value="0,0,4,0" />
+        <Setter Property="CornerRadius" Value="4,4,0,0" />
+        <Setter Property="FontFamily" Value="Consolas, Cascadia Code, monospace" />
+    </Style>
+    <Style Selector="TabControl.historyTabs TabItem:selected">
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+    </Style>
+
+    <!-- History ListBox Styles -->
+    <Style Selector="ListBox.historyListBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Focusable" Value="True" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ScrollViewer.AllowAutoHide" Value="False" />
+    </Style>
+    <Style Selector="ListBox.historyListBox ScrollViewer">
+        <Setter Property="AllowAutoHide" Value="False" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+    </Style>
+    <Style Selector="ListBox.historyListBox ListBoxItem">
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="Margin" Value="0,1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+    </Style>
+    <Style Selector="ListBox.historyListBox ListBoxItem:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+    </Style>
+    <Style Selector="ListBox.historyListBox ListBoxItem:selected">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+    </Style>
+
+</Styles>

@@ -1433,4 +1433,38 @@ public class MainViewModelTabTests
         Assert.Equal(1, mainVm.TabSwitcherSelectedIndex); // Clamped within bounds
         Assert.True(mainVm.IsTabSwitcherOpen);
     }
+
+    [Fact]
+    public async Task SelectedTab_WhenChanged_UpdatesIsSelectedOnTabs()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Assert initial tab is selected
+        Assert.Single(mainVm.Tabs);
+        var tab1 = mainVm.Tabs[0];
+        Assert.Same(tab1, mainVm.SelectedTab);
+        Assert.True(tab1.IsSelected);
+
+        // Act: Add second tab
+        mainVm.AddNewTabCommand.Execute(null);
+        var tab2 = mainVm.Tabs[1];
+
+        // Assert tab2 is selected and tab1 is deselected
+        Assert.Same(tab2, mainVm.SelectedTab);
+        Assert.True(tab2.IsSelected);
+        Assert.False(tab1.IsSelected);
+
+        // Act: Select tab1 again
+        mainVm.SelectTabCommand.Execute(tab1);
+
+        // Assert tab1 is selected and tab2 is deselected
+        Assert.Same(tab1, mainVm.SelectedTab);
+        Assert.True(tab1.IsSelected);
+        Assert.False(tab2.IsSelected);
+    }
 }
+

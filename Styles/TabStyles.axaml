@@ -1,0 +1,211 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Inactive Tab Button Style -->
+    <Style Selector="Button.tabBtn">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+        <Setter Property="BorderThickness" Value="1,1,1,0" />
+        <Setter Property="CornerRadius" Value="4,4,0,0" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="Margin" Value="1,0,1,0" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.tabBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorderHover}" />
+    </Style>
+
+    <!-- Active Tab Button Style -->
+    <Style Selector="Button.tabBtn.active">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceActive}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+        <Setter Property="BorderThickness" Value="1,2,1,0" />
+        <Setter Property="Margin" Value="1,0,1,0" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- Close Tab Button Inside Tab -->
+    <Style Selector="Button.tabCloseBtn">
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextMuted}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Margin" Value="6,0,0,0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.tabCloseBtn:pointerover">
+        <Setter Property="Background" Value="#33FF0055" />
+        <Setter Property="Foreground" Value="{DynamicResource AppDanger}" />
+    </Style>
+
+    <!-- Add Tab (+) Button Style -->
+    <Style Selector="Button.addTabBtn">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+        <Setter Property="BorderThickness" Value="1,1,1,0" />
+        <Setter Property="CornerRadius" Value="4,0,0,0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="2,0,0,0" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.addTabBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorderHover}" />
+    </Style>
+
+    <!-- Shell Selector Dropdown Button (▾) Style -->
+    <Style Selector="Button.tabShellDropdownBtn">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Width" Value="20" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+        <Setter Property="BorderThickness" Value="0,1,1,0" />
+        <Setter Property="CornerRadius" Value="0,4,0,0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0,0,2,0" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.tabShellDropdownBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorderHover}" />
+    </Style>
+
+    <!-- Tab Scroll Buttons (◀ / ▶) -->
+    <Style Selector="Button.tabScrollBtn">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Width" Value="26" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+        <Setter Property="BorderThickness" Value="1,1,1,0" />
+        <Setter Property="CornerRadius" Value="4,4,0,0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="1,0,1,0" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.tabScrollBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppBorder}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+    </Style>
+
+    <!-- Tab Dropdown Menu Button Style -->
+    <Style Selector="Button.tabMenuBtn">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+        <Setter Property="BorderThickness" Value="1,1,1,0" />
+        <Setter Property="CornerRadius" Value="4,4,0,0" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="Margin" Value="1,0,0,0" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.tabMenuBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppBorder}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+    </Style>
+
+    <!-- Tab Switcher ListBox Styles -->
+    <Style Selector="ListBox.tabSwitcherListBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Focusable" Value="True" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    </Style>
+    <Style Selector="ListBox.tabSwitcherListBox ListBoxItem">
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="Margin" Value="0,2" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+    </Style>
+    <Style Selector="ListBox.tabSwitcherListBox ListBoxItem:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+    </Style>
+    <Style Selector="ListBox.tabSwitcherListBox ListBoxItem:selected">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+    </Style>
+    <Style Selector="Button.tabSwitcherCloseBtn">
+        <Setter Property="Width" Value="20" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextMuted}" />
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+                <BrushTransition Property="Foreground" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="ListBox.tabSwitcherListBox ListBoxItem:pointerover Button.tabSwitcherCloseBtn">
+        <Setter Property="Opacity" Value="0.6" />
+    </Style>
+    <Style Selector="ListBox.tabSwitcherListBox ListBoxItem Button.tabSwitcherCloseBtn:pointerover">
+        <Setter Property="Opacity" Value="1.0" />
+        <Setter Property="Background" Value="{DynamicResource AppDangerSubtle}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppDanger}" />
+    </Style>
+
+    <!-- Header Action Buttons (History, Settings) -->
+    <Style Selector="Button.toolbarActionBtn">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}" />
+        <Setter Property="BorderThickness" Value="1,1,1,0" />
+        <Setter Property="CornerRadius" Value="4,4,0,0" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="Margin" Value="1,0,1,0" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontFamily" Value="Segoe UI, Inter, sans-serif" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.toolbarActionBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+    </Style>
+
+</Styles>
