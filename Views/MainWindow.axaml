@@ -4,6 +4,7 @@
         xmlns:views="using:MultiShell.Views"
         xmlns:dialogs="using:MultiShell.Views.Dialogs"
         xmlns:services="using:MultiShell.Services"
+        xmlns:models="using:MultiShell.Models"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
@@ -352,46 +353,36 @@
                                                                    VerticalAlignment="Center" />
                                                     </StackPanel>
                                                 </Grid>
-                                                <Border Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="4" Padding="2">
-                                                    <Grid ColumnDefinitions="*,*,*,*">
-                                                        <Button Grid.Column="0"
-                                                                Classes="levelBtn"
-                                                                Classes.active="{Binding IsGerman}"
-                                                                Command="{Binding SelectLanguageCommand}"
-                                                                CommandParameter="de"
-                                                                HorizontalAlignment="Stretch"
-                                                                ToolTip.Tip="Deutsch (German)">
-                                                            <TextBlock Text="DE" />
-                                                        </Button>
-                                                        <Button Grid.Column="1"
-                                                                Classes="levelBtn"
-                                                                Classes.active="{Binding IsEnglish}"
-                                                                Command="{Binding SelectLanguageCommand}"
-                                                                CommandParameter="en"
-                                                                HorizontalAlignment="Stretch"
-                                                                ToolTip.Tip="English (Default Fallback)">
-                                                            <TextBlock Text="EN" />
-                                                        </Button>
-                                                        <Button Grid.Column="2"
-                                                                Classes="levelBtn"
-                                                                Classes.active="{Binding IsFrench}"
-                                                                Command="{Binding SelectLanguageCommand}"
-                                                                CommandParameter="fr"
-                                                                HorizontalAlignment="Stretch"
-                                                                ToolTip.Tip="Français (French)">
-                                                            <TextBlock Text="FR" />
-                                                        </Button>
-                                                        <Button Grid.Column="3"
-                                                                Classes="levelBtn"
-                                                                Classes.active="{Binding IsSpanish}"
-                                                                Command="{Binding SelectLanguageCommand}"
-                                                                CommandParameter="es"
-                                                                HorizontalAlignment="Stretch"
-                                                                ToolTip.Tip="Español (Spanish)">
-                                                            <TextBlock Text="ES" />
-                                                        </Button>
-                                                    </Grid>
-                                                </Border>
+                                                <ComboBox ItemsSource="{Binding AvailableLanguages}"
+                                                          SelectedItem="{Binding SelectedLanguage}"
+                                                          HorizontalAlignment="Stretch"
+                                                          Padding="6,4"
+                                                          FontSize="11">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate x:DataType="models:LanguageOption">
+                                                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                                <Border Background="{DynamicResource AppSurfaceBackground}"
+                                                                        BorderBrush="{DynamicResource AppBorder}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="3"
+                                                                        Padding="4,1"
+                                                                        MinWidth="26">
+                                                                    <TextBlock Text="{Binding UpperCode}"
+                                                                               FontFamily="Consolas, monospace"
+                                                                               FontSize="9"
+                                                                               FontWeight="Bold"
+                                                                               HorizontalAlignment="Center"
+                                                                               Foreground="{DynamicResource AppAccent}" />
+                                                                </Border>
+                                                                <TextBlock Text="{Binding NativeName}" FontSize="11" VerticalAlignment="Center" />
+                                                                <TextBlock Text="{Binding EnglishName, StringFormat='({0})'}"
+                                                                           FontSize="10"
+                                                                           Foreground="{DynamicResource AppTextTertiary}"
+                                                                           VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
                                             </StackPanel>
                                         </Border>
 

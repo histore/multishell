@@ -22,7 +22,9 @@ public partial class LocalizationService : ILocalizationService
         new("de", "Deutsch", "German"),
         new("en", "English", "English"),
         new("fr", "Français", "French"),
-        new("es", "Español", "Spanish")
+        new("es", "Español", "Spanish"),
+        new("it", "Italiano", "Italian"),
+        new("pt", "Português", "Portuguese")
     };
 
     public IReadOnlyList<LanguageOption> SupportedLanguages => AllSupportedLanguages;
@@ -48,6 +50,8 @@ public partial class LocalizationService : ILocalizationService
             "de" => "de",
             "fr" => "fr",
             "es" => "es",
+            "it" => "it",
+            "pt" => "pt",
             _ => "en" // Standard Fallback is English
         };
     }
@@ -59,6 +63,8 @@ public partial class LocalizationService : ILocalizationService
         if (norm.StartsWith("de")) return "de";
         if (norm.StartsWith("fr")) return "fr";
         if (norm.StartsWith("es")) return "es";
+        if (norm.StartsWith("it")) return "it";
+        if (norm.StartsWith("pt")) return "pt";
         return "en";
     }
 
@@ -91,6 +97,8 @@ public partial class LocalizationService : ILocalizationService
                 "de" => GermanStrings,
                 "fr" => FrenchStrings,
                 "es" => SpanishStrings,
+                "it" => ItalianStrings,
+                "pt" => PortugueseStrings,
                 _ => EnglishStrings
             };
 
@@ -99,11 +107,13 @@ public partial class LocalizationService : ILocalizationService
                 return val;
             }
 
-            // Fallback chain: English -> German -> French -> Spanish -> key itself
+            // Fallback chain: English -> German -> French -> Spanish -> Italian -> Portuguese -> key itself
             if (EnglishStrings.TryGetValue(key, out var enVal)) return enVal;
             if (GermanStrings.TryGetValue(key, out var deVal)) return deVal;
             if (FrenchStrings.TryGetValue(key, out var frVal)) return frVal;
             if (SpanishStrings.TryGetValue(key, out var esVal)) return esVal;
+            if (ItalianStrings.TryGetValue(key, out var itVal)) return itVal;
+            if (PortugueseStrings.TryGetValue(key, out var ptVal)) return ptVal;
 
             return key;
         }
