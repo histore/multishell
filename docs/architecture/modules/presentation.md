@@ -76,5 +76,5 @@ Backs an individual terminal tab instance:
 * Intercepts pointer events for link opening, right-click paste/copy, and focus transfer.
 
 ## 5. View Resolution & Native AOT Compatibility
-* **[`ViewLocator`](file:///c:/projekte/csharp/multishell/ViewLocator.cs)** implements Avalonia's `IDataTemplate`.
+* **[`ViewLocator`](../../../ViewLocator.cs)** implements Avalonia's `IDataTemplate`.
 * Explicitly maps known ViewModel types (`TerminalTabViewModel` -> `TerminalTabView`) without reflection scanning, ensuring compatibility with Native AOT compilation.

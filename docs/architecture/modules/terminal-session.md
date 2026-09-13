@@ -6,23 +6,23 @@ The Terminal Session module encapsulates low-level operating system process mana
 ## 2. Core Components & Contracts
 
 ### 2.1 Contracts (`Services/`)
-* **[`IShellSession`](file:///c:/projekte/csharp/multishell/Services/IShellSession.cs)**:
+* **[`IShellSession`](../../../Services/IShellSession.cs)**:
   * Public abstraction exposing stream events (`DataReceived`, `ProcessExited`, `WorkingDirectoryChanged`, `CommandExecuted`).
   * Provides control APIs: `Write(byte[] data)`, `Resize(int columns, int rows)`, and `Terminate()`.
-* **[`IShellProcessService`](file:///c:/projekte/csharp/multishell/Services/IShellProcessService.cs)**:
+* **[`IShellProcessService`](../../../Services/IShellProcessService.cs)**:
   * Factory interface for instantiating concrete `IShellSession` sessions based on requested profiles and working directories.
-* **[`IShellDiscoveryService`](file:///c:/projekte/csharp/multishell/Services/IShellDiscoveryService.cs)**:
+* **[`IShellDiscoveryService`](../../../Services/IShellDiscoveryService.cs)**:
   * Enumerates available shell executables across the host environment.
 
 ### 2.2 Implementations
-* **[`ShellSession`](file:///c:/projekte/csharp/multishell/Services/ShellSession.cs)**:
+* **[`ShellSession`](../../../Services/ShellSession.cs)**:
   * Manages ConPTY lifecycle via native `CreatePseudoConsole`, `ResizePseudoConsole`, and `ClosePseudoConsole` P/Invoke calls.
   * Connects standard input/output anonymous pipes between ConPTY and the parent process.
   * Spawns worker processes using `STARTUPINFOEX` and `PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE`.
   * Runs background async reading loops on the stdout pipe.
-* **[`ShellProcessService`](file:///c:/projekte/csharp/multishell/Services/ShellProcessService.cs)**:
+* **[`ShellProcessService`](../../../Services/ShellProcessService.cs)**:
   * Concrete factory constructing `ShellSession` instances with initial buffer dimensions and environment configurations.
-* **[`ShellDiscoveryService`](file:///c:/projekte/csharp/multishell/Services/ShellDiscoveryService.cs)**:
+* **[`ShellDiscoveryService`](../../../Services/ShellDiscoveryService.cs)**:
   * Auto-discovers PowerShell 7 (`pwsh.exe`), Windows PowerShell (`powershell.exe`), Command Prompt (`cmd.exe`), WSL distributions (`wsl.exe`), and NuShell (`nu.exe`).
 
 ## 3. Data Flow & Streaming Sequence
