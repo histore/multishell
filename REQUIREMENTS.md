@@ -38,7 +38,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-GOV-001` | Subagent Roles & Context Isolation | Architecture | **IMPLEMENTED** | `_agents/rules/subagents.md` |
 | `REQ-GOV-002` | Dynamic Model & Reasoning Depth Allocation | Architecture | **IMPLEMENTED** | `_agents/skills/la-control` |
 | `REQ-GOV-003` | Requirements Immutability & Conflict Escalation | Governance | **IMPLEMENTED** | Quality Gate / Verification |
-| `REQ-LOC-001` | Dynamic Multi-Language UI (DE, EN, FR, ES) with Persistence | Localization | **IMPLEMENTED** | `LocalizationServiceTests` |
+| `REQ-LOC-001` | Dynamic Multi-Language UI (DE, EN, FR, ES, IT, PT) with Dropdown & Persistence | Localization | **IMPLEMENTED** | `LocalizationServiceTests` |
 | `REQ-HIST-002` | Live Fuzzy Search & Type-to-Filter in History Drawer | Interaction | **IMPLEMENTED** | `FuzzySearchServiceTests` |
 | `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | UI | **IMPLEMENTED** | `FontSizeServiceTests`, `MainViewModelTests` |
 | `REQ-TERM-001` | Robust UTF-8 Character Streaming & Box-Drawing Monospace Glyph Rendering | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `PowerShellSessionTests` |
@@ -358,13 +358,13 @@ This document serves as the single source of truth for all functional and non-fu
 
 ---
 
-### REQ-LOC-001: Dynamic Multi-Language UI (DE, EN, FR, ES) with Persistence
+### REQ-LOC-001: Dynamic Multi-Language UI (DE, EN, FR, ES, IT, PT) with Dropdown & Persistence
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want the UI to automatically adapt to my operating system language (with English fallback) and allow switching between German, English, French, and Spanish with persistent storage across restarts.
+- **User Story**: As a user, I want the UI to automatically adapt to my operating system language (with English fallback) and allow switching between German, English, French, Spanish, Italian, and Portuguese via a responsive dropdown selector with persistent storage across restarts.
 - **Acceptance Criteria**:
-  - **Given** an OS configured in German, French, Spanish or English, the UI defaults to that language.
-  - **When** the user manually chooses a language from the Settings flyout (`[ DE | EN | FR | ES ]`),
-  - **Then** all UI elements update immediately in real time, and the preference is persisted in `WorkspaceState.SavedLanguage`.
+  - **Given** an OS configured in German, French, Spanish, Italian, Portuguese, or English, the UI defaults to that language.
+  - **When** the user manually chooses a language from the Settings dropdown selector (`ComboBox`),
+  - **Then** all UI elements update immediately in real time without window reloads, and the preference is persisted in `WorkspaceState.SavedLanguage`.
 
 ---
 

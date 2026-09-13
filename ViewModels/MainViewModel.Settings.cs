@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MultiShell.Models;
 
 namespace MultiShell.ViewModels;
 
@@ -27,10 +30,26 @@ public partial class MainViewModel
     [ObservableProperty]
     private double _terminalFontSize = 12.0;
 
+    public LanguageOption SelectedLanguage
+    {
+        get => AvailableLanguages.FirstOrDefault(l => string.Equals(l.Code, CurrentLanguage, StringComparison.OrdinalIgnoreCase))
+               ?? AvailableLanguages[0];
+        set
+        {
+            if (value != null && !string.Equals(value.Code, CurrentLanguage, StringComparison.OrdinalIgnoreCase))
+            {
+                SelectLanguage(value.Code);
+                OnPropertyChanged(nameof(SelectedLanguage));
+            }
+        }
+    }
+
     public bool IsGerman => string.Equals(CurrentLanguage, "de", StringComparison.OrdinalIgnoreCase);
     public bool IsEnglish => string.Equals(CurrentLanguage, "en", StringComparison.OrdinalIgnoreCase);
     public bool IsFrench => string.Equals(CurrentLanguage, "fr", StringComparison.OrdinalIgnoreCase);
     public bool IsSpanish => string.Equals(CurrentLanguage, "es", StringComparison.OrdinalIgnoreCase);
+    public bool IsItalian => string.Equals(CurrentLanguage, "it", StringComparison.OrdinalIgnoreCase);
+    public bool IsPortuguese => string.Equals(CurrentLanguage, "pt", StringComparison.OrdinalIgnoreCase);
 
     public bool IsAppFontSizeLevel1 => AppFontSizeLevel == 1;
     public bool IsAppFontSizeLevel2 => AppFontSizeLevel == 2;
@@ -49,10 +68,13 @@ public partial class MainViewModel
     partial void OnCurrentLanguageChanged(string value)
     {
         OnPropertyChanged(nameof(CurrentLanguageUpper));
+        OnPropertyChanged(nameof(SelectedLanguage));
         OnPropertyChanged(nameof(IsGerman));
         OnPropertyChanged(nameof(IsEnglish));
         OnPropertyChanged(nameof(IsFrench));
         OnPropertyChanged(nameof(IsSpanish));
+        OnPropertyChanged(nameof(IsItalian));
+        OnPropertyChanged(nameof(IsPortuguese));
         OnPropertyChanged(nameof(TabSwitcherCountText));
         OnPropertyChanged(nameof(TabSwitcherHintText));
     }

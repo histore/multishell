@@ -11,7 +11,7 @@ MultiShell is a high-performance, developer-focused desktop terminal designed fo
 - Integrated support for multiple shell environments (PowerShell 7, Windows PowerShell, WSL, CMD, NuShell).
 - Direct Win32 ConPTY virtualization with zero-allocation UTF-8 stream processing.
 - Rich developer workflow tooling: fuzzy command & directory history drawer, clickable URLs/paths, and dynamic font/theme controls.
-- Full internationalization (i18n) across English, German, French, and Spanish.
+- Full internationalization (i18n) across English, German, French, Spanish, Italian, and Portuguese.
 
 ---
 
@@ -60,7 +60,7 @@ MultiShell's detailed technical specifications are modularized under [`modules/`
 | **Presentation & MVVM** | [`presentation.md`](modules/presentation.md) | Avalonia UI composition, `MainViewModel` partials, `TerminalTabViewModel`, tab drag/drop, persistent panels. |
 | **Profiles & Configuration** | [`profiles-and-configuration.md`](modules/profiles-and-configuration.md) | Shell profile detection, default profile seeding, JSON profile store. |
 | **Workspace Persistence** | [`persistence.md`](modules/persistence.md) | Session serialization (`tabs_state.json`), atomic temp-swap writing, AOT-compliant System.Text.Json context. |
-| **Internationalization (i18n)** | [`localization.md`](modules/localization.md) | 0% hardcoded strings, dynamic runtime language switching (EN, DE, FR, ES), fallback handling. |
+| **Internationalization (i18n)** | [`localization.md`](modules/localization.md) | 0% hardcoded strings, dynamic runtime language switching (EN, DE, FR, ES, IT, PT), fallback handling. |
 | **Theming, Palettes & Fonts** | [`theming-and-styling.md`](modules/theming-and-styling.md) | Avalonia theme variants (Dark/Light), 16-color ANSI & 24-bit TrueColor palettes, dynamic font scaling. |
 | **Fuzzy Search & Drawer** | [`search-and-drawer.md`](modules/search-and-drawer.md) | Subsequence fuzzy matching, slide-out History Drawer, interactive URL/path link detection. |
 
