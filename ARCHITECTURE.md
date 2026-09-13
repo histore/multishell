@@ -1,157 +1,45 @@
-# MultiShell Architecture & Design Specification
+# MultiShell Architecture & Design
 
-This document provides a comprehensive technical overview of the architecture, design patterns, subsystem boundaries, and data flows in **MultiShell**.
+## System Purpose & Scope
+MultiShell is a high-performance, multi-tab terminal emulator built with **C# 13**, **.NET 10.0**, and **Avalonia UI 11.2** for Windows. It provides direct Win32 ConPTY virtualization, zero-allocation UTF-8 stream processing, persistent workspaces, multi-shell profile management (PowerShell 7, Windows PowerShell, WSL, CMD, NuShell), and live fuzzy search history drawers with dynamic i18n support.
 
----
+For the comprehensive system architecture specification and subsystem diagrams, see [docs/architecture/overview.md](docs/architecture/overview.md).
 
-## 1. Architectural Philosophy
+## Architecture & Layers
+MultiShell strictly adheres to **Clean Architecture** and **MVVM** principles:
 
-MultiShell is built in **C# 13**, **.NET 10.0**, and **Avalonia UI 11.2** adhering strictly to **Clean Architecture** and **Clean Code** principles:
+- **Domain Layer (`Models/`)**: Core immutable entities, value objects, and serialization records (`TabState`, `TerminalProfile`, `LanguageOption`) with zero external dependencies.
+- **Services Layer (`Services/`)**: Application contracts and infrastructure implementations (`ShellSession` for ConPTY Win32 pipes, `TerminalProfileService`, `ThemeService`, `LocalizationService`, `TabStatePersistenceService`, `FuzzySearchService`).
+- **Presentation Layer (`ViewModels/` & `Views/`)**: Reactive view models (`MainViewModel`, `TerminalTabViewModel`) using `CommunityToolkit.Mvvm`, decoupled from Avalonia UI controls, and XAML views using compiled bindings (`x:DataType`).
+- **Automated Test Suite (`MultiShell.Tests/`)**: Comprehensive xUnit tests adhering to the AAA pattern.
 
-```
-MultiShell Solution
-├── Models/                     # Core Domain Layer (Entities, DTOs, State Records)
-├── Services/                   # Application & Infrastructure Layer (Contracts & Implementations)
-├── ViewModels/                 # Presentation Layer (MVVM using CommunityToolkit.Mvvm)
-├── Views/                      # UI Rendering Layer (Avalonia XAML Views & Controls)
-└── MultiShell.Tests/           # Automated Test Suite (xUnit with AAA Pattern)
-```
+### Core Architectural Invariants
+1. **Inward Dependencies**: Dependencies point strictly inward. Domain models and service contracts remain agnostic of UI controls.
+2. **Framework Decoupling**: ViewModels contain presentation logic and observable state without referencing concrete UI controls (`Window`, `Control`, `Visual`).
+3. **Compiled Bindings**: All Avalonia XAML views use compiled bindings (`x:DataType`) for compile-time type safety and peak runtime performance.
+4. **Bilingual & Dynamic i18n**: 0% hardcoded strings in UI/XAML; all strings are resolved dynamically through `LocalizationService` (English, German, French, Spanish).
+5. **Safe Native Interop**: Low-level Win32 ConPTY and kernel32 pipe handles are safely wrapped in `SafeHandle` instances with leak-free disposal lifecycles.
 
-### Core Architecture Invariants:
-1. **Dependency Rule**: Dependencies point inward. Domain models and service contracts are decoupled from Avalonia UI controls.
-2. **Framework Decoupling**: ViewModels hold observable state and commands without referencing concrete UI controls (`Visual`, `Window`, `Control`).
-3. **Compiled Bindings**: All XAML views use compiled bindings (`x:DataType`) for compile-time safety and peak runtime performance.
-4. **Bilingual Localization**: Zero hardcoded user-facing strings; all UI texts are resolved dynamically via `LocalizationService` (German `de`, English `en`, French `fr`, Spanish `es`).
-5. **Native P/Invoke Encapsulation**: Win32 ConPTY and kernel32 handles are encapsulated in `SafeHandle` instances with leak-free disposal lifecycles.
+## Cross-Cutting Concerns
+- **Concurrency & ConPTY Streaming**: Asynchronous ConPTY stdout/stderr reading with stateful UTF-8 chunk decoding (`Decoder.GetChars`) and real-time OSC 7/9/133 shell integration sequence parsing.
+- **Process Codepage & Fonts**: Process-wide UTF-8 manifest ([`app.manifest`](app.manifest)), console codepage 65001, and cross-platform monospace font fallback chain (`Cascadia Code NF`, `Cascadia Mono NF`, etc.).
+- **Atomic Persistence**: Thread-safe atomic JSON workspace persistence (`%LOCALAPPDATA%/MultiShell/tabs_state.json`) with safe temporary swap files.
 
----
+## Modules Index
+Detailed technical specifications and design blueprints are modularized and maintained incrementally under [docs/architecture/modules/](docs/architecture/modules/):
 
-## 2. Layer Structure & Responsibilities
+| Module | Specification | Scope & Key Responsibilities |
+| :--- | :--- | :--- |
+| **Terminal Session & ConPTY** | [`terminal-session.md`](docs/architecture/modules/terminal-session.md) | Win32 ConPTY lifecycle, pipe redirection, stateful UTF-8 decoding, OSC 7/9/133 shell integration. |
+| **Presentation & MVVM** | [`presentation.md`](docs/architecture/modules/presentation.md) | Avalonia UI composition, `MainViewModel` partials, `TerminalTabViewModel`, tab drag/drop, persistent panels. |
+| **Profiles & Configuration** | [`profiles-and-configuration.md`](docs/architecture/modules/profiles-and-configuration.md) | Shell profile detection, default profile seeding, JSON profile store. |
+| **Workspace Persistence** | [`persistence.md`](docs/architecture/modules/persistence.md) | Session serialization (`tabs_state.json`), atomic temp-swap writing, AOT-compliant System.Text.Json context. |
+| **Internationalization (i18n)** | [`localization.md`](docs/architecture/modules/localization.md) | 0% hardcoded strings, dynamic runtime language switching (EN, DE, FR, ES), fallback handling. |
+| **Theming, Palettes & Fonts** | [`theming-and-styling.md`](docs/architecture/modules/theming-and-styling.md) | Avalonia theme variants (Dark/Light), 16-color ANSI & 24-bit TrueColor palettes, dynamic font scaling. |
+| **Fuzzy Search & Drawer** | [`search-and-drawer.md`](docs/architecture/modules/search-and-drawer.md) | Subsequence fuzzy matching, slide-out History Drawer, interactive URL/path link detection. |
 
-### 2.1 Domain Layer (`Models/`)
-* **`TabState.cs`**: Immutable records (`WorkspaceState`, `PersistedTabState`) for atomic serialization.
-* **`LanguageOption.cs`**: Strongly-typed language descriptor record (`Code`, `NativeName`, `EnglishName`).
-* **`MultiShellJsonSerializerContext.cs`**: High-performance AOT-ready JSON source-generation context (`System.Text.Json`).
+### Architectural Decision Records (ADR)
+Architectural decisions, rationale, and trade-offs are documented under [docs/architecture/adr/](docs/architecture/adr/).
 
-### 2.2 Service & Infrastructure Layer (`Services/`)
-* **`IShellSession` / `ShellSession.cs`**:
-  * Manages the Win32 PseudoConsole (ConPTY) lifecycle via `CreatePseudoConsole`, `ResizePseudoConsole`, and `ClosePseudoConsole`.
-  * Encapsulates I/O pipe handles and streams (`_inputStream`, `_outputStream`).
-  * Employs stateful UTF-8 decoding (`_outputDecoder`) to prevent fragmented multi-byte character corruption.
-  * Intercepts shell integration escape sequences in real time:
-    * **OSC 9;9**: `\x1b]9;9;"<path>"\x07` (PowerShell working directory tracking).
-    * **OSC 7**: `\x1b]7;file://<path>\x07` (WSL / POSIX working directory tracking).
-    * **OSC 133;E**: `\x1b]133;E;<base64-command>\x07` (Executed command tracking).
-* **`IPowerShellProcessService` / `PowerShellProcessService.cs`**:
-  * Factory service for creating isolated shell sessions across configured shell profiles.
-* **`ITerminalProfileService` / `TerminalProfileService.cs`**:
-  * Manages configured terminal profiles (PowerShell, NuShell, WSL, CMD, custom executables) with persistence.
-* **`IThemeService` / `ThemeService.cs`**:
-  * Manages independent App UI theme variants (`ThemeVariant.Dark` / `ThemeVariant.Light`) and Terminal palettes.
-* **`ILocalizationService` / `LocalizationService.cs`**:
-  * Provides dynamic multi-language string resolution with OS language detection and user preference persistence.
-* **`IFuzzySearchService` / `FuzzySearchService.cs`**:
-  * Fast subsequence fuzzy matching engine with match scoring for live history filtering.
-* **`ITabStatePersistenceService` / `TabStatePersistenceService.cs`**:
-  * Thread-safe atomic JSON file persistence (`%LOCALAPPDATA%/MultiShell/tabs_state.json`) with safe temporary swap files.
-
-### 2.3 Presentation Layer (`ViewModels/`)
-* **`ViewModelBase.cs`**: Base `ObservableObject` for CommunityToolkit.Mvvm notifications.
-* **`MainViewModel.cs`**:
-  * Root orchestrator managing tab collection (`ObservableCollection<TerminalTabViewModel>`), active tab selection, settings menu, modal dialogs, and workspace state persistence.
-* **`TerminalTabViewModel.cs`**:
-  * Backs an individual terminal tab. Bridges `IShellSession` events to `TerminalControlModel`.
-  * Maintains live command history (`CommandHistory`), directory history (`DirectoryHistory`), and fuzzy-filtered views.
-  * Tracks keyboard state (e.g. `IsAltGrActive` for international layout compatibility).
-
-### 2.4 Presentation Layer (`Views/`)
-* **`MainWindow.axaml` / `MainWindow.axaml.cs`**:
-  * Main window container, top toolbar, 30px draggable tab bar, left-edge slide-out History Drawer, and modal overlay dialogs (Help, About, Profiles).
-* **`TerminalTabView.axaml` / `TerminalTabView.axaml.cs`**:
-  * Terminal view hosting `SvcSystems.UI.Terminal`.
-  * Manages Xterm 16-color and 24-bit TrueColor palette synchronization, right-click copy/paste, and focus dispatch.
-
-### 2.5 MVVM Composition & UI Component Wiring
-
-The visual frame and child UI components are wired via Avalonia's MVVM architecture, compiled bindings (`x:DataType`), and declarative data templates:
-
-```
-Program.cs (Desktop Lifetime)
-   │
-   ▼
-App.axaml / App.axaml.cs (Global Resources, Themes, ViewLocator)
-   │
-   ▼ Instantiates
-MainWindow.axaml ◄────── DataContext (Binding) ──────► MainViewModel.cs
-   │                                                         │
-   ├─► TabsItemsControl (Tab Headers)                        ├─► ObservableCollection<TerminalTabViewModel> Tabs
-   │        │                                                │
-   │        ▼ DataTemplate (vm:TerminalTabViewModel)         │
-   │    Tab Button (Title, Icon, Close Command)              │
-   │                                                         ▼
-   └─► TabContentControl (Persistent Panel)           TerminalTabViewModel.cs
-            │                                                │
-            ▼ DataTemplate (vm:TerminalTabViewModel)         ├─► TerminalControlModel (Screen Buffer)
-       TerminalTabView.axaml ◄────── binds to ───────┤
-       (IsVisible = IsSelected)                              └─► IShellSession (ConPTY / Windows Pipes)
-```
-
-1. **Application Bootstrap & Lifetime (`App.axaml` / `App.axaml.cs`)**:
-   * `App.axaml` defines global theme dictionaries (Light/Dark Xterm color brushes, surface colors), font configurations (`InterFont`), and registers the global `ViewLocator` in `Application.DataTemplates`.
-   * `App.axaml.cs` intercepts `OnFrameworkInitializationCompleted()`, instantiating the desktop `MainWindow` and assigning its root `DataContext = new MainViewModel()`.
-
-2. **Root View-ViewModel Binding (`MainWindow.axaml`)**:
-   * Employs compiled binding `x:DataType="vm:MainViewModel"` for compile-time safety and zero-reflection performance.
-   * Window title, keyboard shortcuts (`Ctrl+Shift+T`, `Ctrl+Shift+W`), dynamic theme brushes, and top-level action commands (settings, profile switcher, history drawer) bind directly to properties and `[RelayCommand]` methods on `MainViewModel`.
-
-3. **Dynamic Tab Headers (`ItemsControl`)**:
-   * The tab bar (`TabsItemsControl`) binds its `ItemsSource` to `MainViewModel.Tabs` (`ObservableCollection<TerminalTabViewModel>`).
-   * A scoped `DataTemplate DataType="vm:TerminalTabViewModel"` projects each model into an interactive tab button displaying `ShellIconTag` and `DisplayTitle`, while delegating tab selection to `SelectTabCommand` and closure to `RequestCloseCommand`.
-
-4. **Persistent Multi-Tab Terminal Content (`TabContentControl`)**:
-   * The main content host (`TabContentControl`) also binds to `ItemsSource="{Binding Tabs}"` using a virtualized `<Panel />` layout panel.
-   * Inside its `DataTemplate`, each tab instantiates a `TerminalTabView` with `IsVisible="{Binding IsSelected}"`. By toggling visibility rather than unmounting controls, ConPTY pipe streams, ANSI scrollback buffers, and terminal caret positions remain fully intact when switching tabs.
-
-5. **Terminal View & Shell Session Bridge (`TerminalTabView.axaml`)**:
-   * Each `TerminalTabView` receives an individual `TerminalTabViewModel` as its `DataContext`.
-   * The embedded `terminal:TerminalControl` binds to `TerminalModel`, font parameters, and theme brushes.
-   * In the background, `TerminalTabViewModel` connects the terminal engine with `IShellSession` (ConPTY Win32 pipes), decoding UTF-8 streams and dispatching keyboard input.
-
-6. **Automated View Resolution (`ViewLocator.cs`)**:
-   * Registered globally in `App.axaml`, `ViewLocator` implements `IDataTemplate`.
-   * Directly resolves `TerminalTabViewModel` to `TerminalTabView` (without reflection for Native AOT readiness) and serves as a convention-based fallback (`*ViewModel` -> `*View`) for dynamic content containers.
-
----
-
-## 3. Win32 ConPTY Streaming & Data Flow
-
-```mermaid
-sequenceDiagram
-    participant User as User / Keyboard
-    participant View as TerminalTabView (Avalonia)
-    participant VM as TerminalTabViewModel
-    participant Session as ShellSession (ConPTY)
-    participant Shell as pwsh.exe / powershell.exe
-
-    User->>View: Keystroke (Input)
-    View->>VM: OnTerminalUserInput (bytes)
-    VM->>Session: Send(bytes)
-    Session->>Shell: Pipe Write (stdin)
-    
-    Shell->>Session: Pipe Read (stdout/stderr + ANSI/OSC)
-    Session->>Session: CheckForOscSequences (OSC 7/9/133)
-    Session-->>VM: WorkingDirectoryChanged / CommandExecuted
-    Session->>VM: DataReceived (raw bytes)
-    VM->>VM: Stateful UTF-8 Decoder & SanitizeTerminalText
-    VM->>View: TerminalModel.Feed(text)
-    View->>User: Render Visual Character Cells
-```
-
----
-
-## 4. Encoding, Codepages & Font Hierarchy
-
-* **Process-Wide UTF-8**: Windows Application Manifest ([`app.manifest`](app.manifest)) declares `<activeCodePage>UTF-8</activeCodePage>`.
-* **Win32 Console Codepage**: Shell initialization script executes `chcp 65001 >$null` and sets `[Console]::OutputEncoding = UTF8`.
-* **Font Fallback Hierarchy**:
-  `Cascadia Code NF, Cascadia Mono NF, Cascadia Code, Cascadia Mono, Consolas, Segoe UI Symbol, DejaVu Sans Mono, monospace`
+### Incremental Synchronization
+System architecture documentation is kept in sync with ongoing code changes via the `la-architecture-sync` skill using git revision checkpoints ([`docs/architecture/.arch-sync.json`](docs/architecture/.arch-sync.json)).

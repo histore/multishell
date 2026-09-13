@@ -23,7 +23,7 @@ All changes must be developed in dedicated feature, fix, or maintenance branches
 
 ### 1.2 Repository Setup & Git Submodules
 
-This repository uses [histore/agent-skills](https://github.com/histore/agent-skills) as a Git submodule at `.agents`.
+This repository uses [histore/agent-skills](https://github.com/histore/agent-skills) as a Git submodule at `_agents`.
 
 When cloning for the first time:
 ```powershell
@@ -37,7 +37,7 @@ git submodule update --init --recursive
 
 To update agent skills to their latest version:
 ```powershell
-git submodule update --remote .agents
+git submodule update --remote _agents
 ```
 
 ---
