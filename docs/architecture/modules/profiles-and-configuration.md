@@ -6,7 +6,7 @@ MultiShell supports multiple concurrent shell profiles, including modern PowerSh
 ## 2. Domain Models & Contracts
 
 ### 2.1 Models (`Models/`)
-* **[`TerminalProfile`](file:///c:/projekte/csharp/multishell/Models/TerminalProfile.cs)**:
+* **[`TerminalProfile`](../../../Models/TerminalProfile.cs)**:
   * Record defining profile attributes:
     * `Id`: Unique identifier (GUID).
     * `Name`: Display name (e.g., "PowerShell 7", "Ubuntu (WSL)").
@@ -17,10 +17,10 @@ MultiShell supports multiple concurrent shell profiles, including modern PowerSh
     * `IsDefault`: Indicates whether this profile is launched on standard new tab action.
 
 ### 2.2 Contracts (`Services/`)
-* **[`ITerminalProfileService`](file:///c:/projekte/csharp/multishell/Services/ITerminalProfileService.cs)**:
+* **[`ITerminalProfileService`](../../../Services/ITerminalProfileService.cs)**:
   * Exposes reactive observable collection or read-only list of available profiles.
   * APIs: `GetProfiles()`, `GetDefaultProfile()`, `SaveProfile(TerminalProfile profile)`, `DeleteProfile(Guid profileId)`, `SetDefaultProfile(Guid profileId)`.
-* **[`IShellDiscoveryService`](file:///c:/projekte/csharp/multishell/Services/IShellDiscoveryService.cs)**:
+* **[`IShellDiscoveryService`](../../../Services/IShellDiscoveryService.cs)**:
   * Probes file system standard directories (e.g., `%ProgramFiles%/PowerShell`, `%LOCALAPPDATA%/Microsoft/WindowsApps`), PATH environment variable, and WSL registry entries to detect installed shells.
 
 ## 3. Persistence & Default Profile Bootstrapping

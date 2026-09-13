@@ -52,17 +52,17 @@ MultiShell strictly adheres to **Clean Architecture** principles, enforcing sepa
 
 ## 3. Subsystem Modules Index
 
-MultiShell's detailed technical specifications are modularized under [`modules/`](file:///c:/projekte/csharp/multishell/docs/architecture/modules/):
+MultiShell's detailed technical specifications are modularized under [`modules/`](modules/):
 
 | Module | Specification | Key Responsibilities |
 | :--- | :--- | :--- |
-| **Terminal Session & ConPTY** | [`terminal-session.md`](file:///c:/projekte/csharp/multishell/docs/architecture/modules/terminal-session.md) | Win32 ConPTY lifecycle, pipe redirection, stateful UTF-8 decoding, OSC 7/9/133 shell integration. |
-| **Presentation & MVVM** | [`presentation.md`](file:///c:/projekte/csharp/multishell/docs/architecture/modules/presentation.md) | Avalonia UI composition, `MainViewModel` partials, `TerminalTabViewModel`, tab drag/drop, persistent panels. |
-| **Profiles & Configuration** | [`profiles-and-configuration.md`](file:///c:/projekte/csharp/multishell/docs/architecture/modules/profiles-and-configuration.md) | Shell profile detection, default profile seeding, JSON profile store. |
-| **Workspace Persistence** | [`persistence.md`](file:///c:/projekte/csharp/multishell/docs/architecture/modules/persistence.md) | Session serialization (`tabs_state.json`), atomic temp-swap writing, AOT-compliant System.Text.Json context. |
-| **Internationalization (i18n)** | [`localization.md`](file:///c:/projekte/csharp/multishell/docs/architecture/modules/localization.md) | 0% hardcoded strings, dynamic runtime language switching (EN, DE, FR, ES), fallback handling. |
-| **Theming, Palettes & Fonts** | [`theming-and-styling.md`](file:///c:/projekte/csharp/multishell/docs/architecture/modules/theming-and-styling.md) | Avalonia theme variants (Dark/Light), 16-color ANSI & 24-bit TrueColor palettes, dynamic font scaling. |
-| **Fuzzy Search & Drawer** | [`search-and-drawer.md`](file:///c:/projekte/csharp/multishell/docs/architecture/modules/search-and-drawer.md) | Subsequence fuzzy matching, slide-out History Drawer, interactive URL/path link detection. |
+| **Terminal Session & ConPTY** | [`terminal-session.md`](modules/terminal-session.md) | Win32 ConPTY lifecycle, pipe redirection, stateful UTF-8 decoding, OSC 7/9/133 shell integration. |
+| **Presentation & MVVM** | [`presentation.md`](modules/presentation.md) | Avalonia UI composition, `MainViewModel` partials, `TerminalTabViewModel`, tab drag/drop, persistent panels. |
+| **Profiles & Configuration** | [`profiles-and-configuration.md`](modules/profiles-and-configuration.md) | Shell profile detection, default profile seeding, JSON profile store. |
+| **Workspace Persistence** | [`persistence.md`](modules/persistence.md) | Session serialization (`tabs_state.json`), atomic temp-swap writing, AOT-compliant System.Text.Json context. |
+| **Internationalization (i18n)** | [`localization.md`](modules/localization.md) | 0% hardcoded strings, dynamic runtime language switching (EN, DE, FR, ES), fallback handling. |
+| **Theming, Palettes & Fonts** | [`theming-and-styling.md`](modules/theming-and-styling.md) | Avalonia theme variants (Dark/Light), 16-color ANSI & 24-bit TrueColor palettes, dynamic font scaling. |
+| **Fuzzy Search & Drawer** | [`search-and-drawer.md`](modules/search-and-drawer.md) | Subsequence fuzzy matching, slide-out History Drawer, interactive URL/path link detection. |
 
 ---
 
@@ -95,4 +95,4 @@ sequenceDiagram
 ---
 
 ## 5. Architectural Decision Records (ADR)
-Significant architectural decisions and trade-offs are documented under [`adr/`](file:///c:/projekte/csharp/multishell/docs/architecture/adr/).
+Significant architectural decisions and trade-offs are documented under [`adr/`](adr/).
