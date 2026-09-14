@@ -42,6 +42,11 @@ MultiShell mandates **0% hardcoded user-facing strings** across all XAML views, 
   4. The selected language code is stored in local app configuration.
 
 ### 3.3 Fallback Mechanism
-* If a requested translation key is missing in the active language dictionary:
-  1. The service checks the English (`en`) dictionary.
-  2. If absent in English, it returns the key name itself enclosed in brackets (e.g. `[MissingKey]`) to make localization gaps immediately apparent during development.
+* If a requested translation key is missing in the active language dictionary, `LocalizationService` resolves through a deterministic fallback chain:
+  1. English (`en`)
+  2. German (`de`)
+  3. French (`fr`)
+  4. Spanish (`es`)
+  5. Italian (`it`)
+  6. Portuguese (`pt`)
+  7. If absent across all dictionaries, the key itself is returned as raw fallback.

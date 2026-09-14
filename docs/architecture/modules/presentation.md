@@ -43,7 +43,7 @@ To avoid monolithic classes, `MainViewModel` is divided across functional partia
   * Profile selection dropdown list and default launch profile selection.
   * Commands for creating, editing, and deleting custom terminal profiles.
 * **`MainViewModel.Settings.cs`**:
-  * Manages settings drawer/overlay visibility, language selection, theme variant toggling, and global font sizing.
+  * Manages settings drawer/overlay visibility, language selection (`SelectedLanguage` two-way bound to `ComboBox`, `AvailableLanguages`, language flags `IsGerman`, `IsEnglish`, `IsFrench`, `IsSpanish`, `IsItalian`, `IsPortuguese`), theme variant toggling, and global font sizing.
 * **`MainViewModel.TabSwitcher.cs`**:
   * Quick switcher model backing `Ctrl+Tab` navigation with MRU (Most Recently Used) ordering.
 
