@@ -9,7 +9,7 @@ For the comprehensive system architecture specification and subsystem diagrams, 
 MultiShell strictly adheres to **Clean Architecture** and **MVVM** principles:
 
 - **Domain Layer (`Models/`)**: Core immutable entities, value objects, and serialization records (`TabState`, `TerminalProfile`, `LanguageOption`) with zero external dependencies.
-- **Services Layer (`Services/`)**: Application contracts and infrastructure implementations (`ShellSession` for ConPTY Win32 pipes, `TerminalProfileService`, `ThemeService`, `LocalizationService`, `TabStatePersistenceService`, `FuzzySearchService`).
+- **Services Layer (`Services/`)**: Application contracts and infrastructure implementations (`ShellSession` for ConPTY Win32 pipes, `TerminalProfileService`, `ThemeService`, `LocalizationService`, `TabStatePersistenceService`, `FuzzySearchService`, `PathCommandHistoryService`).
 - **Presentation Layer (`ViewModels/` & `Views/`)**: Reactive view models (`MainViewModel`, `TerminalTabViewModel`) using `CommunityToolkit.Mvvm`, decoupled from Avalonia UI controls, and XAML views using compiled bindings (`x:DataType`).
 - **Automated Test Suite (`MultiShell.Tests/`)**: Comprehensive xUnit tests adhering to the AAA pattern.
 
@@ -36,7 +36,7 @@ Detailed technical specifications and design blueprints are modularized and main
 | **Workspace Persistence** | [`persistence.md`](docs/architecture/modules/persistence.md) | Session serialization (`tabs_state.json`), atomic temp-swap writing, AOT-compliant System.Text.Json context. |
 | **Internationalization (i18n)** | [`localization.md`](docs/architecture/modules/localization.md) | 0% hardcoded strings, dynamic runtime language switching (EN, DE, FR, ES, IT, PT), fallback handling. |
 | **Theming, Palettes & Fonts** | [`theming-and-styling.md`](docs/architecture/modules/theming-and-styling.md) | Avalonia theme variants (Dark/Light), 16-color ANSI & 24-bit TrueColor palettes, dynamic font scaling. |
-| **Fuzzy Search & Drawer** | [`search-and-drawer.md`](docs/architecture/modules/search-and-drawer.md) | Subsequence fuzzy matching, slide-out History Drawer, interactive URL/path link detection. |
+| **Fuzzy Search & Drawer** | [`search-and-drawer.md`](docs/architecture/modules/search-and-drawer.md) | Subsequence fuzzy matching, slide-out History Drawer, path-bound dynamic command history, interactive URL/path link detection. |
 
 ### Architectural Decision Records (ADR)
 Architectural decisions, rationale, and trade-offs are documented under [docs/architecture/adr/](docs/architecture/adr/).

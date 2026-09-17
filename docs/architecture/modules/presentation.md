@@ -34,10 +34,13 @@ Views/
 To avoid monolithic classes, `MainViewModel` is divided across functional partial files:
 * **`MainViewModel.cs`**:
   * Root properties: active tab reference, window title resolution, status indicators.
-  * Dependency injection constructor accepting services (`IPowerShellProcessService`, `ITerminalProfileService`, `IThemeService`, `ILocalizationService`, `ITabStatePersistenceService`, `IFontSizeService`).
+  * Dependency injection constructor accepting services (`IPowerShellProcessService`, `ITerminalProfileService`, `IThemeService`, `ILocalizationService`, `ITabStatePersistenceService`, `IFontSizeService`, `IPathCommandHistoryService`).
+  * Manages path command history lifecycle: migrates legacy tab command histories on load and invokes `_pathCommandHistoryService.PruneNonExistentPaths()` prior to saving state on application shutdown.
 * **`MainViewModel.Tabs.cs`**:
   * Manages `ObservableCollection<TerminalTabViewModel> Tabs`.
   * Commands: `NewTabCommand`, `CloseTabCommand`, `ReopenClosedTabCommand`, `DuplicateTabCommand`, `MoveTabCommand`.
+  * `AddNewTabWithDirectory` supports explicit index placement via an optional `insertIndex` parameter.
+  * `DuplicateTabCommand` calculates `insertIndex = targetIndex + 1`, placing newly duplicated tabs directly to the right of the active tab.
   * Maintains `ClosedTabsStack` for resurrecting closed tabs (`Ctrl+Shift+T`).
 * **`MainViewModel.Profiles.cs`**:
   * Profile selection dropdown list and default launch profile selection.
@@ -51,10 +54,16 @@ To avoid monolithic classes, `MainViewModel` is divided across functional partia
 Backs an individual terminal tab instance:
 * Encapsulates an `IShellSession` and binds to `TerminalControlModel`.
 * Tracks shell lifecycle: process exit, working directory updates, active title updates.
+* Path-Bound Command History Integration:
+  * Injected with `IPathCommandHistoryService`.
+  * Binds `CommandHistory` dynamically to the tab's current `WorkingDirectory`.
+  * Listens to `IPathCommandHistoryService.HistoryChangedForPath` to synchronize changes across all tabs sharing that directory in real time.
+  * Records commands under their originating directory (tracking pending directory changes before OSC updates).
 * Maintains live history:
-  * `CommandHistory`: List of executed commands captured via OSC 133 or manual tracking.
+  * `CommandHistory`: Dynamically synced list of commands executed in the current directory.
   * `DirectoryHistory`: List of visited working directories captured via OSC 7 / OSC 9;9.
-* Manages fuzzy search filtering across command and directory history.
+* Concurrency-Hardened Fuzzy Search:
+  * `RefreshFilteredCommands()` and `RefreshFilteredDirectories()` take `.ToArray()` snapshots of history collections before invoking `_fuzzySearchService.FilterAndRank` to eliminate concurrent collection modification exceptions during background streaming.
 * Handles special keyboard input state (e.g. `IsAltGrActive` for international layouts).
 
 ## 4. UI Rendering & Views

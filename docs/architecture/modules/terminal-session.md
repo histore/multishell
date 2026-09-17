@@ -60,6 +60,7 @@ ConPTY streaming delivers arbitrary byte buffers over anonymous pipes. Multi-byt
 * **OSC 9;9 (`\x1b]9;9;"<path>"\x07`)**: Working directory notification emitted by PowerShell profile hooks.
 * **OSC 7 (`\x1b]7;file://<host>/<path>\x07`)**: Standard POSIX/WSL working directory escape sequence.
 * **OSC 133;E (`\x1b]133;E;<base64-command>\x07`)**: Execution notification capturing the exact command line executed by the shell.
+* **Evaluation Order & Origin Directory Attribution**: In `ShellSession.CheckForOscSequences`, `OSC 133;E` is evaluated before `OSC 9;9` / `OSC 7`. This ensures that directory navigation commands (`cd <path>`) trigger `CommandExecuted` while the pending origin directory is preserved, preventing commands from being misattributed to their destination directory.
 
 ### 4.3 Safe Disposal & Leak-Free Teardown
 On tab closure or application exit:
