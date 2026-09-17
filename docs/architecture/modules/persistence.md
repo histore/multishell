@@ -6,17 +6,22 @@ The Workspace State Persistence module provides reliable, atomic serialization a
 ## 2. Models & Contracts
 
 ### 2.1 Models (`Models/TabState.cs`)
-* **`PersistedTabState`**:
-  * Immutable record containing:
-    * `ProfileId`: GUID matching the shell profile.
+* **`TabState`**:
+  * Immutable record representing a single tab snapshot:
     * `Title`: Customized or last-resolved tab title.
     * `WorkingDirectory`: Working directory path at the moment of persistence.
-    * `ProfileName`: Human-readable profile name fallback.
+    * `CommandHistory`: List of recent commands (retained for backward compatibility).
+    * `DirectoryHistory`: List of visited directories.
+    * `ShellType`: Shell executable type (`PowerShell`, `WindowsPowerShell`, `Cmd`, `Wsl`, `NuShell`).
 * **`WorkspaceState`**:
-  * Immutable record containing:
-    * `Tabs`: List of `PersistedTabState` entries.
-    * `ActiveTabIndex`: Index of the currently focused tab.
-    * `LastSaved`: UTC timestamp of the snapshot.
+  * Immutable record representing overall workspace state:
+    * `Tabs`: List of `TabState` entries.
+    * `SelectedIndex`: Index of the currently focused tab.
+    * `SavedLanguage`: Persisted language code (`en`, `de`, `fr`, `es`, `it`, `pt`).
+    * `AppFontSizeLevel` / `TerminalFontSizeLevel`: Configured 5-level font size scale indices.
+    * `DefaultShellType`: Selected default launch shell type.
+    * `ClosedTabs`: List of recently closed tabs available for restoration.
+    * `PathCommandHistory`: Dictionary mapping normalized filesystem paths to lists of recent commands (`Dictionary<string, List<string>>`).
 
 ### 2.2 Contracts (`Services/ITabStatePersistenceService.cs`)
 * **`SaveWorkspaceStateAsync(WorkspaceState state, CancellationToken ct)`**:
@@ -27,7 +32,7 @@ The Workspace State Persistence module provides reliable, atomic serialization a
 ## 3. High-Performance AOT Serialization
 * **`MultiShellJsonSerializerContext.cs`**:
   * Implements `System.Text.Json.Serialization.JsonSerializerContext`.
-  * Configured with `[JsonSerializable(typeof(WorkspaceState))]` and `[JsonSerializable(typeof(TerminalProfile))]`.
+  * Configured with `[JsonSerializable(typeof(WorkspaceState))]`, `[JsonSerializable(typeof(TerminalProfile))]`, `[JsonSerializable(typeof(Dictionary<string, List<string>>))]`, and collection types.
   * Generates metadata at compile-time, eliminating runtime reflection for Native AOT readiness, fast startup time, and zero startup warmup penalty.
 
 ## 4. Resilience & Atomic Swap Strategy
