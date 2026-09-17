@@ -252,7 +252,8 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     public void RefreshFilteredCommands()
     {
-        var results = _fuzzySearchService.FilterAndRank(CommandHistory, CommandFilterQuery, x => x).ToList();
+        var snapshot = CommandHistory.ToArray();
+        var results = _fuzzySearchService.FilterAndRank(snapshot, CommandFilterQuery, x => x).ToList();
         FilteredCommandHistory.Clear();
         foreach (var item in results)
         {
@@ -262,7 +263,8 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     public void RefreshFilteredDirectories()
     {
-        var results = _fuzzySearchService.FilterAndRank(DirectoryHistory, DirectoryFilterQuery, x => x).ToList();
+        var snapshot = DirectoryHistory.ToArray();
+        var results = _fuzzySearchService.FilterAndRank(snapshot, DirectoryFilterQuery, x => x).ToList();
         FilteredDirectoryHistory.Clear();
         foreach (var item in results)
         {

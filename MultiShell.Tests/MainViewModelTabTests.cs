@@ -223,6 +223,44 @@ public class MainViewModelTabTests
     }
 
     [Fact]
+    public void DuplicateTab_InsertsDirectlyToRightOfActiveTab()
+    {
+        // Arrange - 3 tabs: TabA (idx 0), TabB (idx 1), TabC (idx 2)
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        mainVm.AddNewTabWithDirectory(@"C:\tabB");
+        mainVm.AddNewTabWithDirectory(@"C:\tabC");
+
+        var tabA = mainVm.Tabs[0];
+        var tabB = mainVm.Tabs[1];
+        var tabC = mainVm.Tabs[2];
+
+        // Act - Select TabB (index 1) and duplicate it
+        mainVm.SelectedTab = tabB;
+        mainVm.DuplicateTab();
+
+        // Assert - The duplicated tab must be inserted at index 2 (directly to the right of TabB)
+        Assert.Equal(4, mainVm.Tabs.Count);
+        Assert.Same(tabA, mainVm.Tabs[0]);
+        Assert.Same(tabB, mainVm.Tabs[1]);
+        var duplicatedTab = mainVm.Tabs[2];
+        Assert.Same(duplicatedTab, mainVm.SelectedTab);
+        Assert.Same(tabC, mainVm.Tabs[3]);
+        Assert.Equal(@"C:\tabB", duplicatedTab.WorkingDirectory);
+
+        // Act 2 - Duplicate TabA (index 0)
+        mainVm.SelectedTab = tabA;
+        mainVm.DuplicateTab();
+
+        // Assert - Inserted at index 1 (directly to right of TabA)
+        Assert.Equal(5, mainVm.Tabs.Count);
+        Assert.Same(tabA, mainVm.Tabs[0]);
+        Assert.Same(mainVm.SelectedTab, mainVm.Tabs[1]);
+        Assert.Same(tabB, mainVm.Tabs[2]);
+    }
+
+    [Fact]
     public void MoveTab_ReordersTabsAndUpdatesSelectionAndSavesState()
     {
         // Arrange
