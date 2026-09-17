@@ -169,7 +169,7 @@ This document serves as the single source of truth for all functional and non-fu
   - **When** pressing `Ctrl+Shift+T`,
   - **Then** a new tab is created and selected in the default directory.
   - **When** pressing `Ctrl+Shift+D`,
-  - **Then** a new tab is created and selected with the current working directory of the active tab.
+  - **Then** a new tab is created and selected with the current working directory of the active tab, positioned directly to the right of the active tab.
 
 ---
 

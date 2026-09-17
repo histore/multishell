@@ -108,11 +108,18 @@ public partial class MainViewModel
         AddNewTabWithDirectory(null, shellType);
     }
 
-    public void AddNewTabWithDirectory(string? workingDirectory, ShellType shellType = ShellType.PowerShell)
+    public void AddNewTabWithDirectory(string? workingDirectory, ShellType shellType = ShellType.PowerShell, int? insertIndex = null)
     {
         var newTab = CreateNewTab(workingDirectory, shellType);
         RegisterTabEvents(newTab);
-        Tabs.Add(newTab);
+        if (insertIndex.HasValue && insertIndex.Value >= 0 && insertIndex.Value <= Tabs.Count)
+        {
+            Tabs.Insert(insertIndex.Value, newTab);
+        }
+        else
+        {
+            Tabs.Add(newTab);
+        }
         SelectedTab = newTab;
         TriggerSaveState();
     }
@@ -176,7 +183,10 @@ public partial class MainViewModel
             return;
         }
 
-        AddNewTabWithDirectory(targetTab.WorkingDirectory, targetTab.ShellType);
+        int targetIndex = Tabs.IndexOf(targetTab);
+        int insertIndex = targetIndex >= 0 ? targetIndex + 1 : Tabs.Count;
+
+        AddNewTabWithDirectory(targetTab.WorkingDirectory, targetTab.ShellType, insertIndex);
     }
 
     [RelayCommand]
