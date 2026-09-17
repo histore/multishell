@@ -20,6 +20,8 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 {
     private readonly IShellSession _session;
     private readonly IFuzzySearchService _fuzzySearchService;
+    private readonly IPathCommandHistoryService _pathCommandHistoryService;
+    private string? _pendingCommandDirectory;
     private bool _isDisposed;
 
     [ObservableProperty]
@@ -197,12 +199,18 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     public ObservableCollection<string> FilteredDirectoryHistory { get; } = new();
 
-    public TerminalTabViewModel(IShellSession session, IFuzzySearchService? fuzzySearchService = null)
+    public TerminalTabViewModel(
+        IShellSession session,
+        IFuzzySearchService? fuzzySearchService = null,
+        IPathCommandHistoryService? pathCommandHistoryService = null)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _fuzzySearchService = fuzzySearchService ?? new FuzzySearchService();
+        _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
         _workingDirectory = session.WorkingDirectory;
         _title = !string.IsNullOrWhiteSpace(_workingDirectory) ? _workingDirectory : session.Title;
+
+        SyncCommandHistoryFromPath();
 
         if (!string.IsNullOrWhiteSpace(_workingDirectory))
         {
@@ -211,6 +219,8 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
         RefreshFilteredCommands();
         RefreshFilteredDirectories();
+
+        _pathCommandHistoryService.HistoryChangedForPath += OnPathHistoryChanged;
 
         TerminalModel = new TerminalControlModel(new TerminalOptions
         {
@@ -314,14 +324,14 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     {
         if (commands != null)
         {
-            CommandHistory.Clear();
             foreach (var cmd in commands)
             {
-                if (!string.IsNullOrWhiteSpace(cmd) && !IsInternalConfigurationCommand(cmd) && !CommandHistory.Contains(cmd))
+                if (!string.IsNullOrWhiteSpace(cmd) && !IsInternalConfigurationCommand(cmd))
                 {
-                    CommandHistory.Add(cmd);
+                    _pathCommandHistoryService.RecordCommand(WorkingDirectory, cmd);
                 }
             }
+            SyncCommandHistoryFromPath();
         }
 
         if (directories != null)
@@ -340,29 +350,49 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         RefreshFilteredDirectories();
     }
 
-    private void OnSessionCommandExecuted(string command)
+    private void SyncCommandHistoryFromPath()
     {
-        if (string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
-
-        void AddCommand()
+        var history = _pathCommandHistoryService.GetHistory(WorkingDirectory);
+        CommandHistory.Clear();
+        foreach (var cmd in history)
         {
-            if (CommandHistory.Contains(command))
-            {
-                CommandHistory.Remove(command);
-            }
-            CommandHistory.Add(command);
-            RefreshFilteredCommands();
+            CommandHistory.Add(cmd);
+        }
+        RefreshFilteredCommands();
+    }
+
+    private void OnPathHistoryChanged(string changedNormalizedPath)
+    {
+        var currentNormalized = PathCommandHistoryService.NormalizePath(WorkingDirectory);
+        if (!string.Equals(currentNormalized, changedNormalizedPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        void Update()
+        {
+            SyncCommandHistoryFromPath();
             HistoryChanged?.Invoke(this);
         }
 
         if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
         {
-            AddCommand();
+            Update();
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(AddCommand);
+            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
         }
+    }
+
+    private void OnSessionCommandExecuted(string command)
+    {
+        if (string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
+
+        var targetDir = _pendingCommandDirectory ?? WorkingDirectory;
+        _pendingCommandDirectory = null;
+
+        _pathCommandHistoryService.RecordCommand(targetDir, command);
     }
 
     private void OnSessionWorkingDirectoryChanged(string newDir)
@@ -379,6 +409,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
                 DirectoryHistory.Add(newDir);
                 RefreshFilteredDirectories();
             }
+
+            SyncCommandHistoryFromPath();
+            HistoryChanged?.Invoke(this);
 
             DirectoryChanged?.Invoke(this, newDir);
         }
@@ -671,10 +704,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
                     if (!string.IsNullOrWhiteSpace(executedCommand))
                     {
-                        CheckForDirectoryChangeCommand(executedCommand);
+                        _pendingCommandDirectory = WorkingDirectory;
                         if (ShellType != ShellType.PowerShell)
                         {
                             OnSessionCommandExecuted(executedCommand);
+                            CheckForDirectoryChangeCommand(executedCommand);
                         }
                     }
                     continue;
@@ -797,6 +831,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     {
         if (string.IsNullOrWhiteSpace(command)) return;
 
+        _pendingCommandDirectory = WorkingDirectory;
         var clean = command.Trim();
         var commandWithEnter = clean.EndsWith('\r') || clean.EndsWith('\n') ? clean : clean + "\r";
         var bytes = Encoding.UTF8.GetBytes(commandWithEnter);
@@ -901,6 +936,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         _session.Exited -= OnSessionExited;
         _session.WorkingDirectoryChanged -= OnSessionWorkingDirectoryChanged;
         _session.CommandExecuted -= OnSessionCommandExecuted;
+        _pathCommandHistoryService.HistoryChangedForPath -= OnPathHistoryChanged;
         TerminalModel.UserInput -= OnTerminalUserInput;
         TerminalModel.SizeChanged -= OnTerminalSizeChanged;
 

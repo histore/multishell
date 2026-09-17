@@ -58,6 +58,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TERM-010` | Native Windows ConPTY Environment & OSC 11 Background Color Negotiation | Terminal | **IMPLEMENTED** | `ShellSession`, `TerminalTabViewModelTests` |
 | `REQ-TERM-011` | Smooth Terminal Rendering, PTY Output Batching & Overlay Scrollbar Anti-Flicker | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
 | `REQ-PROF-001` | Configurable Working Directory per Profile (Default: User Profile Directory) | Profiles | **IMPLEMENTED** | `TerminalProfileServiceTests`, `MainViewModelTabTests`, `MainWindow` |
+| `REQ-HIST-003` | Path-Based Dynamic Command History, Live Multi-Tab Sync & Exit Pruning | History | **IMPLEMENTED** | `PathCommandHistoryServiceTests`, `TerminalTabViewModelTests`, `MainViewModelTabTests` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
@@ -816,3 +817,24 @@ This document serves as the single source of truth for all functional and non-fu
   - **Given** a terminal tab opened via `AddNewTabWithProfile`,
   - **When** the shell session is launched,
   - **Then** the session begins at the configured `WorkingDirectory` of that profile (or user profile directory fallback).
+
+---
+
+### REQ-HIST-003: Path-Based Dynamic Command History, Live Multi-Tab Sync & Exit Pruning
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a multi-tab terminal user, I want the command history to be bound to the current directory path rather than isolated per tab instance, so that tabs sharing the same path dynamically synchronize commands in real-time, history per path is capped at 100 entries, duplicate commands are refreshed to the latest position, and obsolete histories for deleted paths are automatically pruned on exit.
+- **Acceptance Criteria**:
+  - **Given** terminal tabs with working directories,
+  - **When** commands are executed in any tab at path `P`,
+  - **Then** the commands are stored in the path history for `P`, with duplicates moved to the newest position (MRU), and internal setup commands ignored.
+  - **When** the history for path `P` exceeds 100 entries,
+  - **Then** the oldest entries are pruned using FIFO, keeping at most 100 entries.
+  - **Given** multiple open tabs residing in the same working directory `P`,
+  - **When** a command is executed in one tab,
+  - **Then** all other tabs residing in path `P` dynamically and immediately reflect the new command in `CommandHistory` and `FilteredCommandHistory`.
+  - **Given** an active tab switching its working directory from path `A` to path `B`,
+  - **Then** the tab's command history dynamically switches to the command history of path `B`.
+  - **Given** persisted path histories in MultiShell,
+  - **When** the application shuts down or saves state synchronously on exit,
+  - **Then** all tracked paths are checked with `Directory.Exists(path)`, and any paths that no longer exist on disk are pruned from the history store before saving.
+

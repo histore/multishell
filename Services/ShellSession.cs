@@ -183,12 +183,6 @@ public sealed class ShellSession : IShellSession
                 _oscBuffer.Append(text);
                 var currentBuffer = _oscBuffer.ToString();
 
-                var matches9 = Osc9Regex.Matches(currentBuffer);
-                if (matches9.Count > 0) UpdateDirectory(matches9[^1].Groups[1].Value.Trim());
-
-                var matches7 = Osc7Regex.Matches(currentBuffer);
-                if (matches7.Count > 0) UpdateDirectory(Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim()));
-
                 var matches133E = Osc133ERegex.Matches(currentBuffer);
                 if (matches133E.Count > 0)
                 {
@@ -206,6 +200,12 @@ public sealed class ShellSession : IShellSession
                     }
                     catch { }
                 }
+
+                var matches9 = Osc9Regex.Matches(currentBuffer);
+                if (matches9.Count > 0) UpdateDirectory(matches9[^1].Groups[1].Value.Trim());
+
+                var matches7 = Osc7Regex.Matches(currentBuffer);
+                if (matches7.Count > 0) UpdateDirectory(Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim()));
 
                 if (_oscBuffer.Length > 8192) _oscBuffer.Remove(0, 4096);
             }

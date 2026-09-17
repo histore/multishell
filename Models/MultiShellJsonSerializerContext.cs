@@ -12,6 +12,8 @@ namespace MultiShell.Models;
 [JsonSerializable(typeof(List<TabState>))]
 [JsonSerializable(typeof(TerminalProfile))]
 [JsonSerializable(typeof(List<TerminalProfile>))]
+[JsonSerializable(typeof(Dictionary<string, List<string>>))]
+[JsonSerializable(typeof(List<string>))]
 public partial class MultiShellJsonSerializerContext : JsonSerializerContext
 {
 }
