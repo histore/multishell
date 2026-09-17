@@ -18,9 +18,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly IThemeService _themeService;
     private readonly ILocalizationService _localizationService;
     private readonly IFontSizeService _fontSizeService;
+    private readonly IPathCommandHistoryService _pathCommandHistoryService;
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
+
+    /// <summary>
+    /// Gets the path command history service for path-bound command histories.
+    /// </summary>
+    public IPathCommandHistoryService PathCommandHistoryService => _pathCommandHistoryService;
 
     /// <summary>
     /// Gets the localization service for dynamic XAML string bindings.
@@ -117,7 +123,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ILocalizationService localizationService,
         IFontSizeService fontSizeService,
         IShellDiscoveryService? shellDiscoveryService = null,
-        ITerminalProfileService? terminalProfileService = null)
+        ITerminalProfileService? terminalProfileService = null,
+        IPathCommandHistoryService? pathCommandHistoryService = null)
     {
         _shellProcessService = shellProcessService ?? throw new ArgumentNullException(nameof(shellProcessService));
         _persistenceService = persistenceService ?? throw new ArgumentNullException(nameof(persistenceService));
@@ -127,6 +134,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _shellDiscoveryService = shellDiscoveryService ?? new ShellDiscoveryService(_localizationService);
         _terminalProfileService = terminalProfileService ?? new TerminalProfileService(localizationService: _localizationService);
         _terminalProfileService.ProfilesChanged += ReloadProfiles;
+        _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;
@@ -190,6 +198,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _fontSizeService.SetAppFontSizeLevel(state.AppFontSizeLevel);
             _fontSizeService.SetTerminalFontSizeLevel(state.TerminalFontSizeLevel);
             DefaultShellType = state.DefaultShellType;
+
+            if (state.PathCommandHistory != null && state.PathCommandHistory.Count > 0)
+            {
+                _pathCommandHistoryService.ImportAll(state.PathCommandHistory);
+            }
+            else
+            {
+                // Backwards compatibility migration from legacy tab CommandHistory
+                foreach (var tabState in state.Tabs)
+                {
+                    if (tabState.CommandHistory != null && !string.IsNullOrWhiteSpace(tabState.WorkingDirectory))
+                    {
+                        foreach (var cmd in tabState.CommandHistory)
+                        {
+                            _pathCommandHistoryService.RecordCommand(tabState.WorkingDirectory, cmd);
+                        }
+                    }
+                }
+            }
         }
 
         void ApplyLoadedTabs()
@@ -211,7 +238,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     _tabCounter++;
                     var title = string.IsNullOrWhiteSpace(tabState.Title) ? GetDefaultTitle(tabState.ShellType, _tabCounter) : tabState.Title;
                     var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType);
-                    var tabVm = new TerminalTabViewModel(session);
+                    var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService);
                     tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
                     RegisterTabEvents(tabVm);
                     Tabs.Add(tabVm);
@@ -260,6 +287,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
+        var pathHistories = _pathCommandHistoryService.ExportAll();
         var workspaceState = new WorkspaceState(
             tabStates,
             selectedIndex,
@@ -267,7 +295,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AppFontSizeLevel,
             TerminalFontSizeLevel,
             DefaultShellType,
-            closedTabStates);
+            closedTabStates,
+            pathHistories);
 
         _ = _persistenceService.SaveStateAsync(workspaceState);
     }
@@ -275,6 +304,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public void SaveCurrentStateSynchronously()
     {
         if (_isDisposed || !_isInitialized) return;
+
+        // Prune non-existent paths on application exit per REQ-HIST-003
+        _pathCommandHistoryService.PruneNonExistentPaths();
 
         var tabStates = Tabs.Select(t => new TabState(
             t.Title,
@@ -285,6 +317,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
+        var pathHistories = _pathCommandHistoryService.ExportAll();
         var workspaceState = new WorkspaceState(
             tabStates,
             selectedIndex,
@@ -292,7 +325,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AppFontSizeLevel,
             TerminalFontSizeLevel,
             DefaultShellType,
-            closedTabStates);
+            closedTabStates,
+            pathHistories);
 
         try
         {

@@ -482,10 +482,10 @@ public class MainViewModelTabTests
 
         var session = processService.CreatedSessions[^1];
 
-        // Act - Execute commands in session
+        // Act - Change directory and execute commands in session
+        session.TriggerDirectoryChange(@"C:\projekte\demo");
         session.TriggerCommandExecuted("Get-ChildItem");
         session.TriggerCommandExecuted("git status");
-        session.TriggerDirectoryChange(@"C:\projekte\demo");
 
         // Allow async save task
         await Task.Delay(50);
@@ -1465,6 +1465,53 @@ public class MainViewModelTabTests
         Assert.Same(tab1, mainVm.SelectedTab);
         Assert.True(tab1.IsSelected);
         Assert.False(tab2.IsSelected);
+    }
+
+    [Fact]
+    public async Task SaveCurrentStateSynchronously_PrunesNonExistentPaths_OnExit()
+    {
+        // Arrange
+        var persistenceService = new FakeTabStatePersistenceService();
+        var processService = new FakePowerShellProcessService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        var baseDir = Path.Combine(Path.GetTempPath(), $"multishell_exit_test_{Guid.NewGuid():N}");
+        var existingDir = Path.Combine(baseDir, "existing");
+        var deletedDir = Path.Combine(baseDir, "deleted");
+        Directory.CreateDirectory(existingDir);
+        Directory.CreateDirectory(deletedDir);
+
+        try
+        {
+            // Record commands in both paths
+            mainVm.PathCommandHistoryService.RecordCommand(existingDir, "cmd-keep");
+            mainVm.PathCommandHistoryService.RecordCommand(deletedDir, "cmd-drop");
+
+            // Delete one directory before exit
+            Directory.Delete(deletedDir, recursive: true);
+
+            // Act - Shutdown save
+            mainVm.SaveCurrentStateSynchronously();
+
+            // Assert
+            Assert.NotNull(persistenceService.SavedState);
+            Assert.NotNull(persistenceService.SavedState.PathCommandHistory);
+
+            var normalizedExisting = PathCommandHistoryService.NormalizePath(existingDir);
+            var normalizedDeleted = PathCommandHistoryService.NormalizePath(deletedDir);
+
+            Assert.True(persistenceService.SavedState.PathCommandHistory.ContainsKey(normalizedExisting));
+            Assert.False(persistenceService.SavedState.PathCommandHistory.ContainsKey(normalizedDeleted));
+            Assert.Equal(new[] { "cmd-keep" }, persistenceService.SavedState.PathCommandHistory[normalizedExisting]);
+        }
+        finally
+        {
+            if (Directory.Exists(baseDir))
+            {
+                Directory.Delete(baseDir, recursive: true);
+            }
+        }
     }
 }
 

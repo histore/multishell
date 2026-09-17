@@ -239,7 +239,13 @@ public class LocalizationServiceTests
     public void MainViewModel_SelectedLanguage_UpdatesCurrentLanguageAndViceVersa()
     {
         // Arrange
-        using var vm = new MainViewModel();
+        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_loc_test_{Guid.NewGuid():N}.json");
+        using var vm = new MainViewModel(
+            new ShellProcessService(),
+            new TabStatePersistenceService(tempFile),
+            new ThemeService(),
+            new LocalizationService("de"),
+            new FontSizeService());
 
         // Act - Set to Italian via SelectedLanguage
         var italianOption = vm.AvailableLanguages.First(l => l.Code == "it");

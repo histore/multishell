@@ -891,6 +891,105 @@ public class TerminalTabViewModelTests
         var line = vm.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
         Assert.Contains("SUCCESS: All done", line);
     }
+
+    [Fact]
+    public void TwoTabs_SamePath_ShareAndSyncHistoryDynamically()
+    {
+        // Arrange
+        var historyService = new PathCommandHistoryService();
+        var sharedPath = @"C:\projekte\repo";
+
+        var session1 = new MockPowerShellSession("Tab 1", sharedPath);
+        using var tab1 = new TerminalTabViewModel(session1, pathCommandHistoryService: historyService);
+
+        var session2 = new MockPowerShellSession("Tab 2", sharedPath);
+        using var tab2 = new TerminalTabViewModel(session2, pathCommandHistoryService: historyService);
+
+        // Act - Tab 1 executes a command
+        session1.SimulateCommandExecuted("git status");
+
+        // Assert - Both Tab 1 and Tab 2 immediately reflect the command
+        Assert.Single(tab1.CommandHistory);
+        Assert.Equal("git status", tab1.CommandHistory[0]);
+        Assert.Single(tab1.FilteredCommandHistory);
+        Assert.Equal("git status", tab1.FilteredCommandHistory[0]);
+
+        Assert.Single(tab2.CommandHistory);
+        Assert.Equal("git status", tab2.CommandHistory[0]);
+        Assert.Single(tab2.FilteredCommandHistory);
+        Assert.Equal("git status", tab2.FilteredCommandHistory[0]);
+
+        // Act - Tab 2 executes another command
+        session2.SimulateCommandExecuted("dotnet test");
+
+        // Assert - Both tabs have both commands in same chronological order
+        Assert.Equal(2, tab1.CommandHistory.Count);
+        Assert.Equal(new[] { "git status", "dotnet test" }, tab1.CommandHistory);
+        Assert.Equal(2, tab2.CommandHistory.Count);
+        Assert.Equal(new[] { "git status", "dotnet test" }, tab2.CommandHistory);
+    }
+
+    [Fact]
+    public void Tab_ChangesWorkingDirectory_SwitchesToNewPathHistory()
+    {
+        // Arrange
+        var historyService = new PathCommandHistoryService();
+        var pathA = @"C:\projekte\frontend";
+        var pathB = @"C:\projekte\backend";
+
+        historyService.RecordCommand(pathA, "npm run dev");
+        historyService.RecordCommand(pathB, "dotnet run");
+
+        var session = new MockPowerShellSession("Tab", pathA);
+        using var tab = new TerminalTabViewModel(session, pathCommandHistoryService: historyService);
+
+        // Assert initially on pathA
+        Assert.Single(tab.CommandHistory);
+        Assert.Equal("npm run dev", tab.CommandHistory[0]);
+
+        // Act - directory changes to pathB
+        session.SimulateDirectoryChange(pathB);
+
+        // Assert dynamically switched to pathB's history
+        Assert.Single(tab.CommandHistory);
+        Assert.Equal("dotnet run", tab.CommandHistory[0]);
+        Assert.Single(tab.FilteredCommandHistory);
+        Assert.Equal("dotnet run", tab.FilteredCommandHistory[0]);
+    }
+
+    [Fact]
+    public void UserInput_CdCommand_SavesUnderSourceDirectory_NotTargetDirectory()
+    {
+        // Arrange
+        var historyService = new PathCommandHistoryService();
+        var dirA = @"C:\projekte\folderA";
+        var dirB = @"C:\projekte\folderB";
+
+        var session = new MockPowerShellSession("Tab", dirA);
+        using var tab = new TerminalTabViewModel(session, pathCommandHistoryService: historyService);
+        tab.StartSession();
+
+        // Act - User types 'cd C:\projekte\folderB' and presses Enter while in dirA
+        tab.SendInput(Encoding.UTF8.GetBytes($"cd {dirB}\r"));
+
+        // Shell completes execution: directory changes to dirB and OSC command notification arrives
+        session.SimulateDirectoryChange(dirB);
+        session.SimulateCommandExecuted($"cd {dirB}");
+
+        // Assert
+        var historyA = historyService.GetHistory(dirA);
+        var historyB = historyService.GetHistory(dirB);
+
+        // Command must be recorded under dirA (where it was executed)
+        Assert.Single(historyA);
+        Assert.Equal($"cd {dirB}", historyA[0]);
+
+        // Command must NOT be recorded under dirB
+        Assert.Empty(historyB);
+
+        // Tab is now in dirB, so its active history reflects dirB (empty)
+        Assert.Empty(tab.CommandHistory);
+    }
 }
 
 
