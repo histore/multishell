@@ -21,6 +21,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     private readonly IShellSession _session;
     private readonly IFuzzySearchService _fuzzySearchService;
     private readonly IPathCommandHistoryService _pathCommandHistoryService;
+    private readonly IDirectoryHistoryService _directoryHistoryService;
+    private readonly object _commandHistoryLock = new();
+    private readonly object _directoryHistoryLock = new();
     private string? _pendingCommandDirectory;
     private bool _isDisposed;
 
@@ -202,11 +205,13 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     public TerminalTabViewModel(
         IShellSession session,
         IFuzzySearchService? fuzzySearchService = null,
-        IPathCommandHistoryService? pathCommandHistoryService = null)
+        IPathCommandHistoryService? pathCommandHistoryService = null,
+        IDirectoryHistoryService? directoryHistoryService = null)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _fuzzySearchService = fuzzySearchService ?? new FuzzySearchService();
         _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
+        _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
         _workingDirectory = session.WorkingDirectory;
         _title = !string.IsNullOrWhiteSpace(_workingDirectory) ? _workingDirectory : session.Title;
 
@@ -214,13 +219,15 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
         if (!string.IsNullOrWhiteSpace(_workingDirectory))
         {
-            DirectoryHistory.Add(_workingDirectory);
+            _directoryHistoryService.RecordDirectory(_workingDirectory);
         }
+        SyncDirectoryHistory();
 
         RefreshFilteredCommands();
         RefreshFilteredDirectories();
 
         _pathCommandHistoryService.HistoryChangedForPath += OnPathHistoryChanged;
+        _directoryHistoryService.HistoryChanged += OnSharedDirectoryHistoryChanged;
 
         TerminalModel = new TerminalControlModel(new TerminalOptions
         {
@@ -252,23 +259,29 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     public void RefreshFilteredCommands()
     {
-        var snapshot = CommandHistory.ToArray();
-        var results = _fuzzySearchService.FilterAndRank(snapshot, CommandFilterQuery, x => x).ToList();
-        FilteredCommandHistory.Clear();
-        foreach (var item in results)
+        lock (_commandHistoryLock)
         {
-            FilteredCommandHistory.Add(item);
+            var snapshot = CommandHistory.ToArray();
+            var results = _fuzzySearchService.FilterAndRank(snapshot, CommandFilterQuery, x => x).ToList();
+            FilteredCommandHistory.Clear();
+            foreach (var item in results)
+            {
+                FilteredCommandHistory.Add(item);
+            }
         }
     }
 
     public void RefreshFilteredDirectories()
     {
-        var snapshot = DirectoryHistory.ToArray();
-        var results = _fuzzySearchService.FilterAndRank(snapshot, DirectoryFilterQuery, x => x).ToList();
-        FilteredDirectoryHistory.Clear();
-        foreach (var item in results)
+        lock (_directoryHistoryLock)
         {
-            FilteredDirectoryHistory.Add(item);
+            var snapshot = DirectoryHistory.ToArray();
+            var results = _fuzzySearchService.FilterAndRank(snapshot, DirectoryFilterQuery, x => x).ToList();
+            FilteredDirectoryHistory.Clear();
+            foreach (var item in results)
+            {
+                FilteredDirectoryHistory.Add(item);
+            }
         }
     }
 
@@ -326,41 +339,86 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     {
         if (commands != null)
         {
-            foreach (var cmd in commands)
+            _pathCommandHistoryService.HistoryChangedForPath -= OnPathHistoryChanged;
+            try
             {
-                if (!string.IsNullOrWhiteSpace(cmd) && !IsInternalConfigurationCommand(cmd))
+                foreach (var cmd in commands)
                 {
-                    _pathCommandHistoryService.RecordCommand(WorkingDirectory, cmd);
+                    if (!string.IsNullOrWhiteSpace(cmd) && !IsInternalConfigurationCommand(cmd))
+                    {
+                        _pathCommandHistoryService.RecordCommand(WorkingDirectory, cmd);
+                    }
                 }
+            }
+            finally
+            {
+                _pathCommandHistoryService.HistoryChangedForPath += OnPathHistoryChanged;
             }
             SyncCommandHistoryFromPath();
         }
 
         if (directories != null)
         {
-            DirectoryHistory.Clear();
-            foreach (var dir in directories)
+            _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
+            try
             {
-                if (!string.IsNullOrWhiteSpace(dir) && !DirectoryHistory.Contains(dir))
-                {
-                    DirectoryHistory.Add(dir);
-                }
+                _directoryHistoryService.ImportAll(directories);
             }
+            finally
+            {
+                _directoryHistoryService.HistoryChanged += OnSharedDirectoryHistoryChanged;
+            }
+            SyncDirectoryHistory();
         }
 
         RefreshFilteredCommands();
         RefreshFilteredDirectories();
     }
 
+    private void SyncDirectoryHistory()
+    {
+        lock (_directoryHistoryLock)
+        {
+            var history = _directoryHistoryService.GetHistory();
+            DirectoryHistory.Clear();
+            foreach (var dir in history)
+            {
+                DirectoryHistory.Add(dir);
+            }
+            RefreshFilteredDirectories();
+        }
+    }
+
+    private void OnSharedDirectoryHistoryChanged()
+    {
+        void Update()
+        {
+            SyncDirectoryHistory();
+            HistoryChanged?.Invoke(this);
+        }
+
+        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            Update();
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
+        }
+    }
+
     private void SyncCommandHistoryFromPath()
     {
-        var history = _pathCommandHistoryService.GetHistory(WorkingDirectory);
-        CommandHistory.Clear();
-        foreach (var cmd in history)
+        lock (_commandHistoryLock)
         {
-            CommandHistory.Add(cmd);
+            var history = _pathCommandHistoryService.GetHistory(WorkingDirectory);
+            CommandHistory.Clear();
+            foreach (var cmd in history)
+            {
+                CommandHistory.Add(cmd);
+            }
+            RefreshFilteredCommands();
         }
-        RefreshFilteredCommands();
     }
 
     private void OnPathHistoryChanged(string changedNormalizedPath)
@@ -406,11 +464,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             WorkingDirectory = newDir;
             Title = newDir;
 
-            if (!DirectoryHistory.Contains(newDir))
-            {
-                DirectoryHistory.Add(newDir);
-                RefreshFilteredDirectories();
-            }
+            _directoryHistoryService.RecordDirectory(newDir);
 
             SyncCommandHistoryFromPath();
             HistoryChanged?.Invoke(this);
@@ -939,6 +993,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         _session.WorkingDirectoryChanged -= OnSessionWorkingDirectoryChanged;
         _session.CommandExecuted -= OnSessionCommandExecuted;
         _pathCommandHistoryService.HistoryChangedForPath -= OnPathHistoryChanged;
+        _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
         TerminalModel.UserInput -= OnTerminalUserInput;
         TerminalModel.SizeChanged -= OnTerminalSizeChanged;
 

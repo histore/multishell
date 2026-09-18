@@ -59,6 +59,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TERM-011` | Smooth Terminal Rendering, PTY Output Batching & Overlay Scrollbar Anti-Flicker | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
 | `REQ-PROF-001` | Configurable Working Directory per Profile (Default: User Profile Directory) | Profiles | **IMPLEMENTED** | `TerminalProfileServiceTests`, `MainViewModelTabTests`, `MainWindow` |
 | `REQ-HIST-003` | Path-Based Dynamic Command History, Live Multi-Tab Sync & Exit Pruning | History | **IMPLEMENTED** | `PathCommandHistoryServiceTests`, `TerminalTabViewModelTests`, `MainViewModelTabTests` |
+| `REQ-HIST-004` | Shared Global Directory History across Tabs with MRU Deduplication & Cap 100 | History | **IMPLEMENTED** | `DirectoryHistoryServiceTests`, `SharedDirectoryHistoryIntegrationTests` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
@@ -837,4 +838,23 @@ This document serves as the single source of truth for all functional and non-fu
   - **Given** persisted path histories in MultiShell,
   - **When** the application shuts down or saves state synchronously on exit,
   - **Then** all tracked paths are checked with `Directory.Exists(path)`, and any paths that no longer exist on disk are pruned from the history store before saving.
+
+---
+
+### REQ-HIST-004: Shared Global Directory History across Tabs with MRU Deduplication & Cap 100
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a multi-tab terminal user, I want all terminal tabs to share a single unified directory history in the History drawer, capped at 100 entries with FIFO pruning for older items and MRU deduplication, so that visited paths from any tab are instantly available everywhere without duplicates.
+- **Acceptance Criteria**:
+  - **Given** one or more open terminal tabs,
+  - **When** a directory is visited or changed in any tab,
+  - **Then** that path is recorded into the shared `DirectoryHistoryService`.
+  - **When** the path already exists in the history,
+  - **Then** the previous occurrence is removed and the path is placed at the newest position (MRU order).
+  - **When** the total count of directory entries exceeds 100,
+  - **Then** the oldest entries are evicted using FIFO (retaining at most 100 entries).
+  - **When** a directory change occurs in any tab,
+  - **Then** all open tabs immediately reflect the updated directory history in their `DirectoryHistory` and `FilteredDirectoryHistory`.
+  - **When** the application saves workspace state,
+  - **Then** the shared directory history is persisted in `WorkspaceState.SharedDirectoryHistory` in `tabs_state.json` and restored on subsequent application launches.
+
 
