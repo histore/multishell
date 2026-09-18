@@ -24,4 +24,5 @@ public record WorkspaceState(
     int TerminalFontSizeLevel = 3,
     ShellType DefaultShellType = ShellType.PowerShell,
     List<TabState>? ClosedTabs = null,
-    Dictionary<string, List<string>>? PathCommandHistory = null);
+    Dictionary<string, List<string>>? PathCommandHistory = null,
+    List<string>? SharedDirectoryHistory = null);

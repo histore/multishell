@@ -19,9 +19,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly ILocalizationService _localizationService;
     private readonly IFontSizeService _fontSizeService;
     private readonly IPathCommandHistoryService _pathCommandHistoryService;
+    private readonly IDirectoryHistoryService _directoryHistoryService;
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
+
+    /// <summary>
+    /// Gets the shared directory history service.
+    /// </summary>
+    public IDirectoryHistoryService DirectoryHistoryService => _directoryHistoryService;
 
     /// <summary>
     /// Gets the path command history service for path-bound command histories.
@@ -124,7 +130,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IFontSizeService fontSizeService,
         IShellDiscoveryService? shellDiscoveryService = null,
         ITerminalProfileService? terminalProfileService = null,
-        IPathCommandHistoryService? pathCommandHistoryService = null)
+        IPathCommandHistoryService? pathCommandHistoryService = null,
+        IDirectoryHistoryService? directoryHistoryService = null)
     {
         _shellProcessService = shellProcessService ?? throw new ArgumentNullException(nameof(shellProcessService));
         _persistenceService = persistenceService ?? throw new ArgumentNullException(nameof(persistenceService));
@@ -135,6 +142,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _terminalProfileService = terminalProfileService ?? new TerminalProfileService(localizationService: _localizationService);
         _terminalProfileService.ProfilesChanged += ReloadProfiles;
         _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
+        _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;
@@ -217,6 +225,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     }
                 }
             }
+
+            if (state.SharedDirectoryHistory != null && state.SharedDirectoryHistory.Count > 0)
+            {
+                _directoryHistoryService.ImportAll(state.SharedDirectoryHistory);
+            }
+            else
+            {
+                // Backwards compatibility migration from legacy tab DirectoryHistory
+                foreach (var tabState in state.Tabs)
+                {
+                    if (tabState.DirectoryHistory != null)
+                    {
+                        _directoryHistoryService.ImportAll(tabState.DirectoryHistory);
+                    }
+                }
+            }
         }
 
         void ApplyLoadedTabs()
@@ -238,7 +262,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     _tabCounter++;
                     var title = string.IsNullOrWhiteSpace(tabState.Title) ? GetDefaultTitle(tabState.ShellType, _tabCounter) : tabState.Title;
                     var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType);
-                    var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService);
+                    var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService);
                     tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
                     RegisterTabEvents(tabVm);
                     Tabs.Add(tabVm);
@@ -288,6 +312,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
         var pathHistories = _pathCommandHistoryService.ExportAll();
+        var sharedDirectories = _directoryHistoryService.ExportAll();
         var workspaceState = new WorkspaceState(
             tabStates,
             selectedIndex,
@@ -296,7 +321,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             TerminalFontSizeLevel,
             DefaultShellType,
             closedTabStates,
-            pathHistories);
+            pathHistories,
+            sharedDirectories);
 
         _ = _persistenceService.SaveStateAsync(workspaceState);
     }
@@ -305,7 +331,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (_isDisposed || !_isInitialized) return;
 
-        // Prune non-existent paths on application exit per REQ-HIST-003
+        // Prune non-existent paths for command history on application exit per REQ-HIST-003
         _pathCommandHistoryService.PruneNonExistentPaths();
 
         var tabStates = Tabs.Select(t => new TabState(
@@ -318,6 +344,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
         var pathHistories = _pathCommandHistoryService.ExportAll();
+        var sharedDirectories = _directoryHistoryService.ExportAll();
         var workspaceState = new WorkspaceState(
             tabStates,
             selectedIndex,
@@ -326,7 +353,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             TerminalFontSizeLevel,
             DefaultShellType,
             closedTabStates,
-            pathHistories);
+            pathHistories,
+            sharedDirectories);
 
         try
         {
