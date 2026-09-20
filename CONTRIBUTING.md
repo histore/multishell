@@ -44,20 +44,22 @@ git submodule update --remote _agents
 
 ## 2. End-to-End Development Lifecycle
 
-Every code change moves through a structured, quality-gated 9-stage lifecycle:
+Every code change moves through a structured, quality-gated 9-stage lifecycle adhering to **Stub-First Test-Driven Development (TDD)**:
 
 ```mermaid
 flowchart TD
     A["1. Requirement / Issue"] -->|"RequirementEngineer"| B["2. Create Branch"]
-    B -->|"Architect & Developer"| C["3. Implement Clean Code & MVVM"]
-    C -->|"Tester"| D["4. Automated Tests (MultiShell.Tests)"]
-    D -->|"Verifikation"| E["5. Quality Gate Audit"]
+    B -->|"Architekt"| C1["3a. Skeleton Stubs (Phase RED)"]
+    C1 -->|"Tester"| C2["3b. Failing Tests (MultiShell.Tests)"]
+    C2 -->|"Developer & UIDesigner"| C3["3c. Production Code (Phase GREEN)"]
+    C3 -->|"Tester"| D["4. Automated Test Verification (dotnet test)"]
+    D -->|"Verifikation"| E["5. Quality & Immutability Gate"]
     E -->|"Pass"| F["6. Developer Review & Live Testing Gate"]
-    F -->|"Needs Changes / Corrections"| C
+    F -->|"Needs Changes / Corrections"| C3
     F -->|"Approved"| G["7. Commit & Push via CommitManager"]
     G -->|"PRManager"| H["8. Open PR & CI Check"]
     H -->|"GitHub Actions CI"| I{"CI Build & Test Pass?"}
-    I -->|"No"| C
+    I -->|"No"| C3
     I -->|"Yes"| J["9. Maintainer Review & Squash Merge (PRManager)"]
     J -->|"ReleaseManager"| K["SemVer Tag vX.Y.Z & GitHub Release"]
 ```
@@ -73,24 +75,31 @@ git pull origin main
 git checkout -b feat/REQ-025-tab-split-view
 ```
 
-### Stage 3: Clean Architecture Implementation (`Developer` & `UIDesigner`)
-- Implement domain logic, services, view models, and views respecting layer separation:
-  - **Models**: Pure domain objects, DTOs, and serialization models.
-  - **Services**: Interfaces (`I...Service`) and infrastructure implementations (ConPTY Win32 bindings, theme manager, fuzzy search).
-  - **ViewModels**: CommunityToolkit.Mvvm presentation logic decoupled from Avalonia UI controls.
-  - **Views**: Compiled bindings (`x:DataType`), decoupled styles, zero business logic in code-behind.
-- **i18n Compliance**: Zero hardcoded UI strings; all user-facing texts must be referenced in dynamic localization dictionaries (German `de` & English `en` mandatory).
+### Stage 3: Stub-First TDD Implementation (`Architekt`, `Tester`, `Developer` & `UIDesigner`)
+MultiShell adheres strictly to **Stub-First Test-Driven Development (TDD)** (Red-Green-Refactor):
+- **Phase RED (Stubs & Failing Tests)**:
+  - The `Architekt` defines interfaces and compiles skeleton stubs throwing `NotImplementedException`.
+  - The `Tester` implements xUnit unit/integration tests in [MultiShell.Tests](MultiShell.Tests/) adhering to the Arrange-Act-Assert (AAA) pattern *before* production logic is written, verifying that tests compile cleanly and fail semantically.
+- **Phase GREEN (Production Code)**:
+  - The `Developer` (and `UIDesigner`) implement domain logic, services, view models, and views strictly to turn failing tests green.
+  - **Test Immutability Constraint**: The developer is strictly forbidden from altering test files or relaxing assertions.
+  - **Circuit Breaker**: The local feedback loop (`Code` -> `dotnet test` -> `Fix`) is capped at a maximum of 3 iterations before escalating.
+  - Respect layer separation:
+    - **Models**: Pure domain objects, DTOs, and serialization models.
+    - **Services**: Interfaces (`I...Service`) and infrastructure implementations (ConPTY Win32 bindings, theme manager, fuzzy search).
+    - **ViewModels**: CommunityToolkit.Mvvm presentation logic decoupled from Avalonia UI controls.
+    - **Views**: Compiled bindings (`x:DataType`), decoupled styles, zero business logic in code-behind.
+  - **i18n Compliance**: Zero hardcoded UI strings; all user-facing texts must be referenced in dynamic localization dictionaries (German `de` & English `en` mandatory).
 
-### Stage 4: Automated Testing (`Tester`)
-- Add or update comprehensive xUnit unit tests in [MultiShell.Tests](MultiShell.Tests/).
-- Ensure the Arrange-Act-Assert (AAA) pattern is strictly followed.
-- Run tests locally:
+### Stage 4: Automated Testing Verification (`Tester`)
+- Execute the full automated test suite locally:
   ```powershell
   dotnet test MultiShell.Tests/MultiShell.Tests.csproj
   ```
+- A 100% pass rate with 0 failures is strictly required before verification handoff.
 
 ### Stage 5: Local Quality & Security Gate Audit (`Verifikation` & `SecurityAuditor`)
-- Verify 0 test failures, 0 compiler warnings, and clean formatting.
+- Verify 0 test failures, 0 compiler warnings, clean formatting, and **test immutability compliance**.
 - Confirm full requirement coverage and bilingual localization resources.
 - **Security & Secret Audit (`SecurityAuditor`)**:
   - Audit staged diffs for accidental credentials, tokens, or private keys.
@@ -130,11 +139,24 @@ git checkout -b feat/REQ-025-tab-split-view
   ```powershell
   gh pr merge --squash --delete-branch
   ```
-- `ReleaseManager` verifies milestones and tags releases upon user confirmation per [Section 4](#4-release--versioning-policy-releasemanager).
+- `ReleaseManager` verifies milestones and tags releases upon user confirmation per [Section 5](#5-release--versioning-policy-releasemanager).
 
 ---
 
-## 3. Pull Request Standards & Quality Gates
+## 3. Lifecycle Action Execution Governance
+
+Operations involving Git and releases (`commit`, `push`, `pr merge`, `release`) adhere to six governance principles:
+
+1. **Strict Action Execution (Atomic Scope)**: An explicitly requested action executes only that action without unsolicited side-actions (e.g. committing never triggers an automatic push).
+2. **State-Driven Prerequisite Resolution**: If an action requires preceding state changes (e.g. uncommitted workspace changes when `push` is requested, or unpushed commits before PR creation), prerequisites are resolved automatically.
+3. **Proactive Next-Step Offering**: After completing an action, the logical successor step is proactively recommended to the user for immediate execution.
+4. **Gate Invariance**: Mandatory interactive review gates (commit message confirmation, PR description approval, release tag verification) are never bypassed.
+5. **Explicit User Override**: Explicit user instructions can combine or alter default actions at any time.
+6. **Atypical State & Safety Confirmation Gate**: If following these instructions produces an unexpected state or requires non-standard measures (e.g. detached HEAD, merge conflicts, unexpected untracked files, unverified release states), the agent halts, describes the situation, and requests explicit user confirmation before proceeding.
+
+---
+
+## 4. Pull Request Standards & Quality Gates
 
 Every Pull Request must fill out [.github/pull_request_template.md](.github/pull_request_template.md):
 
@@ -144,14 +166,14 @@ Every Pull Request must fill out [.github/pull_request_template.md](.github/pull
 
 ---
 
-## 4. Release & Versioning Policy (`ReleaseManager`)
+## 5. Release & Versioning Policy (`ReleaseManager`)
 
 MultiShell adheres to **Semantic Versioning 2.0.0** (`MAJOR.MINOR.PATCH`):
 - **MAJOR**: Incompatible API or structural breaking changes.
 - **MINOR**: Backward-compatible new features (`feat`).
 - **PATCH**: Backward-compatible bug fixes (`fix`, `perf`).
 
-### 4.1 Main-Branch Release Enforcement
+### 5.1 Main-Branch Release Enforcement
 Releases must **strictly and exclusively** be tagged and created from the `main` branch:
 1. **Local Pre-Check (`ReleaseManager`)**: Before calculating versions and creating tags, the working branch is checked to ensure it is `main` and fully synchronized with `origin/main`.
 2. **CI/CD Pipeline Gate ([.github/workflows/release.yml](.github/workflows/release.yml))**: When a tag (`v*.*.*`) is pushed, the GitHub Actions release workflow validates that the tag commit is an ancestor of `origin/main` (`git merge-base --is-ancestor`). Any release build triggered by non-main tags is immediately aborted.
