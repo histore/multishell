@@ -29,6 +29,8 @@ public class MainViewModelTabTests
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted;
 
+        public List<byte[]> SentInputs { get; } = new();
+
         public MockPowerShellSession(string title, string? workingDirectory = null)
         {
             Title = title;
@@ -36,7 +38,7 @@ public class MainViewModelTabTests
         }
 
         public void Start() { IsRunning = true; }
-        public void Send(byte[] input) { }
+        public void Send(byte[] input) { SentInputs.Add(input); }
         public void Resize(int cols, int rows) { }
 
         public void TriggerCommandExecuted(string cmd)
@@ -1605,5 +1607,82 @@ public class MainViewModelTabTests
         // Assert: Should cap tabs at MaxRestoreTabsLimit (50)
         Assert.Equal(MainViewModel.MaxRestoreTabsLimit, vm.Tabs.Count);
     }
+
+    [Fact]
+    public void OpenDirectoryFromDrop_WithNullOrEmpty_DoesNothing()
+    {
+        var processService = new FakePowerShellProcessService();
+        using var vm = new MainViewModel(processService, new FakeTabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService());
+        var initialTab = vm.SelectedTab!;
+
+        vm.OpenDirectoryFromDrop(null, openInNewTab: false);
+        vm.OpenDirectoryFromDrop("", openInNewTab: false);
+        vm.OpenDirectoryFromDrop("   ", openInNewTab: false);
+
+        Assert.Single(vm.Tabs);
+        Assert.Same(initialTab, vm.SelectedTab);
+    }
+
+    [Fact]
+    public void OpenDirectoryFromDrop_WithoutShift_NavigatesSelectedTab()
+    {
+        var processService = new FakePowerShellProcessService();
+        using var vm = new MainViewModel(processService, new FakeTabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService());
+        var session = processService.CreatedSessions[0];
+
+        vm.OpenDirectoryFromDrop(@"C:\Projects\MultiShell", openInNewTab: false);
+
+        Assert.Single(vm.Tabs);
+        Assert.NotEmpty(session.SentInputs);
+        var sentText = System.Text.Encoding.UTF8.GetString(session.SentInputs[^1]);
+        Assert.Contains(@"C:\Projects\MultiShell", sentText);
+    }
+
+    [Fact]
+    public void OpenDirectoryFromDrop_WithShift_CreatesNewTabInDirectory()
+    {
+        var processService = new FakePowerShellProcessService();
+        using var vm = new MainViewModel(processService, new FakeTabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService());
+
+        vm.OpenDirectoryFromDrop(@"C:\Projects\MultiShell", openInNewTab: true);
+
+        Assert.Equal(2, vm.Tabs.Count);
+        Assert.Equal(@"C:\Projects\MultiShell", vm.SelectedTab!.WorkingDirectory);
+    }
+
+    [Fact]
+    public void OpenDirectoryFromDrop_WhenNoTabsOpen_CreatesNewTabRegardlessOfShift()
+    {
+        var processService = new FakePowerShellProcessService();
+        using var vm = new MainViewModel(processService, new FakeTabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService());
+        vm.CloseTab(vm.Tabs[0]);
+        Assert.Empty(vm.Tabs);
+
+        vm.OpenDirectoryFromDrop(@"C:\Projects\MultiShell", openInNewTab: false);
+
+        Assert.Single(vm.Tabs);
+        Assert.Equal(@"C:\Projects\MultiShell", vm.SelectedTab!.WorkingDirectory);
+    }
+
+    [Fact]
+    public void OpenDirectoryFromDrop_WithSpecificTargetTab_NavigatesTargetTabAndActivatesIt()
+    {
+        var processService = new FakePowerShellProcessService();
+        using var vm = new MainViewModel(processService, new FakeTabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService());
+        vm.AddNewTab(); // Tab 2
+        var tab1 = vm.Tabs[0];
+        var tab2 = vm.Tabs[1];
+        vm.SelectedTab = tab2;
+
+        var session1 = processService.CreatedSessions[0];
+
+        vm.OpenDirectoryFromDrop(@"D:\Workspace", openInNewTab: false, targetTab: tab1);
+
+        Assert.Same(tab1, vm.SelectedTab);
+        Assert.NotEmpty(session1.SentInputs);
+        var sentText = System.Text.Encoding.UTF8.GetString(session1.SentInputs[^1]);
+        Assert.Contains(@"D:\Workspace", sentText);
+    }
 }
+
 

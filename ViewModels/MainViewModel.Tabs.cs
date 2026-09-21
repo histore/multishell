@@ -452,4 +452,30 @@ public partial class MainViewModel
         Tabs.Move(oldIndex, newIndex);
         TriggerSaveState();
     }
+
+    /// <summary>
+    /// Handles directory navigation or tab creation from a drag-and-drop operation (REQ-TAB-024).
+    /// </summary>
+    /// <param name="directory">The resolved directory path to open.</param>
+    /// <param name="openInNewTab">True if Shift was held or user requested a new tab; false to navigate current/target tab.</param>
+    /// <param name="targetTab">Optional specific target tab dropped onto.</param>
+    public void OpenDirectoryFromDrop(string? directory, bool openInNewTab, TerminalTabViewModel? targetTab = null)
+    {
+        if (string.IsNullOrWhiteSpace(directory)) return;
+
+        if (openInNewTab || Tabs.Count == 0 || SelectedTab == null)
+        {
+            AddNewTabWithDirectory(directory, DefaultShellType);
+            return;
+        }
+
+        var tabToNavigate = targetTab ?? SelectedTab;
+        if (tabToNavigate != null)
+        {
+            SelectedTab = tabToNavigate;
+            tabToNavigate.NavigateToDirectory(directory);
+        }
+    }
 }
+
+

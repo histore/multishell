@@ -41,6 +41,7 @@ To avoid monolithic classes, `MainViewModel` is divided across functional partia
   * Commands: `NewTabCommand`, `CloseTabCommand`, `ReopenClosedTabCommand`, `DuplicateTabCommand`, `MoveTabCommand`.
   * `AddNewTabWithDirectory` supports explicit index placement via an optional `insertIndex` parameter.
   * `DuplicateTabCommand` calculates `insertIndex = targetIndex + 1`, placing newly duplicated tabs directly to the right of the active tab.
+  * `OpenDirectoryFromDrop` handles file/folder drop navigation into the active or target tab, or creates a new tab when `openInNewTab` (Shift key) is active or when 0 tabs exist.
   * Maintains `ClosedTabsStack` for resurrecting closed tabs (`Ctrl+Shift+T`).
 * **`MainViewModel.Profiles.cs`**:
   * Profile selection dropdown list and default launch profile selection.
@@ -72,8 +73,11 @@ Backs an individual terminal tab instance:
 * **Top Header / Draggable Tab Bar**:
   * Custom 30px draggable title bar integrating window controls (minimize, maximize, close).
   * `ItemsControl` bound to `Tabs` with custom tab items supporting middle-click to close, right-click context menu, and active selection indication.
+  * Drag-and-drop support (`DragDrop.AllowDrop="True"`): dragging over tab items dynamically activates the hovered tab, and dropping files navigates or opens a new tab.
+  * Drag hover auto-scrolling: hovering over overflow scroll arrow buttons (`‹` / `›`) during any active drag operation (external files or tab drag) automatically scrolls the tab bar sequentially (250ms dwell, then 320ms per tab step) to reveal hidden tabs.
 * **Main Terminal Host Panel**:
   * Persistent tab hosting via `Panel` with `IsVisible="{Binding IsSelected}"` binding. This retains ConPTY streams, terminal ANSI buffers, and scrollback without unmounting controls upon tab switching.
+  * Drag-and-drop surface (`TerminalContentArea`): dropping folders or files navigates the active terminal (or containing folder for files), and holding `Shift` opens a new tab.
 * **Left Slide-out History Drawer**:
   * Animated panel displaying searchable command and directory history.
 * **Quick Tab Switcher Overlay**:

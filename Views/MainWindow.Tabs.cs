@@ -4,18 +4,81 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using MultiShell.Services;
 using MultiShell.ViewModels;
 
 namespace MultiShell.Views;
 
 public partial class MainWindow
 {
+    private readonly IStartupPathResolver _startupPathResolver = new StartupPathResolver();
     private TerminalTabViewModel? _draggedTab;
     private Point _dragStartPos;
     private bool _isDragging;
     private double _tabWheelAccumulator;
+    private DispatcherTimer? _dragScrollTimer;
+    private double _dragScrollDelta;
+
+    private static bool IsVisualOrChildOf(Visual? visual, Visual? target)
+    {
+        if (target == null || visual == null) return false;
+        while (visual != null)
+        {
+            if (visual == target) return true;
+            visual = visual.GetVisualParent();
+        }
+        return false;
+    }
+
+    private void StartDragScrollTimer(double delta)
+    {
+        if (_dragScrollTimer != null && Math.Sign(_dragScrollDelta) == Math.Sign(delta) && _dragScrollTimer.IsEnabled)
+        {
+            return;
+        }
+
+        StopDragScrollTimer();
+        _dragScrollDelta = delta;
+
+        bool isInitialTick = true;
+        _dragScrollTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(250)
+        };
+        _dragScrollTimer.Tick += (_, _) =>
+        {
+            if (isInitialTick)
+            {
+                isInitialTick = false;
+                _dragScrollTimer.Interval = TimeSpan.FromMilliseconds(320);
+            }
+
+            ScrollTabsBy(_dragScrollDelta);
+
+            if (TabsScrollViewer != null)
+            {
+                var offset = TabsScrollViewer.Offset.X;
+                var maxOffset = Math.Max(0, TabsScrollViewer.Extent.Width - TabsScrollViewer.Viewport.Width);
+                if ((_dragScrollDelta < 0 && offset <= 0) || (_dragScrollDelta > 0 && offset >= maxOffset))
+                {
+                    StopDragScrollTimer();
+                }
+            }
+        };
+        _dragScrollTimer.Start();
+    }
+
+    private void StopDragScrollTimer()
+    {
+        if (_dragScrollTimer != null)
+        {
+            _dragScrollTimer.Stop();
+            _dragScrollTimer = null;
+        }
+    }
 
     private void OnTabMenuButtonClick(object? sender, RoutedEventArgs e)
     {
@@ -149,23 +212,44 @@ public partial class MainWindow
         if (_isDragging && DataContext is MainViewModel mainVm)
         {
             var hitVisual = this.InputHitTest(currentPos) as Visual;
-            var hoverTab = FindTabViewModel(hitVisual);
 
-            if (hoverTab != null && hoverTab != _draggedTab)
+            if (IsVisualOrChildOf(hitVisual, TabScrollLeftBtn))
             {
-                mainVm.MoveTab(_draggedTab, hoverTab);
+                if (TabScrollLeftBtn?.IsEnabled == true)
+                {
+                    StartDragScrollTimer(-160);
+                }
+            }
+            else if (IsVisualOrChildOf(hitVisual, TabScrollRightBtn))
+            {
+                if (TabScrollRightBtn?.IsEnabled == true)
+                {
+                    StartDragScrollTimer(160);
+                }
+            }
+            else
+            {
+                StopDragScrollTimer();
+
+                var hoverTab = FindTabViewModel(hitVisual);
+                if (hoverTab != null && hoverTab != _draggedTab)
+                {
+                    mainVm.MoveTab(_draggedTab, hoverTab);
+                }
             }
         }
     }
 
     private void OnTabsPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
+        StopDragScrollTimer();
         _draggedTab = null;
         _isDragging = false;
     }
 
     private void OnTabsPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
+        StopDragScrollTimer();
         _draggedTab = null;
         _isDragging = false;
     }
@@ -263,4 +347,141 @@ public partial class MainWindow
         }
         return false;
     }
+
+    private static bool HasFiles(DragEventArgs e)
+    {
+        return e.DataTransfer.Contains(DataFormat.File) || e.DataTransfer.TryGetFiles() != null;
+    }
+
+    private string? ExtractFirstResolvedDirectory(DragEventArgs e)
+    {
+        var files = e.DataTransfer.TryGetFiles();
+        if (files != null)
+        {
+            foreach (var item in files)
+            {
+                var localPath = item.TryGetLocalPath() ?? (item.Path.IsFile ? item.Path.LocalPath : null);
+                if (!string.IsNullOrWhiteSpace(localPath))
+                {
+                    var resolved = _startupPathResolver.ResolveWorkingDirectory(localPath);
+                    if (!string.IsNullOrWhiteSpace(resolved))
+                    {
+                        return resolved;
+                    }
+                }
+            }
+        }
+
+        var text = e.DataTransfer.TryGetText();
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            var resolved = _startupPathResolver.ResolveWorkingDirectory(text);
+            if (!string.IsNullOrWhiteSpace(resolved))
+            {
+                return resolved;
+            }
+        }
+
+        return null;
+    }
+
+    internal void OnTerminalDragOver(object? sender, DragEventArgs e)
+    {
+        StopDragScrollTimer();
+        if (HasFiles(e))
+        {
+            e.DragEffects = DragDropEffects.Copy;
+            e.Handled = true;
+        }
+        else
+        {
+            e.DragEffects = DragDropEffects.None;
+        }
+    }
+
+    internal void OnTerminalDrop(object? sender, DragEventArgs e)
+    {
+        StopDragScrollTimer();
+        var resolvedDir = ExtractFirstResolvedDirectory(e);
+        if (resolvedDir != null && DataContext is MainViewModel mainVm)
+        {
+            bool isShiftPressed = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+            mainVm.OpenDirectoryFromDrop(resolvedDir, openInNewTab: isShiftPressed);
+            e.Handled = true;
+        }
+    }
+
+    internal void OnTabBarDragOver(object? sender, DragEventArgs e)
+    {
+        if (HasFiles(e))
+        {
+            e.DragEffects = DragDropEffects.Copy;
+            e.Handled = true;
+
+            var currentPos = e.GetPosition(this);
+            var hitVisual = this.InputHitTest(currentPos) as Visual;
+
+            if (IsVisualOrChildOf(hitVisual, TabScrollLeftBtn))
+            {
+                if (TabScrollLeftBtn?.IsEnabled == true)
+                {
+                    StartDragScrollTimer(-160);
+                }
+            }
+            else if (IsVisualOrChildOf(hitVisual, TabScrollRightBtn))
+            {
+                if (TabScrollRightBtn?.IsEnabled == true)
+                {
+                    StartDragScrollTimer(160);
+                }
+            }
+            else
+            {
+                StopDragScrollTimer();
+
+                if (DataContext is MainViewModel mainVm)
+                {
+                    var hoverTab = FindTabViewModel(hitVisual);
+                    if (hoverTab != null && hoverTab != mainVm.SelectedTab)
+                    {
+                        mainVm.SelectedTab = hoverTab;
+                    }
+                }
+            }
+        }
+        else
+        {
+            StopDragScrollTimer();
+            e.DragEffects = DragDropEffects.None;
+        }
+    }
+
+    internal void OnTabBarDragLeave(object? sender, DragEventArgs e)
+    {
+        StopDragScrollTimer();
+    }
+
+    internal void OnTabBarDrop(object? sender, DragEventArgs e)
+    {
+        StopDragScrollTimer();
+        var resolvedDir = ExtractFirstResolvedDirectory(e);
+        if (resolvedDir != null && DataContext is MainViewModel mainVm)
+        {
+            var currentPos = e.GetPosition(this);
+            var hitVisual = this.InputHitTest(currentPos) as Visual;
+            var hoverTab = FindTabViewModel(hitVisual);
+            bool isShiftPressed = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+
+            if (hoverTab != null)
+            {
+                mainVm.OpenDirectoryFromDrop(resolvedDir, openInNewTab: isShiftPressed, targetTab: hoverTab);
+            }
+            else
+            {
+                mainVm.OpenDirectoryFromDrop(resolvedDir, openInNewTab: true);
+            }
+            e.Handled = true;
+        }
+    }
 }
+

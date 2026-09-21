@@ -35,7 +35,7 @@
             <Border Background="{DynamicResource AppHeaderBackground}" BorderBrush="{DynamicResource AppBorderSubtle}" BorderThickness="0,0,0,1" Padding="6,4,6,0">
             <Grid ColumnDefinitions="*, Auto">
                 <!-- Tab Bar with Overflow Navigation -->
-                <Grid x:Name="TabBarContainer" Grid.Column="0" ColumnDefinitions="Auto, *, Auto, Auto, Auto" Margin="0,0,6,0" Background="Transparent">
+                <Grid x:Name="TabBarContainer" Grid.Column="0" ColumnDefinitions="Auto, *, Auto, Auto, Auto" Margin="0,0,6,0" Background="Transparent" DragDrop.AllowDrop="True">
                     <!-- Left Scroll Arrow Button -->
                     <Button x:Name="TabScrollLeftBtn"
                             Grid.Column="0"
@@ -44,7 +44,8 @@
                             ToolTip.Tip="{Binding Loc[Btn_Tab_Scroll_Left]}"
                             IsVisible="False"
                             VerticalAlignment="Bottom"
-                            Margin="0,0,2,0" />
+                            Margin="0,0,2,0"
+                            DragDrop.AllowDrop="True" />
 
                     <!-- Scrollable Tabs Area with Edge Gradient Overlays -->
                     <Grid Grid.Column="1">
@@ -131,7 +132,8 @@
                             ToolTip.Tip="{Binding Loc[Btn_Tab_Scroll_Right]}"
                             IsVisible="False"
                             VerticalAlignment="Bottom"
-                            Margin="2,0,2,0" />
+                            Margin="2,0,2,0"
+                            DragDrop.AllowDrop="True" />
 
                     <!-- Docked Add Tab (+) and Shell Selector (▾) Buttons -->
                     <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="0" VerticalAlignment="Bottom">
@@ -490,7 +492,7 @@
         </LayoutTransformControl>
 
         <!-- Active Tab Content Area with Left Hover Overlay & Modals -->
-        <Grid Grid.Row="1" Background="{DynamicResource AppContentBackground}">
+        <Grid x:Name="TerminalContentArea" Grid.Row="1" Background="{DynamicResource AppContentBackground}" DragDrop.AllowDrop="True">
             <!-- Persistent Terminal Content per Tab -->
             <ItemsControl x:Name="TabContentControl"
                           ItemsSource="{Binding Tabs}"

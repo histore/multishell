@@ -61,6 +61,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-HIST-003` | Path-Based Dynamic Command History, Live Multi-Tab Sync & Exit Pruning | History | **IMPLEMENTED** | `PathCommandHistoryServiceTests`, `TerminalTabViewModelTests`, `MainViewModelTabTests` |
 | `REQ-HIST-004` | Shared Global Directory History across Tabs with MRU Deduplication & Cap 100 | History | **IMPLEMENTED** | `DirectoryHistoryServiceTests`, `SharedDirectoryHistoryIntegrationTests` |
 | `REQ-CLI-001` | Startup Arguments & Single-Instance Tab Activation (File / Directory Path) | Core | **IMPLEMENTED** | `StartupPathResolverTests`, `SingleInstanceServiceTests` |
+| `REQ-TAB-024` | File & Folder Drag-and-Drop Navigation, Shift-Tab Creation & Tab Bar Drag-Over Activation | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
@@ -896,6 +897,35 @@ This document serves as the single source of truth for all functional and non-fu
   - **Given** MultiShell is already running,
   - **When** started without path arguments,
   - **Then** the existing MultiShell window is activated and brought to the foreground without creating an extra tab.
+
+---
+
+### REQ-TAB-024: File & Folder Drag-and-Drop Navigation, Shift-Tab Creation & Tab Bar Drag-Over Activation
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want to drag files or folders onto the terminal surface to navigate the active shell to that folder (or containing folder for files), hold `Shift` while dropping to create a new tab in that directory, and have tabs in the tab bar activate automatically when dragging over them.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab in MultiShell,
+  - **When** a directory path is dropped onto the terminal surface without holding `Shift`,
+  - **Then** the active terminal navigates to that directory using the shell navigation command (`Set-Location` or `cd`).
+  - **Given** an active terminal tab in MultiShell,
+  - **When** a file path is dropped onto the terminal surface without holding `Shift`,
+  - **Then** the active terminal navigates to the parent directory containing that file.
+  - **Given** MultiShell with or without open tabs,
+  - **When** a file or directory is dropped onto the terminal surface while holding the `Shift` key,
+  - **Then** a new tab is created with its working directory initialized to that resolved folder.
+  - **Given** no open tabs in MultiShell,
+  - **When** a file or directory is dropped onto the terminal area,
+  - **Then** a new tab is created in that resolved directory regardless of whether `Shift` is held.
+  - **Given** multiple open tabs in MultiShell,
+  - **When** dragging an item (files/folders or tab drag) over a tab header in the tab bar,
+  - **Then** that tab is immediately activated/selected, allowing the user to view its content and drop into it.
+  - **Given** a tab header in the tab bar,
+  - **When** a file or directory is dropped directly onto that tab header without `Shift`,
+  - **Then** that tab is activated and navigates to the resolved directory.
+  - **Given** open tabs exceeding the visible tab bar with overflow scroll arrows (`‹` / `›`),
+  - **When** hovering over the left or right scroll arrow button during an active drag operation (files/folders or tab drag),
+  - **Then** the tab bar auto-scrolls sequentially in that direction with a comfortable cadence (250ms initial dwell delay, then 320ms per tab step) until the pointer leaves the button or the scroll boundary is reached.
+
 
 
 
