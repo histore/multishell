@@ -24,6 +24,7 @@ MultiShell strictly adheres to **Clean Architecture** and **MVVM** principles:
 - **Concurrency & ConPTY Streaming**: Asynchronous ConPTY stdout/stderr reading with stateful UTF-8 chunk decoding (`Decoder.GetChars`) and real-time OSC 7/9/133 shell integration sequence parsing.
 - **Process Codepage & Fonts**: Process-wide UTF-8 manifest ([`app.manifest`](app.manifest)), console codepage 65001, and cross-platform monospace font fallback chain (`Cascadia Code NF`, `Cascadia Mono NF`, etc.).
 - **Atomic Persistence**: Thread-safe atomic JSON workspace persistence (`%LOCALAPPDATA%/MultiShell/tabs_state.json`) with safe temporary swap files.
+- **Single-Instance & CLI Parameters**: Cross-process argument forwarding via asynchronous Named Pipes (`MultiShell_IPC_Pipe`) synchronized with a system Mutex (`Local\MultiShell_SingleInstance_Mutex`). Automatically resolves folder or file paths to working directories and focuses the existing window.
 
 ## Modules Index
 Detailed technical specifications and design blueprints are modularized and maintained incrementally under [docs/architecture/modules/](docs/architecture/modules/):

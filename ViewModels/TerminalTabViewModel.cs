@@ -339,20 +339,20 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     {
         if (commands != null)
         {
-            _pathCommandHistoryService.HistoryChangedForPath -= OnPathHistoryChanged;
-            try
+            var existingHistory = _pathCommandHistoryService.GetHistory(WorkingDirectory);
+            if (existingHistory.Count == 0)
             {
-                foreach (var cmd in commands)
+                var validCommands = commands
+                    .Where(c => !string.IsNullOrWhiteSpace(c) && !IsInternalConfigurationCommand(c))
+                    .ToList();
+
+                if (validCommands.Count > 0)
                 {
-                    if (!string.IsNullOrWhiteSpace(cmd) && !IsInternalConfigurationCommand(cmd))
+                    _pathCommandHistoryService.ImportAll(new Dictionary<string, List<string>>
                     {
-                        _pathCommandHistoryService.RecordCommand(WorkingDirectory, cmd);
-                    }
+                        [WorkingDirectory ?? string.Empty] = validCommands
+                    });
                 }
-            }
-            finally
-            {
-                _pathCommandHistoryService.HistoryChangedForPath += OnPathHistoryChanged;
             }
             SyncCommandHistoryFromPath();
         }

@@ -425,10 +425,21 @@ public sealed class ShellSession : IShellSession
         _isDisposed = true;
         IsRunning = false;
         _lifetimeCancellation?.Cancel();
-        try { _process?.Kill(entireProcessTree: true); } catch { }
+
+        // 1. Close ConPTY handle first so that any pending Read on the output pipe breaks with EOF immediately
+        _pseudoConsole?.Dispose();
+
+        // 2. Kill the shell process tree and wait briefly for clean exit
+        try
+        {
+            _process?.Kill(entireProcessTree: true);
+            _process?.WaitForExit(500);
+        }
+        catch { }
+
+        // 3. Close streams and pipe handles cleanly
         _inputStream?.Dispose();
         _outputStream?.Dispose();
-        _pseudoConsole?.Dispose();
         _inputWriteHandle?.Dispose();
         _outputReadHandle?.Dispose();
         _process?.Dispose();

@@ -470,4 +470,28 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    /// <summary>
+    /// Restores, activates, and brings the window into the foreground.
+    /// </summary>
+    public void BringToForeground()
+    {
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        Show();
+        Activate();
+        Focus();
+
+        var handle = TryGetPlatformHandle()?.Handle;
+        if (handle.HasValue && handle.Value != IntPtr.Zero && OperatingSystem.IsWindows())
+        {
+            SetForegroundWindow(handle.Value);
+        }
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
 }

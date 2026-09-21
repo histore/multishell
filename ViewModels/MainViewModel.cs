@@ -23,6 +23,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
+    private bool _isApplyingLoadedTabs;
+    private readonly string? _initialDirectory;
 
     /// <summary>
     /// Gets the shared directory history service.
@@ -53,6 +55,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /// Gets the application version dynamically determined from the assembly metadata or Git tag.
     /// </summary>
     public string AppVersion { get; } = DetermineAppVersion();
+
+    /// <summary>
+    /// Maximum number of tabs restored from saved state to prevent UI freeze on corrupted state files.
+    /// </summary>
+    public const int MaxRestoreTabsLimit = 50;
 
     /// <summary>
     /// Gets the official GitHub repository URL.
@@ -107,18 +114,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return "v0.0.1";
     }
 
-    public MainViewModel()
-        : this(new ShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService())
+    public MainViewModel(string? initialDirectory = null)
+        : this(new ShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), initialDirectory: initialDirectory)
     {
     }
 
-    public MainViewModel(IShellProcessService shellProcessService)
-        : this(shellProcessService, new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService())
+    public MainViewModel(IShellProcessService shellProcessService, string? initialDirectory = null)
+        : this(shellProcessService, new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), initialDirectory: initialDirectory)
     {
     }
 
-    public MainViewModel(IShellProcessService shellProcessService, ITabStatePersistenceService persistenceService, IThemeService themeService)
-        : this(shellProcessService, persistenceService, themeService, new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService())
+    public MainViewModel(IShellProcessService shellProcessService, ITabStatePersistenceService persistenceService, IThemeService themeService, string? initialDirectory = null)
+        : this(shellProcessService, persistenceService, themeService, new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), initialDirectory: initialDirectory)
     {
     }
 
@@ -131,8 +138,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IShellDiscoveryService? shellDiscoveryService = null,
         ITerminalProfileService? terminalProfileService = null,
         IPathCommandHistoryService? pathCommandHistoryService = null,
-        IDirectoryHistoryService? directoryHistoryService = null)
+        IDirectoryHistoryService? directoryHistoryService = null,
+        string? initialDirectory = null)
     {
+        _initialDirectory = initialDirectory;
         _shellProcessService = shellProcessService ?? throw new ArgumentNullException(nameof(shellProcessService));
         _persistenceService = persistenceService ?? throw new ArgumentNullException(nameof(persistenceService));
         _themeService = themeService ?? new ThemeService();
@@ -245,47 +254,69 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         void ApplyLoadedTabs()
         {
-            foreach (var tab in Tabs.ToList())
+            _isApplyingLoadedTabs = true;
+            try
             {
-                tab.CloseRequested -= CloseTab;
-                tab.DirectoryChanged -= OnTabDirectoryChanged;
-                tab.HistoryChanged -= OnTabHistoryChanged;
-                tab.Dispose();
-            }
-            Tabs.Clear();
-            _tabCounter = 0;
-
-            if (state != null && state.Tabs.Count > 0)
-            {
-                foreach (var tabState in state.Tabs)
+                foreach (var tab in Tabs.ToList())
                 {
-                    _tabCounter++;
-                    var title = string.IsNullOrWhiteSpace(tabState.Title) ? GetDefaultTitle(tabState.ShellType, _tabCounter) : tabState.Title;
-                    var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType);
-                    var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService);
-                    tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
-                    RegisterTabEvents(tabVm);
-                    Tabs.Add(tabVm);
+                    if (tab == null) continue;
+                    tab.CloseRequested -= CloseTab;
+                    tab.DirectoryChanged -= OnTabDirectoryChanged;
+                    tab.HistoryChanged -= OnTabHistoryChanged;
+                    tab.Dispose();
+                }
+                Tabs.Clear();
+                _tabCounter = 0;
+
+                if (state != null && state.Tabs.Count > 0)
+                {
+                    var tabsToRestore = state.Tabs.Take(MaxRestoreTabsLimit).ToList();
+                    foreach (var tabState in tabsToRestore)
+                    {
+                        _tabCounter++;
+                        var title = string.IsNullOrWhiteSpace(tabState.Title) ? GetDefaultTitle(tabState.ShellType, _tabCounter) : tabState.Title;
+                        var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType);
+                        var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService);
+                        tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
+                        RegisterTabEvents(tabVm);
+                        Tabs.Add(tabVm);
+                    }
+
+                    int selectIndex = Math.Clamp(state.SelectedIndex, 0, Tabs.Count - 1);
+                    SelectedTab = Tabs[selectIndex];
+
+                    if (!string.IsNullOrWhiteSpace(_initialDirectory))
+                    {
+                        AddNewTabWithDirectory(_initialDirectory, DefaultShellType);
+                    }
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(_initialDirectory))
+                    {
+                        AddNewTabWithDirectory(_initialDirectory, DefaultShellType);
+                    }
+                    else
+                    {
+                        AddNewTab();
+                    }
                 }
 
-                int selectIndex = Math.Clamp(state.SelectedIndex, 0, Tabs.Count - 1);
-                SelectedTab = Tabs[selectIndex];
-            }
-            else
-            {
-                AddNewTab();
-            }
-
-            if (state?.ClosedTabs != null && state.ClosedTabs.Count > 0)
-            {
-                ClosedTabs.Clear();
-                foreach (var closedState in state.ClosedTabs.Take(MaxClosedTabsCount))
+                if (state?.ClosedTabs != null && state.ClosedTabs.Count > 0)
                 {
-                    ClosedTabs.Add(ClosedTabItemViewModel.FromTabState(closedState));
+                    ClosedTabs.Clear();
+                    foreach (var closedState in state.ClosedTabs.Take(MaxClosedTabsCount))
+                    {
+                        ClosedTabs.Add(ClosedTabItemViewModel.FromTabState(closedState));
+                    }
                 }
-            }
 
-            _isInitialized = true;
+                _isInitialized = true;
+            }
+            finally
+            {
+                _isApplyingLoadedTabs = false;
+            }
         }
 
         if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
@@ -300,14 +331,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void TriggerSaveState()
     {
-        if (_isDisposed || !_isInitialized) return;
+        if (_isDisposed || !_isInitialized || _isApplyingLoadedTabs) return;
 
-        var tabStates = Tabs.Select(t => new TabState(
-            t.Title,
-            t.WorkingDirectory,
-            t.CommandHistory.ToList(),
-            t.DirectoryHistory.ToList(),
-            t.ShellType)).ToList();
+        var tabStates = Tabs
+            .Where(t => t != null)
+            .Select(t => new TabState(
+                t.Title,
+                t.WorkingDirectory,
+                t.CommandHistory?.ToList() ?? new List<string>(),
+                t.DirectoryHistory?.ToList() ?? new List<string>(),
+                t.ShellType))
+            .ToList();
         var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;

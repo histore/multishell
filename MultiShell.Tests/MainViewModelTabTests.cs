@@ -125,6 +125,30 @@ public class MainViewModelTabTests
     }
 
     [Fact]
+    public async Task InitializeWorkspaceAsync_WithInitialDirectory_OpensTabWithSpecifiedDirectory()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        var targetDir = @"C:\target\workspace";
+
+        // Act
+        using var mainVm = new MainViewModel(
+            processService,
+            persistenceService,
+            new ThemeService(),
+            new LocalizationService(),
+            new FontSizeService(),
+            initialDirectory: targetDir);
+
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Assert
+        Assert.NotNull(mainVm.SelectedTab);
+        Assert.Equal(targetDir, mainVm.SelectedTab.WorkingDirectory);
+    }
+
+    [Fact]
     public async Task InitializeWorkspaceAsync_RestoresTabsAndDirectories_WhenSavedStateExists()
     {
         // Arrange
@@ -1550,6 +1574,36 @@ public class MainViewModelTabTests
                 Directory.Delete(baseDir, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public async Task InitializeWorkspaceAsync_CapsRestoredTabs_AtMaxRestoreTabsLimit()
+    {
+        // Arrange: prepare state with 100 tabs
+        var excessiveTabs = new List<TabState>();
+        for (int i = 0; i < 100; i++)
+        {
+            excessiveTabs.Add(new TabState($"Tab {i}", @"C:\Windows", null, null, ShellType.PowerShell));
+        }
+
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService
+        {
+            StateToReturn = new WorkspaceState(excessiveTabs, 0, null, 3, 3, ShellType.PowerShell)
+        };
+
+        using var vm = new MainViewModel(
+            processService,
+            persistenceService,
+            new ThemeService(),
+            new LocalizationService(),
+            new FontSizeService());
+
+        // Act
+        await vm.InitializeWorkspaceAsync();
+
+        // Assert: Should cap tabs at MaxRestoreTabsLimit (50)
+        Assert.Equal(MainViewModel.MaxRestoreTabsLimit, vm.Tabs.Count);
     }
 }
 

@@ -9,41 +9,71 @@ namespace MultiShell.Tests;
 
 public class MainViewModelTests
 {
+    private static MainViewModel CreateIsolatedViewModel(out string tempFile)
+    {
+        tempFile = Path.Combine(Path.GetTempPath(), $"multishell_test_{Guid.NewGuid():N}.json");
+        return new MainViewModel(
+            new ShellProcessService(),
+            new TabStatePersistenceService(tempFile),
+            new MockThemeService(),
+            new LocalizationService(),
+            new FontSizeService());
+    }
+
     [Fact]
     public void AppVersion_IsNotNullOrEmpty_AndStartsWithV()
     {
         // Arrange & Act
-        using var vm = new MainViewModel();
-
-        // Assert
-        Assert.False(string.IsNullOrWhiteSpace(vm.AppVersion));
-        Assert.StartsWith("v", vm.AppVersion);
+        using var vm = CreateIsolatedViewModel(out var tempFile);
+        try
+        {
+            // Assert
+            Assert.False(string.IsNullOrWhiteSpace(vm.AppVersion));
+            Assert.StartsWith("v", vm.AppVersion);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
     }
 
     [Fact]
     public void GitHubUrl_IsConfiguredCorrectly()
     {
         // Arrange & Act
-        using var vm = new MainViewModel();
-
-        // Assert
-        Assert.Equal("https://github.com/histore/multishell", vm.GitHubUrl);
-        Assert.NotNull(vm.OpenGitHubUrlCommand);
+        using var vm = CreateIsolatedViewModel(out var tempFile);
+        try
+        {
+            // Assert
+            Assert.Equal("https://github.com/histore/multishell", vm.GitHubUrl);
+            Assert.NotNull(vm.OpenGitHubUrlCommand);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
     }
 
     [Fact]
     public async Task WindowTitle_ReflectsSelectedTabPathWithoutEllipsis_WhenPathIsNotExcessivelyLong()
     {
         // Arrange
-        using var vm = new MainViewModel();
-        await vm.InitializeWorkspaceAsync();
-
-        // Assert - Title starts with MultiShell - and contains untruncated path when reasonable length
-        Assert.StartsWith("MultiShell - ", vm.WindowTitle);
-        Assert.NotNull(vm.SelectedTab);
-        if (!string.IsNullOrWhiteSpace(vm.SelectedTab.WorkingDirectory) && vm.SelectedTab.WorkingDirectory.Length <= 65)
+        using var vm = CreateIsolatedViewModel(out var tempFile);
+        try
         {
-            Assert.Equal($"MultiShell - {vm.SelectedTab.WorkingDirectory}", vm.WindowTitle);
+            await vm.InitializeWorkspaceAsync();
+
+            // Assert - Title starts with MultiShell - and contains untruncated path when reasonable length
+            Assert.StartsWith("MultiShell - ", vm.WindowTitle);
+            Assert.NotNull(vm.SelectedTab);
+            if (!string.IsNullOrWhiteSpace(vm.SelectedTab.WorkingDirectory) && vm.SelectedTab.WorkingDirectory.Length <= 65)
+            {
+                Assert.Equal($"MultiShell - {vm.SelectedTab.WorkingDirectory}", vm.WindowTitle);
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
         }
     }
 

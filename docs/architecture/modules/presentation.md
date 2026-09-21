@@ -87,3 +87,12 @@ Backs an individual terminal tab instance:
 ## 5. View Resolution & Native AOT Compatibility
 * **[`ViewLocator`](../../../ViewLocator.cs)** implements Avalonia's `IDataTemplate`.
 * Explicitly maps known ViewModel types (`TerminalTabViewModel` -> `TerminalTabView`) without reflection scanning, ensuring compatibility with Native AOT compilation.
+
+## 6. Startup, Single-Instance & CLI Integration
+* **`Program.cs` & `SingleInstanceService`**:
+  * On launch, verifies `SingleInstanceService.IsFirstInstance` using `Local\MultiShell_SingleInstance_Mutex`.
+  * If a secondary instance is detected, it resolves CLI arguments via `StartupPathResolver` (converting folders or file paths into target working directories) and transmits the path through `MultiShell_IPC_Pipe` via `SendArgsToFirstInstanceAsync`, exiting immediately (ExitCode 0).
+  * If the first instance, it starts the background Named Pipe server (`StartServer()`) and passes any initial directory into `App` / `MainViewModel`.
+* **`App.axaml.cs`**:
+  * Subscribes to `SingleInstanceService.DirectoryOpenRequested`.
+  * Dispatches incoming path requests to the UI thread, bringing `MainWindow` to the foreground via `BringToForeground()` (including Win32 `SetForegroundWindow` fallback) and invoking `MainViewModel.AddNewTabWithDirectory(...)`.

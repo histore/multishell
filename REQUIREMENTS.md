@@ -60,6 +60,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-PROF-001` | Configurable Working Directory per Profile (Default: User Profile Directory) | Profiles | **IMPLEMENTED** | `TerminalProfileServiceTests`, `MainViewModelTabTests`, `MainWindow` |
 | `REQ-HIST-003` | Path-Based Dynamic Command History, Live Multi-Tab Sync & Exit Pruning | History | **IMPLEMENTED** | `PathCommandHistoryServiceTests`, `TerminalTabViewModelTests`, `MainViewModelTabTests` |
 | `REQ-HIST-004` | Shared Global Directory History across Tabs with MRU Deduplication & Cap 100 | History | **IMPLEMENTED** | `DirectoryHistoryServiceTests`, `SharedDirectoryHistoryIntegrationTests` |
+| `REQ-CLI-001` | Startup Arguments & Single-Instance Tab Activation (File / Directory Path) | Core | **IMPLEMENTED** | `StartupPathResolverTests`, `SingleInstanceServiceTests` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
@@ -866,5 +867,35 @@ This document serves as the single source of truth for all functional and non-fu
   - **Then** all open tabs immediately reflect the updated directory history in their `DirectoryHistory` and `FilteredDirectoryHistory`.
   - **When** the application saves workspace state,
   - **Then** the shared directory history is persisted in `WorkspaceState.SharedDirectoryHistory` in `tabs_state.json` and restored on subsequent application launches.
+
+---
+
+### REQ-CLI-001: Startup Arguments & Single-Instance Tab Activation (File / Directory Path)
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user or CLI tool, I want to launch MultiShell with a directory or file path parameter so that:
+  - If MultiShell is already running, a new tab opens in the existing window using the resolved folder (or directory containing the file) and the window is brought to the foreground.
+  - If MultiShell is not running, the application starts normally, loads its workspace state, and opens a new tab with the resolved folder.
+- **Acceptance Criteria**:
+  - **Given** an input argument representing an existing directory path (absolute or relative),
+  - **When** resolved,
+  - **Then** the resolver returns the normalized absolute path of the directory.
+  - **Given** an input argument representing an existing file path,
+  - **When** resolved,
+  - **Then** the resolver returns the normalized absolute path of the directory containing that file.
+  - **Given** a relative path argument and a base directory (caller's working directory),
+  - **When** resolved,
+  - **Then** the resolver computes the absolute path relative to the caller's working directory.
+  - **Given** MultiShell is already running,
+  - **When** a secondary instance is started with a valid path argument,
+  - **Then** the secondary instance forwards the resolved directory to the primary instance via Named Pipe IPC and exits with code 0.
+  - **When** the primary instance receives the directory path,
+  - **Then** the primary instance restores its window if minimized, activates the window into the foreground, opens a new tab with that directory, and focuses it.
+  - **Given** MultiShell is not yet running,
+  - **When** started with a valid path argument,
+  - **Then** MultiShell starts, initializes the IPC listener, restores workspace state, and opens an additional new tab with the specified directory.
+  - **Given** MultiShell is already running,
+  - **When** started without path arguments,
+  - **Then** the existing MultiShell window is activated and brought to the foreground without creating an extra tab.
+
 
 
