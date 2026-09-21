@@ -32,6 +32,17 @@ public partial class MainWindow : Window
         {
             TabBarContainer.AddHandler(InputElement.PointerWheelChangedEvent, OnTabsPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
             TabBarContainer.AddHandler(InputElement.PointerPressedEvent, OnTabBarPointerPressed, RoutingStrategies.Bubble);
+            TabBarContainer.AddHandler(DragDrop.DragEnterEvent, OnTabBarDragOver, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+            TabBarContainer.AddHandler(DragDrop.DragOverEvent, OnTabBarDragOver, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+            TabBarContainer.AddHandler(DragDrop.DragLeaveEvent, OnTabBarDragLeave, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+            TabBarContainer.AddHandler(DragDrop.DropEvent, OnTabBarDrop, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+        }
+
+        if (TerminalContentArea != null)
+        {
+            TerminalContentArea.AddHandler(DragDrop.DragEnterEvent, OnTerminalDragOver, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+            TerminalContentArea.AddHandler(DragDrop.DragOverEvent, OnTerminalDragOver, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+            TerminalContentArea.AddHandler(DragDrop.DropEvent, OnTerminalDrop, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
         }
 
         if (TabsScrollViewer != null)
