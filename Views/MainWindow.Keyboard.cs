@@ -41,13 +41,23 @@ public partial class MainWindow
             }
         }
 
-        // Ctrl+Shift+H: Toggle History Drawer (ensure Alt/AltGr is not pressed)
+        // Ctrl+Shift+H: Open Command History / Ctrl+Shift+L: Open Directory History (REQ-TAB-015)
         var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
-        if (!isAlt && e.Key == Key.H && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift))
+        var isCtrlShift = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift);
+        if (!isAlt && isCtrlShift)
         {
-            ToggleHistoryDrawer();
-            e.Handled = true;
-            return;
+            if (e.Key == Key.H)
+            {
+                OpenOrToggleHistoryDrawer(0);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.L)
+            {
+                OpenOrToggleHistoryDrawer(1);
+                e.Handled = true;
+                return;
+            }
         }
 
         // When History Drawer is open, capture all navigation keys globally

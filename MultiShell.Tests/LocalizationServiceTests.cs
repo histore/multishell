@@ -266,4 +266,25 @@ public class LocalizationServiceTests
         Assert.Equal("pt", vm.SelectedLanguage.Code);
         Assert.True(vm.IsPortuguese);
     }
+
+    [Theory]
+    [InlineData("de")]
+    [InlineData("en")]
+    [InlineData("fr")]
+    [InlineData("es")]
+    [InlineData("it")]
+    [InlineData("pt")]
+    public void LocalizationService_HistoryDrawerKeys_ExistInAllLanguages(string lang)
+    {
+        // Arrange
+        var service = new LocalizationService(lang);
+
+        // Act & Assert
+        Assert.False(string.IsNullOrWhiteSpace(service["Help_Hist_Commands"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["Help_Hist_Directories"]));
+        Assert.Contains("H", service["Btn_Tab_History_Tooltip"]);
+        Assert.Contains("L", service["Btn_Tab_History_Tooltip"]);
+        Assert.Contains("H", service["Help_Feature_1"]);
+        Assert.Contains("L", service["Help_Feature_1"]);
+    }
 }

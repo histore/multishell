@@ -24,6 +24,45 @@ public partial class MainWindow
         }
     }
 
+    public void OpenOrToggleHistoryDrawer(int targetTabIndex)
+    {
+        if (HistoryDrawer == null) return;
+
+        if (HistoryDrawer.IsVisible)
+        {
+            if (HistoryTabControl != null && HistoryTabControl.SelectedIndex == targetTabIndex)
+            {
+                // Already open on the requested tab -> toggle close
+                HideHistoryDrawerAndFocusTerminal();
+            }
+            else
+            {
+                // Switch directly to the requested tab without closing
+                if (HistoryTabControl != null)
+                {
+                    HistoryTabControl.SelectedIndex = targetTabIndex;
+                }
+                var hasFilter = false;
+                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+                {
+                    hasFilter = targetTabIndex == 1
+                        ? !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery)
+                        : !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery);
+                }
+                FocusActiveHistoryList(selectLastItem: !hasFilter);
+            }
+        }
+        else
+        {
+            // Open directly on requested tab
+            if (HistoryTabControl != null)
+            {
+                HistoryTabControl.SelectedIndex = targetTabIndex;
+            }
+            ShowHistoryDrawer();
+        }
+    }
+
     public void ShowHistoryDrawer()
     {
         _historyHoverTimer?.Stop();

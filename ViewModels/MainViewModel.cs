@@ -373,6 +373,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var tabsToDispose = Tabs.ToArray();
         foreach (var tab in tabsToDispose)
         {
+            if (tab == null) continue;
             tab.CloseRequested -= CloseTab;
             tab.DirectoryChanged -= OnTabDirectoryChanged;
             tab.HistoryChanged -= OnTabHistoryChanged;

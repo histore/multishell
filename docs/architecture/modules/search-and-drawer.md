@@ -43,7 +43,7 @@ MultiShell integrates quick-access developer utilities directly into the termina
 ### 2.4 History Drawer (`Views/MainWindow.HistoryDrawer.cs`)
 * **Drawer Interaction**:
   * Slide-out panel docked to the left of the main terminal workspace.
-  * Toggled via left-edge dwell hover (300ms delay), toolbar button, or keyboard shortcut (`Ctrl+Shift+H`).
+  * Toggled via left-edge dwell hover (300ms delay), toolbar button, or dedicated keyboard shortcuts (`Ctrl+Shift+H` for Command History, `Ctrl+Shift+L` for Directory History).
   * Displays two searchable tabs/sections:
     * **Command History**: Dynamic list of commands executed in the current tab's active directory path.
     * **Directory History**: Unified list of directories visited across all tabs in the session (capped at 100 MRU entries).

@@ -17,11 +17,11 @@
 | ⚡ **ConPTY Terminal Multiplexing** | Native Windows Pseudo Console (ConPTY) terminal engine with ANSI/VT color palette support. |
 | 🎨 **Independent Dual-Theme Engine** | Switch **App UI** (Dark / Light) and **Terminal Shell** (Dark / Light) completely independently in the Settings menu (`⚙ ▾`). |
 | 🌍 **Multi-Language Support (DE / EN / FR / ES)** | Dynamic UI runtime localization supporting **Deutsch**, **English** *(Default Fallback)*, **Français**, and **Español**, with automatic OS language detection and user preference persistence. |
-| 🔍 **Live Fuzzy Search & Type-to-Filter** | Start typing anywhere in the History Drawer (`Ctrl+Shift+H`) to fuzzy-search commands and directories in real time with subsequence matching and scoring. |
-| 📜 **Command & Directory History Drawer** | Slide-out drawer on left-edge hover or shortcut `Ctrl+Shift+H` with instant real-time filtering, arrow navigation, and `Enter` execution. |
+| 🔍 **Live Fuzzy Search & Type-to-Filter** | Start typing anywhere in the History Drawer (`Ctrl+Shift+H` / `Ctrl+Shift+L`) to fuzzy-search commands and directories in real time with subsequence matching and scoring. |
+| 📜 **Command & Directory History Drawer** | Slide-out drawer on left-edge hover or dedicated shortcuts (`Ctrl+Shift+H` for Commands, `Ctrl+Shift+L` for Directories) with instant real-time filtering, arrow navigation, and `Enter` execution. |
 | 🗂️ **Ergonomic 30px Tab Bar** | Pixel-perfect 30px tab bar with drag & drop reordering, overflow scrolling buttons (`‹ ›`), and quick dropdown list (`≡ ▾`). |
 | 💾 **Robust Workspace Persistence** | Automatically saves open tabs, working directories, active selection, and custom language preferences across restarts. |
-| ⌨️ **Comprehensive Keyboard Navigation** | First-class keyboard shortcuts for tabs (`Ctrl+Shift+T`, `Ctrl+Shift+D`, `Ctrl+W`, `Ctrl+Tab`), help (`F1`), history (`Ctrl+Shift+H`), and modals (`Esc`). |
+| ⌨️ **Comprehensive Keyboard Navigation** | First-class keyboard shortcuts for tabs (`Ctrl+Shift+T`, `Ctrl+Shift+D`, `Ctrl+W`, `Ctrl+Tab`), help (`F1`), history (`Ctrl+Shift+H`, `Ctrl+Shift+L`), and modals (`Esc`). |
 
 ---
 

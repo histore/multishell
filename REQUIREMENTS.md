@@ -31,7 +31,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-TAB-012` | Tab History Hover Overlay (Commands & Directories) | Interaction | **IMPLEMENTED** | `TerminalTabViewModelTests`, `PowerShellSessionTests` |
 | `REQ-TAB-013` | Tab Command & Directory History Persistence | Storage | **IMPLEMENTED** | `TabStatePersistenceServiceTests`, `MainViewModelTabTests` |
 | `REQ-TAB-014` | Tab Bar Overflow Visualization & Quick Tab Navigation | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
-| `REQ-TAB-015` | Tab History Keyboard Navigation & Toggle Shortcut (`Ctrl+Shift+H`) | Interaction | **IMPLEMENTED** | `MainWindow` |
+| `REQ-TAB-015` | Tab History Keyboard Navigation & Dedicated Shortcuts (`Ctrl+Shift+H` / `Ctrl+Shift+L`) | Interaction | **IMPLEMENTED** | `MainWindow` |
 | `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | UI | **IMPLEMENTED** | `MainWindow` |
 | `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide | UI | **IMPLEMENTED** | `MainWindow` |
 | `REQ-UI-003` | About Dialog & Technology Information | UI | **IMPLEMENTED** | `MainWindow` |
@@ -238,18 +238,28 @@ This document serves as the single source of truth for all functional and non-fu
 
 ---
 
-### REQ-TAB-015: Tab History Keyboard Navigation & Toggle Shortcut (`Ctrl+Shift+H`)
+### REQ-TAB-015: Tab History Keyboard Navigation & Dedicated Shortcuts (`Ctrl+Shift+H` / `Ctrl+Shift+L`)
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want to toggle the history drawer using `Ctrl+Shift+H`, navigate through items with arrow keys with the last item preselected, and execute/apply the selected item by pressing `Enter`.
+- **User Story**: As a user, I want dedicated keyboard shortcuts to open the command history (`Ctrl+Shift+H`) and directory history (`Ctrl+Shift+L`), switch between tabs using `Tab` or arrow keys with the last item preselected, and execute/apply the selected item by pressing `Enter`.
 - **Acceptance Criteria**:
   - **Given** the main application window is active,
-  - **When** pressing `Ctrl+Shift+H`,
-  - **Then** the history drawer toggles between visible and hidden.
-  - **When** the history drawer opens,
-  - **Then** the last item in the active history list is selected and focused by default.
+  - **When** pressing `Ctrl+Shift+H` while the drawer is closed,
+  - **Then** the history drawer opens directly on the command history tab (`Tab 0`) with the search box focused.
+  - **When** pressing `Ctrl+Shift+H` while the drawer is open on the directory history tab,
+  - **Then** the drawer switches directly to the command history tab without closing.
+  - **When** pressing `Ctrl+Shift+H` while the drawer is already active on the command history tab,
+  - **Then** the history drawer closes and focuses the terminal.
+  - **When** pressing `Ctrl+Shift+L` while the drawer is closed,
+  - **Then** the history drawer opens directly on the directory history tab (`Tab 1`) with the search box focused.
+  - **When** pressing `Ctrl+Shift+L` while the drawer is open on the command history tab,
+  - **Then** the drawer switches directly to the directory history tab without closing.
+  - **When** pressing `Ctrl+Shift+L` while the drawer is already active on the directory history tab,
+  - **Then** the history drawer closes and focuses the terminal.
+  - **When** the history drawer opens on either tab,
+  - **Then** the last item in the active history list is selected by default (or the first item if a filter is active).
   - **When** pressing `Up` or `Down`,
   - **Then** selection moves between history entries.
-  - **When** pressing `Left` or `Right`,
+  - **When** pressing `Tab`, `Left`, or `Right`,
   - **Then** the active tab switches between command history and directory history.
   - **When** pressing `Enter`,
   - **Then** the selected command or directory navigation is sent to the terminal and the overlay closes immediately, focusing the terminal.
@@ -273,7 +283,7 @@ This document serves as the single source of truth for all functional and non-fu
 - **Acceptance Criteria**:
   - **Given** MultiShell is active,
   - **When** pressing `F1` or clicking `❓ Help`,
-  - **Then** a modal dialog opens displaying shortcuts (`Ctrl+Shift+T`, `Ctrl+Shift+D`, `Ctrl+Shift+H`, `F1`, `ESC`) and feature guides.
+  - **Then** a modal dialog opens displaying shortcuts (`Ctrl+Shift+T`, `Ctrl+Shift+D`, `Ctrl+Shift+H`, `Ctrl+Shift+L`, `F1`, `ESC`) and feature guides.
   - **When** pressing `Escape` or clicking `✕` / backdrop,
   - **Then** the modal closes.
 
