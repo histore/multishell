@@ -82,6 +82,14 @@ public partial class TerminalTabView : UserControl
             Terminal.Focus();
         };
 
+        GotFocus += (_, e) =>
+        {
+            if (!ReferenceEquals(e.Source, Terminal))
+            {
+                Terminal.Focus();
+            }
+        };
+
         PropertyChanged += (_, e) =>
         {
             if (e.Property == IsVisibleProperty && IsVisible)
@@ -102,6 +110,14 @@ public partial class TerminalTabView : UserControl
         };
 
         DataContextChanged += OnDataContextChanged;
+    }
+
+    /// <summary>
+    /// Explicitly focuses the inner TerminalControl.
+    /// </summary>
+    public void FocusTerminal()
+    {
+        Terminal.Focus();
     }
 
     /// <summary>
