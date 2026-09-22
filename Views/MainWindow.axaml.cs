@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -376,20 +377,47 @@ public partial class MainWindow : Window
         FocusActiveTerminal();
     }
 
+    internal SvcSystems.UI.Terminal.TerminalControl? GetActiveTerminalControl()
+    {
+        var vm = DataContext as MainViewModel;
+        return TerminalFocusHelper.FindActiveTerminal(TabContentControl, vm?.SelectedTab);
+    }
+
     private void FocusActiveTerminal()
     {
-        Dispatcher.UIThread.Post(() =>
+        void DoFocus()
         {
-            var terminal = TabContentControl?.FindDescendantOfType<SvcSystems.UI.Terminal.TerminalControl>();
-            if (terminal != null)
+            var targetTerminal = GetActiveTerminalControl();
+            if (targetTerminal != null && targetTerminal.IsEffectivelyVisible)
             {
-                terminal.Focus();
+                targetTerminal.Focus();
+            }
+            else if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+            {
+                var activeTabView = TabContentControl?.GetVisualDescendants()
+                    .OfType<TerminalTabView>()
+                    .FirstOrDefault(v => ReferenceEquals(v.DataContext, vm.SelectedTab));
+
+                if (activeTabView != null && activeTabView.IsEffectivelyVisible)
+                {
+                    activeTabView.FocusTerminal();
+                }
+                else
+                {
+                    TabContentControl?.Focus();
+                }
             }
             else
             {
                 TabContentControl?.Focus();
             }
-        }, DispatcherPriority.Input);
+        }
+
+        // Apply focus immediately and asynchronously across dispatcher priorities
+        // to guarantee focus acquisition after overlay closure and layout invalidation.
+        DoFocus();
+        Dispatcher.UIThread.Post(DoFocus, DispatcherPriority.Input);
+        Dispatcher.UIThread.Post(DoFocus, DispatcherPriority.Loaded);
     }
 
     private async Task BrowseExecutablePathAsync()
