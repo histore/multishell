@@ -53,6 +53,21 @@
         <Setter Property="Foreground" Value="{DynamicResource AppDanger}" />
     </Style>
 
+    <!-- Tab Inline Rename Box Style (REQ-TAB-020) -->
+    <Style Selector="TextBox.tabRenameBox">
+        <Setter Property="Height" Value="20" />
+        <Setter Property="MinHeight" Value="18" />
+        <Setter Property="Padding" Value="4,0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceSubtle}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="3" />
+    </Style>
+
     <!-- Add Tab (+) Button Style -->
     <Style Selector="Button.addTabBtn">
         <Setter Property="Height" Value="30" />

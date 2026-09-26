@@ -8,7 +8,9 @@ The Workspace State Persistence module provides reliable, atomic serialization a
 ### 2.1 Models (`Models/TabState.cs`)
 * **`TabState`**:
   * Immutable record representing a single tab snapshot:
-    * `Title`: Customized or last-resolved tab title.
+    * `Title`: Dynamic or fallback tab title.
+    * `CustomTitle`: User-assigned custom title (`string?`), overriding dynamic title when non-empty.
+    * `TabColor`: Hex color code (`string?`) for the tab's accent indicator bar.
     * `WorkingDirectory`: Working directory path at the moment of persistence.
     * `CommandHistory`: List of recent commands (retained for backward compatibility).
     * `DirectoryHistory`: List of visited directories.

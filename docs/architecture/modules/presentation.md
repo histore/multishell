@@ -39,11 +39,11 @@ To avoid monolithic classes, `MainViewModel` is divided across functional partia
   * Manages path command history lifecycle: migrates legacy tab command histories on load and invokes `_pathCommandHistoryService.PruneNonExistentPaths()` prior to saving state on application shutdown.
 * **`MainViewModel.Tabs.cs`**:
   * Manages `ObservableCollection<TerminalTabViewModel> Tabs`.
-  * Commands: `NewTabCommand`, `CloseTabCommand`, `ReopenClosedTabCommand`, `DuplicateTabCommand`, `MoveTabCommand`.
+  * Commands: `NewTabCommand`, `CloseTabCommand`, `CloseOtherTabsCommand`, `CloseTabsToRightCommand`, `ReopenClosedTabCommand`, `DuplicateTabCommand`, `MoveTabCommand`.
   * `AddNewTabWithDirectory` supports explicit index placement via an optional `insertIndex` parameter.
   * `DuplicateTabCommand` calculates `insertIndex = targetIndex + 1`, placing newly duplicated tabs directly to the right of the active tab.
   * `OpenDirectoryFromDrop` handles file/folder drop navigation into the active or target tab, or creates a new tab when `openInNewTab` (Shift key) is active or when 0 tabs exist.
-  * Maintains `ClosedTabsStack` for resurrecting closed tabs (`Ctrl+Shift+T`).
+  * Maintains `ClosedTabs` history with preserved `CustomTitle` and `TabColor` for restoring recently closed tabs.
 * **`MainViewModel.Profiles.cs`**:
   * Profile selection dropdown list and default launch profile selection.
   * Commands for creating, editing, and deleting custom terminal profiles.
@@ -70,6 +70,11 @@ Backs an individual terminal tab instance:
   * Exposes `IsSearchOpen`, `SearchQuery`, `SearchResultCount`, `CurrentSearchResultIndex`, and `SearchMatchSummary` (`"m/n"` or `"No results"`).
   * Commands: `OpenSearchCommand`, `CloseSearchCommand`, `ToggleSearchCommand`, `SearchNextCommand`, `SearchPreviousCommand`.
   * Events: `FocusSearchBoxRequested`, `FocusTerminalRequested` ensuring crisp focus transitions between the input overlay and terminal canvas.
+* Custom Tab Renaming & Tab Color Palette Tagging (REQ-TAB-020):
+  * Exposes `CustomTitle`, `TabColor`, `IsRenaming`, `RenameBuffer`, `HasCustomTitle`, `HasTabColor`, `TabColorBrush`.
+  * `DisplayTitle` returns user-assigned custom title when set, falling back to dynamic middle-ellipsis formatted path/title.
+  * Commands: `StartRenamingCommand`, `CommitRenamingCommand`, `CancelRenamingCommand`, `ResetCustomTitleCommand`, `SetTabColorCommand`.
+  * Event: `FocusRenameBoxRequested` dispatched to view to select and focus the inline `TextBox`.
 * Handles special keyboard input state (e.g. `IsAltGrActive` for international layouts).
 
 ## 4. UI Rendering & Views
@@ -77,7 +82,7 @@ Backs an individual terminal tab instance:
 ### 4.1 `MainWindow.axaml` Layout
 * **Top Header / Draggable Tab Bar**:
   * Custom 30px draggable title bar integrating window controls (minimize, maximize, close).
-  * `ItemsControl` bound to `Tabs` with custom tab items supporting middle-click to close, right-click context menu, and active selection indication.
+  * `ItemsControl` bound to `Tabs` with custom tab items supporting double-click or `F2` inline renaming (`TextBox.tabRenameBox`), bottom accent indicator bar (`TabColorBrush`), right-click `ContextMenu` (Rename `F2`, Reset Name, 9-color Palette submenu, Duplicate `Ctrl+Shift+D`, Close `Ctrl+Shift+W`, Close Other Tabs, Close Tabs to Right), and active selection indication.
   * Drag-and-drop support (`DragDrop.AllowDrop="True"`): dragging over tab items dynamically activates the hovered tab, and dropping files navigates or opens a new tab.
   * Drag hover auto-scrolling: hovering over overflow scroll arrow buttons (`‹` / `›`) during any active drag operation (external files or tab drag) automatically scrolls the tab bar sequentially (250ms dwell, then 320ms per tab step) to reveal hidden tabs.
 * **Main Terminal Host Panel**:

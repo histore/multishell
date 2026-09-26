@@ -68,27 +68,130 @@
                                                 ToolTip.ShowDelay="150"
                                                 Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).SelectTabCommand}"
                                                 CommandParameter="{Binding}">
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <Border Background="{DynamicResource AppSurfaceSubtle}"
-                                                        CornerRadius="3"
-                                                        Padding="3,1"
-                                                        VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding ShellIconTag}"
-                                                               FontFamily="Consolas, Cascadia Code, monospace"
-                                                               FontSize="9"
-                                                               FontWeight="Bold"
-                                                               Foreground="{DynamicResource AppAccent}"
-                                                               VerticalAlignment="Center" />
-                                                </Border>
-                                                <TextBlock Text="{Binding DisplayTitle}"
-                                                           VerticalAlignment="Center"
-                                                           MaxWidth="180"
-                                                           TextTrimming="CharacterEllipsis" />
-                                                <Button Classes="tabCloseBtn"
-                                                        Content="×"
-                                                        Command="{Binding RequestCloseCommand}"
-                                                        ToolTip.Tip="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Btn_Tab_Close_Tooltip]}" />
-                                            </StackPanel>
+                                            <Button.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_Rename]}"
+                                                              InputGesture="F2"
+                                                              Command="{Binding StartRenamingCommand}" />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_ResetName]}"
+                                                              IsEnabled="{Binding HasCustomTitle}"
+                                                              Command="{Binding ResetCustomTitleCommand}" />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_Color]}">
+                                                        <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Color_Default]}"
+                                                                  Command="{Binding SetTabColorCommand}"
+                                                                  CommandParameter="{x:Null}" />
+                                                        <Separator />
+                                                        <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Color_Red]}"
+                                                                  Command="{Binding SetTabColorCommand}"
+                                                                  CommandParameter="#F7768E">
+                                                            <MenuItem.Icon>
+                                                                <Border Width="12" Height="12" CornerRadius="6" Background="#F7768E" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Color_Orange]}"
+                                                                  Command="{Binding SetTabColorCommand}"
+                                                                  CommandParameter="#FF9E64">
+                                                            <MenuItem.Icon>
+                                                                <Border Width="12" Height="12" CornerRadius="6" Background="#FF9E64" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Color_Yellow]}"
+                                                                  Command="{Binding SetTabColorCommand}"
+                                                                  CommandParameter="#E0AF68">
+                                                            <MenuItem.Icon>
+                                                                <Border Width="12" Height="12" CornerRadius="6" Background="#E0AF68" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Color_Green]}"
+                                                                  Command="{Binding SetTabColorCommand}"
+                                                                  CommandParameter="#9ECE6A">
+                                                            <MenuItem.Icon>
+                                                                <Border Width="12" Height="12" CornerRadius="6" Background="#9ECE6A" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Color_Cyan]}"
+                                                                  Command="{Binding SetTabColorCommand}"
+                                                                  CommandParameter="#7DCFFF">
+                                                            <MenuItem.Icon>
+                                                                <Border Width="12" Height="12" CornerRadius="6" Background="#7DCFFF" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Color_Blue]}"
+                                                                  Command="{Binding SetTabColorCommand}"
+                                                                  CommandParameter="#7AA2F7">
+                                                            <MenuItem.Icon>
+                                                                <Border Width="12" Height="12" CornerRadius="6" Background="#7AA2F7" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Color_Purple]}"
+                                                                  Command="{Binding SetTabColorCommand}"
+                                                                  CommandParameter="#BB9AF7">
+                                                            <MenuItem.Icon>
+                                                                <Border Width="12" Height="12" CornerRadius="6" Background="#BB9AF7" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Color_Pink]}"
+                                                                  Command="{Binding SetTabColorCommand}"
+                                                                  CommandParameter="#F43F5E">
+                                                            <MenuItem.Icon>
+                                                                <Border Width="12" Height="12" CornerRadius="6" Background="#F43F5E" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                    </MenuItem>
+                                                    <Separator />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_Duplicate]}"
+                                                              InputGesture="Ctrl+Shift+D"
+                                                              Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).DuplicateTabCommand}"
+                                                              CommandParameter="{Binding}" />
+                                                    <Separator />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_Close]}"
+                                                              InputGesture="Ctrl+Shift+W"
+                                                              Command="{Binding RequestCloseCommand}" />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_CloseOthers]}"
+                                                              Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).CloseOtherTabsCommand}"
+                                                              CommandParameter="{Binding}" />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_CloseRight]}"
+                                                              Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).CloseTabsToRightCommand}"
+                                                              CommandParameter="{Binding}" />
+                                                </ContextMenu>
+                                            </Button.ContextMenu>
+                                            <Grid>
+                                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                    <Border Background="{DynamicResource AppSurfaceSubtle}"
+                                                            CornerRadius="3"
+                                                            Padding="3,1"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding ShellIconTag}"
+                                                                   FontFamily="Consolas, Cascadia Code, monospace"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{DynamicResource AppAccent}"
+                                                                   VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <TextBlock Text="{Binding DisplayTitle}"
+                                                               VerticalAlignment="Center"
+                                                               MaxWidth="180"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               IsVisible="{Binding !IsRenaming}" />
+                                                    <TextBox x:Name="TabRenameBox"
+                                                             Classes="tabRenameBox"
+                                                             Text="{Binding RenameBuffer, Mode=TwoWay}"
+                                                             MaxWidth="180"
+                                                             IsVisible="{Binding IsRenaming}" />
+                                                    <Button Classes="tabCloseBtn"
+                                                            Content="×"
+                                                            Command="{Binding RequestCloseCommand}"
+                                                            ToolTip.Tip="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Btn_Tab_Close_Tooltip]}" />
+                                                </StackPanel>
+                                                <!-- Bottom Tab Color Accent Line -->
+                                                <Border Height="2.5"
+                                                        VerticalAlignment="Bottom"
+                                                        HorizontalAlignment="Stretch"
+                                                        Margin="-10,0,-10,-1"
+                                                        CornerRadius="0,0,2,2"
+                                                        Background="{Binding TabColorBrush}"
+                                                        IsVisible="{Binding HasTabColor}" />
+                                            </Grid>
                                         </Button>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

@@ -30,9 +30,11 @@ public partial class MainViewModel
         {
             if (SelectedTab == null) return "MultiShell";
 
-            var rawTitle = !string.IsNullOrWhiteSpace(SelectedTab.WorkingDirectory)
-                ? SelectedTab.WorkingDirectory
-                : SelectedTab.Title;
+            var rawTitle = SelectedTab.HasCustomTitle
+                ? SelectedTab.CustomTitle!
+                : (!string.IsNullOrWhiteSpace(SelectedTab.WorkingDirectory)
+                    ? SelectedTab.WorkingDirectory
+                    : SelectedTab.Title);
 
             if (string.IsNullOrWhiteSpace(rawTitle)) return "MultiShell";
 
@@ -204,7 +206,9 @@ public partial class MainViewModel
             tab.ShellType,
             tab.CommandHistory,
             tab.DirectoryHistory,
-            DateTime.Now);
+            DateTime.Now,
+            customTitle: tab.CustomTitle,
+            tabColor: tab.TabColor);
 
         try
         {
@@ -257,6 +261,8 @@ public partial class MainViewModel
         var session = _shellProcessService.CreateSession(closedItem.Title, closedItem.WorkingDirectory, closedItem.ShellType);
         var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
         tabVm.RestoreHistory(closedItem.CommandHistory, closedItem.DirectoryHistory);
+        tabVm.CustomTitle = closedItem.CustomTitle;
+        tabVm.TabColor = closedItem.TabColor;
         RegisterTabEvents(tabVm);
         Tabs.Add(tabVm);
         SelectedTab = tabVm;
@@ -406,11 +412,51 @@ public partial class MainViewModel
         }
     }
 
+    [RelayCommand]
+    public void CloseOtherTabs(TerminalTabViewModel? tab)
+    {
+        var target = tab ?? SelectedTab;
+        if (target == null) return;
+
+        var toClose = Tabs.Where(t => t != target).ToList();
+        foreach (var t in toClose)
+        {
+            CloseTab(t);
+        }
+    }
+
+    [RelayCommand]
+    public void CloseTabsToRight(TerminalTabViewModel? tab)
+    {
+        var target = tab ?? SelectedTab;
+        if (target == null) return;
+
+        var targetIndex = Tabs.IndexOf(target);
+        if (targetIndex < 0) return;
+
+        var toClose = Tabs.Skip(targetIndex + 1).ToList();
+        foreach (var t in toClose)
+        {
+            CloseTab(t);
+        }
+    }
+
     private void RegisterTabEvents(TerminalTabViewModel tab)
     {
         tab.CloseRequested += CloseTab;
         tab.DirectoryChanged += OnTabDirectoryChanged;
         tab.HistoryChanged += OnTabHistoryChanged;
+        tab.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName is nameof(TerminalTabViewModel.CustomTitle) or nameof(TerminalTabViewModel.TabColor))
+            {
+                if (tab == SelectedTab)
+                {
+                    OnPropertyChanged(nameof(WindowTitle));
+                }
+                TriggerSaveState();
+            }
+        };
         tab.UpdateTheme(IsDarkTerminalTheme);
         tab.UpdateFontSize(_fontSizeService.TerminalFontSize);
     }

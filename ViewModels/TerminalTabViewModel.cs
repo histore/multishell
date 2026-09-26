@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MultiShell.Services;
@@ -37,17 +38,59 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [NotifyPropertyChangedFor(nameof(TabTooltip))]
     private string? _workingDirectory;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayTitle))]
+    [NotifyPropertyChangedFor(nameof(HasCustomTitle))]
+    [NotifyPropertyChangedFor(nameof(TabTooltip))]
+    private string? _customTitle;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTabColor))]
+    [NotifyPropertyChangedFor(nameof(TabColorBrush))]
+    private string? _tabColor;
+
+    [ObservableProperty]
+    private bool _isRenaming;
+
+    [ObservableProperty]
+    private string _renameBuffer = string.Empty;
+
     /// <summary>
-    /// Formats the tab title with a middle-ellipsis (e.g. C:\...\multishell) when space is limited.
+    /// Event fired when inline renaming starts to focus and select the rename text box.
     /// </summary>
-    public string DisplayTitle => FormatMiddleEllipsis(Title);
+    public event Action? FocusRenameBoxRequested;
+
+    /// <summary>
+    /// Gets whether a user-assigned custom tab title is active.
+    /// </summary>
+    public bool HasCustomTitle => !string.IsNullOrWhiteSpace(CustomTitle);
+
+    /// <summary>
+    /// Gets whether a user-assigned tab color is active.
+    /// </summary>
+    public bool HasTabColor => !string.IsNullOrWhiteSpace(TabColor);
+
+    /// <summary>
+    /// Gets the brush corresponding to the assigned tab color tag.
+    /// </summary>
+    public IBrush? TabColorBrush => HasTabColor && Color.TryParse(TabColor, out var color)
+        ? new ImmutableSolidColorBrush(color)
+        : null;
+
+    /// <summary>
+    /// Formats the tab title with a middle-ellipsis (e.g. C:\...\multishell) when space is limited,
+    /// or returns the custom title if one has been assigned.
+    /// </summary>
+    public string DisplayTitle => HasCustomTitle ? CustomTitle! : FormatMiddleEllipsis(Title);
 
     /// <summary>
     /// Gets the full, untruncated working directory path for display in the hover tooltip.
     /// </summary>
-    public string TabTooltip => !string.IsNullOrWhiteSpace(WorkingDirectory)
-        ? WorkingDirectory
-        : (!string.IsNullOrWhiteSpace(Title) ? Title : _session.Title);
+    public string TabTooltip => HasCustomTitle
+        ? (!string.IsNullOrWhiteSpace(WorkingDirectory) ? $"{CustomTitle} ({WorkingDirectory})" : CustomTitle!)
+        : (!string.IsNullOrWhiteSpace(WorkingDirectory)
+            ? WorkingDirectory
+            : (!string.IsNullOrWhiteSpace(Title) ? Title : _session.Title));
 
     public static string FormatMiddleEllipsis(string? text, int maxLength = 22)
     {
@@ -1144,6 +1187,59 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         {
             SearchMatchSummary = string.Format(Loc["Search_Terminal_Matches"], CurrentSearchResultIndex + 1, SearchResultCount);
         }
+    }
+
+    /// <summary>
+    /// Initiates inline tab renaming (REQ-TAB-020).
+    /// </summary>
+    [RelayCommand]
+    public void StartRenaming()
+    {
+        RenameBuffer = CustomTitle ?? Title ?? string.Empty;
+        IsRenaming = true;
+        FocusRenameBoxRequested?.Invoke();
+    }
+
+    /// <summary>
+    /// Confirms and commits the new tab title from the inline edit buffer (REQ-TAB-020).
+    /// </summary>
+    [RelayCommand]
+    public void CommitRenaming()
+    {
+        if (!IsRenaming) return;
+        var trimmed = RenameBuffer?.Trim();
+        CustomTitle = string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+        IsRenaming = false;
+    }
+
+    /// <summary>
+    /// Cancels inline tab renaming without altering the existing custom title (REQ-TAB-020).
+    /// </summary>
+    [RelayCommand]
+    public void CancelRenaming()
+    {
+        IsRenaming = false;
+        RenameBuffer = string.Empty;
+    }
+
+    /// <summary>
+    /// Clears any custom tab title and restores default dynamic directory/process naming (REQ-TAB-020).
+    /// </summary>
+    [RelayCommand]
+    public void ResetCustomTitle()
+    {
+        CustomTitle = null;
+        IsRenaming = false;
+        RenameBuffer = string.Empty;
+    }
+
+    /// <summary>
+    /// Assigns or clears the tab's accent color tag (REQ-TAB-020).
+    /// </summary>
+    [RelayCommand]
+    public void SetTabColor(string? colorHex)
+    {
+        TabColor = string.IsNullOrWhiteSpace(colorHex) ? null : colorHex.Trim();
     }
 
     public void Dispose()

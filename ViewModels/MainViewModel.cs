@@ -278,6 +278,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                         var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType);
                         var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
                         tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
+                        tabVm.CustomTitle = tabState.CustomTitle;
+                        tabVm.TabColor = tabState.TabColor;
                         RegisterTabEvents(tabVm);
                         Tabs.Add(tabVm);
                     }
@@ -340,7 +342,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 t.WorkingDirectory,
                 t.CommandHistory?.ToList() ?? new List<string>(),
                 t.DirectoryHistory?.ToList() ?? new List<string>(),
-                t.ShellType))
+                t.ShellType,
+                t.CustomTitle,
+                t.TabColor))
             .ToList();
         var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
@@ -373,7 +377,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             t.WorkingDirectory,
             t.CommandHistory.ToList(),
             t.DirectoryHistory.ToList(),
-            t.ShellType)).ToList();
+            t.ShellType,
+            t.CustomTitle,
+            t.TabColor)).ToList();
         var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
         var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;

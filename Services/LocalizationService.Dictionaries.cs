@@ -152,7 +152,25 @@ public partial class LocalizationService
         ["Search_Terminal_Next"] = "Nächster Treffer (Eingabe / F3)",
         ["Search_Terminal_Close"] = "Suche schließen (Esc)",
         ["Search_Terminal_NoResults"] = "Keine Treffer",
-        ["Search_Terminal_Matches"] = "{0} von {1}"
+        ["Search_Terminal_Matches"] = "{0} von {1}",
+
+        // Tab Context Menu & Renaming (REQ-TAB-020)
+        ["Menu_Tab_Rename"] = "Tab umbenennen",
+        ["Menu_Tab_ResetName"] = "Tab-Namen zurücksetzen",
+        ["Menu_Tab_Color"] = "Tab-Farbe",
+        ["Menu_Tab_Duplicate"] = "Tab duplizieren",
+        ["Menu_Tab_Close"] = "Tab schließen",
+        ["Menu_Tab_CloseOthers"] = "Andere Tabs schließen",
+        ["Menu_Tab_CloseRight"] = "Tabs rechts schließen",
+        ["Color_Default"] = "Standard (Keine Farbe)",
+        ["Color_Red"] = "Rot",
+        ["Color_Orange"] = "Orange",
+        ["Color_Yellow"] = "Gelb",
+        ["Color_Green"] = "Grün",
+        ["Color_Cyan"] = "Cyan",
+        ["Color_Blue"] = "Blau",
+        ["Color_Purple"] = "Lila",
+        ["Color_Pink"] = "Rosa"
     };
 
     private static readonly Dictionary<string, string> EnglishStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -298,7 +316,25 @@ public partial class LocalizationService
         ["Search_Terminal_Next"] = "Next match (Enter / F3)",
         ["Search_Terminal_Close"] = "Close search (Esc)",
         ["Search_Terminal_NoResults"] = "No results",
-        ["Search_Terminal_Matches"] = "{0} of {1}"
+        ["Search_Terminal_Matches"] = "{0} of {1}",
+
+        // Tab Context Menu & Renaming (REQ-TAB-020)
+        ["Menu_Tab_Rename"] = "Rename Tab",
+        ["Menu_Tab_ResetName"] = "Reset Tab Name",
+        ["Menu_Tab_Color"] = "Tab Color",
+        ["Menu_Tab_Duplicate"] = "Duplicate Tab",
+        ["Menu_Tab_Close"] = "Close Tab",
+        ["Menu_Tab_CloseOthers"] = "Close Other Tabs",
+        ["Menu_Tab_CloseRight"] = "Close Tabs to the Right",
+        ["Color_Default"] = "Default (No Color)",
+        ["Color_Red"] = "Red",
+        ["Color_Orange"] = "Orange",
+        ["Color_Yellow"] = "Yellow",
+        ["Color_Green"] = "Green",
+        ["Color_Cyan"] = "Cyan",
+        ["Color_Blue"] = "Blue",
+        ["Color_Purple"] = "Purple",
+        ["Color_Pink"] = "Pink"
     };
 
     private static readonly Dictionary<string, string> FrenchStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -448,7 +484,25 @@ public partial class LocalizationService
         ["Search_Terminal_Next"] = "Occurrence suivante (Entrée / F3)",
         ["Search_Terminal_Close"] = "Fermer la recherche (Échap)",
         ["Search_Terminal_NoResults"] = "Aucun résultat",
-        ["Search_Terminal_Matches"] = "{0} sur {1}"
+        ["Search_Terminal_Matches"] = "{0} sur {1}",
+
+        // Tab Context Menu & Renaming (REQ-TAB-020)
+        ["Menu_Tab_Rename"] = "Renommer l'onglet",
+        ["Menu_Tab_ResetName"] = "Réinitialiser le nom de l'onglet",
+        ["Menu_Tab_Color"] = "Couleur de l'onglet",
+        ["Menu_Tab_Duplicate"] = "Dupliquer l'onglet",
+        ["Menu_Tab_Close"] = "Fermer l'onglet",
+        ["Menu_Tab_CloseOthers"] = "Fermer les autres onglets",
+        ["Menu_Tab_CloseRight"] = "Fermer les onglets à droite",
+        ["Color_Default"] = "Par défaut (aucune couleur)",
+        ["Color_Red"] = "Rouge",
+        ["Color_Orange"] = "Orange",
+        ["Color_Yellow"] = "Jaune",
+        ["Color_Green"] = "Vert",
+        ["Color_Cyan"] = "Cyan",
+        ["Color_Blue"] = "Bleu",
+        ["Color_Purple"] = "Violet",
+        ["Color_Pink"] = "Rose"
     };
 
     private static readonly Dictionary<string, string> SpanishStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -594,7 +648,25 @@ public partial class LocalizationService
         ["Search_Terminal_Next"] = "Siguiente coincidencia (Intro / F3)",
         ["Search_Terminal_Close"] = "Cerrar búsqueda (Esc)",
         ["Search_Terminal_NoResults"] = "Sin resultados",
-        ["Search_Terminal_Matches"] = "{0} de {1}"
+        ["Search_Terminal_Matches"] = "{0} de {1}",
+
+        // Tab Context Menu & Renaming (REQ-TAB-020)
+        ["Menu_Tab_Rename"] = "Cambiar nombre de pestaña",
+        ["Menu_Tab_ResetName"] = "Restablecer nombre de pestaña",
+        ["Menu_Tab_Color"] = "Color de pestaña",
+        ["Menu_Tab_Duplicate"] = "Duplicar pestaña",
+        ["Menu_Tab_Close"] = "Cerrar pestaña",
+        ["Menu_Tab_CloseOthers"] = "Cerrar las demás pestañas",
+        ["Menu_Tab_CloseRight"] = "Cerrar pestañas a la derecha",
+        ["Color_Default"] = "Predeterminado (sin color)",
+        ["Color_Red"] = "Rojo",
+        ["Color_Orange"] = "Naranja",
+        ["Color_Yellow"] = "Amarillo",
+        ["Color_Green"] = "Verde",
+        ["Color_Cyan"] = "Cian",
+        ["Color_Blue"] = "Azul",
+        ["Color_Purple"] = "Morado",
+        ["Color_Pink"] = "Rosa"
     };
 
     private static readonly Dictionary<string, string> ItalianStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -741,7 +813,25 @@ public partial class LocalizationService
         ["Search_Terminal_Next"] = "Corrispondenza successiva (Invio / F3)",
         ["Search_Terminal_Close"] = "Chiudi ricerca (Esc)",
         ["Search_Terminal_NoResults"] = "Nessun risultato",
-        ["Search_Terminal_Matches"] = "{0} di {1}"
+        ["Search_Terminal_Matches"] = "{0} di {1}",
+
+        // Tab Context Menu & Renaming (REQ-TAB-020)
+        ["Menu_Tab_Rename"] = "Rinomina scheda",
+        ["Menu_Tab_ResetName"] = "Ripristina nome scheda",
+        ["Menu_Tab_Color"] = "Colore scheda",
+        ["Menu_Tab_Duplicate"] = "Duplica scheda",
+        ["Menu_Tab_Close"] = "Chiudi scheda",
+        ["Menu_Tab_CloseOthers"] = "Chiudi altre schede",
+        ["Menu_Tab_CloseRight"] = "Chiudi schede a destra",
+        ["Color_Default"] = "Predefinito (nessun colore)",
+        ["Color_Red"] = "Rosso",
+        ["Color_Orange"] = "Arancione",
+        ["Color_Yellow"] = "Giallo",
+        ["Color_Green"] = "Verde",
+        ["Color_Cyan"] = "Ciano",
+        ["Color_Blue"] = "Blu",
+        ["Color_Purple"] = "Viola",
+        ["Color_Pink"] = "Rosa"
     };
 
     private static readonly Dictionary<string, string> PortugueseStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -887,6 +977,24 @@ public partial class LocalizationService
         ["Search_Terminal_Next"] = "Próxima correspondência (Enter / F3)",
         ["Search_Terminal_Close"] = "Fechar pesquisa (Esc)",
         ["Search_Terminal_NoResults"] = "Nenhum resultado",
-        ["Search_Terminal_Matches"] = "{0} de {1}"
+        ["Search_Terminal_Matches"] = "{0} de {1}",
+
+        // Tab Context Menu & Renaming (REQ-TAB-020)
+        ["Menu_Tab_Rename"] = "Mudar o nome do separador",
+        ["Menu_Tab_ResetName"] = "Repor nome do separador",
+        ["Menu_Tab_Color"] = "Cor do separador",
+        ["Menu_Tab_Duplicate"] = "Duplicar separador",
+        ["Menu_Tab_Close"] = "Fechar separador",
+        ["Menu_Tab_CloseOthers"] = "Fechar outros separadores",
+        ["Menu_Tab_CloseRight"] = "Fechar separadores à direita",
+        ["Color_Default"] = "Padrão (sem cor)",
+        ["Color_Red"] = "Vermelho",
+        ["Color_Orange"] = "Laranja",
+        ["Color_Yellow"] = "Amarelo",
+        ["Color_Green"] = "Verde",
+        ["Color_Cyan"] = "Ciano",
+        ["Color_Blue"] = "Azul",
+        ["Color_Purple"] = "Roxo",
+        ["Color_Pink"] = "Rosa"
     };
 }
