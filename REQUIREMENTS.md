@@ -1,992 +1,238 @@
-# Project Requirements & Status Catalog
+# MultiShell Requirements Specification (Central Hub)
 
-This document serves as the single source of truth for all functional and non-functional requirements in **MultiShell**.
+> **Document Role**: Central Requirements Hub, Global NFR Baseline & Module Registry  
+> **Architecture Alignment**: [`ARCHITECTURE.md`](ARCHITECTURE.md)  
+> **Governance Standard**: [`AGENTS.md`](AGENTS.md)
 
----
-
-## Requirements Governance Rules
-1. **Check Against Existing Requirements**: Every newly requested feature or change must be cross-checked against existing requirements in this file.
-2. **Conflict & Duplicate Resolution**: Contradictions, ambiguities, or duplicates must be escalated to the user for explicit decision.
-3. **Immutability of Existing Requirements**: Existing requirements may only be modified, replaced, or deleted with explicit user authorization.
-4. **100% Coverage**: Every code, architecture, or configuration change must trace back to an approved requirement ID.
+This document is the **Single Source of Truth** for all functional, non-functional, and technical requirements of MultiShell. Adhering to the **Modular Hub-and-Spoke Requirements Architecture**, domain-specific requirements are partitioned into dedicated module specifications under `docs/requirements/modules/`, while this root hub establishes global non-functional baselines, cross-cutting constraints, and the central index.
 
 ---
 
-## Requirements Overview Table
+## Modular Requirements Architecture
 
-| ID | Title | Category | Status | Verified By |
+To prevent cognitive overload, maintain strict context hygiene for subagents, and eliminate token bloat, requirements are segmented along the project's modular architecture boundaries:
+
+```
+docs/requirements/modules/
+├── terminal-session.md          # ConPTY, shell lifecycle, ANSI, UTF-8, ConPTY win32con, hyperlinks
+├── presentation.md              # Tab bar, drag & drop, tab switcher, keyboard navigation, modals, split panes
+├── search-and-drawer.md         # History drawer, fuzzy search, in-terminal search overlay
+├── profiles-and-configuration.md # Shell profiles, working directories, global settings flyout
+├── persistence.md               # tabs_state.json, workspace state, closed tabs history
+├── theming-and-styling.md       # Dark/Light theme tokens, Xterm color palettes, Windows 11 Mica/Acrylic
+└── localization.md              # Dynamic bilingual & 6-language i18n/l10n resources
+```
+
+---
+
+## Governance Rules
+
+1. **100% Coverage Mandate**: Every system modification (production code, architecture refactoring, configuration, tests) must map directly to an approved Requirement ID.
+2. **Consistency & Cross-Module Deduplication**: New requirements must be audited against existing requirements across all active module specifications.
+3. **User Decision on Conflicts**: If a conflict or contradiction arises between specifications, agents MUST pause and escalate the decision directly to the user.
+4. **Immutability of Existing Requirements**: Existing requirements may only be modified or deprecated with explicit user instructions.
+5. **Namespaced Scoped IDs**: All requirements follow the scoped pattern: `REQ-<SCOPE>-XXX` (e.g. `REQ-TAB-001`, `REQ-TERM-002`, `REQ-UI-003`, `REQ-HIST-004`).
+6. **Subagent Context Isolation**: Downstream agents (`Developer`, `Tester`, `Verifikation`) receive only this central index and the specific target module specification file (`docs/requirements/modules/<module>.md`) to maintain strict context hygiene.
+
+---
+
+## Module Registry
+
+| Module / Subsystem | Scope Prefix | Requirements Specification | Architecture Specification | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `REQ-LNC-001` | Launcher Search & Item Filtering | Core | **IMPLEMENTED** | `MainViewModelTests` |
-| `REQ-TAB-001` | Tabbed User Interface & Dynamic Tab Creation | Terminal | **IMPLEMENTED** | `MainViewModelTabTests` |
-| `REQ-TAB-002` | Tab Closure & Process Cleanup | Terminal | **IMPLEMENTED** | `MainViewModelTabTests` |
-| `REQ-TAB-003` | Isolated PowerShell (`pwsh.exe`/`powershell.exe`) Execution & Streaming | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `PowerShellSessionTests` |
-| `REQ-TAB-004` | Integrated In-Terminal Prompt & Seamless Canvas | Terminal | **SUPERSEDED by REQ-TAB-007** | `TerminalTabViewModelTests` |
-| `REQ-TAB-005` | Direct NuShell TAB Key Evaluation & Auto-Completion | Terminal | **SUPERSEDED by REQ-TAB-007** | `TerminalTabViewModelTests` |
-| `REQ-TAB-006` | Authentic Nushell Visual Theme & Reedline Completion UI | Terminal | **SUPERSEDED by REQ-TAB-007** | `TerminalTabViewModelTests` |
-| `REQ-TAB-007` | True Terminal Emulation via ConPTY (PowerShell) | Terminal | **IMPLEMENTED** | `PowerShellSessionTests`, `TerminalTabViewModelTests` |
-| `REQ-TAB-008` | Working Directory (CWD) Tracking via OSC Escape Sequences | Terminal | **IMPLEMENTED** | `PowerShellSessionTests`, `TerminalTabViewModelTests` |
-| `REQ-TAB-009` | Tab Session & Working Directory Persistence | Storage | **IMPLEMENTED** | `TabStatePersistenceServiceTests`, `MainViewModelTabTests` |
-| `REQ-TAB-010` | Tab Keyboard Shortcuts (`Ctrl+Shift+T` / `Ctrl+Shift+D`) | Interaction | **IMPLEMENTED** | `MainViewModelTabTests` |
-| `REQ-TAB-011` | Tab Drag & Drop Reordering | Interaction | **IMPLEMENTED** | `MainViewModelTabTests` |
-| `REQ-TAB-012` | Tab History Hover Overlay (Commands & Directories) | Interaction | **IMPLEMENTED** | `TerminalTabViewModelTests`, `PowerShellSessionTests` |
-| `REQ-TAB-013` | Tab Command & Directory History Persistence | Storage | **IMPLEMENTED** | `TabStatePersistenceServiceTests`, `MainViewModelTabTests` |
-| `REQ-TAB-014` | Tab Bar Overflow Visualization & Quick Tab Navigation | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
-| `REQ-TAB-015` | Tab History Keyboard Navigation & Dedicated Shortcuts (`Ctrl+Shift+H` / `Ctrl+Shift+L`) | Interaction | **IMPLEMENTED** | `MainWindow` |
-| `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | UI | **IMPLEMENTED** | `MainWindow` |
-| `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide | UI | **IMPLEMENTED** | `MainWindow` |
-| `REQ-UI-003` | About Dialog & Technology Information | UI | **IMPLEMENTED** | `MainWindow` |
-| `REQ-GOV-001` | Subagent Roles & Context Isolation | Architecture | **IMPLEMENTED** | `_agents/rules/model-tiers.json` |
-| `REQ-GOV-002` | Dynamic Model & Reasoning Depth Allocation | Architecture | **IMPLEMENTED** | `_agents/skills/ask-control` |
-| `REQ-GOV-003` | Requirements Immutability & Conflict Escalation | Governance | **IMPLEMENTED** | Quality Gate / Verification |
-| `REQ-LOC-001` | Dynamic Multi-Language UI (DE, EN, FR, ES, IT, PT) with Dropdown & Persistence | Localization | **IMPLEMENTED** | `LocalizationServiceTests` |
-| `REQ-HIST-002` | Live Fuzzy Search & Type-to-Filter in History Drawer | Interaction | **IMPLEMENTED** | `FuzzySearchServiceTests` |
-| `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | UI | **IMPLEMENTED** | `FontSizeServiceTests`, `MainViewModelTests` |
-| `REQ-TERM-001` | Robust UTF-8 Character Streaming & Box-Drawing Monospace Glyph Rendering | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `PowerShellSessionTests` |
-| `REQ-TAB-016` | Tab Navigation & Cycling via Mouse Wheel over Tab Bar | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
-| `REQ-TAB-017` | Terminal Text Selection, Copy (Right-Click / Ctrl+C), and Paste (Right-Click / Ctrl+V) | Interaction | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
-| `REQ-TAB-018` | Comprehensive Tab Keyboard Navigation & Reordering Shortcuts | Interaction | **IMPLEMENTED** | `MainViewModelTabNavigationTests`, `MainWindow` |
-| `REQ-TERM-002` | Multi-line Newline Insertion via `Ctrl+Enter` and `Shift+Enter` | Terminal | **IMPLEMENTED** | `TerminalTabView`, `TerminalTabViewModelTests` |
-| `REQ-TERM-004` | Multi-Chunk ANSI/VT100 Sequence Preservation & Color Bleed Prevention | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests` |
-| `REQ-TAB-019` | Unified Interactive Tab Switcher Overlay (Ctrl+Tab & Tab Bar Menu Button) | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
-| `REQ-TERM-005` | Clickable Hyperlinks & Local File Paths via `Ctrl+Click` | Terminal | **IMPLEMENTED** | `LinkDetectionHelperTests`, `TerminalTabView` |
-| `REQ-UI-005` | Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts | UI | **IMPLEMENTED** | `FontSizeServiceTests`, `MainViewModelTests`, `TerminalTabView` |
-| `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
-| `REQ-UI-008` | Empty State Welcome & Terminal Profile Selector Dashboard | UI | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
-| `REQ-TAB-021` | Recently Closed Tabs History & Restoration (Max 10 FIFO) | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
-| `REQ-TAB-022` | Dynamic Tab Creation via Double-Click on Empty Tab Bar Area | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
-| `REQ-TAB-023` | Tab Switcher Direct Tab Closure via Hover Close Button | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
-| `REQ-TERM-010` | Native Windows ConPTY Environment & OSC 11 Background Color Negotiation | Terminal | **IMPLEMENTED** | `ShellSession`, `TerminalTabViewModelTests` |
-| `REQ-TERM-011` | Smooth Terminal Rendering, PTY Output Batching & Overlay Scrollbar Anti-Flicker | Terminal | **IMPLEMENTED** | `TerminalTabViewModelTests`, `TerminalTabView` |
-| `REQ-PROF-001` | Configurable Working Directory per Profile (Default: User Profile Directory) | Profiles | **IMPLEMENTED** | `TerminalProfileServiceTests`, `MainViewModelTabTests`, `MainWindow` |
-| `REQ-HIST-003` | Path-Based Dynamic Command History, Live Multi-Tab Sync & Exit Pruning | History | **IMPLEMENTED** | `PathCommandHistoryServiceTests`, `TerminalTabViewModelTests`, `MainViewModelTabTests` |
-| `REQ-HIST-004` | Shared Global Directory History across Tabs with MRU Deduplication & Cap 100 | History | **IMPLEMENTED** | `DirectoryHistoryServiceTests`, `SharedDirectoryHistoryIntegrationTests` |
-| `REQ-CLI-001` | Startup Arguments & Single-Instance Tab Activation (File / Directory Path) | Core | **IMPLEMENTED** | `StartupPathResolverTests`, `SingleInstanceServiceTests` |
-| `REQ-TAB-024` | File & Folder Drag-and-Drop Navigation, Shift-Tab Creation & Tab Bar Drag-Over Activation | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
-| `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
-| `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **IMPLEMENTED** | `TerminalSearchTests`, `TerminalTabView` |
-| `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
-| `REQ-TERM-007` | Broadcast / Multi-Input Mode across Tabs / Panes | Terminal | **BACKLOG** | TBD |
-| `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | Interaction | **BACKLOG** | TBD |
-| `REQ-UI-007` | Windows 11 Acrylic & Mica Window Backdrop Effects | UI | **BACKLOG** | TBD |
+| **Terminal Session & ConPTY** | `TERM` / `TAB` | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | [`docs/architecture/modules/terminal-session.md`](docs/architecture/modules/terminal-session.md) | `ACTIVE` |
+| **Presentation & User Interface** | `UI` / `TAB` | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | [`docs/architecture/modules/presentation.md`](docs/architecture/modules/presentation.md) | `ACTIVE` |
+| **Search & History Drawer** | `HIST` / `SEARCH` | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | [`docs/architecture/modules/search-and-drawer.md`](docs/architecture/modules/search-and-drawer.md) | `ACTIVE` |
+| **Profiles & Configuration** | `PROF` / `SET` | [`docs/requirements/modules/profiles-and-configuration.md`](docs/requirements/modules/profiles-and-configuration.md) | [`docs/architecture/modules/profiles-and-configuration.md`](docs/architecture/modules/profiles-and-configuration.md) | `ACTIVE` |
+| **Workspace Persistence** | `PERSIST` / `TAB` | [`docs/requirements/modules/persistence.md`](docs/requirements/modules/persistence.md) | [`docs/architecture/modules/persistence.md`](docs/architecture/modules/persistence.md) | `ACTIVE` |
+| **Theming & Styling** | `THEME` / `UI` | [`docs/requirements/modules/theming-and-styling.md`](docs/requirements/modules/theming-and-styling.md) | [`docs/architecture/modules/theming-and-styling.md`](docs/architecture/modules/theming-and-styling.md) | `ACTIVE` |
+| **Localization & i18n** | `LOC` / `I18N` | [`docs/requirements/modules/localization.md`](docs/requirements/modules/localization.md) | [`docs/architecture/modules/localization.md`](docs/architecture/modules/localization.md) | `ACTIVE` |
 
 ---
 
-## Detailed Specifications
+## Global Non-Functional Requirements (NFR Baseline)
 
-### REQ-LNC-001: Launcher Search & Item Filtering
+### `[REQ-GOV-001]` Subagent Roles & Context Isolation
+
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want to search and filter application/command launcher items by name or category so that I can quickly find target applications.
-- **Acceptance Criteria**:
-  - **Given** a list of launcher items,
-  - **When** the user enters a search query,
-  - **Then** `FilteredItems` contains only items matching the search query (case-insensitive) in `Name` or `Category`.
+- **Type**: `Governance`
+- **Target Release**: `v0.1.0`
+
+#### User Story
+> **As a** development orchestrator,  
+> **I want** specialized subagents operating with minimal isolated contexts adhering to Clean Code, Clean Architecture, and full Internationalization, maintained declaratively in a Single Source of Truth (`_agents/rules/model-tiers.json`).
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: **Given** a new task, optimization, or bug report, **When** subagents are dispatched, **Then** each role receives only the minimal necessary context package without bloated history.
+- [x] **AC-2**: All 22 subagent roles are defined declaratively in `_agents/rules/model-tiers.json`.
 
 ---
 
-### REQ-TAB-001: Tabbed User Interface & Dynamic Tab Creation
+### `[REQ-GOV-002]` Dynamic Model & Reasoning Depth Allocation
+
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want a tabbed interface with an Add Tab button (`+ New Tab`) so that I can open multiple parallel terminal tabs.
-- **Acceptance Criteria**:
-  - **Given** the application is launched,
-  - **When** the main window loads without saved state,
-  - **Then** an initial tab (`PS 1`) is created and selected by default.
-  - **When** the user clicks `+ New Tab`,
-  - **Then** a new numbered tab (`PS 2`, `PS 3`, ...) is added and immediately selected.
+- **Type**: `Governance`
+- **Target Release**: `v0.1.0`
+
+#### User Story
+> **As the** Control agent,  
+> **I want** to assign appropriate models and reasoning levels (Tiers 1 to 4 with High, Medium, Low/Fast thinking budgets) defined dynamically via the Single Source of Truth (`_agents/rules/model-tiers.json`).
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: Subagent roles are matched to cognitive tiers and thinking budgets based on task complexity.
 
 ---
 
-### REQ-TAB-002: Tab Closure & Bidirectional Process Lifecycle
+### `[REQ-GOV-003]` Requirements Immutability & Conflict Escalation
+
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want tabs and their underlying shell processes to be bidirectionally tied together: when the shell process ends, the tab closes automatically; when a tab is closed, the shell process is terminated; and if termination is not possible, the tab remains open.
-- **Acceptance Criteria**:
-  - **Given** an active tab with a running shell process,
-  - **When** the shell process terminates (e.g. user enters `exit` or process ends),
-  - **Then** the tab is automatically closed and removed from the tab bar.
-  - **When** the user clicks the `✕` close button on a tab header,
-  - **Then** the application attempts to terminate the underlying shell process,
-  - **And** if process termination succeeds, the tab is removed from the tab bar,
-  - **And** if the closed tab was selected, an adjacent tab is selected,
-  - **And** if process termination fails or is not possible, the tab remains open.
+- **Type**: `Governance`
+- **Target Release**: `v0.1.0`
+
+#### User Story
+> **As a** user,  
+> **I want** all new requirements verified against existing ones, conflicts escalated for user decision, and existing requirements preserved as immutable unless explicitly instructed.
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: Any requirement contradiction or duplicate intent must be paused and presented to the user for explicit decision.
 
 ---
 
-### REQ-TAB-003: Isolated PowerShell (`pwsh.exe`/`powershell.exe`) Execution & Streaming
+### `[REQ-REL-001]` Git-Tag-Based Dynamic Semantic Versioning & Main-Branch Enforcement
+
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want each tab to run an isolated PowerShell instance (`pwsh.exe` with fallback to `powershell.exe`) with live terminal output and input streaming.
-- **Acceptance Criteria**:
-  - **Given** an active tab,
-  - **When** commands are entered,
-  - **Then** the command is piped to standard input of the dedicated PowerShell process via ConPTY,
-  - **And** output and ANSI sequences are streamed in real time to the terminal display.
+- **Type**: `Release / CI`
+- **Target Release**: `v0.1.0`
+
+#### User Story
+> **As a** maintainer and release manager,  
+> **I want** release versions dynamically determined from Git tags (`vX.Y.Z` via MinVer) with release tagging strictly restricted to the `main` branch.
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: Application version dynamically compiles from Git tags, falling back to `0.0.1` in development builds.
+- [x] **AC-2**: Release tags and GitHub Release builds are strictly enforced on `main`.
 
 ---
 
-### REQ-TAB-007: True Terminal Emulation via ConPTY (PowerShell)
+### `[REQ-REL-002]` GitHub Actions CI/CD Pipeline
+
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want each terminal tab to behave like a real terminal window so that PowerShell runs as an authentic interactive REPL with PSReadLine, syntax highlighting, TAB completion, and history navigation.
-- **Supersedes**: `REQ-TAB-004`, `REQ-TAB-005`, `REQ-TAB-006`.
-- **Acceptance Criteria**:
-  - **Given** a terminal tab is opened,
-  - **When** the tab loads,
-  - **Then** PowerShell starts as an interactive REPL process via Windows ConPTY,
-  - **And** the terminal renders using `SvcSystems.UI.Terminal`,
-  - **And** all keyboard input is passed directly to the PTY,
-  - **And** all terminal output (including ANSI escape sequences, colors, cursor positioning) is rendered natively.
-  - **When** the terminal window is resized,
-  - **Then** the PTY dimensions are updated and the shell reflows accordingly.
-  - **When** the tab is closed,
-  - **Then** the ConPTY session and PowerShell process are terminated cleanly.
+- **Type**: `Infrastructure`
+- **Target Release**: `v0.1.0`
+
+#### User Story
+> **As a** maintainer,  
+> **I want** standardized GitHub Actions workflows for continuous integration (testing on `main` push/PR) and automated single-file Windows releases on version tags (`v*.*.*`).
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: PR and push builds compile and test on Windows runner with zero warnings and 100% test pass rate.
+- [x] **AC-2**: Releases generate portable ZIP and Inno Setup installers automatically on tag push.
 
 ---
 
-### REQ-TAB-008: Working Directory (CWD) Tracking & Path Tab Titles
+### `[REQ-REL-003]` Multi-Target Release Packaging (Self-Contained & Framework-Dependent)
+
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want the application to track the active working directory of each terminal tab in real time so that tab headers display the current path with prefix ellipsis (`...`) when space is limited and the state can be saved.
-- **Acceptance Criteria**:
-  - **Given** a running PowerShell terminal tab,
-  - **When** the directory changes (e.g. via `cd` or `Set-Location`),
-  - **Then** the shell emits an OSC 9;9 or OSC 7 escape sequence with the new path,
-  - **And** the terminal session intercepts the sequence and updates its `WorkingDirectory` property and triggers `WorkingDirectoryChanged`,
-  - **And** the tab viewmodel updates its `Title` to the full path,
-  - **And** the tab header renders the title with `TextTrimming="PrefixCharacterEllipsis"`, ensuring the last path component remains visible when space is constrained.
+- **Type**: `Infrastructure`
+- **Target Release**: `v0.1.0`
+
+#### User Story
+> **As a** user with an existing .NET 10 desktop runtime,  
+> **I want** an optional lightweight, framework-dependent release archive alongside the standard self-contained installer and portable builds.
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: Release workflow produces both self-contained (portable + installer) and lightweight framework-dependent binaries (< 20 MB).
 
 ---
 
-### REQ-TAB-009: Tab Session & Working Directory Persistence
+### `[REQ-SEC-001]` Automated Secret Scanning & Dependency Vulnerability Auditing
+
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want the application to save all open tabs and their active working directories when changed, and restore them when the application is restarted.
-- **Acceptance Criteria**:
-  - **Given** open tabs with specific working directories in MultiShell,
-  - **When** tabs are opened, closed, or their active working directory changes,
-  - **Then** the state (open tab list, titles, directories, selected tab index) is persisted to local storage (`%LOCALAPPDATA%/MultiShell/tabs_state.json`),
-  - **When** the application starts up,
-  - **Then** previously saved tabs are restored at their saved working directories.
+- **Type**: `Security`
+- **Target Release**: `v0.1.0`
+
+#### User Story
+> **As a** security officer,  
+> **I want** automated secret scanning (Gitleaks) and NuGet package vulnerability audits to run on every commit and PR.
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: Gitleaks and `dotnet list package --vulnerable` run as required CI checks on every push and PR.
 
 ---
 
-### REQ-TAB-010: Tab Keyboard Shortcuts (`Ctrl+Shift+T` / `Ctrl+Shift+D`)
+### `[REQ-LEGAL-001]` Third-Party License Notices & Font Attribution
+
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want standard keyboard shortcuts to create a new tab (`Ctrl+Shift+T`) and duplicate the active tab (`Ctrl+Shift+D` with same working directory) without conflicting with standard terminal escape sequences.
-- **Acceptance Criteria**:
-  - **Given** MultiShell is active,
-  - **When** pressing `Ctrl+Shift+T`,
-  - **Then** a new tab is created and selected in the default directory.
-  - **When** pressing `Ctrl+Shift+D`,
-  - **Then** a new tab is created and selected with the current working directory of the active tab, positioned directly to the right of the active tab.
+- **Type**: `Compliance`
+- **Target Release**: `v0.1.0`
+
+#### User Story
+> **As an** open-source user and maintainer,  
+> **I want** comprehensive third-party software and font license notices in `THIRD_PARTY_NOTICES.md` and referenced in the About dialog.
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: `THIRD_PARTY_NOTICES.md` attributes all libraries and the embedded FiraCode Nerd Font Mono (OFL-1.1).
 
 ---
 
-### REQ-TAB-011: Tab Drag & Drop Reordering
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want to reorder terminal tabs by dragging and dropping tab headers so that I can organize parallel tabs visually according to my workflow.
-- **Acceptance Criteria**:
-  - **Given** multiple open terminal tabs in MultiShell,
-  - **When** the user drags a tab header and drops it over another tab position,
-  - **Then** the tab is moved to the target index in the `Tabs` collection,
-  - **And** the moved tab remains selected/active,
-  - **And** the updated order is persisted to storage.
-
----
-
-### REQ-TAB-012: Tab History Hover Overlay (Commands & Directories)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want a left-side hover area that reveals an overlay displaying the executed command history and visited directory history of the active tab, allowing me to view, insert, or re-execute previous commands or navigate to previous folders.
-- **Acceptance Criteria**:
-  - **Given** an active PowerShell terminal tab in MultiShell,
-  - **When** commands are executed in the tab,
-  - **Then** each executed command is tracked into `CommandHistory` and directory changes into `DirectoryHistory`.
-  - **When** hovering and dwelling in the left edge trigger area of the window (dwell delay 300ms) or clicking the History toolbar button,
-  - **Then** a flyout overlay displays the command history and directory history of the active tab.
-  - **When** moving the pointer swiftly across the trigger area without dwelling,
-  - **Then** the overlay does not open.
-  - **When** clicking a history entry with the left mouse button or pressing `Enter`,
-  - **Then** the command or folder navigation is pasted into the active terminal prompt without executing it, and the overlay closes immediately, focusing the terminal.
-  - **When** right-clicking an entry,
-  - **Then** the command or directory navigation is executed directly with Return.
-  - **When** moving the pointer out of the overlay or the window,
-  - **Then** the overlay closes smoothly and focuses the terminal.
-
----
-
-### REQ-TAB-013: Tab Command & Directory History Persistence
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want the command history and visited directory history of each tab to be persisted across application restarts and restored when reopening the application, and removed from storage when a tab is closed.
-- **Acceptance Criteria**:
-  - **Given** open terminal tabs with accumulated command and directory histories,
-  - **When** commands are executed or working directories change,
-  - **Then** `CommandHistory` and `DirectoryHistory` are persisted to local storage (`tabs_state.json`).
-  - **When** the application starts up,
-  - **Then** previously saved command and directory histories are restored for each persisted tab.
-  - **When** a tab is closed (by user action or shell exit),
-  - **Then** the tab is removed and its persisted state and histories are purged from storage.
-
----
-
-### REQ-TAB-014: Tab Bar Overflow Visualization & Quick Tab Navigation
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want visual indicators when there are more tabs than can be displayed in the visible tab bar, along with scroll buttons and a quick tab dropdown menu, so that I can easily navigate and switch between all open tabs.
-- **Acceptance Criteria**:
-  - **Given** many open tabs exceeding the visible horizontal space of the tab bar,
-  - **When** overflow occurs,
-  - **Then** visual edge gradient indicators and scroll buttons (`◀` and `▶`) appear to indicate overflow to the left and right.
-  - **When** the tab bar is displayed,
-  - **Then** the Add Tab (`+`) and shell dropdown (`▾`) button group is permanently docked on the right side outside the scrollable tab area, and the right scroll overflow button (`›`) appears immediately to its left.
-  - **When** the user clicks `◀` or `▶`,
-  - **Then** the tab bar scrolls smoothly in the respective direction.
-  - **When** the user clicks the tab list button (`▼`),
-  - **Then** a dropdown/flyout opens listing all open tabs with their titles and active status, allowing direct 1-click tab selection.
-  - **When** an active tab changes or a new tab is created,
-  - **Then** the tab bar automatically scrolls to bring the selected tab into view.
-
----
-
-### REQ-TAB-015: Tab History Keyboard Navigation & Dedicated Shortcuts (`Ctrl+Shift+H` / `Ctrl+Shift+L`)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want dedicated keyboard shortcuts to open the command history (`Ctrl+Shift+H`) and directory history (`Ctrl+Shift+L`), switch between tabs using `Tab` or arrow keys with the last item preselected, and execute/apply the selected item by pressing `Enter`.
-- **Acceptance Criteria**:
-  - **Given** the main application window is active,
-  - **When** pressing `Ctrl+Shift+H` while the drawer is closed,
-  - **Then** the history drawer opens directly on the command history tab (`Tab 0`) with the search box focused.
-  - **When** pressing `Ctrl+Shift+H` while the drawer is open on the directory history tab,
-  - **Then** the drawer switches directly to the command history tab without closing.
-  - **When** pressing `Ctrl+Shift+H` while the drawer is already active on the command history tab,
-  - **Then** the history drawer closes and focuses the terminal.
-  - **When** pressing `Ctrl+Shift+L` while the drawer is closed,
-  - **Then** the history drawer opens directly on the directory history tab (`Tab 1`) with the search box focused.
-  - **When** pressing `Ctrl+Shift+L` while the drawer is open on the command history tab,
-  - **Then** the drawer switches directly to the directory history tab without closing.
-  - **When** pressing `Ctrl+Shift+L` while the drawer is already active on the directory history tab,
-  - **Then** the history drawer closes and focuses the terminal.
-  - **When** the history drawer opens on either tab,
-  - **Then** the last item in the active history list is selected by default (or the first item if a filter is active).
-  - **When** pressing `Up` or `Down`,
-  - **Then** selection moves between history entries.
-  - **When** pressing `Tab`, `Left`, or `Right`,
-  - **Then** the active tab switches between command history and directory history.
-  - **When** pressing `Enter`,
-  - **Then** the selected command or directory navigation is sent to the terminal and the overlay closes immediately, focusing the terminal.
-  - **When** pressing `Escape`,
-  - **Then** the overlay closes without execution and focuses the terminal.
-
----
-
-### REQ-UI-001: Modern UI Theme, Header Toolbar & Visual Polish
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want a sleek modern dark interface with a top toolbar featuring brand identity, smooth tabs, and quick action buttons.
-- **Acceptance Criteria**:
-  - **Given** the application is running,
-  - **Then** the top toolbar displays the MultiShell brand logo, title, tab bar, and quick-action buttons (`📜 History`, `❓ Help`, `ℹ About`).
-
----
-
-### REQ-UI-002: Interactive Help & Keyboard Shortcuts Guide
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want an interactive Help modal (accessible via `F1` or top toolbar button) showing all keyboard shortcuts and feature explanations.
-- **Acceptance Criteria**:
-  - **Given** MultiShell is active,
-  - **When** pressing `F1` or clicking `❓ Help`,
-  - **Then** a modal dialog opens displaying shortcuts (`Ctrl+Shift+T`, `Ctrl+Shift+D`, `Ctrl+Shift+H`, `Ctrl+Shift+L`, `F1`, `ESC`) and feature guides.
-  - **When** pressing `Escape` or clicking `✕` / backdrop,
-  - **Then** the modal closes.
-
----
-
-### REQ-UI-003: About Dialog & Technology Information
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want an About dialog (accessible via `ℹ About` toolbar button) displaying version information, architecture overview, and technology stack.
-- **Acceptance Criteria**:
-  - **Given** MultiShell is active,
-  - **When** clicking `ℹ About`,
-  - **Then** a modal dialog opens with version `1.0.0`, tech stack (`.NET 10`, `Avalonia 11`, `ConPTY`), and architecture details.
-  - **When** pressing `Escape` or clicking `✕` / backdrop,
-  - **Then** the modal closes.
-
----
-
-### REQ-GOV-001: Subagent Roles & Context Isolation
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a development orchestrator, I want specialized subagents operating with minimal isolated contexts adhering to Clean Code, Clean Architecture, and full Internationalization, maintained declaratively in a Single Source of Truth (`_agents/rules/model-tiers.json`).
-- **Acceptance Criteria**:
-  - **Given** a new task, optimization, or bug report,
-  - **When** subagents are dispatched,
-  - **Then** each role receives only the minimal necessary context package without bloated history.
-
----
-
-### REQ-GOV-002: Dynamic Model & Reasoning Depth Allocation
-- **Status**: `IMPLEMENTED`
-- **User Story**: As the Control agent, I want to assign appropriate models and reasoning levels (Tiers 1 to 4 with High, Medium, Low/Fast thinking budgets) defined dynamically via the Single Source of Truth (`_agents/rules/model-tiers.json`).
-- **Acceptance Criteria**:
-  - **Given** a stage in the execution pipeline,
-  - **When** assigning the subagent role,
-  - **Then** the model profile and reasoning depth match the role's allocation matrix in `_agents/rules/model-tiers.json`.
-
----
-
-### REQ-GOV-003: Requirements Immutability & Conflict Escalation
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want all new requirements verified against existing ones, conflicts escalated for user decision, and existing requirements preserved as immutable unless explicitly instructed.
-- **Acceptance Criteria**:
-  - **Given** a new user request,
-  - **When** duplicates or contradictions are found against `REQUIREMENTS.md`,
-  - **Then** the user is prompted to resolve the conflict before any changes are made.
-
----
-
-### REQ-REL-001: Git-Tag-Based Dynamic Semantic Versioning
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user and developer, I want the application version dynamically determined from Git tags (e.g. `v0.0.1`, `v1.0.0`) with a default initial fallback of `0.0.1`, and displayed in the About dialog.
-- **Acceptance Criteria**:
-  - **Given** the application is compiled,
-  - **When** a Git tag `vX.Y.Z` exists (or fallback `0.0.1`),
-  - **Then** `MainViewModel.AppVersion` returns the formatted semantic version string `vX.Y.Z`.
-  - **When** the user opens the About modal,
-  - **Then** the dynamic version is displayed in the Version field.
-
----
-
-### REQ-REL-002: GitHub Actions CI/CD Pipeline
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a maintainer, I want standardized GitHub Actions workflows for continuous integration (testing on `main` push/PR) and automated single-file Windows releases on version tags (`v*.*.*`).
-- **Acceptance Criteria**:
-  - **Given** a pull request or push to `main`,
-  - **When** the CI workflow triggers,
-  - **Then** `.NET 10` dependencies are restored and all automated tests are executed (`dotnet test`).
-  - **Given** a version tag `v*.*.*` is pushed,
-  - **When** the Release workflow triggers,
-  - **Then** single-file executables and the Inno Setup installer are published as a GitHub Release.
-
----
-
-### REQ-SET-001: Unified Settings Menu & Dynamic Theme Switching
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want a unified Settings menu (gear icon ⚙) in the top toolbar providing dynamic Dark/Light theme switching, Help & Shortcuts (`F1`), and About dialog access.
-- **Acceptance Criteria**:
-  - **Given** the application is running,
-  - **When** clicking the Settings gear button `⚙`,
-  - **Then** a dropdown menu appears with Theme toggle, Help, and About items.
-  - **When** clicking the Theme option,
-  - **Then** the application dynamically switches between Dark and Light theme variants.
-  - **When** clicking Help or About,
-  - **Then** the respective modal dialog opens and the menu closes.
-
----
-
-### REQ-LOC-001: Dynamic Multi-Language UI (DE, EN, FR, ES, IT, PT) with Dropdown & Persistence
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want the UI to automatically adapt to my operating system language (with English fallback) and allow switching between German, English, French, Spanish, Italian, and Portuguese via a responsive dropdown selector with persistent storage across restarts.
-- **Acceptance Criteria**:
-  - **Given** an OS configured in German, French, Spanish, Italian, Portuguese, or English, the UI defaults to that language.
-  - **When** the user manually chooses a language from the Settings dropdown selector (`ComboBox`),
-  - **Then** all UI elements update immediately in real time without window reloads, and the preference is persisted in `WorkspaceState.SavedLanguage`.
-
----
-
-### REQ-HIST-002: Live Fuzzy Search & Type-to-Filter in History Drawer
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want a real-time fuzzy search filter in the History (Commands) and Directories drawer so that whenever I start typing, matching items are filtered and ranked instantly.
-- **Acceptance Criteria**:
-  - **Given** the History Drawer is open (`Ctrl+Shift+H` or left-edge hover),
-  - **When** the user types characters on the keyboard that are not navigation commands,
-  - **Then** keystrokes are automatically routed to the active search box, and the list filters in real time using fuzzy subsequence matching and scoring.
-  - **When** the user presses `Enter`, the top matching command or directory is executed/navigated.
-  - **When** the user presses `Escape`, the active filter query is cleared first or the drawer is closed.
-
----
-
-### REQ-UI-004: 5-Level Font Size Settings for App and Terminal
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want to adjust the font size of both the application UI and the terminal independently across 5 distinct levels, where level 3 corresponds to the system default standard size, with persistent storage across sessions.
-- **Acceptance Criteria**:
-  - **Given** the Settings menu (⚙),
-  - **When** viewing the font size options,
-  - **Then** 5 selectable levels (1 to 5) are offered for App Font Size and Terminal Font Size, with level 3 marked as standard default.
-  - **When** level 1, 2, 3, 4, or 5 is selected,
-  - **Then** the App UI scale (0.85x, 0.92x, 1.00x, 1.12x, 1.25x) or Terminal font size (9.5pt, 10.5pt, 12.0pt, 14.0pt, 16.5pt) updates immediately.
-  - **When** the application restarts,
-  - **Then** the selected font size levels are loaded and restored from `WorkspaceState`.
-
----
-
-### REQ-TERM-001: Robust UTF-8 Character Streaming & Box-Drawing Monospace Glyph Rendering
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want graphical characters (such as box-drawing borders `─`, `│`, `┌`, `┐`, `└`, `┘`, powerline glyphs, emojis, and international characters) to render crisply without character corruption, missing glyph replacement blocks, or swallowed characters across stream chunk boundaries.
-- **Acceptance Criteria**:
-  - **Given** terminal output streams containing multi-byte UTF-8 sequences (e.g. 3-byte box-drawing characters or 4-byte emojis) that may be fragmented across arbitrary buffer chunk boundaries,
-  - **When** chunks are processed by `ShellSession` and `TerminalTabViewModel`,
-  - **Then** stateful UTF-8 decoders preserve partial byte sequences across reads without emitting `\uFFFD` replacement blocks or losing adjacent characters.
-  - **When** PowerShell or CMD shell processes are spawned,
-  - **Then** console encoding is initialized to UTF-8 (`[Console]::OutputEncoding = UTF8`, `$OutputEncoding = UTF8`, `chcp 65001`, `PYTHONIOENCODING=utf-8`), ensuring tools emit standard UTF-8.
-  - **When** `TerminalControl` renders text in `TerminalTabView`,
-  - **Then** a dedicated monospace font family chain (`Cascadia Mono, Cascadia Code, Consolas, DejaVu Sans Mono, monospace`) is configured for complete box-drawing character glyph coverage.
-
----
-
-### REQ-TAB-016: Tab Navigation & Cycling via Mouse Wheel over Tab Bar
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want to cycle through open terminal tabs by rotating the mouse wheel over the tab bar area, so that I can quickly switch between active tabs without clicking each individual tab button.
-- **Acceptance Criteria**:
-  - **Given** multiple open terminal tabs in MultiShell,
-  - **When** the user rotates the mouse wheel upwards (or scrolls left) over the tab bar area,
-  - **Then** the previous tab in the tab list is selected (clamped to the first tab).
-  - **When** the user rotates the mouse wheel downwards (or scrolls right) over the tab bar area,
-  - **Then** the next tab in the tab list is selected (clamped to the last tab).
-  - **When** the selected tab changes via mouse wheel scrolling,
-  - **Then** the tab bar automatically scrolls to ensure the newly selected tab is fully visible.
-
----
-
-### REQ-TAB-017: Terminal Text Selection, Copy (Right-Click / Ctrl+C), and Paste (Right-Click / Ctrl+V)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want to select text within terminal tabs, copy selections to the clipboard via Right-Click or Ctrl+C, and paste clipboard content via Right-Click (when no selection is active) or Ctrl+V.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab in MultiShell,
-  - **When** the user selects text using the pointer/mouse,
-  - **Then** the selected characters are visually highlighted with a high-contrast selection brush (`SelectionBrush`).
-  - **When** right-clicking on the terminal while text is selected,
-  - **Then** the selected text is copied to the system clipboard and the selection is cleared.
-  - **When** pressing `Ctrl+C` while text is selected,
-  - **Then** the selected text is copied to the system clipboard and no interrupt sequence (`\x03`) is sent to the shell.
-  - **When** pressing `Ctrl+C` without any active selection,
-  - **Then** the interrupt sequence (`\x03` / SIGINT) is passed to the underlying shell session.
-  - **When** right-clicking on the terminal without any active selection,
-  - **Then** the current text content of the system clipboard is pasted into the terminal at the cursor position.
-  - **When** pressing `Ctrl+V`,
-  - **Then** the current text content of the system clipboard is pasted into the terminal at the cursor position.
-
----
-
-### REQ-TAB-018: Comprehensive Tab Keyboard Navigation & Reordering Shortcuts
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want complete keyboard shortcuts to cycle through tabs (`Ctrl+Tab`, `Ctrl+Shift+Tab`, `Ctrl+PageDown`, `Ctrl+PageUp`), jump directly to numbered tabs (`Ctrl+1` through `Ctrl+8`), jump to the last tab (`Ctrl+9`), close the active tab (`Ctrl+Shift+W`), and reorder tabs left/right (`Ctrl+Shift+PageUp`, `Ctrl+Shift+PageDown`).
-- **Acceptance Criteria**:
-  - **Given** multiple open tabs,
-  - **When** pressing `Ctrl+Tab` or `Ctrl+PageDown`,
-  - **Then** the next tab is selected (wrapping around to the first tab when at the end).
-  - **When** pressing `Ctrl+Shift+Tab` or `Ctrl+PageUp`,
-  - **Then** the previous tab is selected (wrapping around to the last tab when at the beginning).
-  - **When** pressing `Ctrl+1` through `Ctrl+8`,
-  - **Then** the tab at corresponding index (1st to 8th) is selected if it exists.
-  - **When** pressing `Ctrl+9`,
-  - **Then** the last tab in the tab bar is selected.
-  - **When** pressing `Ctrl+Shift+W`,
-  - **Then** the currently active tab is closed and an adjacent tab is selected.
-  - **When** pressing `Ctrl+Shift+PageUp`,
-  - **Then** the active tab is moved one position to the left in the tab collection.
-  - **When** pressing `Ctrl+Shift+PageDown`,
-  - **Then** the active tab is moved one position to the right in the tab collection.
-
----
-
-### REQ-TERM-002: Multi-line Newline Insertion via `Ctrl+Enter` and `Shift+Enter`
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user writing multi-line PowerShell scripts or commands, I want `Ctrl+Enter` (and `Shift+Enter`) to insert a newline / line continuation (`\n`) without immediately executing the command.
-- **Acceptance Criteria**:
-  - **Given** an active terminal session,
-  - **When** the user presses `Ctrl+Enter` or `Shift+Enter`,
-  - **Then** a linefeed (`\n` / `0x0A`) is sent to the ConPTY shell instead of carriage return (`\r` / `0x0D`),
-  - **And** the shell enters a multi-line continuation prompt without executing the command prematurely.
-  - **When** the user presses standard `Enter` (without modifiers),
-  - **Then** carriage return (`\r`) is sent and the command is executed as usual.
-
----
-
-### REQ-TERM-004: Multi-Chunk ANSI/VT100 Sequence Preservation & Color Bleed Prevention
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user running interactive CLI/TUI applications (e.g. GitHub Copilot CLI, Neovim with Markdown/Tree-sitter highlighting, Ink, Bubbletea), I want ANSI escape sequences (CSI colors, cursor positioning, SGR resets, OSC sequences) to be processed cleanly across arbitrary stream chunk boundaries without fragments printing as raw text or causing color bleeding across entire text blocks.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab in MultiShell streaming high-throughput or chunked output,
-  - **When** an ANSI/VT100 escape sequence (such as TrueColor `\x1b[38;2;...m`, `\x1b[48;2;...m`, SGR reset `\x1b[0m`, cursor movements `\x1b[...H`, `\x1b[...K`, or OSC sequences) is split across buffer chunk boundaries,
-  - **Then** the terminal stream sanitizer buffers the incomplete sequence header until the final terminator byte arrives,
-  - **And** only complete, valid sequences or clean text chunks are passed to the terminal model (`TerminalModel.Feed()`),
-  - **And** no stray escape codes, orphan brackets, or parameter fragments are printed to the terminal screen,
-  - **And** background colors and text styles reset promptly at token boundaries without bleeding into following paragraphs or lines.
-
----
-
-### REQ-TAB-019: Unified Interactive Tab Switcher Overlay (Ctrl+Tab & Tab Bar Menu Button)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want a single, unified, and aesthetically outstanding Tab Switcher HUD overlay that can be triggered either via keyboard (`Ctrl+Tab` / `Ctrl+Shift+Tab`) or via the tab bar menu button (`≡ ▾`), allowing me to quickly preview and switch between all open terminal tabs.
-- **Acceptance Criteria**:
-  - **Given** multiple open terminal tabs in MultiShell,
-  - **When** pressing `Ctrl+Tab` (or `Ctrl+Shift+Tab`),
-  - **Then** a centered floating Quick Tab Switcher HUD overlay appears, showing the list of open tabs with their shell icon badges, titles, and working directories.
-  - **When** holding `Ctrl` and pressing `Tab` (or `PageDown` / `Down Arrow`) repeatedly,
-  - **Then** the highlight moves forward through the tab list (wrapping around to the first tab at the end).
-  - **When** holding `Ctrl` and pressing `Shift+Tab` (or `PageUp` / `Up Arrow`) repeatedly,
-  - **Then** the highlight moves backward through the tab list (wrapping around to the last tab at the beginning).
-  - **When** the user releases the `Ctrl` key,
-  - **Then** the currently highlighted tab is activated, the overlay closes automatically, and the terminal receives focus.
-  - **When** pressing `Escape` while the overlay is open,
-  - **Then** the overlay closes without changing the active tab.
-  - **When** clicking the `≡ ▾` button in the tab bar,
-  - **Then** the same unified Tab Switcher HUD overlay opens in persistent mode, allowing tab selection via mouse click, `Enter`, or dismissal via `Escape`.
-
----
-
-### REQ-TERM-005: Clickable Hyperlinks & Local File Paths via `Ctrl+Click`
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want Web URLs (`http://`, `https://`) and local file paths (`C:\...`, relative paths, line numbers `:42`) in terminal output to be interactively clickable via `Ctrl + Left-Click`, automatically opening the URL in my default browser or the file in my default editor.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab in MultiShell displaying command output containing links or file paths,
-  - **When** the user holds `Ctrl` and left-clicks on an `http://` or `https://` URL (or text selection containing a URL),
-  - **Then** the URL is launched in the default system web browser.
-  - **When** the user holds `Ctrl` and left-clicks on an existing file path (absolute or relative to the tab's working directory, with or without `:line` suffix),
-  - **Then** the file is opened with the system default application or editor.
-  - **When** holding `Ctrl` while moving the mouse over a detected hyperlink or file path in the terminal,
-  - **Then** the mouse cursor switches to a Hand pointer (`Cursor="Hand"`).
-
----
-
-### REQ-UI-005: Zoom & Font-Size Keyboard & Mouse Wheel Shortcuts
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want quick zoom shortcuts (`Ctrl++`, `Ctrl+-`, `Ctrl+0`, and `Ctrl+MouseWheel`) to dynamically adjust terminal and UI font sizes on the fly.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab,
-  - **When** pressing `Ctrl++` or `Ctrl+NumpadPlus`, the font size increments to the next level.
-  - **When** pressing `Ctrl+-` or `Ctrl+NumpadMinus`, the font size decrements to the previous level.
-  - **When** pressing `Ctrl+0` or `Ctrl+Numpad0`, the font size resets to default Level 3 (12pt / 100%).
-  - **When** scrolling the mouse wheel while holding `Ctrl` over the terminal, font size zooms in or out.
-
----
-
-### REQ-TERM-003: Terminal Scrollback & Buffer Control Shortcuts
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want standard keyboard shortcuts (`Shift+PageUp`, `Shift+PageDown`, `Ctrl+Shift+K`, `Ctrl+Shift+C`, `Ctrl+Shift+V`) to navigate and manage the terminal scrollback buffer.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab with scrollback history,
-  - **When** pressing `Shift+PageUp` or `Shift+PageDown`, the viewport scrolls through previous output.
-  - **When** pressing `Ctrl+Shift+K`, the terminal buffer is cleared.
-  - **When** pressing `Ctrl+Shift+C` or `Ctrl+Shift+V`, text is copied or pasted without interfering with Unix signals.
-
----
-
-### REQ-UI-008: Empty State Welcome & Terminal Profile Selector Dashboard
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, when all terminal tabs are closed (`Tabs.Count == 0`), I want an attractive welcome dashboard with instructions and interactive quick-launch cards for all available terminal types/profiles so that I can immediately start a new session.
-- **Acceptance Criteria**:
-  - **Given** all open terminal tabs are closed,
-  - **Then** the empty state dashboard becomes visible, presenting a logo, title, and descriptive guidance.
-  - **When** clicking on any profile card (e.g. PowerShell, Command Prompt, Git Bash, WSL),
-  - **Then** a new tab with that terminal profile is opened and the empty state dashboard closes.
-  - **When** pressing `Ctrl+T` or clicking the new tab button on the tab bar,
-  - **Then** a new default terminal tab is created and the workspace enters active state.
-
----
-
-## 🔮 Future / Backlog Features
-
-### REQ-AI-001: Context-Aware AI Command Generator & Auto-Suggest
-- **Status**: `PLANNED`
-- **User Story**: As a terminal user, I want an integrated AI assistant overlay (triggered via shortcut `Ctrl+I` / `Ctrl+K`) that translates natural language requests into contextual PowerShell commands using local LLMs (Ollama) or Cloud APIs (OpenAI/Gemini), with one-click execution (`Enter`) and inline pasting (`Tab`).
-- **Acceptance Criteria**:
-  - **Given** an active PowerShell terminal tab,
-  - **When** the user presses `Ctrl+I` or `Ctrl+K`,
-  - **Then** a floating AI prompt overlay appears.
-  - **When** entering a natural language request,
-  - **Then** the AI service (Ollama/OpenAI) generates the exact PowerShell command with safety explanations, taking current working directory and recent history into context.
-  - **When** pressing `Enter`,
-  - **Then** the command is executed in the active ConPTY session and the overlay closes.
-  - **When** pressing `Tab`,
-  - **Then** the command is pasted into the active terminal prompt without executing.
-  - **When** pressing `Escape`,
-  - **Then** the overlay closes without modifications.
-
----
-
-### REQ-UI-006: Split Panes (Horizontal & Vertical Session Splits within Tab)
-- **Status**: `PLANNED`
-- **User Story**: As a power user, I want to split a tab into multiple horizontal or vertical terminal panes (`Alt+Shift++` / `Alt+Shift+-`), navigating between them with `Alt+ArrowKeys` and resizing separators with the mouse.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab,
-  - **When** triggering vertical split, a new independent shell session is created side-by-side in the same tab.
-  - **When** triggering horizontal split, a new session is created stacked below.
-  - **When** closing a split pane, remaining panes expand to fill the available space.
-
----
-
-### REQ-TERM-006: In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`)
-- **Status**: `PLANNED`
-- **User Story**: As a user, I want an in-terminal search bar overlay (`Ctrl+Shift+F`) with real-time match highlighting, `F3` / `Shift+F3` next/prev navigation, and regex support.
-- **Acceptance Criteria**:
-  - **Given** terminal output with scrollback,
-  - **When** pressing `Ctrl+Shift+F`, a search bar opens in the upper right corner.
-  - **When** typing a query, all occurrences in the terminal viewport and buffer are highlighted with active match counter (`Match 3 of 12`).
-  - **When** pressing `Enter` or `F3`, viewport jumps to the next match; `Shift+F3` jumps to previous.
-  - **When** pressing `Escape`, search bar closes and highlights clear.
-
----
-
-### REQ-TAB-020: Custom Tab Renaming & Tab Color Palette Tagging
-- **Status**: `PLANNED`
-- **User Story**: As a user, I want to assign custom titles and color badges to tabs via right-click context menu (e.g. Red for Production/SSH, Green for Tests, Blue for Dev).
-- **Acceptance Criteria**:
-  - **Given** an open tab in the tab bar,
-  - **When** right-clicking a tab and selecting "Rename Tab" or double-clicking the tab title, an inline edit box appears.
-  - **When** selecting a color from the tab context menu, a color indicator dot or accent border is applied to that tab.
-  - **When** restarting the app, custom titles and color tags are restored from persistent workspace state.
-
----
-
-### REQ-TERM-007: Broadcast / Multi-Input Mode across Tabs / Panes
-- **Status**: `PLANNED`
-- **User Story**: As a systems operator, I want a broadcast input toggle (`Ctrl+Shift+B`) that mirrors keyboard input simultaneously to all open tabs or split panes.
-- **Acceptance Criteria**:
-  - **Given** multiple open tabs,
-  - **When** activating broadcast mode, a prominent status badge indicates broadcast is active.
-  - **When** typing in the active terminal, identical keystrokes and escape codes are dispatched to all active PTY sessions.
-
----
-
-### REQ-SNIP-001: Customizable Snippet & Quick Command Launcher
-- **Status**: `PLANNED`
-- **User Story**: As a developer, I want a quick snippet drawer or overlay with tagged PowerShell scripts and Docker/Git commands that can be inserted or executed with a single click.
-- **Acceptance Criteria**:
-  - **Given** configured snippets in settings,
-  - **When** opening the snippet bar, items are categorized and filterable.
-  - **When** clicking a snippet, it is pasted into the terminal prompt.
-
----
-
-### REQ-UI-007: Windows 11 Acrylic & Mica Window Backdrop Effects
-- **Status**: `PLANNED`
-- **User Story**: As a user on Windows 11, I want native Mica / Acrylic window transparency blur effects with configurable background opacity.
-- **Acceptance Criteria**:
-  - **Given** Windows 11 OS,
-  - **When** enabling transparency in Settings, the window background enables `Mica` or `Acrylic` blur backdrop with dark/light theme harmonization.
-
----
-
-### REQ-REL-001: Main-Branch Release Tagging & Build Enforcement
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a maintainer and release manager, I want release tags and GitHub Release builds to be strictly restricted to the `main` branch so that incomplete feature branches can never accidentally trigger a production release.
-- **Acceptance Criteria**:
-  - **Given** the local ReleaseManager skill (`la-release-manager`),
-  - **When** triggering release calculation and tag creation,
-  - **Then** the active branch must be `main` and fully synchronized with `origin/main`, otherwise tag creation is aborted.
-  - **Given** a pushed Git tag (`v*.*.*`) in GitHub Actions (`release.yml`),
-  - **When** the workflow triggers,
-  - **Then** the workflow verifies that the tag commit is an ancestor of `origin/main` (`git merge-base --is-ancestor`), aborting the release pipeline immediately if the tag originates from a non-main branch.
-
----
-
-### REQ-SEC-001: Automated Secret Scanning & Dependency Vulnerability Auditing
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a security auditor and maintainer, I want automatic secret detection and dependency CVE auditing in the local development lifecycle and CI pipeline so that no credentials or vulnerable packages are released.
-- **Acceptance Criteria**:
-  - **Given** the local SecurityAuditor skill (`la-security-auditor`),
-  - **When** auditing staged changes or dependencies,
-  - **Then** diffs are checked for high-entropy secrets/tokens and `dotnet list package --vulnerable --include-transitive` is executed.
-  - **Given** a push or Pull Request in GitHub Actions (`ci.yml`),
-  - **When** the CI workflow runs,
-  - **Then** Gitleaks secret scanning and NuGet package vulnerability audits execute and fail the build if secrets or known CVEs are detected.
-
----
-
-### REQ-HIST-003: Filter Internal & Automated Configuration Commands from History
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a terminal user, I want internal setup and environment configuration commands (e.g. `chcp 65001`, `[Console]::OutputEncoding`, `Set-PSReadLineOption`, prompt hooks) to be excluded from both the in-app command history and the persistent PSReadLine history, so that only intentional user-executed commands appear in search and recall.
-- **Acceptance Criteria**:
-  - **Given** a running PowerShell or ConPTY shell session,
-  - **When** the application or session executes internal setup commands (e.g. `chcp 65001 >$null`, `[Console]::OutputEncoding`, `$OutputEncoding`, `$function:prompt`, `Set-PSReadLineOption`),
-  - **Then** these commands are not added to `TerminalTabViewModel.CommandHistory` and do not appear in the `Ctrl+H` history overlay.
-  - **Then** PSReadLine's `AddToHistoryHandler` ignores these configuration commands, preventing them from being written to `ConsoleHost_history.txt`.
-
----
-
-### REQ-TAB-021: Recently Closed Tabs History & Restoration (Max 10 FIFO)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want a persistent history of my recently closed tabs (capped at 10 items) accessible both from the shell selector dropdown (`▾`) and the empty-state welcome dashboard, so that I can quickly restore closed sessions with their complete command and directory histories or permanently purge them.
-- **Acceptance Criteria**:
-  - **Given** an open tab with command and directory history,
-  - **When** the tab is closed (via `×`, `Ctrl+W`, or `exit`),
-  - **Then** its metadata and histories are captured as a `ClosedTabItemViewModel` and pushed to the top of `ClosedTabs`.
-  - **Given** more than 10 closed tabs,
-  - **When** a new tab is closed,
-  - **Then** the oldest closed tab (at index 10) is evicted and its data permanently purged (FIFO limit of 10).
-  - **Given** one or more closed tabs in history,
-  - **When** opening the shell selector dropdown (`▾`) or when all tabs are closed (`HasNoTabs`),
-  - **Then** the list of recently closed tabs is displayed with shell badge, title, working directory, and close time.
-  - **When** clicking a closed tab item or its restore action,
-  - **Then** a new tab is created restoring the saved title, working directory, shell type, and full command/directory histories, and the item is removed from `ClosedTabs`.
-  - **When** clicking the delete (`×`) button on a closed tab item or clicking "Clear History",
-  - **Then** the item(s) are removed from `ClosedTabs` and permanently purged.
-  - **When** the application saves state,
-  - **Then** `ClosedTabs` is persisted in `tabs_state.json` and restored on subsequent application launches.
-
----
-
-### REQ-TERM-009: Embedded Monospace Nerd Font (FiraCode Nerd Font Mono)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a terminal user, I want an embedded monospace Nerd Font (`FiraCode Nerd Font Mono`) bundled directly into the application assets, so that powerline symbols, git branch icons, folder glyphs, and developer prompts render flawlessly without requiring manual font installation on the host OS.
-- **Acceptance Criteria**:
-  - **Given** a clean Windows installation without custom Nerd Fonts installed,
-  - **When** starting MultiShell,
-  - **Then** `TerminalTabViewModel.TerminalFontFamily` resolves the embedded `avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono` resource with fallback to system fonts.
-  - **Then** powerline glyphs, git branch icons, and box-drawing characters render sharply and in fixed monospace alignment without character distortion.
-
----
-
-### REQ-REL-003: Multi-Target Release Packaging (Self-Contained & Framework-Dependent)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user with an existing .NET 10 desktop runtime, I want an optional lightweight, framework-dependent release archive alongside the standard self-contained installer and portable builds, minimizing download sizes.
-- **Acceptance Criteria**:
-  - **Given** a production release workflow in `.github/workflows/release.yml`,
-  - **When** a release tag is pushed,
-  - **Then** the pipeline produces both:
-    1. A self-contained portable archive and Inno Setup installer (`--self-contained true`).
-    2. A lightweight framework-dependent single-file archive (`--self-contained false`, under 20 MB).
-  - **Then** both artifacts are published to the GitHub Release.
-
----
-
-### REQ-LEGAL-001: Third-Party License Notices & Font Attribution
-- **Status**: `IMPLEMENTED`
-- **User Story**: As an open-source contributor and user, I want comprehensive third-party software and font license notices easily accessible in the repository and referenced in the application's About dialog to ensure complete legal compliance (e.g. SIL Open Font License 1.1).
-- **Acceptance Criteria**:
-  - **Given** the project repository,
-  - **Then** `THIRD_PARTY_NOTICES.md` provides full license texts and copyright attributions for all third-party dependencies and fonts (Fira Code, Nerd Fonts, Avalonia, CommunityToolkit, SvcSystems.UI.Terminal, MinVer, .NET Runtime).
-  - **When** opening the About dialog in MultiShell,
-  - **Then** font attribution (`FiraCode Nerd Font Mono (OFL-1.1)`) and third-party notice references are clearly displayed across all supported languages.
-
----
-
-### REQ-TAB-022: Dynamic Tab Creation via Double-Click on Empty Tab Bar Area
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want to double-click in the empty/free area of the tab bar (e.g. to the right of the open tabs) to quickly open a new terminal tab, matching standard modern browser and terminal ergonomics.
-- **Acceptance Criteria**:
-  - **Given** MultiShell is running with one or more open tabs,
-  - **When** the user performs a left-button double-click in the empty space of the tab bar (outside of tab buttons, close buttons, scroll arrows, and toolbar controls),
-  - **Then** a new tab is created with the default shell and immediately selected.
-  - **When** the user double-clicks directly on an interactive control (such as a tab button, close button, or scroll button),
-  - **Then** a new tab is NOT created.
-
----
-
-### REQ-TERM-010: Native Windows ConPTY Environment & OSC 11 Background Color Negotiation
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a developer using modern TUIs (such as Neovim, Helix, or Bat) within MultiShell on Windows 11, I want the terminal to accurately communicate its background brightness via OSC 11 and run native Windows shells in native ConPTY mode (`win32con`), so that syntax highlighting and markdown rendering display clean, accurate theme colors without background flooding or corrupted color modes.
-- **Acceptance Criteria**:
-  - **Given** a terminal tab running a native Windows shell (PowerShell or CMD),
-  - **When** the shell session is initialized,
-  - **Then** `TERM` and `WT_SESSION` are NOT injected, allowing the shell and ConPTY to run in standard native `win32con` mode.
-  - **Given** a terminal tab running WSL/Linux,
-  - **When** the session is initialized,
-  - **Then** `TERM=xterm-256color` and `COLORTERM=truecolor` are provided to support Linux terminal capabilities.
-  - **Given** a running terminal session where a TUI emits an OSC 11 background query (`\x1b]11;?\x07` or `\x1b]11;?\x1b\`),
-  - **When** MultiShell receives the query stream,
-  - **Then** it responds back to the shell process input with the active theme background color in standard X11 format (`\x1b]11;rgb:0e0e/0f0f/1515\x1b\` for Dark mode or `\x1b]11;rgb:f8f8/f9f9/fcfc\x1b\` for Light mode), and strips the query before passing to the UI display model.
-
----
-
-### REQ-TAB-023: Tab Switcher Direct Tab Closure via Hover Close Button
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user with multiple tabs open in the Tab Switcher overlay, I want to hover over any tab entry to see an "✕" close button at the right edge and click it to directly close that tab while keeping the Tab Switcher overlay open, so that I can conveniently prune and manage tabs without closing the switcher dialog.
-- **Acceptance Criteria**:
-  - **Given** the Tab Switcher overlay is open (`IsTabSwitcherOpen = true`) with one or more open tabs,
-  - **When** the mouse pointer hovers over a tab row in the switcher list,
-  - **Then** an "✕" close button becomes smoothly visible at the right edge of that row (`Opacity = 0.6`, highlighted to `1.0` with danger color when hovered directly).
-  - **When** the user clicks the "✕" close button,
-  - **Then** the targeted tab is closed and added to the recently closed history (`ClosedTabs`),
-  - **And** the Tab Switcher overlay remains open with an updated tab count (e.g. `1 / 2`),
-  - **And** if the closed tab was selected, the switcher selection automatically adjusts to the next available tab.
-  - **When** the last remaining tab in the switcher is closed,
-  - **Then** the Tab Switcher overlay closes and the empty workspace dashboard is displayed.
-
----
-
-### REQ-TERM-011: Smooth Terminal Rendering, PTY Output Batching & Overlay Scrollbar Anti-Flicker
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a developer using interactive TUIs and animated CLI tools (such as `agy`, Git status/spinners, progress bars, and full-screen terminal editors) in MultiShell, I want terminal rendering to be flicker-free and the scrollbar to float as a non-intrusive overlay without dynamically stealing character surface width, so that output streaming is silky smooth and reaching the bottom of the screen never causes infinite resize / ConPTY reflow thrashing.
-- **Acceptance Criteria**:
-  - **Given** an active terminal session where the shell or an interactive CLI outputs micro-chunks of text and ANSI sequences (such as clearing lines and printing animated spinners),
-  - **When** the output stream is received by MultiShell,
-  - **Then** consecutive chunks are coalesced and dispatched on the UI thread at render priority, eliminating intermediate blank/erased frames and full-screen flashing.
-  - **Given** a terminal tab whose buffer reaches and exceeds the bottom row of the viewport (`MaxScrollback > 0`),
-  - **When** the vertical scrollbar becomes visible,
-  - **Then** it renders as an overlay in Column 0 aligned to the right edge without reducing the width of the terminal character surface (`_surface`),
-    - **And** `_surface.OnSizeChanged` does not fire merely due to the scrollbar appearing or disappearing,
-    - **And** no spurious `SIGWINCH` or ConPTY resize events are emitted when text scrolls into scrollback.
-
----
-
-### REQ-PROF-001: Configurable Startup Working Directory per Profile (Default: User Profile Directory)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a terminal user, I want each terminal profile to support a configurable startup working directory, with the user's home/profile directory (`%USERPROFILE%`) serving as the universal default, so that custom or built-in shell profiles can automatically launch in their dedicated project or home directories.
-- **Acceptance Criteria**:
-  - **Given** default terminal profiles (PowerShell, CMD, WSL, NuShell) created by `TerminalProfileService`,
-  - **When** default profiles are initialized,
-  - **Then** their `WorkingDirectory` is set to the user profile directory (`Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)`).
-  - **Given** existing or serialized profiles where `WorkingDirectory` is null or whitespace,
-  - **When** profiles are loaded by `TerminalProfileService`,
-  - **Then** `WorkingDirectory` defaults to the user profile directory.
-  - **Given** the Profile Editor modal in MultiShell,
-  - **When** creating a new profile,
-  - **Then** the working directory input is pre-populated with the user profile directory.
-  - **When** editing an existing profile,
-  - **Then** the working directory input reflects the profile's configured working directory (or user profile directory if previously unset).
-  - **When** saving a profile with a specified directory,
-  - **Then** that directory is persisted in `profiles.json`.
-  - **Given** a terminal tab opened via `AddNewTabWithProfile`,
-  - **When** the shell session is launched,
-  - **Then** the session begins at the configured `WorkingDirectory` of that profile (or user profile directory fallback).
-
----
-
-### REQ-HIST-003: Path-Based Dynamic Command History, Live Multi-Tab Sync & Exit Pruning
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a multi-tab terminal user, I want the command history to be bound to the current directory path rather than isolated per tab instance, so that tabs sharing the same path dynamically synchronize commands in real-time, history per path is capped at 100 entries, duplicate commands are refreshed to the latest position, and obsolete histories for deleted paths are automatically pruned on exit.
-- **Acceptance Criteria**:
-  - **Given** terminal tabs with working directories,
-  - **When** commands are executed in any tab at path `P`,
-  - **Then** the commands are stored in the path history for `P`, with duplicates moved to the newest position (MRU), and internal setup commands ignored.
-  - **When** the history for path `P` exceeds 100 entries,
-  - **Then** the oldest entries are pruned using FIFO, keeping at most 100 entries.
-  - **Given** multiple open tabs residing in the same working directory `P`,
-  - **When** a command is executed in one tab,
-  - **Then** all other tabs residing in path `P` dynamically and immediately reflect the new command in `CommandHistory` and `FilteredCommandHistory`.
-  - **Given** an active tab switching its working directory from path `A` to path `B`,
-  - **Then** the tab's command history dynamically switches to the command history of path `B`.
-  - **Given** persisted path histories in MultiShell,
-  - **When** the application shuts down or saves state synchronously on exit,
-  - **Then** all tracked paths are checked with `Directory.Exists(path)`, and any paths that no longer exist on disk are pruned from the history store before saving.
-
----
-
-### REQ-HIST-004: Shared Global Directory History across Tabs with MRU Deduplication & Cap 100
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a multi-tab terminal user, I want all terminal tabs to share a single unified directory history in the History drawer, capped at 100 entries with FIFO pruning for older items and MRU deduplication, so that visited paths from any tab are instantly available everywhere without duplicates.
-- **Acceptance Criteria**:
-  - **Given** one or more open terminal tabs,
-  - **When** a directory is visited or changed in any tab,
-  - **Then** that path is recorded into the shared `DirectoryHistoryService`.
-  - **When** the path already exists in the history,
-  - **Then** the previous occurrence is removed and the path is placed at the newest position (MRU order).
-  - **When** the total count of directory entries exceeds 100,
-  - **Then** the oldest entries are evicted using FIFO (retaining at most 100 entries).
-  - **When** a directory change occurs in any tab,
-  - **Then** all open tabs immediately reflect the updated directory history in their `DirectoryHistory` and `FilteredDirectoryHistory`.
-  - **When** the application saves workspace state,
-  - **Then** the shared directory history is persisted in `WorkspaceState.SharedDirectoryHistory` in `tabs_state.json` and restored on subsequent application launches.
-
----
-
-### REQ-CLI-001: Startup Arguments & Single-Instance Tab Activation (File / Directory Path)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user or CLI tool, I want to launch MultiShell with a directory or file path parameter so that:
-  - If MultiShell is already running, a new tab opens in the existing window using the resolved folder (or directory containing the file) and the window is brought to the foreground.
-  - If MultiShell is not running, the application starts normally, loads its workspace state, and opens a new tab with the resolved folder.
-- **Acceptance Criteria**:
-  - **Given** an input argument representing an existing directory path (absolute or relative),
-  - **When** resolved,
-  - **Then** the resolver returns the normalized absolute path of the directory.
-  - **Given** an input argument representing an existing file path,
-  - **When** resolved,
-  - **Then** the resolver returns the normalized absolute path of the directory containing that file.
-  - **Given** a relative path argument and a base directory (caller's working directory),
-  - **When** resolved,
-  - **Then** the resolver computes the absolute path relative to the caller's working directory.
-  - **Given** MultiShell is already running,
-  - **When** a secondary instance is started with a valid path argument,
-  - **Then** the secondary instance forwards the resolved directory to the primary instance via Named Pipe IPC and exits with code 0.
-  - **When** the primary instance receives the directory path,
-  - **Then** the primary instance restores its window if minimized, activates the window into the foreground, opens a new tab with that directory, and focuses it.
-  - **Given** MultiShell is not yet running,
-  - **When** started with a valid path argument,
-  - **Then** MultiShell starts, initializes the IPC listener, restores workspace state, and opens an additional new tab with the specified directory.
-  - **Given** MultiShell is already running,
-  - **When** started without path arguments,
-  - **Then** the existing MultiShell window is activated and brought to the foreground without creating an extra tab.
-
----
-
-### REQ-TAB-024: File & Folder Drag-and-Drop Navigation, Shift-Tab Creation & Tab Bar Drag-Over Activation
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want to drag files or folders onto the terminal surface to navigate the active shell to that folder (or containing folder for files), hold `Shift` while dropping to create a new tab in that directory, and have tabs in the tab bar activate automatically when dragging over them.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab in MultiShell,
-  - **When** a directory path is dropped onto the terminal surface without holding `Shift`,
-  - **Then** the active terminal navigates to that directory using the shell navigation command (`Set-Location` or `cd`).
-  - **Given** an active terminal tab in MultiShell,
-  - **When** a file path is dropped onto the terminal surface without holding `Shift`,
-  - **Then** the active terminal navigates to the parent directory containing that file.
-  - **Given** MultiShell with or without open tabs,
-  - **When** a file or directory is dropped onto the terminal surface while holding the `Shift` key,
-  - **Then** a new tab is created with its working directory initialized to that resolved folder.
-  - **Given** no open tabs in MultiShell,
-  - **When** a file or directory is dropped onto the terminal area,
-  - **Then** a new tab is created in that resolved directory regardless of whether `Shift` is held.
-  - **Given** multiple open tabs in MultiShell,
-  - **When** dragging an item (files/folders or tab drag) over a tab header in the tab bar,
-  - **Then** that tab is immediately activated/selected, allowing the user to view its content and drop into it.
-  - **Given** a tab header in the tab bar,
-  - **When** a file or directory is dropped directly onto that tab header without `Shift`,
-  - **Then** that tab is activated and navigates to the resolved directory.
-  - **Given** open tabs exceeding the visible tab bar with overflow scroll arrows (`‹` / `›`),
-  - **When** hovering over the left or right scroll arrow button during an active drag operation (files/folders or tab drag),
-  - **Then** the tab bar auto-scrolls sequentially in that direction with a comfortable cadence (250ms initial dwell delay, then 320ms per tab step) until the pointer leaves the button or the scroll boundary is reached.
-
----
-
-### REQ-TERM-006: In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`)
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want an in-terminal search bar overlay accessible via `Ctrl+Shift+F` so that I can search, highlight, and navigate through text across the active terminal scrollback and screen buffer.
-- **Acceptance Criteria**:
-  - **Given** an active terminal tab in MultiShell,
-  - **When** the user presses `Ctrl+Shift+F`,
-  - **Then** the search overlay appears in the top-right corner of the active terminal and auto-focuses the search input text box.
-  - **When** the user enters a search query in the search box,
-  - **Then** matches are searched within the active terminal's scrollback and screen buffer in real-time, matching occurrences are highlighted or counted, and the total match count and current index are displayed (e.g. `1/14` or `0/0`).
-  - **When** the user presses `Enter` or clicks the `Next` button (`↓`),
-  - **Then** the terminal scrolls to and focuses the next matching occurrence downwards.
-  - **When** the user presses `Shift+Enter` or clicks the `Previous` button (`↑`),
-  - **Then** the terminal scrolls to and focuses the previous matching occurrence upwards.
-  - **When** the user toggles the `Match Case` (`Aa`) option,
-  - **Then** searching respects or ignores character casing accordingly.
-  - **When** the user toggles the `Regular Expression` (`.*`) option,
-  - **Then** searching evaluates the query as a regex pattern (falling back gracefully if regex is invalid).
-  - **When** the user presses `Escape` while the search overlay is open,
-  - **Then** the search overlay closes and keyboard focus is immediately restored to the active terminal.
-  - **When** switching to another tab,
-  - **Then** each tab retains its own independent search state or closes gracefully without leaking focus.
-
----
-
-### REQ-TAB-020: Custom Tab Renaming & Tab Color Palette Tagging
-- **Status**: `IMPLEMENTED`
-- **User Story**: As a user, I want to rename terminal tabs with custom titles (via double-click or context menu) and assign colored accent tags so that I can easily identify and organize parallel workspaces.
-- **Acceptance Criteria**:
-  - **Given** an open tab in MultiShell,
-  - **When** the user double-clicks the tab header title or selects `Rename Tab` from the tab context menu,
-  - **Then** an inline edit box opens to edit the tab's custom title.
-  - **When** the user confirms the new name (presses `Enter` or clicks outside),
-  - **Then** the tab displays the custom title instead of the default auto-generated name.
-  - **When** the custom title is cleared or reset,
-  - **Then** the tab falls back to dynamic directory/process naming.
-  - **When** the user right-clicks a tab and chooses a color from a predefined color palette,
-  - **Then** an accent color indicator bar or tag is rendered on the tab header.
-  - **When** MultiShell restarts,
-  - **Then** custom tab titles and assigned colors are persisted and restored from `tabs_state.json`.
-
----
-
-### REQ-UI-006: Split Panes (Horizontal & Vertical Session Splits within Tab)
-- **Status**: `BACKLOG`
-- **User Story**: As a user, I want to split an active tab into horizontal or vertical panes so that I can run and monitor multiple simultaneous terminal sessions side-by-side within a single window tab.
-- **Acceptance Criteria**:
-  - **Given** an active tab in MultiShell,
-  - **When** the user presses `Alt+Shift+Plus` (or right-clicks and selects `Split Vertically`),
-  - **Then** the tab view divides vertically into two side-by-side panes with the same profile and working directory.
-  - **When** the user presses `Alt+Shift+Minus` (or selects `Split Horizontally`),
-  - **Then** the focused pane divides horizontally into two stacked panes.
-  - **When** typing keyboard inputs,
-  - **Then** only the currently focused pane receives keystrokes, indicated by an active border highlight.
-  - **When** the user presses `Alt+ArrowKeys`,
-  - **Then** focus navigates to the adjacent pane in that direction.
-  - **When** a shell process inside a pane exits or the user closes the pane (`Ctrl+Shift+W`),
-  - **Then** that pane collapses and the remaining pane expands to occupy the available space.
-
-
-
-
-
+## Master Requirements Traceability Matrix
+
+| Requirement ID | Title | Target Module Specification | Status |
+| :--- | :--- | :--- | :--- |
+| `REQ-TAB-001` | Tabbed User Interface & Dynamic Tab Creation | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-002` | Tab Closure & Bidirectional Process Lifecycle | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TAB-003` | Isolated PowerShell Execution & Streaming | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TAB-007` | True Terminal Emulation via ConPTY (PowerShell) | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TAB-008` | Working Directory (CWD) Tracking & Path Tab Titles | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TAB-009` | Tab Session & Working Directory Persistence | [`docs/requirements/modules/persistence.md`](docs/requirements/modules/persistence.md) | `IMPLEMENTED` |
+| `REQ-TAB-010` | Tab Keyboard Shortcuts (`Ctrl+Shift+T` / `D`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-011` | Tab Drag & Drop Reordering | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-012` | Tab History Hover Overlay (Commands & Directories) | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |
+| `REQ-TAB-013` | Tab Command & Directory History Persistence | [`docs/requirements/modules/persistence.md`](docs/requirements/modules/persistence.md) | `IMPLEMENTED` |
+| `REQ-TAB-014` | Tab Bar Overflow Visualization & Navigation | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-015` | Tab History Keyboard Navigation (`Ctrl+Shift+H`/`L`) | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |
+| `REQ-TAB-016` | Tab Navigation & Cycling via Mouse Wheel | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-017` | Terminal Text Selection, Copy & Paste | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TAB-018` | Comprehensive Tab Keyboard Navigation Shortcuts | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-019` | Unified Tab Switcher Overlay (`Ctrl+Tab`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-021` | Recently Closed Tabs History & Restoration (Max 10) | [`docs/requirements/modules/persistence.md`](docs/requirements/modules/persistence.md) | `IMPLEMENTED` |
+| `REQ-TAB-022` | Tab Creation via Double-Click on Empty Tab Bar | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-023` | Tab Switcher Direct Tab Closure via Hover Button | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-024` | File & Folder Drag-Drop, Shift-Tab & Tab Drag-Over | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TERM-001` | Robust UTF-8 Character Streaming & Monospace Glyphs | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TERM-002` | Multi-line Newline Insertion via Ctrl/Shift+Enter | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TERM-004` | Multi-Chunk ANSI/VT100 Sequence Preservation | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TERM-005` | Clickable Hyperlinks & Local File Paths via Ctrl+Click | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TERM-006` | In-Terminal Text & Scrollback Search (`Ctrl+Shift+F`) | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |
+| `REQ-TERM-007` | Broadcast / Multi-Input Mode across Tabs / Panes | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `BACKLOG` |
+| `REQ-TERM-009` | Embedded Monospace Nerd Font (FiraCode Nerd Font Mono)| [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TERM-010` | Native Windows ConPTY Environment & OSC 11 | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-TERM-011` | Smooth Terminal Rendering & Overlay Scrollbar Anti-Flicker| [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md)| `IMPLEMENTED` |
+| `REQ-HIST-002` | Live Fuzzy Search & Type-to-Filter in History Drawer | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |
+| `REQ-HIST-003` | Path-Based Dynamic Command History, Sync & Pruning | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |
+| `REQ-HIST-004` | Shared Global Directory History across Tabs (MRU 100) | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |
+| `REQ-CLI-001` | Startup Arguments & Single-Instance Tab Activation | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
+| `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide (`F1`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-UI-003` | About Dialog & Technology Information | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-UI-005` | Zoom & Font-Size Keyboard & Wheel Shortcuts | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
+| `REQ-UI-007` | Windows 11 Acrylic & Mica Window Backdrop Effects | [`docs/requirements/modules/theming-and-styling.md`](docs/requirements/modules/theming-and-styling.md) | `BACKLOG` |
+| `REQ-UI-008` | Empty State Welcome & Profile Selector Dashboard | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-SET-001` | Unified Settings Menu & Dynamic Theme Switching | [`docs/requirements/modules/profiles-and-configuration.md`](docs/requirements/modules/profiles-and-configuration.md) | `IMPLEMENTED` |
+| `REQ-LOC-001` | Dynamic Multi-Language UI (DE, EN, FR, ES, IT, PT) | [`docs/requirements/modules/localization.md`](docs/requirements/modules/localization.md) | `IMPLEMENTED` |
+| `REQ-PROF-001` | Configurable Startup Working Directory per Profile | [`docs/requirements/modules/profiles-and-configuration.md`](docs/requirements/modules/profiles-and-configuration.md) | `IMPLEMENTED` |
+| `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
+| `REQ-AI-001` | Context-Aware AI Command Generator & Auto-Suggest | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
+| `REQ-LNC-001` | Launcher Search & Item Filtering | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
+| `REQ-GOV-001` | Subagent Roles & Context Isolation | [`REQUIREMENTS.md`](REQUIREMENTS.md) | `IMPLEMENTED` |
+| `REQ-GOV-002` | Dynamic Model & Reasoning Depth Allocation | [`REQUIREMENTS.md`](REQUIREMENTS.md) | `IMPLEMENTED` |
+| `REQ-GOV-003` | Requirements Immutability & Conflict Escalation | [`REQUIREMENTS.md`](REQUIREMENTS.md) | `IMPLEMENTED` |
+| `REQ-REL-001` | Git-Tag-Based Semantic Versioning & Main Release | [`REQUIREMENTS.md`](REQUIREMENTS.md) | `IMPLEMENTED` |
+| `REQ-REL-002` | GitHub Actions CI/CD Pipeline | [`REQUIREMENTS.md`](REQUIREMENTS.md) | `IMPLEMENTED` |
+| `REQ-REL-003` | Multi-Target Release Packaging (Self-Contained & Light) | [`REQUIREMENTS.md`](REQUIREMENTS.md) | `IMPLEMENTED` |
+| `REQ-SEC-001` | Automated Secret Scanning & Vulnerability Auditing | [`REQUIREMENTS.md`](REQUIREMENTS.md) | `IMPLEMENTED` |
+| `REQ-LEGAL-001`| Third-Party License Notices & Font Attribution | [`REQUIREMENTS.md`](REQUIREMENTS.md) | `IMPLEMENTED` |

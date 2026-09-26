@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MultiShell.Models;
 using MultiShell.Services;
 using MultiShell.ViewModels;
+using Avalonia.Media;
 using Xunit;
 
 namespace MultiShell.Tests;

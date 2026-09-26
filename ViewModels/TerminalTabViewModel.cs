@@ -38,22 +38,60 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [NotifyPropertyChangedFor(nameof(TabTooltip))]
     private string? _workingDirectory;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DisplayTitle))]
-    [NotifyPropertyChangedFor(nameof(HasCustomTitle))]
-    [NotifyPropertyChangedFor(nameof(TabTooltip))]
     private string? _customTitle;
+    /// <summary>
+    /// Gets or sets the custom user-assigned title for this tab (REQ-TAB-020).
+    /// </summary>
+    public string? CustomTitle
+    {
+        get => _customTitle;
+        set
+        {
+            if (SetProperty(ref _customTitle, value))
+            {
+                OnPropertyChanged(nameof(DisplayTitle));
+                OnPropertyChanged(nameof(HasCustomTitle));
+                OnPropertyChanged(nameof(TabTooltip));
+            }
+        }
+    }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasTabColor))]
-    [NotifyPropertyChangedFor(nameof(TabColorBrush))]
     private string? _tabColor;
+    /// <summary>
+    /// Gets or sets the custom tab color hex string (REQ-TAB-020).
+    /// </summary>
+    public string? TabColor
+    {
+        get => _tabColor;
+        set
+        {
+            if (SetProperty(ref _tabColor, value))
+            {
+                OnPropertyChanged(nameof(HasTabColor));
+                OnPropertyChanged(nameof(TabColorBrush));
+            }
+        }
+    }
 
-    [ObservableProperty]
     private bool _isRenaming;
+    /// <summary>
+    /// Gets or sets whether inline tab renaming is currently active (REQ-TAB-020).
+    /// </summary>
+    public bool IsRenaming
+    {
+        get => _isRenaming;
+        set => SetProperty(ref _isRenaming, value);
+    }
 
-    [ObservableProperty]
     private string _renameBuffer = string.Empty;
+    /// <summary>
+    /// Gets or sets the temporary buffer during inline tab renaming (REQ-TAB-020).
+    /// </summary>
+    public string RenameBuffer
+    {
+        get => _renameBuffer;
+        set => SetProperty(ref _renameBuffer, value);
+    }
 
     /// <summary>
     /// Event fired when inline renaming starts to focus and select the rename text box.
