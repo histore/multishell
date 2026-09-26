@@ -25,6 +25,7 @@ Views/
 ├── MainWindow.HistoryDrawer.cs      # History drawer slide-out animation & events
 ├── TerminalTabView.axaml            # Embedded terminal view control
 ├── TerminalTabView.axaml.cs         # Palette mapping, clipboard & focus logic
+├── TerminalFocusHelper.cs           # Active terminal focus resolution & restoration
 └── Dialogs/                         # Modal overlay views (Profiles, About, etc.)
 ```
 
@@ -87,6 +88,12 @@ Backs an individual terminal tab instance:
 * Hosts `SvcSystems.UI.Terminal.TerminalControl`.
 * Maps application themes (Xterm 16 colors and 24-bit TrueColor) to terminal color palettes.
 * Intercepts pointer events for link opening, right-click paste/copy, and focus transfer.
+
+### 4.3 Terminal Focus Management & Restoration (`TerminalFocusHelper`)
+* Solves focus loss when dismissing overlays (History Drawer, Settings modal, Profile dialog) or switching tabs.
+* Traverses the visual tree to resolve the active `TerminalControl` matching the selected `TerminalTabViewModel`.
+* Prevents accidentally targeting hidden/background tabs when multiple tab views exist simultaneously in the visual panel.
+* Leverages `ResolveActiveControl` with `IsEffectivelyVisible` validation, falling back gracefully to the first visible terminal instance if no direct match is found.
 
 ## 5. View Resolution & Native AOT Compatibility
 * **[`ViewLocator`](../../../ViewLocator.cs)** implements Avalonia's `IDataTemplate`.

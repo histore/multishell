@@ -35,8 +35,8 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | UI | **IMPLEMENTED** | `MainWindow` |
 | `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide | UI | **IMPLEMENTED** | `MainWindow` |
 | `REQ-UI-003` | About Dialog & Technology Information | UI | **IMPLEMENTED** | `MainWindow` |
-| `REQ-GOV-001` | Subagent Roles & Context Isolation | Architecture | **IMPLEMENTED** | `_agents/rules/subagents.md` |
-| `REQ-GOV-002` | Dynamic Model & Reasoning Depth Allocation | Architecture | **IMPLEMENTED** | `_agents/skills/la-control` |
+| `REQ-GOV-001` | Subagent Roles & Context Isolation | Architecture | **IMPLEMENTED** | `_agents/rules/model-tiers.json` |
+| `REQ-GOV-002` | Dynamic Model & Reasoning Depth Allocation | Architecture | **IMPLEMENTED** | `_agents/skills/ask-control` |
 | `REQ-GOV-003` | Requirements Immutability & Conflict Escalation | Governance | **IMPLEMENTED** | Quality Gate / Verification |
 | `REQ-LOC-001` | Dynamic Multi-Language UI (DE, EN, FR, ES, IT, PT) with Dropdown & Persistence | Localization | **IMPLEMENTED** | `LocalizationServiceTests` |
 | `REQ-HIST-002` | Live Fuzzy Search & Type-to-Filter in History Drawer | Interaction | **IMPLEMENTED** | `FuzzySearchServiceTests` |
@@ -305,7 +305,7 @@ This document serves as the single source of truth for all functional and non-fu
 
 ### REQ-GOV-001: Subagent Roles & Context Isolation
 - **Status**: `IMPLEMENTED`
-- **User Story**: As a development orchestrator, I want specialized subagents (`Control`, `RequirementEngineer`, `Troubleshooter`, `UIDesigner`, `LocalizationSpecialist`, `Architekt`, `Developer`, `RefactoringSpecialist`, `PerformanceOptimizer`, `SecurityAuditor`, `DocumentationSpecialist`, `ReleaseManager`, `Tester`, `Verifikation`) operating with minimal isolated contexts adhering to Clean Code, Clean Architecture, and full Internationalization.
+- **User Story**: As a development orchestrator, I want specialized subagents operating with minimal isolated contexts adhering to Clean Code, Clean Architecture, and full Internationalization, maintained declaratively in a Single Source of Truth (`_agents/rules/model-tiers.json`).
 - **Acceptance Criteria**:
   - **Given** a new task, optimization, or bug report,
   - **When** subagents are dispatched,
@@ -315,11 +315,11 @@ This document serves as the single source of truth for all functional and non-fu
 
 ### REQ-GOV-002: Dynamic Model & Reasoning Depth Allocation
 - **Status**: `IMPLEMENTED`
-- **User Story**: As the Control agent, I want to assign appropriate models and reasoning levels (`High` for Requirements/Troubleshooter/UI-Design/Architecture/Performance/Security/Verification, `Medium` for Localization/Developer/Refactoring/Documentation/ReleaseManager/Tester) depending on cognitive requirements.
+- **User Story**: As the Control agent, I want to assign appropriate models and reasoning levels (Tiers 1 to 4 with High, Medium, Low/Fast thinking budgets) defined dynamically via the Single Source of Truth (`_agents/rules/model-tiers.json`).
 - **Acceptance Criteria**:
   - **Given** a stage in the execution pipeline,
   - **When** assigning the subagent role,
-  - **Then** the model profile and reasoning depth match the role's allocation matrix.
+  - **Then** the model profile and reasoning depth match the role's allocation matrix in `_agents/rules/model-tiers.json`.
 
 ---
 

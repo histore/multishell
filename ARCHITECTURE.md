@@ -43,4 +43,4 @@ Detailed technical specifications and design blueprints are modularized and main
 Architectural decisions, rationale, and trade-offs are documented under [docs/architecture/adr/](docs/architecture/adr/).
 
 ### Incremental Synchronization
-System architecture documentation is kept in sync with ongoing code changes via the `la-architecture-sync` skill using git revision checkpoints ([`docs/architecture/.arch-sync.json`](docs/architecture/.arch-sync.json)).
+System architecture documentation is kept in sync with ongoing code changes via the `ask-architecture-sync` skill using git revision checkpoints ([`docs/architecture/.arch-sync.json`](docs/architecture/.arch-sync.json)).
