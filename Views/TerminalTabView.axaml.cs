@@ -12,6 +12,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using MultiShell.Services;
 using MultiShell.ViewModels;
 using SvcSystems.UI.Terminal;
@@ -63,27 +64,48 @@ public partial class TerminalTabView : UserControl
     private PropertyChangedEventHandler? _propChangedHandler;
     private TerminalTabViewModel? _currentVm;
     private Border? _hoverLinkBorder;
+    private Border? _searchOverlay;
+    private TextBox? _searchInputBox;
 
     public TerminalTabView()
     {
         InitializeComponent();
         _hoverLinkBorder = this.FindControl<Border>("HoverLinkBorder");
+        _searchOverlay = this.FindControl<Border>("SearchOverlay");
+        _searchInputBox = this.FindControl<TextBox>("SearchInputBox");
+        _searchInputBox?.AddHandler(InputElement.KeyDownEvent, OnSearchInputBoxKeyDown, RoutingStrategies.Tunnel);
 
         ConfigureOverlayScrollBar();
 
         Loaded += (_, _) =>
         {
             ConfigureOverlayScrollBar();
-            Dispatcher.UIThread.Post(() => Terminal.Focus());
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (DataContext is not TerminalTabViewModel vm || !vm.IsSearchOpen)
+                {
+                    Terminal.Focus();
+                }
+            });
         };
 
-        PointerPressed += (_, _) =>
+        PointerPressed += (_, e) =>
         {
+            if (IsInsideSearchOverlay(e.Source))
+            {
+                return;
+            }
+
             Terminal.Focus();
         };
 
         GotFocus += (_, e) =>
         {
+            if (IsInsideSearchOverlay(e.Source))
+            {
+                return;
+            }
+
             if (!ReferenceEquals(e.Source, Terminal))
             {
                 Terminal.Focus();
@@ -455,7 +477,40 @@ public partial class TerminalTabView : UserControl
             return;
         }
 
-        // 3c. Ctrl+Shift+C: Copy selected text without sending interrupt signals
+        // 3c. Ctrl+Shift+F: In-Terminal Text Search Overlay (REQ-TERM-006)
+        if (isCtrl && isShift && e.Key == Key.F)
+        {
+            vm.OpenSearch();
+            e.Handled = true;
+            return;
+        }
+
+        // When search overlay is open, F3 / Shift+F3 / Escape route to search navigation
+        if (vm.IsSearchOpen)
+        {
+            if (e.Key == Key.Escape)
+            {
+                vm.CloseSearch();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.F3)
+            {
+                if (isShift)
+                {
+                    vm.SearchPrevious();
+                }
+                else
+                {
+                    vm.SearchNext();
+                }
+                e.Handled = true;
+                return;
+            }
+        }
+
+        // 3d. Ctrl+Shift+C: Copy selected text without sending interrupt signals
         if (isCtrl && isShift && e.Key == Key.C)
         {
             var rawText = vm.TerminalModel.HasSelection ? vm.TerminalModel.SelectedText : string.Empty;
@@ -587,14 +642,21 @@ public partial class TerminalTabView : UserControl
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
-        if (_currentVm != null && _propChangedHandler != null)
+        if (_currentVm != null)
         {
-            _currentVm.PropertyChanged -= _propChangedHandler;
+            if (_propChangedHandler != null)
+            {
+                _currentVm.PropertyChanged -= _propChangedHandler;
+            }
+            _currentVm.FocusSearchBoxRequested -= OnFocusSearchBoxRequested;
+            _currentVm.FocusTerminalRequested -= OnFocusTerminalRequested;
         }
 
         if (DataContext is TerminalTabViewModel vm)
         {
             _currentVm = vm;
+            _currentVm.FocusSearchBoxRequested += OnFocusSearchBoxRequested;
+            _currentVm.FocusTerminalRequested += OnFocusTerminalRequested;
             Terminal.Model = vm.TerminalModel;
             ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm);
 
@@ -627,6 +689,78 @@ public partial class TerminalTabView : UserControl
             vm.StartSession();
             Dispatcher.UIThread.Post(() => Terminal.Focus());
         }
+    }
+
+    private void OnSearchInputBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not TerminalTabViewModel vm) return;
+
+        var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+        if (e.Key == Key.Escape)
+        {
+            vm.CloseSearch();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Enter)
+        {
+            if (isShift)
+            {
+                vm.SearchPrevious();
+            }
+            else
+            {
+                vm.SearchNext();
+            }
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.F3)
+        {
+            if (isShift)
+            {
+                vm.SearchPrevious();
+            }
+            else
+            {
+                vm.SearchNext();
+            }
+            e.Handled = true;
+            return;
+        }
+    }
+
+    private bool IsInsideSearchOverlay(object? source)
+    {
+        if (_searchOverlay == null || source is not Visual visual) return false;
+        return ReferenceEquals(_searchOverlay, visual) || _searchOverlay.IsVisualAncestorOf(visual);
+    }
+
+    private void OnFocusSearchBoxRequested()
+    {
+        void DoFocusSearch()
+        {
+            _searchInputBox ??= this.FindControl<TextBox>("SearchInputBox");
+            if (_searchInputBox != null)
+            {
+                _searchInputBox.Focus();
+                _searchInputBox.SelectAll();
+            }
+        }
+
+        Dispatcher.UIThread.Post(DoFocusSearch, DispatcherPriority.Input);
+        Dispatcher.UIThread.Post(DoFocusSearch, DispatcherPriority.Loaded);
+    }
+
+    private void OnFocusTerminalRequested()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            Terminal.Focus();
+        });
     }
 
     [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Best-effort reflection on third-party TerminalControl internal cache for runtime theme switching")]

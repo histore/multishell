@@ -37,6 +37,63 @@
                         BorderThickness="0,0,0,1.5"
                         CornerRadius="2" />
             </Canvas>
+
+            <!-- In-Terminal Text & Scrollback Search Overlay (REQ-TERM-006) -->
+            <Border x:Name="SearchOverlay"
+                    ZIndex="100"
+                    IsVisible="{Binding IsSearchOpen}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,8,24,0"
+                    Background="{DynamicResource AppSurfaceModal}"
+                    BorderBrush="{DynamicResource AppBorder}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="6,4"
+                    BoxShadow="0 4 12 #40000000">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBox x:Name="SearchInputBox"
+                             Text="{Binding SearchQuery, Mode=TwoWay}"
+                             PlaceholderText="{Binding Loc[Search_Terminal_Watermark]}"
+                             Width="200"
+                             Height="28"
+                             FontSize="12"
+                             VerticalContentAlignment="Center" />
+
+                    <TextBlock Text="{Binding SearchMatchSummary}"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Foreground="{DynamicResource AppTextDimmed}"
+                               Margin="4,0" />
+
+                    <Button x:Name="PrevMatchButton"
+                            Command="{Binding SearchPreviousCommand}"
+                            ToolTip.Tip="{Binding Loc[Search_Terminal_Previous]}"
+                            Width="28" Height="28"
+                            Padding="0"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                        <PathIcon Data="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z" Width="12" Height="12" />
+                    </Button>
+
+                    <Button x:Name="NextMatchButton"
+                            Command="{Binding SearchNextCommand}"
+                            ToolTip.Tip="{Binding Loc[Search_Terminal_Next]}"
+                            Width="28" Height="28"
+                            Padding="0"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                        <PathIcon Data="M7.41,8.59L12,13.17L16.59,8.59L18,10L12,16L6,10L7.41,8.59Z" Width="12" Height="12" />
+                    </Button>
+
+                    <Button x:Name="CloseSearchButton"
+                            Command="{Binding CloseSearchCommand}"
+                            ToolTip.Tip="{Binding Loc[Search_Terminal_Close]}"
+                            Width="28" Height="28"
+                            Padding="0"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                        <PathIcon Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" Width="12" Height="12" />
+                    </Button>
+                </StackPanel>
+            </Border>
         </Grid>
     </ThemeVariantScope>
 </UserControl>

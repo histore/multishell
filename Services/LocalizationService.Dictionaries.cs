@@ -84,6 +84,7 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Verlaufs-Overlay öffnen/schließen (▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Befehlsverlauf öffnen/schließen (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Verzeichnisverlauf öffnen/schließen (▲/▼, Enter)",
+        ["Help_Search_Terminal"] = "Terminal-Textsuche öffnen/schließen (F3/Enter: Weiter, Shift+F3: Zurück, Esc)",
         ["Help_Nav_F1"] = "Diesen Hilfe-Dialog öffnen",
         ["Help_Nav_Esc"] = "Aktives Overlay/Dialog schließen und Terminal fokussieren",
         ["Help_Feature_1"] = "• Tab-Verlauf: Linke Kante berühren oder Strg+Umschalt+H (Befehle) / Strg+Umschalt+L (Verzeichnisse) drücken. Mit Klick/Enter übernehmen, per Rechtsklick direkt ausführen.",
@@ -143,7 +144,15 @@ public partial class LocalizationService
         ["ClosedTabs_RemoveTooltip"] = "Aus Verlauf entfernen",
         ["ClosedTabs_ClearAll"] = "Verlauf leeren",
         ["ClosedTabs_EmptyStateTitle"] = "Zuletzt geschlossene Tabs",
-        ["ClosedTabs_EmptyHint"] = "Keine geschlossenen Tabs im Verlauf"
+        ["ClosedTabs_EmptyHint"] = "Keine geschlossenen Tabs im Verlauf",
+
+        // In-Terminal Search (REQ-TERM-006)
+        ["Search_Terminal_Watermark"] = "Im Terminal suchen...",
+        ["Search_Terminal_Previous"] = "Vorheriger Treffer (Umschalt+Eingabe / Umschalt+F3)",
+        ["Search_Terminal_Next"] = "Nächster Treffer (Eingabe / F3)",
+        ["Search_Terminal_Close"] = "Suche schließen (Esc)",
+        ["Search_Terminal_NoResults"] = "Keine Treffer",
+        ["Search_Terminal_Matches"] = "{0} von {1}"
     };
 
     private static readonly Dictionary<string, string> EnglishStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -225,6 +234,7 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Toggle History Overlay (Navigate with ▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Toggle command history drawer (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Toggle directory history drawer (▲/▼, Enter)",
+        ["Help_Search_Terminal"] = "Open/close in-terminal search (F3/Enter: next, Shift+F3: prev, Esc)",
         ["Help_Nav_F1"] = "Open this Help dialog",
         ["Help_Nav_Esc"] = "Close active overlay / dialog and focus terminal",
         ["Help_Feature_1"] = "• Tab History: Hover left edge or press Ctrl+Shift+H (Commands) / Ctrl+Shift+L (Directories). Left-click/Enter to insert, right-click to execute.",
@@ -280,7 +290,15 @@ public partial class LocalizationService
         ["ClosedTabs_RemoveTooltip"] = "Remove from history",
         ["ClosedTabs_ClearAll"] = "Clear History",
         ["ClosedTabs_EmptyStateTitle"] = "Recently Closed Tabs",
-        ["ClosedTabs_EmptyHint"] = "No closed tabs in history"
+        ["ClosedTabs_EmptyHint"] = "No closed tabs in history",
+
+        // In-Terminal Search (REQ-TERM-006)
+        ["Search_Terminal_Watermark"] = "Find in terminal...",
+        ["Search_Terminal_Previous"] = "Previous match (Shift+Enter / Shift+F3)",
+        ["Search_Terminal_Next"] = "Next match (Enter / F3)",
+        ["Search_Terminal_Close"] = "Close search (Esc)",
+        ["Search_Terminal_NoResults"] = "No results",
+        ["Search_Terminal_Matches"] = "{0} of {1}"
     };
 
     private static readonly Dictionary<string, string> FrenchStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -362,6 +380,7 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Afficher/Masquer le volet d'historique (▲/▼, Entrée)",
         ["Help_Hist_Commands"] = "Afficher/Masquer l'historique des commandes (▲/▼, Entrée)",
         ["Help_Hist_Directories"] = "Afficher/Masquer l'historique des répertoires (▲/▼, Entrée)",
+        ["Help_Search_Terminal"] = "Ouvrir/fermer la recherche dans le terminal (F3/Entrée: suivant, Échap)",
         ["Help_Nav_F1"] = "Ouvrir cette boîte de dialogue d'aide",
         ["Help_Nav_Esc"] = "Fermer le dialogue actif et donner le focus au terminal",
         ["Help_Feature_1"] = "• Historique : Survoler le bord gauche ou Ctrl+Maj+H (Commandes) / Ctrl+Maj+L (Répertoires). Clic/Entrée pour insérer, clic droit pour exécuter.",
@@ -421,7 +440,15 @@ public partial class LocalizationService
         ["ClosedTabs_RemoveTooltip"] = "Supprimer de l'historique",
         ["ClosedTabs_ClearAll"] = "Effacer l'historique",
         ["ClosedTabs_EmptyStateTitle"] = "Onglets récemment fermés",
-        ["ClosedTabs_EmptyHint"] = "Aucun onglet fermé dans l'historique"
+        ["ClosedTabs_EmptyHint"] = "Aucun onglet fermé dans l'historique",
+
+        // In-Terminal Search (REQ-TERM-006)
+        ["Search_Terminal_Watermark"] = "Rechercher dans le terminal...",
+        ["Search_Terminal_Previous"] = "Occurrence précédente (Maj+Entrée / Maj+F3)",
+        ["Search_Terminal_Next"] = "Occurrence suivante (Entrée / F3)",
+        ["Search_Terminal_Close"] = "Fermer la recherche (Échap)",
+        ["Search_Terminal_NoResults"] = "Aucun résultat",
+        ["Search_Terminal_Matches"] = "{0} sur {1}"
     };
 
     private static readonly Dictionary<string, string> SpanishStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -503,6 +530,7 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Alternar panel de historial (Navegar con ▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Alternar historial de comandos (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Alternar historial de directorios (▲/▼, Enter)",
+        ["Help_Search_Terminal"] = "Abrir/cerrar búsqueda en la terminal (F3/Enter: siguiente, Esc)",
         ["Help_Nav_F1"] = "Abrir este diálogo de ayuda",
         ["Help_Nav_Esc"] = "Cerrar el diálogo activo y enfocar el terminal",
         ["Help_Feature_1"] = "• Historial: Pase el ratón por el borde izquierdo o Ctrl+Mayús+H (Comandos) / Ctrl+Mayús+L (Directorios). Clic/Enter para insertar, clic derecho para ejecutar.",
@@ -558,7 +586,15 @@ public partial class LocalizationService
         ["ClosedTabs_RemoveTooltip"] = "Eliminar del historial",
         ["ClosedTabs_ClearAll"] = "Borrar historial",
         ["ClosedTabs_EmptyStateTitle"] = "Pestañas cerradas recientemente",
-        ["ClosedTabs_EmptyHint"] = "No hay pestañas cerradas en el historial"
+        ["ClosedTabs_EmptyHint"] = "No hay pestañas cerradas en el historial",
+
+        // In-Terminal Search (REQ-TERM-006)
+        ["Search_Terminal_Watermark"] = "Buscar en la terminal...",
+        ["Search_Terminal_Previous"] = "Coincidencia anterior (Mayús+Intro / Mayús+F3)",
+        ["Search_Terminal_Next"] = "Siguiente coincidencia (Intro / F3)",
+        ["Search_Terminal_Close"] = "Cerrar búsqueda (Esc)",
+        ["Search_Terminal_NoResults"] = "Sin resultados",
+        ["Search_Terminal_Matches"] = "{0} de {1}"
     };
 
     private static readonly Dictionary<string, string> ItalianStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -640,6 +676,7 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Attiva pannello cronologia (Naviga con ▲/▼, Invio)",
         ["Help_Hist_Commands"] = "Attiva cronologia comandi (▲/▼, Invio)",
         ["Help_Hist_Directories"] = "Attiva cronologia directory (▲/▼, Invio)",
+        ["Help_Search_Terminal"] = "Apri/chiudi ricerca nel terminale (F3/Invio: successivo, Esc)",
         ["Help_Nav_F1"] = "Apri questa finestra di guida",
         ["Help_Nav_Esc"] = "Chiudi finestra / dialogo attivo e focalizza il terminale",
         ["Help_Feature_1"] = "• Cronologia scheda: Passa il mouse sul bordo sinistro o premi Ctrl+Shift+H (Comandi) / Ctrl+Shift+L (Directory). Clic sinistro/Invio per inserire, clic destro per eseguire.",
@@ -692,10 +729,19 @@ public partial class LocalizationService
         // Recently Closed Tabs History (REQ-TAB-021)
         ["ClosedTabs_Title"] = "Schede chiuse di recente",
         ["ClosedTabs_RestoreTooltip"] = "Ripristina scheda con cronologia",
+        // Recently Closed Tabs History (REQ-TAB-021)
         ["ClosedTabs_RemoveTooltip"] = "Rimuovi dalla cronologia",
         ["ClosedTabs_ClearAll"] = "Cancella cronologia",
         ["ClosedTabs_EmptyStateTitle"] = "Schede chiuse di recente",
-        ["ClosedTabs_EmptyHint"] = "Nessuna scheda chiusa nella cronologia"
+        ["ClosedTabs_EmptyHint"] = "Nessuna scheda chiusa nella cronologia",
+
+        // In-Terminal Search (REQ-TERM-006)
+        ["Search_Terminal_Watermark"] = "Cerca nel terminale...",
+        ["Search_Terminal_Previous"] = "Corrispondenza precedente (Maiusc+Invio / Maiusc+F3)",
+        ["Search_Terminal_Next"] = "Corrispondenza successiva (Invio / F3)",
+        ["Search_Terminal_Close"] = "Chiudi ricerca (Esc)",
+        ["Search_Terminal_NoResults"] = "Nessun risultato",
+        ["Search_Terminal_Matches"] = "{0} di {1}"
     };
 
     private static readonly Dictionary<string, string> PortugueseStrings = new(StringComparer.OrdinalIgnoreCase)
@@ -777,6 +823,7 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Alternar painel de histórico (Navegar com ▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Alternar histórico de comandos (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Alternar histórico de diretórios (▲/▼, Enter)",
+        ["Help_Search_Terminal"] = "Abrir/fechar pesquisa no terminal (F3/Enter: seguinte, Esc)",
         ["Help_Nav_F1"] = "Abrir este diálogo de ajuda",
         ["Help_Nav_Esc"] = "Fechar sobreposição / diálogo ativo e focar no terminal",
         ["Help_Feature_1"] = "• Histórico do separador: Passe o rato na margem esquerda ou prima Ctrl+Shift+H (Comandos) / Ctrl+Shift+L (Diretórios). Clique esquerdo/Enter para inserir, clique direito para executar.",
@@ -832,6 +879,14 @@ public partial class LocalizationService
         ["ClosedTabs_RemoveTooltip"] = "Remover do histórico",
         ["ClosedTabs_ClearAll"] = "Limpar histórico",
         ["ClosedTabs_EmptyStateTitle"] = "Separadores fechados recentemente",
-        ["ClosedTabs_EmptyHint"] = "Nenhum separador fechado no histórico"
+        ["ClosedTabs_EmptyHint"] = "Nenhum separador fechado no histórico",
+
+        // In-Terminal Search (REQ-TERM-006)
+        ["Search_Terminal_Watermark"] = "Localizar no terminal...",
+        ["Search_Terminal_Previous"] = "Correspondência anterior (Shift+Enter / Shift+F3)",
+        ["Search_Terminal_Next"] = "Próxima correspondência (Enter / F3)",
+        ["Search_Terminal_Close"] = "Fechar pesquisa (Esc)",
+        ["Search_Terminal_NoResults"] = "Nenhum resultado",
+        ["Search_Terminal_Matches"] = "{0} de {1}"
     };
 }

@@ -276,7 +276,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                         _tabCounter++;
                         var title = string.IsNullOrWhiteSpace(tabState.Title) ? GetDefaultTitle(tabState.ShellType, _tabCounter) : tabState.Title;
                         var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType);
-                        var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService);
+                        var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
                         tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
                         RegisterTabEvents(tabVm);
                         Tabs.Add(tabVm);

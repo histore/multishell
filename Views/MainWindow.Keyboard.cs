@@ -58,6 +58,15 @@ public partial class MainWindow
                 e.Handled = true;
                 return;
             }
+            if (e.Key == Key.F)
+            {
+                if (DataContext is MainViewModel searchVm && searchVm.SelectedTab != null)
+                {
+                    searchVm.SelectedTab.OpenSearch();
+                    e.Handled = true;
+                    return;
+                }
+            }
         }
 
         // When History Drawer is open, capture all navigation keys globally
@@ -164,6 +173,22 @@ public partial class MainWindow
             return;
         }
 
+        // F3 / Shift+F3: In-Terminal Search Match Navigation (REQ-TERM-006)
+        if (e.Key == Key.F3 && DataContext is MainViewModel f3Vm && f3Vm.SelectedTab?.IsSearchOpen == true)
+        {
+            var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+            if (isShift)
+            {
+                f3Vm.SelectedTab.SearchPrevious();
+            }
+            else
+            {
+                f3Vm.SelectedTab.SearchNext();
+            }
+            e.Handled = true;
+            return;
+        }
+
         // Escape: Close active dialog or drawer
         if (e.Key == Key.Escape)
         {
@@ -195,6 +220,13 @@ public partial class MainWindow
             if (HistoryDrawer?.IsVisible == true)
             {
                 HideHistoryDrawerAndFocusTerminal();
+                e.Handled = true;
+                return;
+            }
+            if (DataContext is MainViewModel tvm && tvm.SelectedTab?.IsSearchOpen == true)
+            {
+                tvm.SelectedTab.CloseSearch();
+                FocusActiveTerminal();
                 e.Handled = true;
                 return;
             }
