@@ -3,6 +3,8 @@
 ## Overview
 This workspace employs specialized subagent roles to enforce **Clean Code**, **Clean Architecture**, modern **C# 13 / .NET 10 / Avalonia UI 11.2** best practices, maximum **UI/UX usability**, full **Internationalization (i18n & l10n)**, high performance, robust security, systematic **Root Cause Analysis (Troubleshooting)**, high automated test coverage, and strict context isolation.
 
+All skills and governance rules reference the Single Source of Truth in `_agents/rules/model-tiers.json` and adapt dynamically to the project's technical conventions.
+
 ## Core Governance & Architecture Rules
 1. **Clean Architecture Principles**:
    - Strict separation of concerns across layers (Domain/Entities -> Application/Service Contracts -> ViewModels/Adapters -> Views/Presentation).
@@ -11,16 +13,22 @@ This workspace employs specialized subagent roles to enforce **Clean Code**, **C
    - SOLID, DRY, KISS, YAGNI, Boy Scout Rule, and descriptive naming.
    - Modern C# idioms (nullable reference types, async/await with cancellation tokens, records, pattern matching, efficient collection expressions).
    - Avalonia UI conventions (compiled bindings `x:DataType`, CommunityToolkit.Mvvm source generators, decoupled XAML styles).
-   - English source code comments.
-3. **Core Workflow vs. Domain Specialists**:
-   - **Core Lifecycle Roles** handle the general development lifecycle: `RequirementEngineer`, `Architekt`, `Tester`, `Developer`, `Verifikation`, `CommitManager`, `PRManager`, supported by generalists (`Troubleshooter`, `RefactoringSpecialist`, `ArchitectureSync`, `DocumentationSpecialist`, `Tiebreaker`).
-   - **Domain Specialists** (`UIDesigner`, `LocalizationSpecialist`, `TerminalEngineSpecialist`, `PerformanceOptimizer`, `SecurityAuditor`) are bound to their specific technical domain rather than a single library or framework.
-   - **On-Demand Domain Invocation**: Domain specialists are engaged selectively when features or bugs touch their specific area.
-4. **Automated Testing, Quality & Stub-First TDD**:
-   - Standard feature development and bugfixing adhere strictly to **Stub-First Test-Driven Development (TDD)** (Red-Green-Refactor).
-   - **Phase RED**: The `Tester` authors xUnit tests in `MultiShell.Tests` against acceptance criteria and the `Architekt`'s compilable skeleton stubs (`NotImplementedException`) *before* production code is implemented, verifying that tests compile cleanly and fail semantically.
-   - **Phase GREEN**: The `Developer` implements production code strictly to turn failing tests green. The **Test Immutability Constraint** strictly forbids the developer from altering test files or relaxing assertions.
-   - **Circuit Breaker**: The `Developer`'s local feedback loop (`Code` -> `Run Tests` -> `Fix`) is capped at a maximum of 3 iterations before escalating to `Tiebreaker` or the user.
+   - All source code comments and docstrings must be written in English.
+3. **Core Workflow vs. Domain & Lifecycle Specialists**:
+   - **Core Lifecycle Roles** handle the general development lifecycle: `Control`, `RequirementEngineer`, `Architekt`, `Developer`, `Tester`, `Verifikation`, `CommitManager`, `PRManager`.
+   - **Lifecycle & Domain Specialists** (e.g., `Troubleshooter`, `GitTroubleshooter`, `RefactoringSpecialist`, `ArchitectureSync`, `DocumentationSpecialist`, `DevOpsEngineer`, `UIDesigner`, `LocalizationSpecialist`, `PerformanceOptimizer`, `SecurityAuditor`, `DatabaseSpecialist`, `ApiContractSpecialist`, `ReleaseManager`, `Tiebreaker`, `CodeExplainer`) are engaged **on-demand**.
+   - **On-Demand Specialist Invocation**: Specialists are not mandatory serial steps on every commit. They are engaged selectively when features or bugs explicitly touch their specific domain.
+4. **Automated Testing, Quality & Inner-Loop TDD**:
+   - Standard feature development and bugfixing adhere to **Inner-Loop Test-Driven Development (TDD)** (Red-Green-Refactor) adapted to task complexity:
+     - **Profile A (Fast-Track - Bugs, Tweaks, Small Features)**: Developer authors targeted unit tests and implementation code directly in a single, fast red-green-refactor loop.
+     - **Profile B (Standard Features)**: Architecture contract established -> Developer implements unit tests and code via Inner-Loop TDD -> Verifikation quality gate.
+     - **Profile C (Complex / Architectural)**: Modular architecture contracts -> Optional skeleton stubs for parallel decoupling -> Comprehensive integration test suites by `Tester` -> Developer implementation.
+   - **Targeted Test Execution**: During inner loops, test runners must target only the affected test file or class (`dotnet test --filter`), executing the full test suite once during final verification to prevent full-suite build thrashing.
+   - **Two-Stage Quality Gate (Shift-Left Validation)**:
+     - **Stage 1 (Deterministic Fast-Gate - Zero Tokens)**: Native build (`dotnet build`), project linter, and quiet native test runner (`dotnet test --verbosity quiet`, 0 errors, 100% pass). If failing, immediately return for remediation without consuming LLM tokens on semantic analysis.
+     - **Stage 2 (Concise Traceability Gate)**: `Verifikation` audits acceptance criteria fulfillment and Clean Architecture boundaries.
+   - **Test Integrity Guardrail**: Replaces rigid test immutability. The Developer is empowered to adjust and refine test fixtures, signatures, and assertions to match real contracts and idiomatic types. Weakening, bypassing, or deleting assertions to fake passing tests is strictly forbidden.
+   - **Circuit Breaker**: The `Developer`'s targeted test-fix feedback loop is capped at a maximum of 3 iterations before escalating.
    - **Comprehensive Scenario Coverage**: Unit and integration tests follow the Arrange-Act-Assert (AAA) pattern with a required 100% pass rate (0 failures).
 5. **Internationalization & Localization (i18n / l10n)**:
    - 0% hardcoded user-facing strings; all texts must be managed in dynamic bilingual resource dictionaries in **German (`de`)** and **English (`en`)** (with expanded language support for French, Spanish, Italian, Portuguese).
@@ -31,7 +39,11 @@ This workspace employs specialized subagent roles to enforce **Clean Code**, **C
 9. **Immutability of Existing Requirements**: Existing requirements may only be modified with explicit user instruction.
 10. **100% Coverage**: 100% of code/system changes must be covered by approved requirements.
 11. **Dynamic Model Allocation & Universal Execution Strategy**:
-    - The `Control` agent assigns capability tiers (Tier 1 to Tier 4) and reasoning depth (Thinking Budget: High/Extended, Medium, Low/Fast) matched to the available LLM models in the user's environment, using the current generation (**Gemini 3.8 Pro / Flash**) as reference standard with graceful single-model fallback.
+    - Model tiers and execution modes are declaratively defined in the Single Source of Truth: [`_agents/rules/model-tiers.json`](_agents/rules/model-tiers.json).
+    - **Compound Phased Execution (Default Strategy)**: Core development workflows (Plan -> Inner-Loop TDD -> Verify -> Commit) execute within a **continuous conversation thread** via phased persona transitions. This preserves prefix continuity, unlocking **75–90% prompt caching / KV-cache discounts** and eliminating multi-agent spawn latency.
+    - **Selective Subagent Forking (`invoke_subagent`)**: Reserved strictly for **divergent research**, broad multi-file repository exploration, web lookups, or independent background sidecars to keep exploratory token noise out of the primary thread.
+    - **Terminal & Context Hygiene**: All PowerShell commands must use `-NoProfile`. Testrunners must run in quiet mode (`dotnet test --verbosity quiet`) to prevent terminal logs from bloating the context window.
+    - **Sequential Persona Mode (Copilot / Cursor / Single-Model)**: Uses prompt-modulated thinking budgets (Extended for Tier 1, Low/Minimal for Tier 3/4).
 12. **Branch & PR Process Model with Developer Testing & Review Gate**: All development must occur on dedicated branches (`feat/`, `fix/`, `refactor/`, `chore/`, `docs/`). Prior to Pull Request creation, the developer is provided with the opportunity to review the code, test application functionality interactively/manually, and request adjustments or fixes. Merging into `main` occurs solely via Pull Requests using Squash-and-Merge after explicit user sign-off and passing CI per [CONTRIBUTING.md](CONTRIBUTING.md).
 13. **Four-Step Codebase Analysis Protocol**:
     When exploring, analyzing, or diagnosing the codebase, agents must strictly follow four progressive steps:
@@ -47,39 +59,28 @@ This workspace employs specialized subagent roles to enforce **Clean Code**, **C
     4. **Gate Invariance**: All interactive review gates and safety validations (e.g. commit message confirmation, PR description review, SemVer release tag approval) remain mandatory and cannot be bypassed.
     5. **Explicit User Override**: The user may explicitly instruct deviating or combined behavior at any time (e.g. "commit and push directly").
     6. **Atypical State & Anomaly Gate**: If following these instructions would produce an unusual state or require non-standard/atypical measures (e.g. detached HEAD, merge conflicts, unexpected untracked files, unverified release states, cross-cutting multi-scope changes), the agent must pause, describe the situation, and prompt the user for explicit confirmation before proceeding.
+15. **Adaptive Governance & Strictness Levels**:
+    - `Control` establishes and propagates a `Strictness Level` context:
+      - **Enterprise (Default)**: Strict adherence to Clean Architecture, 100% test coverage, and full Requirement mapping.
+      - **Legacy**: Tolerates architectural deviations and missing tests (does not block verification), but requires Stage 1 compilation success.
+      - **Prototype**: Focuses on speed (MVP). Architecture documentation and TDD are strictly optional.
 
-## Subagent Roles & Model Profiles
+## Subagent Roles & Governance Mappings
+All 22 specialized subagent roles, their cognitive tiers, reference models, and thinking budgets are declaratively maintained in the Single Source of Truth: [`_agents/rules/model-tiers.json`](_agents/rules/model-tiers.json).
+- **Core Lifecycle Roles**: `Control`, `RequirementEngineer`, `Architekt`, `Developer`, `Tester`, `Verifikation`, `CommitManager`, `PRManager`.
+- **Lifecycle Specialists (On-Demand)**: `Troubleshooter`, `GitTroubleshooter`, `CodeExplainer`, `RefactoringSpecialist`, `DocumentationSpecialist`, `ArchitectureSync`, `DevOpsEngineer`, `ReleaseManager`.
+- **Domain Specialists (On-Demand)**: `UIDesigner`, `LocalizationSpecialist`, `PerformanceOptimizer`, `SecurityAuditor`, `DatabaseSpecialist`, `ApiContractSpecialist`.
 
-### Core Lifecycle Roles (Standard Workflow)
-1. **Control**: Orchestrates Stub-First TDD workflow pipelines, breaks down tasks, enforces lifecycle action governance and iteration caps, assigns model capability tiers / reasoning levels, incorporates domain specialists when appropriate, provides strictly minimal context packages, and facilitates the Developer Testing & Review gate before PR creation.
-2. **RequirementEngineer** (`Tier 1 - Deep Reasoning | High/Extended Thinking` - Ref: `Gemini 3.8 Pro`): Translates user requirements into explicit user stories and Given-When-Then acceptance criteria, checking for duplicates/conflicts.
-3. **Architekt** (`Tier 1 - Deep Reasoning | High/Extended Thinking` - Ref: `Gemini 3.8 Pro`): Defines contracts, interfaces, dependency management, and layer structure following Clean Architecture & MVVM. Generates compilable skeleton stubs (`NotImplementedException`) to enable Phase RED testing. Consults domain specialists for domain contracts.
-4. **Tester** (`Tier 3 - Balanced Implementation | Medium Reasoning` - Ref: `Gemini 3.8 Flash`): Implements Phase RED unit/integration tests in `MultiShell.Tests` against stubs/spec before code implementation, verifies semantic failures, and certifies 100% pass rates post-implementation via `dotnet test` (AAA pattern, 0 failures).
-5. **Developer** (`Tier 3 - Balanced Implementation | Medium Reasoning` - Ref: `Gemini 3.8 Flash`): Implements Phase GREEN production code strictly to satisfy failing tests without modifying test files, adhering to Clean Code, project conventions, and the 3-iteration circuit breaker.
-6. **Verifikation** (`Tier 1 - Deep Reasoning | High/Extended Thinking` - Ref: `Gemini 3.8 Pro`): Quality gate auditing acceptance criteria, 100% requirements coverage, test pass rate, Clean Code, performance, security, test immutability compliance, and architectural integrity before handing over to developer testing.
-7. **CommitManager** (`Tier 4 - Fast & Deterministic | Low/Fast Reasoning` - Ref: `Gemini 3.8 Flash`): Manages Git commit and push actions with atomic isolation, resolves prerequisite commits when push is requested, offers push after commit, halts on atypical workspace states, and requires interactive user confirmation.
-8. **PRManager** (`Tier 4 - Fast & Deterministic | Low/Fast Reasoning` - Ref: `Gemini 3.8 Flash`): Manages the Pull Request lifecycle (prerequisite push/commit resolution, template drafting, `gh pr create`, delayed-polling CI checks, squash-merge, and proactive next-step guidance) strictly on-demand after approval.
+Operational execution instructions are defined exclusively in each role's skill specification in `_agents/skills/`.
 
-### General Support Roles (Lifecycle Specialists)
-9. **Troubleshooter** (`Tier 1 - Deep Reasoning | High/Extended Thinking` - Ref: `Gemini 3.8 Pro`): Diagnoses bugs, analyzes call stacks and UI event hierarchies, identifies root causes, and specifies minimal failing reproduction tests for the Tester (Phase RED handoff). Consults domain specialists for domain-specific subsystems.
-10. **RefactoringSpecialist** (`Tier 3 - Balanced Implementation | Medium Reasoning` - Ref: `Gemini 3.8 Flash`): Audits code smells and technical debt, designing safe, test-backed refactorings.
-11. **DocumentationSpecialist** (`Tier 3 - Balanced Implementation | Medium Reasoning` - Ref: `Gemini 3.8 Flash`): Authors XML doc comments (`///`), user manuals, and in-app help guides in English.
-12. **ReleaseManager** (`Tier 4 - Fast & Deterministic | Low/Fast Reasoning` - Ref: `Gemini 3.8 Flash`): Manages deployment pipelines, single-file self-contained packaging, Native AOT readiness, SemVer tag calculation, prerequisite branch/sync verification, anomaly detection, and tag creation & push upon user approval.
-13. **Tiebreaker** (`Tier 1 - Deep Reasoning | High/Extended Thinking` - Ref: `Gemini 3.8 Pro`): Monitors active operations, detects loops/deadlocks/thrashing, and enforces remediation via strategy pivots, model upgrades, context purges, or user escalation.
-14. **CodeExplainer** (`Tier 1 - Deep Reasoning | High/Extended Thinking` - Ref: `Gemini 3.8 Pro`): Analyzes and explains source code, control/data flows, and architectural decisions in the user's operating system language, inserting clear English didactic comments directly into code files.
-15. **ArchitectureSync** (`Tier 3 - Balanced Implementation | Medium Reasoning` - Ref: `Gemini 3.8 Flash`): Incrementally audits and synchronizes system architecture (`ARCHITECTURE.md` and `docs/architecture/modules/*.md`) from git deltas, using zero-token pre-filtering scripts to avoid unnecessary scans and prevent context degradation.
-
-### Domain Specialists (Engaged On-Demand by Control or Consulted by Skills)
-16. **UIDesigner** (`Tier 2 - Advanced Analytical | High Reasoning` - Ref: `Gemini 3.8 Flash`): Designs intuitive, aesthetically outstanding, and accessible user interfaces and interaction flows optimized for maximum usability.
-17. **LocalizationSpecialist** (`Tier 3 - Balanced Implementation | Medium Reasoning` - Ref: `Gemini 3.8 Flash`): Audits code and XAML for i18n compliance, extracts hardcoded strings, and maintains complete bilingual resources (`de`/`en`).
-18. **TerminalEngineSpecialist** (`Tier 1 - Deep Reasoning | High/Extended Thinking` - Ref: `Gemini 3.8 Pro`): Deeply analyzes and optimizes Win32 ConPTY handles, ANSI/VT100 streams, OSC 7/9/133 integration, TrueColor palettes, and zero-allocation UTF-8 decoding.
-19. **PerformanceOptimizer** (`Tier 2 - Advanced Analytical | High Reasoning` - Ref: `Gemini 3.8 Flash`): Identifies allocation hotspots, memory leaks, and ConPTY streaming bottlenecks, optimizing data throughput and UI responsiveness.
-20. **SecurityAuditor** (`Tier 2 - Advanced Analytical | High Reasoning` - Ref: `Gemini 3.8 Flash`): Audits process execution safety, secret leak prevention, dependency CVEs (NuGetAudit), command injection risks, safe path handling, and state serialization security.
-
-## Context Isolation Protocol
+## Context Isolation & Compaction Protocol
 - Subagents must be called with only the minimum context required for their specific role.
 - Intermediate results (e.g. root cause reports, UX blueprints, i18n dictionaries, architecture contracts, diffs, acceptance criteria) are passed downstream sequentially.
 - No role shall receive bloated discussion history or unrelated files.
+- **Proactive Context Compaction & Phase Checkpointing**:
+  - `Control` executes explicit context compaction at major phase boundaries (e.g., Plan -> Implementation, or between distinct user tasks).
+  - Before transitioning or starting a new task, synthesize a concise **State Checkpoint** (active goal, touched files, verified architecture facts, next concrete steps).
+  - Discard obsolete intermediate trial-and-error logs, failed compilation attempts, and transient conversation history, while strictly preserving top-of-context system rules to maximize KV-cache prefix hits.
 
 ## Client Directory Compatibility (`.agents` vs. `_agents`)
 - **Gemini / Antigravity**: Seamlessly supports both `_agents` and `.agents` customization roots.

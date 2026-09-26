@@ -44,22 +44,22 @@ git submodule update --remote _agents
 
 ## 2. End-to-End Development Lifecycle
 
-Every code change moves through a structured, quality-gated 9-stage lifecycle adhering to **Stub-First Test-Driven Development (TDD)**:
+Every code change moves through a structured, quality-gated lifecycle adhering to **Inner-Loop Test-Driven Development (TDD)** and **Two-Stage Quality Gates**:
 
 ```mermaid
 flowchart TD
-    A["1. Requirement / Issue"] -->|"RequirementEngineer"| B["2. Create Branch"]
-    B -->|"Architekt"| C1["3a. Skeleton Stubs (Phase RED)"]
-    C1 -->|"Tester"| C2["3b. Failing Tests (MultiShell.Tests)"]
-    C2 -->|"Developer & UIDesigner"| C3["3c. Production Code (Phase GREEN)"]
-    C3 -->|"Tester"| D["4. Automated Test Verification (dotnet test)"]
-    D -->|"Verifikation"| E["5. Quality & Immutability Gate"]
+    A["1. Requirement / Issue"] -->|"RequirementEngineer / Control"| B["2. Create Branch & Sizing"]
+    B -->|"Architekt"| C1["3a. Architecture & Contracts (Profile B/C)"]
+    C1 -->|"Developer (Inner-Loop TDD)"| C2["3b. Targeted Tests & Implementation"]
+    B -->|"Fast-Track (Profile A)"| C2
+    C2 -->|"Stage 1 (Zero-Token Fast-Gate)"| D["4. Build, Lint & dotnet test --verbosity quiet"]
+    D -->|"Stage 2 (Traceability Gate)"| E["5. Verifikation & Quality Gate"]
     E -->|"Pass"| F["6. Developer Review & Live Testing Gate"]
-    F -->|"Needs Changes / Corrections"| C3
+    F -->|"Needs Changes / Corrections"| C2
     F -->|"Approved"| G["7. Commit & Push via CommitManager"]
     G -->|"PRManager"| H["8. Open PR & CI Check"]
     H -->|"GitHub Actions CI"| I{"CI Build & Test Pass?"}
-    I -->|"No"| C3
+    I -->|"No"| C2
     I -->|"Yes"| J["9. Maintainer Review & Squash Merge (PRManager)"]
     J -->|"ReleaseManager"| K["SemVer Tag vX.Y.Z & GitHub Release"]
 ```
@@ -68,22 +68,25 @@ flowchart TD
 - Verify that every user story is documented in [REQUIREMENTS.md](REQUIREMENTS.md) with explicit **Given-When-Then** acceptance criteria.
 - 100% of functional changes must map to approved requirement IDs (e.g., `REQ-HIST-002`).
 
-### Stage 2: Branch Creation
+### Stage 2: Branch Creation & Adaptive Pipeline Classification (`Control`)
 ```powershell
 git checkout main
 git pull origin main
 git checkout -b feat/REQ-025-tab-split-view
 ```
+- Tasks are classified into adaptive pipelines:
+  - **Profile A (Fast-Track - Bugs, Tweaks, Small Scripts)**: Bypasses `RequirementEngineer` / `Architekt`, routing directly to `Developer` inner-loop TDD.
+  - **Profile B (Standard Features)**: Architecture Contract -> Developer Inner-Loop TDD -> Verifikation.
+  - **Profile C (Complex / Architectural)**: Modular Architecture Contracts -> Optional Skeleton Stubs -> Integration Test Suite (`Tester`) -> Implementation (`Developer`).
 
-### Stage 3: Stub-First TDD Implementation (`Architekt`, `Tester`, `Developer` & `UIDesigner`)
-MultiShell adheres strictly to **Stub-First Test-Driven Development (TDD)** (Red-Green-Refactor):
-- **Phase RED (Stubs & Failing Tests)**:
-  - The `Architekt` defines interfaces and compiles skeleton stubs throwing `NotImplementedException`.
-  - The `Tester` implements xUnit unit/integration tests in [MultiShell.Tests](MultiShell.Tests/) adhering to the Arrange-Act-Assert (AAA) pattern *before* production logic is written, verifying that tests compile cleanly and fail semantically.
-- **Phase GREEN (Production Code)**:
+### Stage 3: Inner-Loop TDD Implementation (`Developer`, `UIDesigner` & `Architekt`)
+MultiShell adheres to **Inner-Loop Test-Driven Development (TDD)** (Red-Green-Refactor):
+- **Targeted Test Execution**:
+  - During the inner feedback loop, execute only affected tests (`dotnet test --filter <TestClass>`) to eliminate full-suite build thrashing.
+- **Production Code & Clean Architecture**:
   - The `Developer` (and `UIDesigner`) implement domain logic, services, view models, and views strictly to turn failing tests green.
-  - **Test Immutability Constraint**: The developer is strictly forbidden from altering test files or relaxing assertions.
-  - **Circuit Breaker**: The local feedback loop (`Code` -> `dotnet test` -> `Fix`) is capped at a maximum of 3 iterations before escalating.
+  - **Test Integrity Guardrail**: The developer is empowered to adjust test fixtures, signatures, and mock setups to match real architectural contracts, but is strictly forbidden from weakening, bypassing, or deleting assertions to fake passing tests.
+  - **Circuit Breaker**: The local feedback loop (`Code` -> `dotnet test --filter` -> `Fix`) is capped at a maximum of 3 iterations before escalating.
   - Respect layer separation:
     - **Models**: Pure domain objects, DTOs, and serialization models.
     - **Services**: Interfaces (`I...Service`) and infrastructure implementations (ConPTY Win32 bindings, theme manager, fuzzy search).
@@ -91,16 +94,17 @@ MultiShell adheres strictly to **Stub-First Test-Driven Development (TDD)** (Red
     - **Views**: Compiled bindings (`x:DataType`), decoupled styles, zero business logic in code-behind.
   - **i18n Compliance**: Zero hardcoded UI strings; all user-facing texts must be referenced in dynamic localization dictionaries (German `de` & English `en` mandatory).
 
-### Stage 4: Automated Testing Verification (`Tester`)
-- Execute the full automated test suite locally:
-  ```powershell
-  dotnet test MultiShell.Tests/MultiShell.Tests.csproj
-  ```
-- A 100% pass rate with 0 failures is strictly required before verification handoff.
-
-### Stage 5: Local Quality & Security Gate Audit (`Verifikation` & `SecurityAuditor`)
-- Verify 0 test failures, 0 compiler warnings, clean formatting, and **test immutability compliance**.
-- Confirm full requirement coverage and bilingual localization resources.
+### Stage 4 & 5: Two-Stage Quality Gate Audit (`Verifikation` & `SecurityAuditor`)
+- **Stage 1 (Deterministic Fast-Gate - Zero Tokens)**:
+  - Clean build (`dotnet build`) with 0 warnings/errors.
+  - Quiet full test runner pass:
+    ```powershell
+    dotnet test MultiShell.Tests/MultiShell.Tests.csproj --verbosity quiet
+    ```
+  - 100% pass rate with 0 failures is strictly required. If failing, returns immediately to Developer without consuming LLM tokens on semantic analysis.
+- **Stage 2 (Concise Traceability Gate)**:
+  - Verify acceptance criteria fulfillment, architectural invariants, and test integrity compliance.
+  - Confirm full requirement coverage and bilingual localization resources.
 - **Security & Secret Audit (`SecurityAuditor`)**:
   - Audit staged diffs for accidental credentials, tokens, or private keys.
   - Verify dependency health and CVE status:
