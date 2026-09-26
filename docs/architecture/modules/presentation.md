@@ -66,6 +66,10 @@ Backs an individual terminal tab instance:
   * `DirectoryHistory`: List of visited working directories captured via OSC 7 / OSC 9;9.
 * Concurrency-Hardened Fuzzy Search:
   * `RefreshFilteredCommands()` and `RefreshFilteredDirectories()` take `.ToArray()` snapshots of history collections before invoking `_fuzzySearchService.FilterAndRank` to eliminate concurrent collection modification exceptions during background streaming.
+* In-Terminal Search State & Navigation (REQ-TERM-006):
+  * Exposes `IsSearchOpen`, `SearchQuery`, `SearchResultCount`, `CurrentSearchResultIndex`, and `SearchMatchSummary` (`"m/n"` or `"No results"`).
+  * Commands: `OpenSearchCommand`, `CloseSearchCommand`, `ToggleSearchCommand`, `SearchNextCommand`, `SearchPreviousCommand`.
+  * Events: `FocusSearchBoxRequested`, `FocusTerminalRequested` ensuring crisp focus transitions between the input overlay and terminal canvas.
 * Handles special keyboard input state (e.g. `IsAltGrActive` for international layouts).
 
 ## 4. UI Rendering & Views
@@ -88,6 +92,7 @@ Backs an individual terminal tab instance:
 * Hosts `SvcSystems.UI.Terminal.TerminalControl`.
 * Maps application themes (Xterm 16 colors and 24-bit TrueColor) to terminal color palettes.
 * Intercepts pointer events for link opening, right-click paste/copy, and focus transfer.
+* Houses the floating `SearchOverlay` border with search input box, match count indicator, and previous/next/close buttons bound to `TerminalTabViewModel`.
 
 ### 4.3 Terminal Focus Management & Restoration (`TerminalFocusHelper`)
 * Solves focus loss when dismissing overlays (History Drawer, Settings modal, Profile dialog) or switching tabs.

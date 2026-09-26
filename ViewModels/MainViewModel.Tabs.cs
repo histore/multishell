@@ -92,7 +92,7 @@ public partial class MainViewModel
         var title = $"{profileVm.IconTag} {nextId}";
         var workingDir = profileVm.WorkingDirectory;
         var session = _shellProcessService.CreateSession(title, workingDir, profileVm.ShellType, profileVm.ExecutablePath, profileVm.Arguments);
-        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService);
+        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
         tab.Title = title;
         tab.UpdateTheme(_themeService.IsDarkTerminalTheme);
         RegisterTabEvents(tab);
@@ -165,7 +165,7 @@ public partial class MainViewModel
 
         var session = _shellProcessService.CreateSession(title, targetDir, shellType, customExe, customArgs);
 
-        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService);
+        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
         if (workingDirectory == null)
         {
             tab.Title = title;
@@ -255,7 +255,7 @@ public partial class MainViewModel
 
         _tabCounter++;
         var session = _shellProcessService.CreateSession(closedItem.Title, closedItem.WorkingDirectory, closedItem.ShellType);
-        var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService);
+        var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
         tabVm.RestoreHistory(closedItem.CommandHistory, closedItem.DirectoryHistory);
         RegisterTabEvents(tabVm);
         Tabs.Add(tabVm);

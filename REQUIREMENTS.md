@@ -63,7 +63,7 @@ This document serves as the single source of truth for all functional and non-fu
 | `REQ-CLI-001` | Startup Arguments & Single-Instance Tab Activation (File / Directory Path) | Core | **IMPLEMENTED** | `StartupPathResolverTests`, `SingleInstanceServiceTests` |
 | `REQ-TAB-024` | File & Folder Drag-and-Drop Navigation, Shift-Tab Creation & Tab Bar Drag-Over Activation | Interaction | **IMPLEMENTED** | `MainViewModelTabTests`, `MainWindow` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits within Tab) | UI | **BACKLOG** | TBD |
-| `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **BACKLOG** | TBD |
+| `REQ-TERM-006` | In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`) | Terminal | **IMPLEMENTED** | `TerminalSearchTests`, `TerminalTabView` |
 | `REQ-TAB-020` | Custom Tab Renaming & Tab Color Palette Tagging | Interaction | **BACKLOG** | TBD |
 | `REQ-TERM-007` | Broadcast / Multi-Input Mode across Tabs / Panes | Terminal | **BACKLOG** | TBD |
 | `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | Interaction | **BACKLOG** | TBD |
@@ -925,6 +925,67 @@ This document serves as the single source of truth for all functional and non-fu
   - **Given** open tabs exceeding the visible tab bar with overflow scroll arrows (`‹` / `›`),
   - **When** hovering over the left or right scroll arrow button during an active drag operation (files/folders or tab drag),
   - **Then** the tab bar auto-scrolls sequentially in that direction with a comfortable cadence (250ms initial dwell delay, then 320ms per tab step) until the pointer leaves the button or the scroll boundary is reached.
+
+---
+
+### REQ-TERM-006: In-Terminal Text & Scrollback Search Overlay (`Ctrl+Shift+F`)
+- **Status**: `IMPLEMENTED`
+- **User Story**: As a user, I want an in-terminal search bar overlay accessible via `Ctrl+Shift+F` so that I can search, highlight, and navigate through text across the active terminal scrollback and screen buffer.
+- **Acceptance Criteria**:
+  - **Given** an active terminal tab in MultiShell,
+  - **When** the user presses `Ctrl+Shift+F`,
+  - **Then** the search overlay appears in the top-right corner of the active terminal and auto-focuses the search input text box.
+  - **When** the user enters a search query in the search box,
+  - **Then** matches are searched within the active terminal's scrollback and screen buffer in real-time, matching occurrences are highlighted or counted, and the total match count and current index are displayed (e.g. `1/14` or `0/0`).
+  - **When** the user presses `Enter` or clicks the `Next` button (`↓`),
+  - **Then** the terminal scrolls to and focuses the next matching occurrence downwards.
+  - **When** the user presses `Shift+Enter` or clicks the `Previous` button (`↑`),
+  - **Then** the terminal scrolls to and focuses the previous matching occurrence upwards.
+  - **When** the user toggles the `Match Case` (`Aa`) option,
+  - **Then** searching respects or ignores character casing accordingly.
+  - **When** the user toggles the `Regular Expression` (`.*`) option,
+  - **Then** searching evaluates the query as a regex pattern (falling back gracefully if regex is invalid).
+  - **When** the user presses `Escape` while the search overlay is open,
+  - **Then** the search overlay closes and keyboard focus is immediately restored to the active terminal.
+  - **When** switching to another tab,
+  - **Then** each tab retains its own independent search state or closes gracefully without leaking focus.
+
+---
+
+### REQ-TAB-020: Custom Tab Renaming & Tab Color Palette Tagging
+- **Status**: `BACKLOG`
+- **User Story**: As a user, I want to rename terminal tabs with custom titles (via double-click or context menu) and assign colored accent tags so that I can easily identify and organize parallel workspaces.
+- **Acceptance Criteria**:
+  - **Given** an open tab in MultiShell,
+  - **When** the user double-clicks the tab header title or selects `Rename Tab` from the tab context menu,
+  - **Then** an inline edit box opens to edit the tab's custom title.
+  - **When** the user confirms the new name (presses `Enter` or clicks outside),
+  - **Then** the tab displays the custom title instead of the default auto-generated name.
+  - **When** the custom title is cleared or reset,
+  - **Then** the tab falls back to dynamic directory/process naming.
+  - **When** the user right-clicks a tab and chooses a color from a predefined color palette,
+  - **Then** an accent color indicator bar or tag is rendered on the tab header.
+  - **When** MultiShell restarts,
+  - **Then** custom tab titles and assigned colors are persisted and restored from `tabs_state.json`.
+
+---
+
+### REQ-UI-006: Split Panes (Horizontal & Vertical Session Splits within Tab)
+- **Status**: `BACKLOG`
+- **User Story**: As a user, I want to split an active tab into horizontal or vertical panes so that I can run and monitor multiple simultaneous terminal sessions side-by-side within a single window tab.
+- **Acceptance Criteria**:
+  - **Given** an active tab in MultiShell,
+  - **When** the user presses `Alt+Shift+Plus` (or right-clicks and selects `Split Vertically`),
+  - **Then** the tab view divides vertically into two side-by-side panes with the same profile and working directory.
+  - **When** the user presses `Alt+Shift+Minus` (or selects `Split Horizontally`),
+  - **Then** the focused pane divides horizontally into two stacked panes.
+  - **When** typing keyboard inputs,
+  - **Then** only the currently focused pane receives keystrokes, indicated by an active border highlight.
+  - **When** the user presses `Alt+ArrowKeys`,
+  - **Then** focus navigates to the adjacent pane in that direction.
+  - **When** a shell process inside a pane exits or the user closes the pane (`Ctrl+Shift+W`),
+  - **Then** that pane collapses and the remaining pane expands to occupy the available space.
+
 
 
 
