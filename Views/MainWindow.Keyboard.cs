@@ -165,10 +165,38 @@ public partial class MainWindow
             }
         }
 
+        // Active Tab Inline Renaming Keyboard Handling (REQ-TAB-020)
+        if (DataContext is MainViewModel rVm && rVm.SelectedTab?.IsRenaming == true)
+        {
+            if (e.Key == Key.Enter)
+            {
+                rVm.SelectedTab.CommitRenaming();
+                FocusActiveTerminal();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.Escape)
+            {
+                rVm.SelectedTab.CancelRenaming();
+                FocusActiveTerminal();
+                e.Handled = true;
+                return;
+            }
+        }
+
         // F1: Help Modal
         if (e.Key == Key.F1)
         {
             ShowHelpModal();
+            e.Handled = true;
+            return;
+        }
+
+        // F2: Rename active tab (REQ-TAB-020)
+        if (e.Key == Key.F2 && DataContext is MainViewModel f2Vm && f2Vm.SelectedTab != null)
+        {
+            f2Vm.SelectedTab.StartRenaming();
+            FocusTabRenameBox();
             e.Handled = true;
             return;
         }

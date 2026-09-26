@@ -19,6 +19,12 @@ public partial class ClosedTabItemViewModel : ViewModelBase
     private string? _workingDirectory;
 
     [ObservableProperty]
+    private string? _customTitle;
+
+    [ObservableProperty]
+    private string? _tabColor;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShellIconTag))]
     private ShellType _shellType = ShellType.PowerShell;
 
@@ -52,12 +58,16 @@ public partial class ClosedTabItemViewModel : ViewModelBase
         ShellType shellType,
         IEnumerable<string>? commandHistory = null,
         IEnumerable<string>? directoryHistory = null,
-        DateTime? closedAt = null)
+        DateTime? closedAt = null,
+        string? customTitle = null,
+        string? tabColor = null)
     {
         _title = title;
         _workingDirectory = workingDirectory;
         _shellType = shellType;
         _closedAt = closedAt ?? DateTime.Now;
+        _customTitle = customTitle;
+        _tabColor = tabColor;
         CommandHistory = commandHistory != null ? new List<string>(commandHistory) : [];
         DirectoryHistory = directoryHistory != null ? new List<string>(directoryHistory) : [];
     }
@@ -69,7 +79,9 @@ public partial class ClosedTabItemViewModel : ViewModelBase
             state.WorkingDirectory,
             state.ShellType,
             state.CommandHistory,
-            state.DirectoryHistory);
+            state.DirectoryHistory,
+            customTitle: state.CustomTitle,
+            tabColor: state.TabColor);
     }
 
     public TabState ToTabState()
@@ -79,6 +91,8 @@ public partial class ClosedTabItemViewModel : ViewModelBase
             WorkingDirectory,
             new List<string>(CommandHistory),
             new List<string>(DirectoryHistory),
-            ShellType);
+            ShellType,
+            CustomTitle,
+            TabColor);
     }
 }

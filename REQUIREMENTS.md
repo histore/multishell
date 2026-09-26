@@ -953,7 +953,7 @@ This document serves as the single source of truth for all functional and non-fu
 ---
 
 ### REQ-TAB-020: Custom Tab Renaming & Tab Color Palette Tagging
-- **Status**: `BACKLOG`
+- **Status**: `IMPLEMENTED`
 - **User Story**: As a user, I want to rename terminal tabs with custom titles (via double-click or context menu) and assign colored accent tags so that I can easily identify and organize parallel workspaces.
 - **Acceptance Criteria**:
   - **Given** an open tab in MultiShell,

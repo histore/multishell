@@ -11,7 +11,9 @@ public record TabState(
     string? WorkingDirectory,
     List<string>? CommandHistory = null,
     List<string>? DirectoryHistory = null,
-    ShellType ShellType = ShellType.PowerShell);
+    ShellType ShellType = ShellType.PowerShell,
+    string? CustomTitle = null,
+    string? TabColor = null);
 
 /// <summary>
 /// Overall persisted workspace state containing all tabs and configuration preferences.

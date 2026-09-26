@@ -27,6 +27,8 @@ public partial class MainWindow : Window
             TabsItemsControl.AddHandler(InputElement.PointerMovedEvent, OnTabsPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
             TabsItemsControl.AddHandler(InputElement.PointerReleasedEvent, OnTabsPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
             TabsItemsControl.AddHandler(InputElement.PointerCaptureLostEvent, OnTabsPointerCaptureLost, RoutingStrategies.Tunnel, handledEventsToo: true);
+            TabsItemsControl.AddHandler(InputElement.KeyDownEvent, OnTabsKeyDown, RoutingStrategies.Tunnel);
+            TabsItemsControl.AddHandler(InputElement.LostFocusEvent, OnTabsLostFocus, RoutingStrategies.Bubble | RoutingStrategies.Tunnel);
         }
 
         if (TabBarContainer != null)
@@ -320,6 +322,7 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainViewModel vm)
             {
+                AttachTabRenameListeners(vm);
                 vm.PropertyChanged += (_, args) =>
                 {
                     if (args.PropertyName == nameof(MainViewModel.SelectedTab))

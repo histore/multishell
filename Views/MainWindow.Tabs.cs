@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -183,9 +184,25 @@ public partial class MainWindow
         var visual = e.Source as Visual;
         if (IsCloseButtonClicked(visual)) return;
 
+        // If clicking inside the rename text box, let TextBox handle caret/selection
+        if (visual is TextBox || visual?.FindAncestorOfType<TextBox>() != null)
+        {
+            return;
+        }
+
         var tabVm = FindTabViewModel(visual);
         if (tabVm != null)
         {
+            if (e.ClickCount == 2)
+            {
+                _draggedTab = null;
+                _isDragging = false;
+                tabVm.StartRenaming();
+                FocusTabRenameBox();
+                e.Handled = true;
+                return;
+            }
+
             _draggedTab = tabVm;
             _dragStartPos = e.GetPosition(this);
             _isDragging = false;
@@ -305,7 +322,7 @@ public partial class MainWindow
     {
         while (visual != null)
         {
-            if (visual is Button btn && btn.Content is string s && s == "✕")
+            if (visual is Button btn && (btn.Classes.Contains("tabCloseBtn") || (btn.Content is string s && (s == "✕" || s == "×"))))
             {
                 return true;
             }
@@ -482,6 +499,74 @@ public partial class MainWindow
             }
             e.Handled = true;
         }
+    }
+
+    /// <summary>
+    /// Locates the inline rename TextBox in the tab bar, requests focus, and selects all text (REQ-TAB-020).
+    /// </summary>
+    public void FocusTabRenameBox()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (TabsItemsControl == null) return;
+            var targetBox = TabsItemsControl.GetVisualDescendants()
+                .OfType<TextBox>()
+                .FirstOrDefault(tb => tb.Classes.Contains("tabRenameBox") && tb.IsVisible);
+
+            if (targetBox != null)
+            {
+                targetBox.Focus();
+                targetBox.SelectAll();
+            }
+        }, DispatcherPriority.Input);
+    }
+
+    private void OnTabsKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Source is TextBox tb && tb.Classes.Contains("tabRenameBox") && tb.DataContext is TerminalTabViewModel tabVm && tabVm.IsRenaming)
+        {
+            if (e.Key == Key.Enter)
+            {
+                tabVm.CommitRenaming();
+                FocusActiveTerminal();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                tabVm.CancelRenaming();
+                FocusActiveTerminal();
+                e.Handled = true;
+            }
+        }
+    }
+
+    private void OnTabsLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is TextBox tb && tb.Classes.Contains("tabRenameBox") && tb.DataContext is TerminalTabViewModel tabVm && tabVm.IsRenaming)
+        {
+            tabVm.CommitRenaming();
+        }
+    }
+
+    internal void AttachTabRenameListeners(MainViewModel vm)
+    {
+        foreach (var tab in vm.Tabs)
+        {
+            tab.FocusRenameBoxRequested -= FocusTabRenameBox;
+            tab.FocusRenameBoxRequested += FocusTabRenameBox;
+        }
+
+        vm.Tabs.CollectionChanged += (s, e) =>
+        {
+            if (e.NewItems != null)
+            {
+                foreach (TerminalTabViewModel tab in e.NewItems)
+                {
+                    tab.FocusRenameBoxRequested -= FocusTabRenameBox;
+                    tab.FocusRenameBoxRequested += FocusTabRenameBox;
+                }
+            }
+        };
     }
 }
 
