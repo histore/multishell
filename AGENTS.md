@@ -34,7 +34,14 @@ All skills and governance rules reference the Single Source of Truth in `_agents
    - 0% hardcoded user-facing strings; all texts must be managed in dynamic bilingual resource dictionaries in **German (`de`)** and **English (`en`)** (with expanded language support for French, Spanish, Italian, Portuguese).
 6. **Performance & Security**:
    - Zero-allocation buffer pooling (`ArrayPool<byte>`), leak-free resource disposal, safe Win32 handle encapsulation, command injection prevention, and regular vulnerability audits (`dotnet list package --vulnerable`).
-7. **Consistency & Deduplication**: All new requirements must be validated against existing requirements in `REQUIREMENTS.md`.
+7. **Requirements Governance & Modular Architecture**:
+   - **Consistency & Deduplication**: All new requirements must be validated against existing requirements.
+   - **Single-File vs. Modular Hub-and-Spoke Scaling**:
+     - *Single-File (`REQUIREMENTS.md`)*: Suitable for small, focused projects or initial phases (< ~30–50 requirements).
+     - *Modular Architecture (`docs/requirements/modules/<module>.md`)*: When a project scales, exceeds ~30–50 requirements, or aligns with modular architecture (`docs/architecture/modules/*.md`), requirements must be segmented into per-module files. The root `REQUIREMENTS.md` acts as the central **Hub, Index, ID Registry, and Non-Functional Requirements (NFR) Baseline**.
+   - **Namespaced Requirement IDs**: Each requirement must follow a unique scoped ID pattern: `REQ-<SCOPE>-XXX` (e.g. `REQ-AUTH-001`, `REQ-CORE-002`, `REQ-UI-003`).
+   - **Lifecycle Status Tracking**: Every requirement tracks an explicit state (`PROPOSED`, `APPROVED`, `IMPLEMENTED`, `VERIFIED`, `DEPRECATED`).
+   - **Context Isolation for Downstream Agents**: When assigning tasks to subagents (`Developer`, `Tester`, `Verifikation`), pass only the central index and the specific affected module requirement file (`docs/requirements/modules/<module>.md`) to maintain strict context hygiene and prevent token bloat.
 8. **User Decision on Conflicts**: In case of contradictions or duplicates, the user must make the decision.
 9. **Immutability of Existing Requirements**: Existing requirements may only be modified with explicit user instruction.
 10. **100% Coverage**: 100% of code/system changes must be covered by approved requirements.

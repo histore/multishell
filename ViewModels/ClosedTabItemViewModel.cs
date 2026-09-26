@@ -18,11 +18,19 @@ public partial class ClosedTabItemViewModel : ViewModelBase
     [ObservableProperty]
     private string? _workingDirectory;
 
-    [ObservableProperty]
     private string? _customTitle;
+    public string? CustomTitle
+    {
+        get => _customTitle;
+        set => SetProperty(ref _customTitle, value);
+    }
 
-    [ObservableProperty]
     private string? _tabColor;
+    public string? TabColor
+    {
+        get => _tabColor;
+        set => SetProperty(ref _tabColor, value);
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShellIconTag))]
