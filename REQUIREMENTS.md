@@ -187,7 +187,7 @@ docs/requirements/modules/
 | `REQ-TAB-009` | Tab Session & Working Directory Persistence | [`docs/requirements/modules/persistence.md`](docs/requirements/modules/persistence.md) | `IMPLEMENTED` |
 | `REQ-TAB-010` | Tab Keyboard Shortcuts (`Ctrl+Shift+T` / `D`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-TAB-011` | Tab Drag & Drop Reordering | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
-| `REQ-TAB-012` | Tab History Hover Overlay (Commands & Directories) | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |
+| `REQ-TAB-012` | Centered History Overlay via Ctrl+Shift+Middle Click & Shortcuts | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |
 | `REQ-TAB-013` | Tab Command & Directory History Persistence | [`docs/requirements/modules/persistence.md`](docs/requirements/modules/persistence.md) | `IMPLEMENTED` |
 | `REQ-TAB-014` | Tab Bar Overflow Visualization & Navigation | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-TAB-015` | Tab History Keyboard Navigation (`Ctrl+Shift+H`/`L`) | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |

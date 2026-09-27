@@ -15,7 +15,6 @@ namespace MultiShell.Views;
 
 public partial class MainWindow : Window
 {
-    private DispatcherTimer? _historyHoverTimer;
 
     public MainWindow()
     {
@@ -127,59 +126,37 @@ public partial class MainWindow : Window
             ProfilesModal.BrowseWorkingDirRequested += async (_, _) => await BrowseWorkingDirectoryAsync();
         }
 
-        // History Drawer Hover Trigger with Dwell Delay (REQ-TAB-012)
-        if (HistoryHoverTrigger != null)
+        // Ctrl+Shift+Middle-click on terminal content area / workspace to toggle history overlay (REQ-TAB-012)
+        if (TerminalContentArea != null)
         {
-            HistoryHoverTrigger.PointerEntered += (_, _) =>
+            TerminalContentArea.AddHandler(InputElement.PointerPressedEvent, (s, e) =>
             {
-                _historyHoverTimer?.Stop();
-                if (HistoryDrawer?.IsVisible == true) return;
+                var point = e.GetCurrentPoint(TerminalContentArea);
+                var isMiddle = point.Properties.IsMiddleButtonPressed || point.Properties.PointerUpdateKind == PointerUpdateKind.MiddleButtonPressed;
+                var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+                var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+                var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
 
-                _historyHoverTimer = new DispatcherTimer
+                if (isMiddle && isCtrl && isShift && !isAlt)
                 {
-                    Interval = TimeSpan.FromMilliseconds(300)
-                };
-                _historyHoverTimer.Tick += (_, _) =>
-                {
-                    _historyHoverTimer?.Stop();
-                    _historyHoverTimer = null;
-                    if (HistoryDrawer != null && !HistoryDrawer.IsVisible)
-                    {
-                        ShowHistoryDrawer();
-                    }
-                };
-                _historyHoverTimer.Start();
-            };
-
-            HistoryHoverTrigger.PointerExited += (_, _) =>
-            {
-                _historyHoverTimer?.Stop();
-                _historyHoverTimer = null;
-            };
+                    ToggleHistoryDrawer();
+                    e.Handled = true;
+                }
+            }, RoutingStrategies.Tunnel);
         }
 
+        // Click on semi-transparent backdrop outside dialog closes History Overlay (REQ-TAB-012)
         if (HistoryDrawer != null)
         {
-            HistoryDrawer.PointerExited += (_, e) =>
+            HistoryDrawer.PointerPressed += (_, e) =>
             {
-                var pos = e.GetPosition(HistoryDrawer);
-                if (pos.X <= 0 || pos.X >= HistoryDrawer.Bounds.Width - 1 || pos.Y <= 0 || pos.Y >= HistoryDrawer.Bounds.Height - 1)
+                if (e.Source == HistoryDrawer)
                 {
                     HideHistoryDrawerAndFocusTerminal();
+                    e.Handled = true;
                 }
             };
         }
-
-        // Close History Drawer when pointer leaves the main window in any direction
-        PointerExited += (_, _) =>
-        {
-            _historyHoverTimer?.Stop();
-            _historyHoverTimer = null;
-            if (HistoryDrawer?.IsVisible == true)
-            {
-                HideHistoryDrawerAndFocusTerminal();
-            }
-        };
 
         if (ClearCommandFilterBtn != null)
         {
@@ -260,10 +237,6 @@ public partial class MainWindow : Window
             CloseHistoryButton.Click += (_, _) => HideHistoryDrawerAndFocusTerminal();
         }
 
-        if (HistoryBackdrop != null)
-        {
-            HistoryBackdrop.PointerPressed += (_, _) => HideHistoryDrawerAndFocusTerminal();
-        }
 
         // History ListBox Selection & Keyboard Execution
         if (CommandHistoryListBox != null)

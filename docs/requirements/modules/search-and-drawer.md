@@ -17,7 +17,7 @@ This document defines the functional and non-functional requirements specific to
 
 ## Requirements
 
-### `[REQ-TAB-012]` Tab History Hover Overlay (Commands & Directories)
+### `[REQ-TAB-012]` Centered History Overlay via Ctrl+Shift+Middle Click & Shortcuts
 
 - **Status**: `IMPLEMENTED`
 - **Type**: `Functional`
@@ -25,13 +25,15 @@ This document defines the functional and non-functional requirements specific to
 
 #### User Story
 > **As a** user,  
-> **I want** to hover the mouse pointer over the left edge of the window to slide out an interactive History Drawer showing recent commands and visited directories for the active tab.
+> **I want** to press `Ctrl+Shift` and click the middle mouse button (scroll wheel click) anywhere within the terminal workspace to open a centered History Overlay showing recent commands and visited directories, closing it with Escape or by clicking outside the dialog.
 
 #### Acceptance Criteria (Given-When-Then)
-- [x] **AC-1**: Hovering over the left edge of the window triggers a 300ms hover delay, then slides out the History Drawer.
-- [x] **AC-2**: The drawer displays two tabs: `Commands` and `Directories`.
-- [x] **AC-3**: Clicking an item in the list sends the command or navigation to the active terminal and closes the drawer.
-- [x] **AC-4**: Moving the mouse pointer outside the drawer closes it automatically.
+- [x] **AC-1**: **Given** the active terminal or terminal workspace, **When** pressing `Ctrl+Shift` and middle-clicking (scroll wheel click), **Then** the interactive History Overlay opens centered over the terminal area.
+- [x] **AC-2**: The overlay is centered within the terminal area with a prominent margin to the outer boundary (`Margin="32"`, `MaxWidth="780"`, `MaxHeight="520"`), not full-screen.
+- [x] **AC-3**: The overlay displays two tabs: `Commands` and `Directories` with live fuzzy search filtering.
+- [x] **AC-4**: Clicking an item in the list sends the command or directory navigation to the active terminal and closes the overlay.
+- [x] **AC-5**: Pressing `Escape` or clicking anywhere on the outer semi-transparent backdrop outside the dialog panel closes the overlay and restores terminal focus.
+- [x] **AC-6**: Dedicated keyboard shortcuts `Ctrl+Shift+H` (Commands) and `Ctrl+Shift+L` (Directories) continue to open/toggle the centered overlay on the respective tab.
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/search-and-drawer.md`
@@ -153,7 +155,7 @@ This document defines the functional and non-functional requirements specific to
 
 | ID | Title | Type | Status | Target Release |
 | :--- | :--- | :--- | :--- | :--- |
-| `REQ-TAB-012` | Tab History Hover Overlay (Commands & Directories) | Functional | IMPLEMENTED | `v0.1.0` |
+| `REQ-TAB-012` | Centered History Overlay via Ctrl+Shift+Middle Click & Shortcuts | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-TAB-015` | Tab History Keyboard Navigation (`Ctrl+Shift+H` / `L`) | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-HIST-002` | Live Fuzzy Search & Type-to-Filter in History Drawer | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-HIST-003` | Path-Based Dynamic Command History, Sync & Pruning | Functional | IMPLEMENTED | `v0.1.0` |
