@@ -251,6 +251,7 @@ public partial class TerminalTabView : UserControl
 
     private async void OnTerminalPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        if (e.Handled) return;
         var point = e.GetCurrentPoint(Terminal);
         if (DataContext is not TerminalTabViewModel vm) return;
 

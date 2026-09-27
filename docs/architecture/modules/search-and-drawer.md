@@ -40,10 +40,11 @@ MultiShell integrates quick-access developer utilities directly into the termina
 * **Persistence**:
   * Persisted into `WorkspaceState.SharedDirectoryHistory` in `tabs_state.json`.
 
-### 2.4 History Drawer (`Views/MainWindow.HistoryDrawer.cs`)
-* **Drawer Interaction**:
-  * Slide-out panel docked to the left of the main terminal workspace.
-  * Toggled via left-edge dwell hover (300ms delay), toolbar button, or dedicated keyboard shortcuts (`Ctrl+Shift+H` for Command History, `Ctrl+Shift+L` for Directory History).
+### 2.4 History Overlay (`Views/MainWindow.HistoryDrawer.cs`)
+* **Overlay Interaction**:
+  * Centered modal floating overlay with dark backdrop over the terminal workspace (`Margin="32"`, `MaxWidth="780"`, `MaxHeight="520"`).
+  * Toggled via `Ctrl+Shift` + middle mouse click (scroll wheel click) anywhere on the terminal surface or workspace, toolbar button, or dedicated keyboard shortcuts (`Ctrl+Shift+H` for Command History, `Ctrl+Shift+L` for Directory History).
+  * Dismissed by pressing `Escape`, clicking the header close button ("✕"), or clicking anywhere on the outer semi-transparent backdrop outside the dialog.
   * Displays two searchable tabs/sections:
     * **Command History**: Dynamic list of commands executed in the current tab's active directory path.
     * **Directory History**: Unified list of directories visited across all tabs in the session (capped at 100 MRU entries).

@@ -847,38 +847,33 @@
                 </ScrollViewer>
             </Grid>
 
-            <!-- Left Edge Hover Trigger Indicator -->
-            <Border x:Name="HistoryHoverTrigger"
-                    HorizontalAlignment="Left"
-                    Width="10"
-                    Background="Transparent"
-                    ZIndex="10">
-                <Border Width="2"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Stretch"
-                        Background="{DynamicResource AppBorder}"
-                        Opacity="0.6"
-                        Margin="1,0,0,0" />
-            </Border>
-
-            <!-- History Flyout Overlay Panel taking 90% width -->
+            <!-- ========================================== -->
+            <!-- Centered History Overlay Panel with Backdrop (REQ-TAB-012) -->
+            <!-- ========================================== -->
             <Grid x:Name="HistoryDrawer"
+                  Background="#55000000"
                   HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
                   IsVisible="False"
-                  ZIndex="20"
-                  ColumnDefinitions="9*, 1*">
-                <!-- 90% Overlay Container -->
-                <Border Grid.Column="0"
-                        Background="{DynamicResource AppWindowBackground}"
+                  ZIndex="45">
+                <!-- Centered Overlay Container with prominent margin to outer boundary -->
+                <Border Width="700"
+                        MaxWidth="800"
+                        MaxHeight="540"
+                        Margin="32"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource AppSurfaceModal}"
                         BorderBrush="{DynamicResource AppBorder}"
-                        BorderThickness="0,0,1,0"
-                        BoxShadow="8 0 24 0 #AA000000">
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        BoxShadow="0 8 32 0 #88000000">
                     <Grid RowDefinitions="Auto, *">
                         <!-- Drawer Header -->
-                        <Border Grid.Row="0" Background="{DynamicResource AppHeaderBackground}" BorderBrush="{DynamicResource AppBorderSubtle}" BorderThickness="0,0,0,1" Padding="12,8">
+                        <Border Grid.Row="0" Background="{DynamicResource AppHeaderBackground}" BorderBrush="{DynamicResource AppBorderSubtle}" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
                             <Grid ColumnDefinitions="*, Auto">
                                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding Loc[Drawer_Title]}" FontFamily="Consolas, Cascadia Code, monospace" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc[Drawer_Title]}" FontFamily="Consolas, Cascadia Code, monospace" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
                                     <TextBlock Text="[ ▲/▼ Navigate  |  Enter Execute  |  Esc Close ]" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <Button Grid.Column="1"
@@ -892,7 +887,7 @@
                         </Border>
 
                         <!-- Drawer Content: TabControl for Commands and Directories -->
-                        <TabControl x:Name="HistoryTabControl" Grid.Row="1" Classes="historyTabs">
+                        <TabControl x:Name="HistoryTabControl" Grid.Row="1" Classes="historyTabs" Margin="8,4,8,8">
                             <!-- Tab 1: Commands -->
                             <TabItem Header="{Binding Loc[Drawer_Tab_Commands]}">
                                 <Grid RowDefinitions="Auto, *">
@@ -1035,11 +1030,6 @@
                         </TabControl>
                     </Grid>
                 </Border>
-
-                <!-- Remaining 10% backdrop area closing drawer when clicked -->
-                <Border Grid.Column="1"
-                        x:Name="HistoryBackdrop"
-                        Background="#22000000" />
             </Grid>
 
             <!-- Modal Dialog for Help (F1) -->

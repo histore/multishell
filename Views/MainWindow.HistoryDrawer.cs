@@ -65,8 +65,6 @@ public partial class MainWindow
 
     public void ShowHistoryDrawer()
     {
-        _historyHoverTimer?.Stop();
-        _historyHoverTimer = null;
         if (HistoryDrawer == null) return;
         HistoryDrawer.IsVisible = true;
         var hasFilter = false;
@@ -357,8 +355,6 @@ public partial class MainWindow
 
     private void HideHistoryDrawerAndFocusTerminal()
     {
-        _historyHoverTimer?.Stop();
-        _historyHoverTimer = null;
         if (HistoryDrawer != null)
         {
             HistoryDrawer.IsVisible = false;
