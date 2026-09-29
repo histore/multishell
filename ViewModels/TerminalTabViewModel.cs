@@ -125,7 +125,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// Gets the full, untruncated working directory path for display in the hover tooltip.
     /// </summary>
     public string TabTooltip => HasCustomTitle
-        ? (!string.IsNullOrWhiteSpace(WorkingDirectory) && !string.Equals(CustomTitle, WorkingDirectory, StringComparison.OrdinalIgnoreCase)
+        ? (!string.IsNullOrWhiteSpace(WorkingDirectory) && !string.Equals(CustomTitle?.TrimEnd('\\', '/'), WorkingDirectory?.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase)
             ? $"{CustomTitle} ({WorkingDirectory})"
             : CustomTitle!)
         : (!string.IsNullOrWhiteSpace(WorkingDirectory)

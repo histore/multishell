@@ -1186,6 +1186,18 @@ public class TerminalTabViewModelTests
     }
 
     [Fact]
+    public void TabTooltip_WhenCustomTitleHasTrailingSlashAndEqualsWorkingDirectory_DoesNotDuplicatePath()
+    {
+        // Arrange
+        string path = @"C:\projects\multishell";
+        var session = new MockPowerShellSession("Test", path);
+        using var vm = new TerminalTabViewModel(session) { CustomTitle = path + @"\" };
+
+        // Assert: Trailing separator differences must be normalized
+        Assert.Equal(path + @"\", vm.TabTooltip);
+    }
+
+    [Fact]
     public void SetTabColor_WhenInvalidHex_SetsNull()
     {
         // Arrange
