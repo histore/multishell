@@ -1110,6 +1110,49 @@ public class TerminalTabViewModelTests
         // Assert: Disposed tab must not invoke events or crash
         Assert.False(closeCalled);
     }
+
+    [Fact]
+    public void FormatMiddleEllipsis_WhenLeafTruncated_DoesNotExceedMaxLength()
+    {
+        // Arrange: Path with long leaf where leaf must be truncated
+        string path = @"C:\Users\tester\multishell_extremely_long_repository_name";
+        int maxLen = 22;
+
+        // Act
+        string result = TerminalTabViewModel.FormatMiddleEllipsis(path, maxLen);
+
+        // Assert: Length must strictly not exceed maxLength
+        Assert.True(result.Length <= maxLen, $"Result '{result}' length {result.Length} exceeded {maxLen}");
+        Assert.EndsWith("…", result);
+    }
+
+    [Fact]
+    public void FormatMiddleEllipsis_WhenUncPath_PreservesDoubleBackslash()
+    {
+        // Arrange
+        string uncPath = @"\\fileserver\share\project\subfolder\file.txt";
+
+        // Act
+        string result = TerminalTabViewModel.FormatMiddleEllipsis(uncPath, 25);
+
+        // Assert: UNC root must start with \\
+        Assert.StartsWith(@"\\fileserver\", result);
+    }
+
+    [Fact]
+    public void HasTabColor_WhenInvalidColorString_ReturnsFalse()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.SetTabColor("not-a-valid-color");
+
+        // Assert
+        Assert.False(vm.HasTabColor);
+        Assert.Null(vm.TabColorBrush);
+    }
 }
 
 

@@ -16,7 +16,14 @@ public partial class MainViewModel
 
     partial void OnSelectedTabChanged(TerminalTabViewModel? oldValue, TerminalTabViewModel? newValue)
     {
-        if (oldValue != null) oldValue.IsSelected = false;
+        if (oldValue != null)
+        {
+            if (oldValue.IsRenaming)
+            {
+                oldValue.CommitRenaming();
+            }
+            oldValue.IsSelected = false;
+        }
         if (newValue != null) newValue.IsSelected = true;
         TriggerSaveState();
     }
@@ -197,6 +204,11 @@ public partial class MainViewModel
         if (tab == null)
         {
             return;
+        }
+
+        if (tab.IsRenaming)
+        {
+            tab.CommitRenaming();
         }
 
         // Capture closed tab state before disposing

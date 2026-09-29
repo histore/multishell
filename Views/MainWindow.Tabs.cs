@@ -198,7 +198,6 @@ public partial class MainWindow
                 _draggedTab = null;
                 _isDragging = false;
                 tabVm.StartRenaming();
-                FocusTabRenameBox();
                 e.Handled = true;
                 return;
             }

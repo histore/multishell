@@ -104,9 +104,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     public bool HasCustomTitle => !string.IsNullOrWhiteSpace(CustomTitle);
 
     /// <summary>
-    /// Gets whether a user-assigned tab color is active.
+    /// Gets whether a user-assigned tab color is active and valid.
     /// </summary>
-    public bool HasTabColor => !string.IsNullOrWhiteSpace(TabColor);
+    public bool HasTabColor => !string.IsNullOrWhiteSpace(TabColor) && Color.TryParse(TabColor, out _);
 
     /// <summary>
     /// Gets the brush corresponding to the assigned tab color tag.
@@ -146,10 +146,12 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             return text[..keep] + "..." + text[^keep..];
         }
 
-        string root = text.StartsWith('/') ? "" : parts[0];
+        string root = text.StartsWith('/')
+            ? ""
+            : (text.StartsWith(@"\\") ? $@"\\{parts[0]}" : parts[0]);
         string leaf = parts[^1];
 
-        // Format: C:\...\multishell or /.../multishell
+        // Format: C:\...\multishell or \\server\...\multishell or /.../multishell
         string compact = $"{root}{sep}...{sep}{leaf}";
         if (compact.Length <= maxLength)
         {
@@ -158,7 +160,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
         // If leaf itself is too long, truncate leaf with an ellipsis at the end
         int rootLength = root.Length + 1; // root + sep
-        int availableForLeaf = Math.Max(4, maxLength - rootLength - 4); // minus ...\
+        int availableForLeaf = Math.Max(4, maxLength - rootLength - 5); // minus ...\ and trailing …
         if (leaf.Length > availableForLeaf)
         {
             return $"{root}{sep}...{sep}{leaf[..availableForLeaf]}…";
@@ -1307,6 +1309,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         var trimmed = RenameBuffer?.Trim();
         CustomTitle = string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
         IsRenaming = false;
+        RenameBuffer = string.Empty;
     }
 
     /// <summary>
