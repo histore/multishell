@@ -226,13 +226,16 @@ public partial class MainWindow
     {
         if (e.Key == Key.Enter)
         {
+            var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
             if (sender == CommandHistoryListBox || HistoryTabControl?.SelectedIndex == 0)
             {
-                PasteSelectedCommand();
+                if (isShift) PasteSelectedCommand();
+                else ExecuteSelectedCommand();
             }
             else
             {
-                PasteSelectedDirectory();
+                if (isShift) PasteSelectedDirectory();
+                else ExecuteSelectedDirectory();
             }
             e.Handled = true;
         }

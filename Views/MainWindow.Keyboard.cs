@@ -1,5 +1,8 @@
 using System;
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using MultiShell.ViewModels;
 
 namespace MultiShell.Views;
@@ -96,13 +99,16 @@ public partial class MainWindow
 
             if (e.Key == Key.Enter)
             {
+                var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
                 if (HistoryTabControl?.SelectedIndex == 1)
                 {
-                    PasteSelectedDirectory();
+                    if (isShift) PasteSelectedDirectory();
+                    else ExecuteSelectedDirectory();
                 }
                 else
                 {
-                    PasteSelectedCommand();
+                    if (isShift) PasteSelectedCommand();
+                    else ExecuteSelectedCommand();
                 }
                 e.Handled = true;
                 return;
@@ -124,6 +130,8 @@ public partial class MainWindow
 
             if (e.Key == Key.Left)
             {
+                if (IsSourceInsideTextBox(e.Source)) return;
+
                 if (HistoryTabControl != null)
                 {
                     HistoryTabControl.SelectedIndex = 0;
@@ -136,6 +144,8 @@ public partial class MainWindow
 
             if (e.Key == Key.Right)
             {
+                if (IsSourceInsideTextBox(e.Source)) return;
+
                 if (HistoryTabControl != null)
                 {
                     HistoryTabControl.SelectedIndex = 1;
@@ -372,5 +382,10 @@ public partial class MainWindow
                 e.Handled = true;
             }
         }
+    }
+
+    private static bool IsSourceInsideTextBox(object? source)
+    {
+        return source is Visual visual && (visual is TextBox || visual.FindAncestorOfType<TextBox>() != null);
     }
 }

@@ -1683,6 +1683,31 @@ public class MainViewModelTabTests
         var sentText = System.Text.Encoding.UTF8.GetString(session1.SentInputs[^1]);
         Assert.Contains(@"D:\Workspace", sentText);
     }
+
+    [Fact]
+    public void CloseTab_UnregistersPropertyChangedAndTabEvents()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        using var vm = new MainViewModel(processService, new FakeTabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService());
+        vm.AddNewTab(); // PS 1 and PS 2
+        var tab2 = vm.Tabs[1];
+
+        // Act - Close tab2
+        vm.CloseTab(tab2);
+
+        // Mutating custom title on the closed tab should not alter WindowTitle or throw
+        var initialTitle = vm.WindowTitle;
+        var exception = Record.Exception(() =>
+        {
+            tab2.CustomTitle = "Zombie Tab Title";
+            tab2.TabColor = "#FF0000";
+        });
+
+        // Assert
+        Assert.Null(exception);
+        Assert.Equal(initialTitle, vm.WindowTitle);
+    }
 }
 
 

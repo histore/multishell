@@ -990,6 +990,28 @@ public class TerminalTabViewModelTests
         // Tab is now in dirB, so its active history reflects dirB (empty)
         Assert.Empty(tab.CommandHistory);
     }
+
+    [Fact]
+    public void TerminalTabViewModel_Disposal_UnsubscribesFromLocalizationService()
+    {
+        // Arrange
+        var loc = new LocalizationService();
+        var session = new MockPowerShellSession("Test", @"C:\Test");
+        var tab = new TerminalTabViewModel(session, localizationService: loc);
+
+        // Act
+        tab.Dispose();
+
+        // Trigger property changed on the shared localization service
+        var exception = Record.Exception(() =>
+        {
+            loc.SetLanguage("de");
+            loc.SetLanguage("en");
+        });
+
+        // Assert - No exception and tab was safely detached
+        Assert.Null(exception);
+    }
 }
 
 

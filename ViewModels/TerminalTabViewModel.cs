@@ -325,7 +325,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
         _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
         Loc = localizationService ?? new LocalizationService();
-        Loc.PropertyChanged += (_, _) => UpdateSearchMatchSummary();
+        Loc.PropertyChanged += OnLocalizationPropertyChanged;
         _workingDirectory = session.WorkingDirectory;
         _title = !string.IsNullOrWhiteSpace(_workingDirectory) ? _workingDirectory : session.Title;
 
@@ -1280,11 +1280,17 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         TabColor = string.IsNullOrWhiteSpace(colorHex) ? null : colorHex.Trim();
     }
 
+    private void OnLocalizationPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        UpdateSearchMatchSummary();
+    }
+
     public void Dispose()
     {
         if (_isDisposed) return;
         _isDisposed = true;
 
+        Loc.PropertyChanged -= OnLocalizationPropertyChanged;
         _session.DataReceived -= OnSessionDataReceived;
         _session.Exited -= OnSessionExited;
         _session.WorkingDirectoryChanged -= OnSessionWorkingDirectoryChanged;
