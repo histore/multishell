@@ -226,9 +226,7 @@ public partial class MainViewModel
 
         var index = Tabs.IndexOf(tab);
         Tabs.Remove(tab);
-        tab.CloseRequested -= CloseTab;
-        tab.DirectoryChanged -= OnTabDirectoryChanged;
-        tab.HistoryChanged -= OnTabHistoryChanged;
+        UnregisterTabEvents(tab);
 
         // Push to recently closed history (newest at index 0, capped at MaxClosedTabsCount)
         ClosedTabs.Insert(0, closedItem);
@@ -446,19 +444,30 @@ public partial class MainViewModel
         tab.CloseRequested += CloseTab;
         tab.DirectoryChanged += OnTabDirectoryChanged;
         tab.HistoryChanged += OnTabHistoryChanged;
-        tab.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName is nameof(TerminalTabViewModel.CustomTitle) or nameof(TerminalTabViewModel.TabColor))
-            {
-                if (tab == SelectedTab)
-                {
-                    OnPropertyChanged(nameof(WindowTitle));
-                }
-                TriggerSaveState();
-            }
-        };
+        tab.PropertyChanged += OnTabPropertyChanged;
         tab.UpdateTheme(IsDarkTerminalTheme);
         tab.UpdateFontSize(_fontSizeService.TerminalFontSize);
+    }
+
+    internal void UnregisterTabEvents(TerminalTabViewModel tab)
+    {
+        tab.CloseRequested -= CloseTab;
+        tab.DirectoryChanged -= OnTabDirectoryChanged;
+        tab.HistoryChanged -= OnTabHistoryChanged;
+        tab.PropertyChanged -= OnTabPropertyChanged;
+    }
+
+    private void OnTabPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (sender is TerminalTabViewModel tab &&
+            e.PropertyName is nameof(TerminalTabViewModel.CustomTitle) or nameof(TerminalTabViewModel.TabColor))
+        {
+            if (tab == SelectedTab)
+            {
+                OnPropertyChanged(nameof(WindowTitle));
+            }
+            TriggerSaveState();
+        }
     }
 
     private void OnTabDirectoryChanged(TerminalTabViewModel tab, string newDirectory)

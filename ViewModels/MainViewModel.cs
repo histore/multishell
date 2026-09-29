@@ -414,9 +414,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         foreach (var tab in tabsToDispose)
         {
             if (tab == null) continue;
-            tab.CloseRequested -= CloseTab;
-            tab.DirectoryChanged -= OnTabDirectoryChanged;
-            tab.HistoryChanged -= OnTabHistoryChanged;
+            UnregisterTabEvents(tab);
             tab.Dispose();
         }
         Tabs.Clear();

@@ -122,4 +122,36 @@ public class HistoryOverlayInteractionTests
         var sentText = Encoding.UTF8.GetString(session.SentInputs[0]);
         Assert.Equal("npm run build\r\n", sentText);
     }
+
+    [Fact]
+    public void REQ_TAB_012_HistoryOverlay_ExecuteHistoryCommand_AppendsNewline_ForExecution()
+    {
+        // Arrange
+        var session = new MockShellSession();
+        var tab = new TerminalTabViewModel(session);
+
+        // Act - Execute sends command with carriage return
+        tab.ExecuteHistoryCommand("git status");
+
+        // Assert
+        Assert.NotEmpty(session.SentInputs);
+        var sentText = Encoding.UTF8.GetString(session.SentInputs[0]);
+        Assert.Equal("git status\r", sentText);
+    }
+
+    [Fact]
+    public void REQ_TAB_012_HistoryOverlay_PasteHistoryCommand_SendsWithoutNewline()
+    {
+        // Arrange
+        var session = new MockShellSession();
+        var tab = new TerminalTabViewModel(session);
+
+        // Act - Paste sends raw text without execution newline
+        tab.PasteHistoryCommand("git status");
+
+        // Assert
+        Assert.NotEmpty(session.SentInputs);
+        var sentText = Encoding.UTF8.GetString(session.SentInputs[0]);
+        Assert.Equal("git status", sentText);
+    }
 }
