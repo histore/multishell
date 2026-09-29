@@ -179,7 +179,18 @@ public partial class MainWindow
 
     private void OnTabsPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        var point = e.GetCurrentPoint(this);
+        if (point.Properties.IsRightButtonPressed)
+        {
+            var targetTab = FindTabViewModel(e.Source as Visual);
+            if (targetTab != null && DataContext is MainViewModel mainVm && mainVm.SelectedTab != targetTab)
+            {
+                mainVm.SelectedTab = targetTab;
+            }
+            return;
+        }
+
+        if (!point.Properties.IsLeftButtonPressed) return;
 
         var visual = e.Source as Visual;
         if (IsCloseButtonClicked(visual)) return;
@@ -514,6 +525,7 @@ public partial class MainWindow
 
             if (targetBox != null)
             {
+                targetBox.BringIntoView();
                 targetBox.Focus();
                 targetBox.SelectAll();
             }

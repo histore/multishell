@@ -1153,6 +1153,52 @@ public class TerminalTabViewModelTests
         Assert.False(vm.HasTabColor);
         Assert.Null(vm.TabColorBrush);
     }
+
+    [Fact]
+    public void StartRenaming_WhenAlreadyRenaming_PreservesEditedBuffer()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test");
+        using var vm = new TerminalTabViewModel(session) { Title = "Initial Title" };
+
+        // Act: Start renaming and type modifications into the buffer
+        vm.StartRenaming();
+        vm.RenameBuffer = "In-progress title edit";
+
+        // Re-trigger StartRenaming (e.g. repeated F2)
+        vm.StartRenaming();
+
+        // Assert: Buffer must not be reset to initial title
+        Assert.True(vm.IsRenaming);
+        Assert.Equal("In-progress title edit", vm.RenameBuffer);
+    }
+
+    [Fact]
+    public void TabTooltip_WhenCustomTitleEqualsWorkingDirectory_DoesNotDuplicatePath()
+    {
+        // Arrange
+        string path = @"C:\projects\multishell";
+        var session = new MockPowerShellSession("Test", path);
+        using var vm = new TerminalTabViewModel(session) { CustomTitle = path };
+
+        // Assert: Must not format as 'C:\projects\multishell (C:\projects\multishell)'
+        Assert.Equal(path, vm.TabTooltip);
+    }
+
+    [Fact]
+    public void SetTabColor_WhenInvalidHex_SetsNull()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.SetTabColor("not-a-color-hex");
+
+        // Assert
+        Assert.Null(vm.TabColor);
+        Assert.False(vm.HasTabColor);
+    }
 }
 
 
