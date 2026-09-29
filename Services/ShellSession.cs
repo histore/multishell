@@ -115,13 +115,18 @@ public sealed class ShellSession : IShellSession
         }
     }
 
+    private readonly object _inputWriteLock = new();
+
     public void Send(byte[] input)
     {
         try
         {
-            if (_inputStream?.CanWrite != true) return;
-            _inputStream.Write(input, 0, input.Length);
-            _inputStream.Flush();
+            lock (_inputWriteLock)
+            {
+                if (_inputStream?.CanWrite != true) return;
+                _inputStream.Write(input, 0, input.Length);
+                _inputStream.Flush();
+            }
         }
         catch (IOException) { }
         catch (ObjectDisposedException) { }

@@ -677,7 +677,27 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         if (lastEsc < 0) return -1;
 
         // If ESC is the very last character in the buffer, it is definitely incomplete
-        if (lastEsc == text.Length - 1) return lastEsc;
+        if (lastEsc == text.Length - 1)
+        {
+            // Check if this trailing ESC is the beginning of ST (\x1b\) for a preceding unclosed multi-character sequence (OSC, DCS, APC, PM, SOS)
+            int lastOsc = text.LastIndexOf("\x1b]", lastEsc, StringComparison.Ordinal);
+            int lastDcs = text.LastIndexOf("\x1bP", lastEsc, StringComparison.Ordinal);
+            int lastApc = text.LastIndexOf("\x1b_", lastEsc, StringComparison.Ordinal);
+            int lastPm = text.LastIndexOf("\x1b^", lastEsc, StringComparison.Ordinal);
+            int lastSos = text.LastIndexOf("\x1bX", lastEsc, StringComparison.Ordinal);
+
+            int prevMultiCharEsc = Math.Max(lastOsc, Math.Max(lastDcs, Math.Max(lastApc, Math.Max(lastPm, lastSos))));
+            if (prevMultiCharEsc >= 0)
+            {
+                int bel = text.IndexOf('\x07', prevMultiCharEsc);
+                int st = text.IndexOf("\x1b\\", prevMultiCharEsc, StringComparison.Ordinal);
+                if (bel < 0 && st < 0)
+                {
+                    return prevMultiCharEsc;
+                }
+            }
+            return lastEsc;
+        }
 
         char nextChar = text[lastEsc + 1];
 
@@ -740,7 +760,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     private void OnSessionDataReceived(byte[] data)
     {
-        if (data.Length == 0) return;
+        if (_isDisposed || data.Length == 0) return;
 
         string textToFeed;
         lock (_decoderLock)
@@ -782,18 +802,22 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             }
         }
 
-        if (string.IsNullOrEmpty(textToFeed)) return;
+        if (string.IsNullOrEmpty(textToFeed) || _isDisposed) return;
 
         if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
         {
             // Direct synchronous feed when running in unit tests or already on UI thread
-            TerminalModel.Feed(textToFeed);
+            if (!_isDisposed)
+            {
+                TerminalModel.Feed(textToFeed);
+            }
         }
         else
         {
             // Coalesce rapid PTY chunks onto the UI thread at Render priority to eliminate intermediate blank frames and flicker (REQ-TERM-011)
             lock (_pendingUiFeedLock)
             {
+                if (_isDisposed) return;
                 _pendingUiFeedBuffer.Append(textToFeed);
                 if (!_isUiFeedScheduled)
                 {
@@ -814,19 +838,24 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     internal void FlushPendingUiFeed()
     {
+        if (_isDisposed) return;
         string batchText;
         lock (_pendingUiFeedLock)
         {
             _isUiFeedScheduled = false;
-            if (_pendingUiFeedBuffer.Length == 0) return;
+            if (_isDisposed || _pendingUiFeedBuffer.Length == 0) return;
             batchText = _pendingUiFeedBuffer.ToString();
             _pendingUiFeedBuffer.Clear();
         }
 
-        TerminalModel.Feed(batchText);
+        if (!_isDisposed)
+        {
+            TerminalModel.Feed(batchText);
+        }
     }
 
     private readonly StringBuilder _inputLineBuffer = new();
+    private bool _previousWasCr;
 
     /// <summary>
     /// Indicates whether AltGr (Ctrl+Alt modifier) is currently pressed.
@@ -877,12 +906,14 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             {
                 if (ch == '\x03') // Ctrl+C -> cancel line
                 {
+                    _previousWasCr = false;
                     _inputLineBuffer.Clear();
                     continue;
                 }
 
-                if (ch == '\r' || ch == '\n') // Enter / Return
+                if (ch == '\r') // Enter / Return: command execution
                 {
+                    _previousWasCr = true;
                     string executedCommand = _inputLineBuffer.ToString().Trim();
                     _inputLineBuffer.Clear();
 
@@ -897,6 +928,22 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
                     }
                     continue;
                 }
+
+                if (ch == '\n')
+                {
+                    if (_previousWasCr)
+                    {
+                        // CRLF sequence - already executed on '\r'
+                        _previousWasCr = false;
+                        continue;
+                    }
+
+                    // Standalone linefeed (e.g. Shift+Enter / Ctrl+Enter multi-line script continuation)
+                    _inputLineBuffer.Append('\n');
+                    continue;
+                }
+
+                _previousWasCr = false;
 
                 if (ch == '\b' || ch == '\x7F') // Backspace
                 {
@@ -925,6 +972,18 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         if (trimmed.StartsWith("cd ", StringComparison.OrdinalIgnoreCase))
         {
             targetPath = trimmed[3..].Trim().Trim('"', '\'');
+            if (targetPath.StartsWith("/d ", StringComparison.OrdinalIgnoreCase))
+            {
+                targetPath = targetPath[3..].Trim().Trim('"', '\'');
+            }
+        }
+        else if (trimmed.Equals("cd..", StringComparison.OrdinalIgnoreCase))
+        {
+            targetPath = "..";
+        }
+        else if (trimmed.Equals("cd\\", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("cd/", StringComparison.OrdinalIgnoreCase))
+        {
+            targetPath = "\\";
         }
         else if (trimmed.StartsWith("Set-Location ", StringComparison.OrdinalIgnoreCase))
         {
@@ -1299,6 +1358,13 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
         TerminalModel.UserInput -= OnTerminalUserInput;
         TerminalModel.SizeChanged -= OnTerminalSizeChanged;
+
+        CloseRequested = null;
+        DirectoryChanged = null;
+        HistoryChanged = null;
+        FocusRenameBoxRequested = null;
+        FocusSearchBoxRequested = null;
+        FocusTerminalRequested = null;
 
         _session.Dispose();
 

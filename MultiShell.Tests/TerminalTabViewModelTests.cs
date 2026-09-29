@@ -1012,6 +1012,104 @@ public class TerminalTabViewModelTests
         // Assert - No exception and tab was safely detached
         Assert.Null(exception);
     }
+
+    [Fact]
+    public void FindIncompleteEscapeSequenceIndex_WhenOscStringTerminatorIsSplit_BuffersFromOscStart()
+    {
+        // Arrange: OSC sequence cut between \x1b and \ in the ST terminator
+        string chunkWithSplitSt = "Hello \x1b]9;9;\"C:\\Projects\"\x1b";
+
+        // Act
+        int index = TerminalTabViewModel.FindIncompleteEscapeSequenceIndex(chunkWithSplitSt);
+
+        // Assert: Must buffer starting at the beginning of the OSC sequence (index 6), not just trailing \x1b
+        Assert.Equal(6, index);
+    }
+
+    [Fact]
+    public void FindIncompleteEscapeSequenceIndex_WhenDcsStringTerminatorIsSplit_BuffersFromDcsStart()
+    {
+        // Arrange: DCS sequence cut between \x1b and \ in the ST terminator
+        string chunkWithSplitSt = "Output \x1bP1$r\x1b";
+
+        // Act
+        int index = TerminalTabViewModel.FindIncompleteEscapeSequenceIndex(chunkWithSplitSt);
+
+        // Assert: Must buffer starting at the beginning of the DCS sequence (index 7)
+        Assert.Equal(7, index);
+    }
+
+    [Fact]
+    public void CheckForDirectoryChangeCommand_CmdDriveChangeWithSlashD_UpdatesDirectory()
+    {
+        // Arrange
+        var tempDir = System.IO.Path.GetTempPath().TrimEnd('\\');
+        var parentDir = System.IO.Directory.GetParent(tempDir)?.FullName ?? @"C:\";
+        var session = new MockPowerShellSession("CMD", parentDir) { ShellType = ShellType.CMD };
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Act: Send 'cd /d <tempDir>\r' via raw input
+        vm.SendInput(Encoding.UTF8.GetBytes($"cd /d \"{tempDir}\"\r"));
+
+        // Assert: Working directory must be updated to the target drive/directory
+        Assert.Equal(tempDir, vm.WorkingDirectory);
+    }
+
+    [Fact]
+    public void CheckForDirectoryChangeCommand_CmdCdDotDot_UpdatesDirectory()
+    {
+        // Arrange
+        var tempDir = System.IO.Path.GetTempPath().TrimEnd('\\');
+        var parentDir = System.IO.Directory.GetParent(tempDir)?.FullName;
+        if (string.IsNullOrEmpty(parentDir)) return; // Skip if root
+        var session = new MockPowerShellSession("CMD", tempDir) { ShellType = ShellType.CMD };
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Act: Send 'cd..\r'
+        vm.SendInput(Encoding.UTF8.GetBytes("cd..\r"));
+
+        // Assert
+        Assert.Equal(parentDir, vm.WorkingDirectory);
+    }
+
+    [Fact]
+    public void TrackInputBuffer_StandaloneLinefeed_AppendsNewlineWithoutSubmittingCommand()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("CMD", @"C:\Test") { ShellType = ShellType.CMD };
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Act: Simulate Shift+Enter (standalone \n)
+        vm.SendInput(Encoding.UTF8.GetBytes("function test()"));
+        vm.SendInput([0x0A]); // standalone \n
+        vm.SendInput(Encoding.UTF8.GetBytes(" { echo 1; }\r"));
+
+        // Assert: Entire multi-line command should be recorded on \r submission
+        Assert.Single(vm.CommandHistory);
+        Assert.Contains("function test()", vm.CommandHistory[0]);
+        Assert.Contains("{ echo 1; }", vm.CommandHistory[0]);
+    }
+
+    [Fact]
+    public void TerminalTabViewModel_Disposal_ClearsEventSubscriptionsAndRejectsDataReceived()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test", @"C:\Test");
+        var tab = new TerminalTabViewModel(session);
+        bool closeCalled = false;
+        tab.CloseRequested += _ => closeCalled = true;
+
+        // Act
+        tab.Dispose();
+        session.SimulateDataReceived(Encoding.UTF8.GetBytes("data after disposal\r\n"));
+        tab.RequestClose();
+
+        // Assert: Disposed tab must not invoke events or crash
+        Assert.False(closeCalled);
+    }
 }
 
 
