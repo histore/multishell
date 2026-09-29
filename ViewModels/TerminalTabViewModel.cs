@@ -125,7 +125,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// Gets the full, untruncated working directory path for display in the hover tooltip.
     /// </summary>
     public string TabTooltip => HasCustomTitle
-        ? (!string.IsNullOrWhiteSpace(WorkingDirectory) ? $"{CustomTitle} ({WorkingDirectory})" : CustomTitle!)
+        ? (!string.IsNullOrWhiteSpace(WorkingDirectory) && !string.Equals(CustomTitle?.TrimEnd('\\', '/'), WorkingDirectory?.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase)
+            ? $"{CustomTitle} ({WorkingDirectory})"
+            : CustomTitle!)
         : (!string.IsNullOrWhiteSpace(WorkingDirectory)
             ? WorkingDirectory
             : (!string.IsNullOrWhiteSpace(Title) ? Title : _session.Title));
@@ -1294,8 +1296,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void StartRenaming()
     {
-        RenameBuffer = CustomTitle ?? Title ?? string.Empty;
-        IsRenaming = true;
+        if (!IsRenaming)
+        {
+            RenameBuffer = CustomTitle ?? Title ?? string.Empty;
+            IsRenaming = true;
+        }
         FocusRenameBoxRequested?.Invoke();
     }
 
@@ -1339,7 +1344,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void SetTabColor(string? colorHex)
     {
-        TabColor = string.IsNullOrWhiteSpace(colorHex) ? null : colorHex.Trim();
+        TabColor = string.IsNullOrWhiteSpace(colorHex) || !Color.TryParse(colorHex.Trim(), out _)
+            ? null
+            : colorHex.Trim();
     }
 
     private void OnLocalizationPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

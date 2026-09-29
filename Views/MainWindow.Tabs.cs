@@ -179,10 +179,21 @@ public partial class MainWindow
 
     private void OnTabsPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-
+        var point = e.GetCurrentPoint(this);
         var visual = e.Source as Visual;
         if (IsCloseButtonClicked(visual)) return;
+
+        if (point.Properties.IsRightButtonPressed)
+        {
+            var targetTab = FindTabViewModel(visual);
+            if (targetTab != null && DataContext is MainViewModel mainVm && mainVm.SelectedTab != targetTab)
+            {
+                mainVm.SelectedTab = targetTab;
+            }
+            return;
+        }
+
+        if (!point.Properties.IsLeftButtonPressed) return;
 
         // If clicking inside the rename text box, let TextBox handle caret/selection
         if (visual is TextBox || visual?.FindAncestorOfType<TextBox>() != null)
@@ -514,6 +525,7 @@ public partial class MainWindow
 
             if (targetBox != null)
             {
+                targetBox.BringIntoView();
                 targetBox.Focus();
                 targetBox.SelectAll();
             }
