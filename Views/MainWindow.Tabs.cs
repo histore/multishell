@@ -558,6 +558,14 @@ public partial class MainWindow
 
         vm.Tabs.CollectionChanged += (s, e) =>
         {
+            if (e.OldItems != null)
+            {
+                foreach (TerminalTabViewModel tab in e.OldItems)
+                {
+                    tab.FocusRenameBoxRequested -= FocusTabRenameBox;
+                }
+            }
+
             if (e.NewItems != null)
             {
                 foreach (TerminalTabViewModel tab in e.NewItems)
