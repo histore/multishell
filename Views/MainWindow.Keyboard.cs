@@ -206,7 +206,6 @@ public partial class MainWindow
         if (e.Key == Key.F2 && DataContext is MainViewModel f2Vm && f2Vm.SelectedTab != null)
         {
             f2Vm.SelectedTab.StartRenaming();
-            FocusTabRenameBox();
             e.Handled = true;
             return;
         }

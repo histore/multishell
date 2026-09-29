@@ -238,6 +238,50 @@ public class TabRenamingAndColorTests : IDisposable
         Assert.Equal("#BB9AF7", restoredState.TabColor);
     }
 
+    [Fact]
+    public void OnSelectedTabChanged_WhenPreviousTabIsRenaming_AutoCommitsRenaming()
+    {
+        var processService = new FakePowerShellProcessService();
+        var persistence = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistence, new ThemeService(), new LocalizationService(), new FontSizeService());
+
+        mainVm.AddNewTabCommand.Execute(null); // Tab 2
+        var tab1 = mainVm.Tabs[0];
+        var tab2 = mainVm.Tabs[1];
+        mainVm.SelectedTab = tab1;
+
+        // Tab 1 enters renaming mode and edits buffer
+        tab1.StartRenaming();
+        tab1.RenameBuffer = "Committed Tab 1";
+        Assert.True(tab1.IsRenaming);
+
+        // Switch selection to Tab 2
+        mainVm.SelectedTab = tab2;
+
+        // Assert: Tab 1 must have auto-committed and exited renaming mode
+        Assert.False(tab1.IsRenaming);
+        Assert.Equal("Committed Tab 1", tab1.CustomTitle);
+    }
+
+    [Fact]
+    public void CloseTab_WhenTabIsRenaming_AutoCommitsRenamingBeforeCapturingHistory()
+    {
+        var processService = new FakePowerShellProcessService();
+        var persistence = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistence, new ThemeService(), new LocalizationService(), new FontSizeService());
+
+        var tab = mainVm.Tabs[0];
+        tab.StartRenaming();
+        tab.RenameBuffer = "Closed Renamed Tab";
+
+        // Close tab while renaming
+        mainVm.CloseTabCommand.Execute(tab);
+
+        // Assert: Closed tabs history should have captured the committed title
+        Assert.Single(mainVm.ClosedTabs);
+        Assert.Equal("Closed Renamed Tab", mainVm.ClosedTabs[0].CustomTitle);
+    }
+
     private class MockPowerShellSession : IShellSession
     {
         public Guid SessionId { get; } = Guid.NewGuid();
