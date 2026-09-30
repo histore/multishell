@@ -6,27 +6,34 @@ The Presentation layer is built on **Avalonia UI 11.2** and **CommunityToolkit.M
 ## 2. Component Structure
 
 ```
+Models/
+└── PathColorStripe.cs                 # Deterministic folder path color stripe model (REQ-TAB-025)
+
+Services/
+├── IPathColorCodingService.cs         # Path color stripe computation contract (REQ-TAB-025)
+└── PathColorCodingService.cs          # Deterministic folder color coding with Padovan scaling
+
 ViewModels/
-├── ViewModelBase.cs                 # Base ObservableObject
-├── MainViewModel.cs                 # Root orchestrator & dependency wiring
-├── MainViewModel.Tabs.cs            # Tab collection & lifecycle management
-├── MainViewModel.Profiles.cs        # Shell profile selection & management
-├── MainViewModel.Settings.cs        # Theme, font, language, and modal states
-├── MainViewModel.TabSwitcher.cs     # Quick tab switcher (Ctrl+Tab)
-├── TerminalTabViewModel.cs          # Active terminal tab state & shell bridge
-├── ClosedTabItemViewModel.cs        # Reopenable closed tab history item
-└── TerminalProfileItemViewModel.cs  # Selectable profile item in UI
+├── ViewModelBase.cs                   # Base ObservableObject
+├── MainViewModel.cs                   # Root orchestrator & dependency wiring
+├── MainViewModel.Tabs.cs              # Tab collection & lifecycle management
+├── MainViewModel.Profiles.cs          # Shell profile selection & management
+├── MainViewModel.Settings.cs          # Theme, font, language, and modal states
+├── MainViewModel.TabSwitcher.cs       # Quick tab switcher (Ctrl+Tab)
+├── TerminalTabViewModel.cs            # Active terminal tab state & shell bridge
+├── ClosedTabItemViewModel.cs          # Reopenable closed tab history item
+└── TerminalProfileItemViewModel.cs    # Selectable profile item in UI
 
 Views/
-├── MainWindow.axaml                 # Root window XAML layout
-├── MainWindow.axaml.cs              # Window lifecycle & backdrop setup
-├── MainWindow.Tabs.cs               # Tab drag-and-drop & header interaction
-├── MainWindow.Keyboard.cs           # Global keyboard shortcut routing
-├── MainWindow.HistoryDrawer.cs      # History drawer slide-out animation & events
-├── TerminalTabView.axaml            # Embedded terminal view control
-├── TerminalTabView.axaml.cs         # Palette mapping, clipboard & focus logic
-├── TerminalFocusHelper.cs           # Active terminal focus resolution & restoration
-└── Dialogs/                         # Modal overlay views (Profiles, About, etc.)
+├── MainWindow.axaml                   # Root window XAML layout
+├── MainWindow.axaml.cs                # Window lifecycle & backdrop setup
+├── MainWindow.Tabs.cs                 # Tab drag-and-drop & header interaction
+├── MainWindow.Keyboard.cs             # Global keyboard shortcut routing
+├── MainWindow.HistoryDrawer.cs        # History drawer slide-out animation & events
+├── TerminalTabView.axaml              # Embedded terminal view control
+├── TerminalTabView.axaml.cs           # Palette mapping, clipboard & focus logic
+├── TerminalFocusHelper.cs             # Active terminal focus resolution & restoration
+└── Dialogs/                           # Modal overlay views (Profiles, About, etc.)
 ```
 
 ## 3. Core ViewModels
@@ -35,15 +42,16 @@ Views/
 To avoid monolithic classes, `MainViewModel` is divided across functional partial files:
 * **`MainViewModel.cs`**:
   * Root properties: active tab reference, window title resolution, status indicators.
-  * Dependency injection constructor accepting services (`IPowerShellProcessService`, `ITerminalProfileService`, `IThemeService`, `ILocalizationService`, `ITabStatePersistenceService`, `IFontSizeService`, `IPathCommandHistoryService`).
+  * Dependency injection constructor accepting services (`IPowerShellProcessService`, `ITerminalProfileService`, `IThemeService`, `ILocalizationService`, `ITabStatePersistenceService`, `IFontSizeService`, `IPathCommandHistoryService`, `IDirectoryHistoryService`, `IPathColorCodingService`).
   * Manages path command history lifecycle: migrates legacy tab command histories on load and invokes `_pathCommandHistoryService.PruneNonExistentPaths()` prior to saving state on application shutdown.
 * **`MainViewModel.Tabs.cs`**:
   * Manages `ObservableCollection<TerminalTabViewModel> Tabs`.
-  * Commands: `NewTabCommand`, `CloseTabCommand`, `CloseOtherTabsCommand`, `CloseTabsToRightCommand`, `ReopenClosedTabCommand`, `DuplicateTabCommand`, `MoveTabCommand`.
+  * Commands: `NewTabCommand`, `CloseTabCommand`, `CloseSelectedTabCommand` (`Ctrl+Shift+W` / `Ctrl+F4`), `CloseOtherTabsCommand`, `CloseTabsToRightCommand`, `ReopenClosedTabCommand`, `DuplicateTabCommand`, `MoveTabCommand`.
   * `AddNewTabWithDirectory` supports explicit index placement via an optional `insertIndex` parameter.
   * `DuplicateTabCommand` calculates `insertIndex = targetIndex + 1`, placing newly duplicated tabs directly to the right of the active tab.
   * `OpenDirectoryFromDrop` handles file/folder drop navigation into the active or target tab, or creates a new tab when `openInNewTab` (Shift key) is active or when 0 tabs exist.
   * Maintains `ClosedTabs` history with preserved `CustomTitle` and `TabColor` for restoring recently closed tabs.
+  * Path Color Stripes Coordination: listens to `PropertyChanged` on tabs; recalculates `PathColorStripes` on `WorkingDirectory` changes via `UpdateTabPathColorStripes(tab)`.
 * **`MainViewModel.Profiles.cs`**:
   * Profile selection dropdown list and default launch profile selection.
   * Commands for creating, editing, and deleting custom terminal profiles.
@@ -64,6 +72,10 @@ Backs an individual terminal tab instance:
 * Maintains live history:
   * `CommandHistory`: Dynamically synced list of commands executed in the current directory.
   * `DirectoryHistory`: List of visited working directories captured via OSC 7 / OSC 9;9.
+* Deterministic Folder Path Color Stripes (REQ-TAB-025):
+  * Exposes `PathColorStripes` collection (`IReadOnlyList<PathColorStripe>`) and `HasPathColorStripes` boolean indicator.
+  * Populated with deterministic color stripes representing each directory depth level from left to right (up to 16 visible stripes).
+  * Color stripes use Padovan sequence width multipliers (1, 2, 3, 4, 5, 7, 9, 12, 16, 21, 28, 37) and golden-ratio hue distribution for distinct, aesthetically harmonious identification.
 * Concurrency-Hardened Fuzzy Search:
   * `RefreshFilteredCommands()` and `RefreshFilteredDirectories()` take `.ToArray()` snapshots of history collections before invoking `_fuzzySearchService.FilterAndRank` to eliminate concurrent collection modification exceptions during background streaming.
 * In-Terminal Search State & Navigation (REQ-TERM-006):
@@ -82,9 +94,12 @@ Backs an individual terminal tab instance:
 ### 4.1 `MainWindow.axaml` Layout
 * **Top Header / Draggable Tab Bar**:
   * Custom 30px draggable title bar integrating window controls (minimize, maximize, close).
-  * `ItemsControl` bound to `Tabs` with custom tab items supporting double-click or `F2` inline renaming (`TextBox.tabRenameBox`), bottom accent indicator bar (`TabColorBrush`), right-click `ContextMenu` (Rename `F2`, Reset Name, 9-color Palette submenu, Duplicate `Ctrl+Shift+D`, Close `Ctrl+Shift+W`, Close Other Tabs, Close Tabs to Right), and active selection indication.
+  * `ItemsControl` bound to `Tabs` with custom tab items supporting double-click or `F2` inline renaming (`TextBox.tabRenameBox`), top deterministic folder path color stripes (`ItemsControl` bound to `PathStripes`, REQ-TAB-025), bottom accent indicator bar (`TabColorBrush`), right-click `ContextMenu` (Rename `F2`, Reset Name, 9-color Palette submenu, Duplicate `Ctrl+Shift+D`, Close `Ctrl+Shift+W` / `Ctrl+F4`, Close Other Tabs, Close Tabs to Right), and active selection indication.
   * Drag-and-drop support (`DragDrop.AllowDrop="True"`): dragging over tab items dynamically activates the hovered tab, and dropping files navigates or opens a new tab.
   * Drag hover auto-scrolling: hovering over overflow scroll arrow buttons (`‹` / `›`) during any active drag operation (external files or tab drag) automatically scrolls the tab bar sequentially (250ms dwell, then 320ms per tab step) to reveal hidden tabs.
+* **Window KeyBindings & Keyboard Routing (`MainWindow.Keyboard.cs`)**:
+  * Declarative `<Window.KeyBindings>` for quick tab actions: `Ctrl+Shift+T` (New Tab), `Ctrl+Shift+D` (Duplicate Tab), `Ctrl+Shift+W` and `Ctrl+F4` (Close Active Tab).
+  * Tunnel preview event handler `OnWindowKeyDown` intercepts global shortcuts before the terminal emulator control consumes them, routing tab switching (`Ctrl+Tab`, `Ctrl+PageUp`/`PageDown`), tab reordering (`Ctrl+Shift+PageUp`/`PageDown`), and tab closing (`Ctrl+Shift+W`, `Ctrl+F4`).
 * **Main Terminal Host Panel**:
   * Persistent tab hosting via `Panel` with `IsVisible="{Binding IsSelected}"` binding. This retains ConPTY streams, terminal ANSI buffers, and scrollback without unmounting controls upon tab switching.
   * Drag-and-drop surface (`TerminalContentArea`): dropping folders or files navigates the active terminal (or containing folder for files), and holding `Shift` opens a new tab.
