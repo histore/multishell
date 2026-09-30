@@ -8,8 +8,8 @@ For the comprehensive system architecture specification and subsystem diagrams, 
 ## Architecture & Layers
 MultiShell strictly adheres to **Clean Architecture** and **MVVM** principles:
 
-- **Domain Layer (`Models/`)**: Core immutable entities, value objects, and serialization records (`TabState`, `TerminalProfile`, `LanguageOption`) with zero external dependencies.
-- **Services Layer (`Services/`)**: Application contracts and infrastructure implementations (`ShellSession` for ConPTY Win32 pipes, `TerminalProfileService`, `ThemeService`, `LocalizationService`, `TabStatePersistenceService`, `FuzzySearchService`, `PathCommandHistoryService`).
+- **Domain Layer (`Models/`)**: Core immutable entities, value objects, and serialization records (`TabState`, `TerminalProfile`, `LanguageOption`, `PathColorStripe`) with zero external dependencies.
+- **Services Layer (`Services/`)**: Application contracts and infrastructure implementations (`ShellSession` for ConPTY Win32 pipes, `TerminalProfileService`, `ThemeService`, `LocalizationService`, `TabStatePersistenceService`, `FuzzySearchService`, `PathCommandHistoryService`, `DirectoryHistoryService`, `PathColorCodingService`).
 - **Presentation Layer (`ViewModels/` & `Views/`)**: Reactive view models (`MainViewModel`, `TerminalTabViewModel`) using `CommunityToolkit.Mvvm`, decoupled from Avalonia UI controls, and XAML views using compiled bindings (`x:DataType`).
 - **Automated Test Suite (`MultiShell.Tests/`)**: Comprehensive xUnit tests adhering to the AAA pattern.
 
@@ -32,7 +32,7 @@ Detailed technical specifications and design blueprints are modularized and main
 | Module | Specification | Scope & Key Responsibilities |
 | :--- | :--- | :--- |
 | **Terminal Session & ConPTY** | [`terminal-session.md`](docs/architecture/modules/terminal-session.md) | Win32 ConPTY lifecycle, pipe redirection, stateful UTF-8 decoding, OSC 7/9/133 shell integration. |
-| **Presentation & MVVM** | [`presentation.md`](docs/architecture/modules/presentation.md) | Avalonia UI composition, `MainViewModel` partials, `TerminalTabViewModel`, tab drag/drop, persistent panels. |
+| **Presentation & MVVM** | [`presentation.md`](docs/architecture/modules/presentation.md) | Avalonia UI composition, `MainViewModel` partials, `TerminalTabViewModel`, path color stripes, tab drag/drop, persistent panels. |
 | **Profiles & Configuration** | [`profiles-and-configuration.md`](docs/architecture/modules/profiles-and-configuration.md) | Shell profile detection, default profile seeding, JSON profile store. |
 | **Workspace Persistence** | [`persistence.md`](docs/architecture/modules/persistence.md) | Session serialization (`tabs_state.json`), atomic temp-swap writing, AOT-compliant System.Text.Json context. |
 | **Internationalization (i18n)** | [`localization.md`](docs/architecture/modules/localization.md) | 0% hardcoded strings, dynamic runtime language switching (EN, DE, FR, ES, IT, PT), fallback handling. |
