@@ -26,6 +26,14 @@ public static class LinkDetectionHelper
 
     private static readonly char[] TrailingPunctuation = ['.', ',', ';', ':', '!', '?', ')', ']', '>', '"', '\''];
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (bool Exists, string FullPath, long Timestamp)> PathResolutionCache = new(StringComparer.OrdinalIgnoreCase);
+    private const long CacheTtlMs = 2000;
+
+    private static readonly HashSet<string> ExecutableExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".exe", ".bat", ".cmd", ".vbs", ".js", ".msi", ".com", ".scr", ".pif"
+    };
+
     /// <summary>
     /// Represents a detected link or file path candidate within a line of text.
     /// </summary>
@@ -144,12 +152,21 @@ public static class LinkDetectionHelper
         var cleanPath = StripLineNumberSuffix(pathCandidate);
         if (string.IsNullOrWhiteSpace(cleanPath)) return false;
 
+        var cacheKey = $"{workingDirectory}|{cleanPath}";
+        var now = Environment.TickCount64;
+        if (PathResolutionCache.TryGetValue(cacheKey, out var cached) && now - cached.Timestamp < CacheTtlMs)
+        {
+            resolvedPath = cached.FullPath;
+            return cached.Exists;
+        }
+
         try
         {
             // 1. Direct path check (absolute or relative to current process)
             if (File.Exists(cleanPath) || Directory.Exists(cleanPath))
             {
                 resolvedPath = Path.GetFullPath(cleanPath);
+                CacheResolution(cacheKey, true, resolvedPath, now);
                 return true;
             }
 
@@ -160,6 +177,7 @@ public static class LinkDetectionHelper
                 if (File.Exists(combined) || Directory.Exists(combined))
                 {
                     resolvedPath = Path.GetFullPath(combined);
+                    CacheResolution(cacheKey, true, resolvedPath, now);
                     return true;
                 }
             }
@@ -169,7 +187,17 @@ public static class LinkDetectionHelper
             // Path contains invalid characters or security restriction
         }
 
+        CacheResolution(cacheKey, false, string.Empty, now);
         return false;
+    }
+
+    private static void CacheResolution(string key, bool exists, string fullPath, long timestamp)
+    {
+        if (PathResolutionCache.Count > 1000)
+        {
+            PathResolutionCache.Clear();
+        }
+        PathResolutionCache[key] = (exists, fullPath, timestamp);
     }
 
     /// <summary>
@@ -212,6 +240,17 @@ public static class LinkDetectionHelper
             // 2. Local File / Directory Path
             if (TryResolveFilePath(target, workingDirectory, out var resolvedPath))
             {
+                if (File.Exists(resolvedPath) && ExecutableExtensions.Contains(Path.GetExtension(resolvedPath)))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "notepad.exe",
+                        Arguments = $"\"{resolvedPath}\"",
+                        UseShellExecute = false
+                    });
+                    return true;
+                }
+
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = resolvedPath,

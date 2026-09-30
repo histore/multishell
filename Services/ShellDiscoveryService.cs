@@ -57,7 +57,7 @@ public class ShellDiscoveryService : IShellDiscoveryService
             _localizationService?["Shell_CMD"] ?? "Command Prompt",
             "CMD",
             cmdPath,
-            File.Exists(cmdPath) || cmdPath != null));
+            File.Exists(cmdPath)));
 
         return shells;
     }

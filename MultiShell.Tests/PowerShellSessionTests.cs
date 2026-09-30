@@ -119,5 +119,28 @@ public class PowerShellSessionTests
         Assert.Contains("[Console]::InputEncoding = [System.Text.Encoding]::UTF8", decodedScript);
         Assert.Contains("$OutputEncoding = [System.Text.Encoding]::UTF8", decodedScript);
     }
+
+    [Fact]
+    public void CheckForOscSequences_FiresCommandExecuted_ForConsecutiveIdenticalCommands()
+    {
+        using var session = new ShellSession("OscTest");
+        var executed = new System.Collections.Generic.List<string>();
+        session.CommandExecuted += cmd => executed.Add(cmd);
+
+        var method = typeof(ShellSession).GetMethod("CheckForOscSequences", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(method);
+
+        var base64Cmd = Convert.ToBase64String(Encoding.UTF8.GetBytes("dotnet test"));
+        var packet = Encoding.UTF8.GetBytes($"\x1b]133;E;{base64Cmd}\x07");
+
+        // First execution
+        method.Invoke(session, new object[] { packet });
+        // Second identical execution
+        method.Invoke(session, new object[] { packet });
+
+        Assert.Equal(2, executed.Count);
+        Assert.Equal("dotnet test", executed[0]);
+        Assert.Equal("dotnet test", executed[1]);
+    }
 }
 

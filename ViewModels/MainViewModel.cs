@@ -398,7 +398,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
-            _persistenceService.SaveStateAsync(workspaceState).GetAwaiter().GetResult();
+            Task.Run(async () => await _persistenceService.SaveStateAsync(workspaceState).ConfigureAwait(false))
+                .Wait(TimeSpan.FromSeconds(2));
         }
         catch
         {

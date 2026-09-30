@@ -21,12 +21,6 @@ public class TerminalProfileService : ITerminalProfileService
 
     public event Action? ProfilesChanged;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true
-    };
-
     public TerminalProfileService(string? customFilePath = null, ILocalizationService? localizationService = null)
     {
         _localizationService = localizationService;

@@ -25,6 +25,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     private readonly IDirectoryHistoryService _directoryHistoryService;
     private readonly object _commandHistoryLock = new();
     private readonly object _directoryHistoryLock = new();
+    private readonly EventHandler<Avalonia.AvaloniaPropertyChangedEventArgs>? _terminalModelPropertyChangedHandler;
     private string? _pendingCommandDirectory;
     private bool _isDisposed;
 
@@ -135,17 +136,27 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     public static string FormatMiddleEllipsis(string? text, int maxLength = 22)
     {
         if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        if (maxLength <= 0) return string.Empty;
         if (text.Length <= maxLength) return text;
+
+        if (maxLength <= 3)
+        {
+            return text[..maxLength];
+        }
 
         char sep = text.Contains('/') && !text.Contains('\\') ? '/' : '\\';
         var parts = text.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
 
         if (parts.Length <= 2)
         {
-            // Truncate simple long text or 2-segment path in the middle
+            if (maxLength < 5)
+            {
+                return text[..maxLength];
+            }
+
             int keep = (maxLength - 3) / 2;
-            if (keep < 1) keep = 1;
-            return text[..keep] + "..." + text[^keep..];
+            int suffixKeep = maxLength - 3 - keep;
+            return text[..keep] + "..." + text[^suffixKeep..];
         }
 
         string root = text.StartsWith('/')
@@ -160,15 +171,27 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             return compact;
         }
 
-        // If leaf itself is too long, truncate leaf with an ellipsis at the end
+        // If leaf itself can fit within the budget with a trailing ellipsis
         int rootLength = root.Length + 1; // root + sep
-        int availableForLeaf = Math.Max(4, maxLength - rootLength - 5); // minus ...\ and trailing …
-        if (leaf.Length > availableForLeaf)
+        int availableForLeaf = maxLength - rootLength - 5; // minus ...\ and trailing …
+        if (availableForLeaf >= 3 && leaf.Length > availableForLeaf)
         {
-            return $"{root}{sep}...{sep}{leaf[..availableForLeaf]}…";
+            string truncatedLeafCompact = $"{root}{sep}...{sep}{leaf[..availableForLeaf]}…";
+            if (truncatedLeafCompact.Length <= maxLength)
+            {
+                return truncatedLeafCompact;
+            }
         }
 
-        return compact;
+        // If root itself or compact form still exceeds maxLength, fallback to strict middle ellipsis
+        if (maxLength < 5)
+        {
+            return text[..maxLength];
+        }
+
+        int generalKeep = (maxLength - 3) / 2;
+        int generalSuffixKeep = maxLength - 3 - generalKeep;
+        return text[..generalKeep] + "..." + text[^generalSuffixKeep..];
     }
 
     /// <summary>
@@ -352,7 +375,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             ReflowOnResize = false,
         });
 
-        TerminalModel.PropertyChanged += (s, e) =>
+        _terminalModelPropertyChangedHandler = (s, e) =>
         {
             if (e.Property.Name == "SearchResultCount")
             {
@@ -365,6 +388,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
                 UpdateSearchMatchSummary();
             }
         };
+        TerminalModel.PropertyChanged += _terminalModelPropertyChangedHandler;
 
         // Wire PTY output -> terminal rendering, directory tracking & command tracking
         _session.DataReceived += OnSessionDataReceived;
@@ -799,9 +823,10 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             // 3. Strip unsupported complete OSC sequences (e.g. OSC 133 / OSC 9;9 shell integration)
             textToFeed = SanitizeTerminalText(current);
 
-            // Safety boundary on stream buffer
+            // Safety boundary on stream buffer: flush remaining sanitized text rather than dropping
             if (_streamBuffer.Length > 16384)
             {
+                textToFeed += SanitizeTerminalText(_streamBuffer.ToString());
                 _streamBuffer.Clear();
             }
         }
@@ -1001,6 +1026,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
                 targetPath = targetPath[6..].Trim().Trim('"', '\'');
             }
         }
+        else if ((trimmed.Length == 2 && char.IsLetter(trimmed[0]) && trimmed[1] == ':') ||
+                 (trimmed.Length == 3 && char.IsLetter(trimmed[0]) && trimmed[1] == ':' && (trimmed[2] == '\\' || trimmed[2] == '/')))
+        {
+            targetPath = trimmed[..2] + "\\";
+        }
 
         if (string.IsNullOrWhiteSpace(targetPath)) return;
 
@@ -1021,6 +1051,10 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
                 {
                     OnSessionWorkingDirectoryChanged(root);
                 }
+            }
+            else if (targetPath.StartsWith('/'))
+            {
+                OnSessionWorkingDirectoryChanged(targetPath);
             }
             else if (System.IO.Path.IsPathRooted(targetPath))
             {
@@ -1078,8 +1112,14 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     {
         if (string.IsNullOrWhiteSpace(command)) return;
 
-        _pendingCommandDirectory = WorkingDirectory;
         var clean = command.Trim();
+        _pendingCommandDirectory = WorkingDirectory;
+        if (ShellType != ShellType.PowerShell)
+        {
+            OnSessionCommandExecuted(clean);
+            CheckForDirectoryChangeCommand(clean);
+        }
+
         var commandWithEnter = clean.EndsWith('\r') || clean.EndsWith('\n') ? clean : clean + "\r";
         var bytes = Encoding.UTF8.GetBytes(commandWithEnter);
         _session.Send(bytes);
@@ -1110,6 +1150,12 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             ShellType.WSL => $"cd {escapedPath}\n",
             _ => $"Set-Location -LiteralPath {escapedPath}\r"
         };
+
+        if (ShellType != ShellType.PowerShell)
+        {
+            CheckForDirectoryChangeCommand(command.Trim());
+        }
+
         var bytes = Encoding.UTF8.GetBytes(command);
         _session.Send(bytes);
     }
@@ -1368,6 +1414,10 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
         TerminalModel.UserInput -= OnTerminalUserInput;
         TerminalModel.SizeChanged -= OnTerminalSizeChanged;
+        if (_terminalModelPropertyChangedHandler != null)
+        {
+            TerminalModel.PropertyChanged -= _terminalModelPropertyChangedHandler;
+        }
 
         CloseRequested = null;
         DirectoryChanged = null;
