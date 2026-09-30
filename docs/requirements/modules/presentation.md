@@ -248,6 +248,32 @@ This document defines the functional and non-functional requirements specific to
 
 ---
 
+### `[REQ-TAB-025]` Tab Path Color Stripes Coding (All Folders & Deterministic Padovan Width)
+
+- **Status**: `IMPLEMENTED`
+- **Type**: `UI/UX`
+- **Target Release**: `v0.1.0`
+
+#### User Story
+> **As a** user working across multiple repositories or sibling directories,  
+> **I want** each folder level in the working directory path to receive a deterministic color segment arranged horizontally across a fixed-height top bar on the tab, displaying all folders statically without dynamic cross-tab omission or jumping,  
+> **so that** related tabs are instantly recognized by their characteristic color pattern while the tab display remains calm and stable.
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: Each folder segment in a tab's working directory receives a deterministic, aesthetically pleasing color based on case-insensitive FNV-1a hashing and HSL color distribution.
+- [x] **AC-2**: Color segments have a fixed base size (`BaseWidth = 9px`, `Height = 3px`), growing horizontally side-by-side from left to right.
+- [x] **AC-3**: Width of each folder block scales with strictly increasing Padovan sequence multipliers (`[1, 2, 3, 4, 5, 7, 9, 12, 16, 21, 28, 37]`), giving higher directory levels smaller blocks and deeper levels wider blocks.
+- [x] **AC-4**: All folder levels of the directory path are displayed statically; no dynamic cross-tab omission occurs, preventing jumping or shifting of stripes when other tabs are opened, closed, or navigated.
+- [x] **AC-5**: Drive root indicators (e.g. `C:`) are omitted so that the color stripes focus on actual directories.
+- [x] **AC-6**: When tabs reside in subfolders of a shared structure (e.g. `C:\dt\project\Services` and `C:\dt\project\Core`), they naturally share identical color blocks from left to right for shared ancestors (`dt`, `project`).
+- [x] **AC-7**: The width of the tab is strictly determined by its content (icon, title, close button) and never expanded by the color bar. When the unscaled length of the color blocks reaches or exceeds the tab's available width, the entire bar scales down proportionally preserving the relative widths of all blocks (`Viewbox Stretch="Fill" StretchDirection="DownOnly"` constrained by `MaxWidth="{Binding #TabContentPanel.Bounds.Width}"`).
+
+#### Traceability & Verification
+- **Architecture Contract**: `docs/architecture/modules/presentation.md`
+- **Test Suite**: `MultiShell.Tests/PathColorCodingServiceTests.cs`, `MultiShell.Tests/TabPathColorCodingIntegrationTests.cs`
+
+---
+
 ### `[REQ-UI-001]` Modern UI Theme, Header Toolbar & Visual Polish
 
 - **Status**: `IMPLEMENTED`
@@ -453,6 +479,7 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-TAB-022` | Tab Creation via Double-Click on Empty Tab Bar | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-TAB-023` | Tab Switcher Direct Tab Closure via Hover Button | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-TAB-024` | File & Folder Drag-Drop, Shift-Tab & Tab Drag-Over | Functional | IMPLEMENTED | `v0.1.0` |
+| `REQ-TAB-025` | Tab Path Color Stripes Coding (All Folders & Deterministic Padovan Width) | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide (`F1`) | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-003` | About Dialog & Technology Information | UI/UX | IMPLEMENTED | `v0.1.0` |

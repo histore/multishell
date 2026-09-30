@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
@@ -20,6 +21,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly IFontSizeService _fontSizeService;
     private readonly IPathCommandHistoryService _pathCommandHistoryService;
     private readonly IDirectoryHistoryService _directoryHistoryService;
+    private readonly IPathColorCodingService _pathColorCodingService;
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
@@ -30,6 +32,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /// Gets the shared directory history service.
     /// </summary>
     public IDirectoryHistoryService DirectoryHistoryService => _directoryHistoryService;
+
+    /// <summary>
+    /// Gets the path color coding service for tab folder pattern visualization.
+    /// </summary>
+    public IPathColorCodingService PathColorCodingService => _pathColorCodingService;
 
     /// <summary>
     /// Gets the path command history service for path-bound command histories.
@@ -139,6 +146,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ITerminalProfileService? terminalProfileService = null,
         IPathCommandHistoryService? pathCommandHistoryService = null,
         IDirectoryHistoryService? directoryHistoryService = null,
+        IPathColorCodingService? pathColorCodingService = null,
         string? initialDirectory = null)
     {
         _initialDirectory = initialDirectory;
@@ -152,6 +160,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _terminalProfileService.ProfilesChanged += ReloadProfiles;
         _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
         _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
+        _pathColorCodingService = pathColorCodingService ?? new PathColorCodingService();
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;
@@ -164,6 +173,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             OnPropertyChanged(nameof(HasOpenTabs));
             OnPropertyChanged(nameof(HasNoTabs));
+
+            if (e.Action == NotifyCollectionChangedAction.Add && e.NewItems != null)
+            {
+                foreach (TerminalTabViewModel tab in e.NewItems)
+                {
+                    UpdateTabPathColorStripes(tab);
+                }
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                UpdateAllTabPathColorStripes();
+            }
         };
 
         ClosedTabs.CollectionChanged += (s, e) =>

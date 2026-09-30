@@ -200,6 +200,7 @@ docs/requirements/modules/
 | `REQ-TAB-022` | Tab Creation via Double-Click on Empty Tab Bar | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-TAB-023` | Tab Switcher Direct Tab Closure via Hover Button | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-TAB-024` | File & Folder Drag-Drop, Shift-Tab & Tab Drag-Over | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-TAB-025` | Tab Path Color Stripes Coding (All Folders & Deterministic Padovan Width) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-TERM-001` | Robust UTF-8 Character Streaming & Monospace Glyphs | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
 | `REQ-TERM-002` | Multi-line Newline Insertion via Ctrl/Shift+Enter | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
 | `REQ-TERM-003` | Terminal Scrollback & Buffer Control Shortcuts | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
