@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Threading;
 
 namespace MultiShell.Services;
 
@@ -17,8 +17,8 @@ public class DirectoryHistoryService : IDirectoryHistoryService
     /// </summary>
     public const int MaxHistoryCount = 100;
 
-    private readonly object _lock = new();
-    private readonly List<string> _directories = new();
+    private readonly Lock _lock = new();
+    private readonly List<string> _directories = [];
 
     /// <inheritdoc />
     public event Action? HistoryChanged;
@@ -62,7 +62,7 @@ public class DirectoryHistoryService : IDirectoryHistoryService
     {
         lock (_lock)
         {
-            return _directories.ToArray();
+            return [.. _directories];
         }
     }
 

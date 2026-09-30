@@ -471,14 +471,19 @@ public partial class MainViewModel
 
     private void OnTabPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (sender is TerminalTabViewModel tab &&
-            e.PropertyName is nameof(TerminalTabViewModel.CustomTitle) or nameof(TerminalTabViewModel.TabColor))
+        if (sender is not TerminalTabViewModel tab) return;
+
+        if (e.PropertyName is nameof(TerminalTabViewModel.CustomTitle) or nameof(TerminalTabViewModel.TabColor))
         {
             if (tab == SelectedTab)
             {
                 OnPropertyChanged(nameof(WindowTitle));
             }
             TriggerSaveState();
+        }
+        else if (e.PropertyName == nameof(TerminalTabViewModel.WorkingDirectory))
+        {
+            UpdateTabPathColorStripes(tab);
         }
     }
 
@@ -488,7 +493,30 @@ public partial class MainViewModel
         {
             OnPropertyChanged(nameof(WindowTitle));
         }
+        // Note: UpdateTabPathColorStripes is already triggered via OnTabPropertyChanged(WorkingDirectory).
         TriggerSaveState();
+    }
+
+    /// <summary>
+    /// Recalculates and updates the path color stripes across all open tabs (REQ-TAB-025).
+    /// </summary>
+    public void UpdateAllTabPathColorStripes()
+    {
+        if (Tabs.Count == 0) return;
+
+        foreach (var tab in Tabs)
+        {
+            UpdateTabPathColorStripes(tab);
+        }
+    }
+
+    /// <summary>
+    /// Updates the path color stripes for a specific tab based on its working directory (REQ-TAB-025).
+    /// </summary>
+    public void UpdateTabPathColorStripes(TerminalTabViewModel tab)
+    {
+        if (tab == null) return;
+        tab.PathColorStripes = _pathColorCodingService.GetStripesForPath(tab.WorkingDirectory);
     }
 
     private void OnTabHistoryChanged(TerminalTabViewModel tab)

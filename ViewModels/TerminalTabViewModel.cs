@@ -8,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MultiShell.Models;
 using MultiShell.Services;
 using SvcSystems.UI.Terminal;
 
@@ -73,6 +74,15 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             }
         }
     }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPathColorStripes))]
+    private IReadOnlyList<PathColorStripe> _pathColorStripes = Array.Empty<PathColorStripe>();
+
+    /// <summary>
+    /// Gets whether this tab currently has one or more dynamic path color stripes (REQ-TAB-025).
+    /// </summary>
+    public bool HasPathColorStripes => PathColorStripes != null && PathColorStripes.Count > 0;
 
     private bool _isRenaming;
     /// <summary>

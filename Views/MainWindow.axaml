@@ -156,7 +156,40 @@
                                                 </ContextMenu>
                                             </Button.ContextMenu>
                                             <Grid>
-                                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <!-- Top Dynamic Path Color Stripes (REQ-TAB-025) -->
+                                                <Grid VerticalAlignment="Top"
+                                                      HorizontalAlignment="Left"
+                                                      Margin="0,0,0,0"
+                                                      Height="3"
+                                                      MaxWidth="{Binding #TabContentPanel.Bounds.Width}"
+                                                      IsHitTestVisible="False"
+                                                      IsVisible="{Binding HasPathColorStripes}">
+                                                    <Viewbox Stretch="Fill"
+                                                             StretchDirection="DownOnly"
+                                                             Height="3"
+                                                             HorizontalAlignment="Left">
+                                                        <ItemsControl ItemsSource="{Binding PathColorStripes}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <StackPanel Orientation="Horizontal" Spacing="1" />
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                 <DataTemplate x:DataType="models:PathColorStripe">
+                                                                     <Border Width="{Binding Width}"
+                                                                             Height="{Binding Height}"
+                                                                             Background="{Binding Brush}"
+                                                                             CornerRadius="0.5" />
+                                                                 </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </Viewbox>
+                                                </Grid>
+
+                                                <StackPanel x:Name="TabContentPanel"
+                                                            Orientation="Horizontal"
+                                                            Spacing="6"
+                                                            VerticalAlignment="Center">
                                                     <Border Background="{DynamicResource AppSurfaceSubtle}"
                                                             CornerRadius="3"
                                                             Padding="3,1"
