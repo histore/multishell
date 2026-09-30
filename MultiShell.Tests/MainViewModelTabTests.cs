@@ -1046,6 +1046,29 @@ public class MainViewModelTabTests
     }
 
     [Fact]
+    public async Task CloseSelectedTabCommand_ClosesActiveTab_WhenExecuted()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTab();
+        Assert.Equal(2, mainVm.Tabs.Count);
+        var tab1 = mainVm.Tabs[1];
+        mainVm.SelectedTab = tab1;
+
+        // Act - Invoked by Window KeyBinding (Ctrl+Shift+W / Ctrl+F4)
+        mainVm.CloseSelectedTabCommand.Execute(null);
+
+        // Assert
+        Assert.Single(mainVm.Tabs);
+        Assert.DoesNotContain(tab1, mainVm.Tabs);
+        Assert.Same(mainVm.Tabs[0], mainVm.SelectedTab);
+    }
+
+    [Fact]
     public async Task ShowTabSwitcher_OpensAndHighlightsNextTab_WhenTriggeredByKeyboard()
     {
         // Arrange

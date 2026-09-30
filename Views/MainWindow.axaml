@@ -24,6 +24,7 @@
         <KeyBinding Gesture="Ctrl+Shift+T" Command="{Binding AddNewTabCommand}" />
         <KeyBinding Gesture="Ctrl+Shift+D" Command="{Binding DuplicateTabCommand}" />
         <KeyBinding Gesture="Ctrl+Shift+W" Command="{Binding CloseSelectedTabCommand}" />
+        <KeyBinding Gesture="Ctrl+F4" Command="{Binding CloseSelectedTabCommand}" />
     </Window.KeyBindings>
 
     <Grid RowDefinitions="Auto, *">

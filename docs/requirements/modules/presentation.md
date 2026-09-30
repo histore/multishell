@@ -126,13 +126,13 @@ This document defines the functional and non-functional requirements specific to
 
 #### User Story
 > **As a** user,  
-> **I want** keyboard shortcuts to cycle tabs (`Ctrl+Tab`, `Ctrl+Shift+Tab`, `Ctrl+PageDown`, `Ctrl+PageUp`), jump to numbered tabs (`Ctrl+1`..`8`, `Ctrl+9`), close active tab (`Ctrl+Shift+W`), and move tabs left/right (`Ctrl+Shift+PageUp`/`PageDown`).
+> **I want** keyboard shortcuts to cycle tabs (`Ctrl+Tab`, `Ctrl+Shift+Tab`, `Ctrl+PageDown`, `Ctrl+PageUp`), jump to numbered tabs (`Ctrl+1`..`8`, `Ctrl+9`), close active tab (`Ctrl+Shift+W` / `Ctrl+F4`), and move tabs left/right (`Ctrl+Shift+PageUp`/`PageDown`).
 
 #### Acceptance Criteria (Given-When-Then)
 - [x] **AC-1**: `Ctrl+Tab` / `Ctrl+PageDown` selects the next tab (cyclic wrap-around).
 - [x] **AC-2**: `Ctrl+Shift+Tab` / `Ctrl+PageUp` selects the previous tab (cyclic wrap-around).
 - [x] **AC-3**: `Ctrl+1`..`8` jumps to the 1st through 8th tab; `Ctrl+9` jumps to the last tab.
-- [x] **AC-4**: `Ctrl+Shift+W` closes the active tab.
+- [x] **AC-4**: `Ctrl+Shift+W` or `Ctrl+F4` closes the active tab.
 - [x] **AC-5**: `Ctrl+Shift+PageUp` / `Ctrl+Shift+PageDown` moves the tab left / right.
 
 #### Traceability & Verification

@@ -292,8 +292,8 @@ public partial class MainWindow
                     return;
                 }
 
-                // 2. Ctrl+Shift+W: Close active tab
-                if (isCtrl && isShift && e.Key == Key.W)
+                // 2. Ctrl+Shift+W / Ctrl+F4: Close active tab
+                if ((isCtrl && isShift && e.Key == Key.W) || (isCtrl && !isShift && e.Key == Key.F4))
                 {
                     vm.CloseSelectedTab();
                     e.Handled = true;
