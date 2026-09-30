@@ -1211,6 +1211,100 @@ public class TerminalTabViewModelTests
         Assert.Null(vm.TabColor);
         Assert.False(vm.HasTabColor);
     }
+
+    [Fact]
+    public void FormatMiddleEllipsis_WithLongRootAndShortLeaf_NeverExceedsMaxLength()
+    {
+        // Arrange: Path where root+leaf compact format exceeds maxLength, but leaf is short
+        string path = @"\\verylongnasstoragehostname\sharename\project\src\app";
+        int maxLen = 22;
+
+        // Act
+        string result = TerminalTabViewModel.FormatMiddleEllipsis(path, maxLen);
+
+        // Assert: Length must strictly not exceed maxLength
+        Assert.True(result.Length <= maxLen, $"Result '{result}' length {result.Length} exceeded {maxLen}");
+    }
+
+    [Theory]
+    [InlineData("abcdefgh", 0, "")]
+    [InlineData("abcdefgh", -1, "")]
+    [InlineData("abcdefgh", 2, "ab")]
+    [InlineData("abcdefgh", 3, "abc")]
+    [InlineData("abcdefgh", 4, "abcd")]
+    [InlineData("abcdefgh", 5, "a...h")]
+    public void FormatMiddleEllipsis_WithSmallMaxLength_NeverExceedsMaxLength(string text, int maxLen, string expected)
+    {
+        // Act
+        string result = TerminalTabViewModel.FormatMiddleEllipsis(text, maxLen);
+
+        // Assert
+        Assert.Equal(expected, result);
+        if (maxLen > 0)
+        {
+            Assert.True(result.Length <= maxLen);
+        }
+    }
+
+    [Fact]
+    public void CheckForDirectoryChangeCommand_CmdDriveSwitch_UpdatesWorkingDirectory()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("CMD", @"C:\Windows") { ShellType = ShellType.CMD };
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Act: Send 'C:\r' to switch drive
+        vm.SendInput(Encoding.UTF8.GetBytes("C:\r"));
+
+        // Assert: Working directory should be normalized to C:\
+        Assert.Equal(@"C:\", vm.WorkingDirectory);
+    }
+
+    [Fact]
+    public void CheckForDirectoryChangeCommand_WslRootPath_UpdatesWorkingDirectory()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("WSL", "/home/user") { ShellType = ShellType.WSL };
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Act: Send 'cd /var/log\r'
+        vm.SendInput(Encoding.UTF8.GetBytes("cd /var/log\r"));
+
+        // Assert: Working directory should update to /var/log
+        Assert.Equal("/var/log", vm.WorkingDirectory);
+    }
+
+    [Fact]
+    public void ExecuteHistoryCommand_NonPowerShellShell_TriggersSessionCommandExecuted()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("CMD", @"C:\Test") { ShellType = ShellType.CMD };
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Act
+        vm.ExecuteHistoryCommand("dir /w");
+
+        // Assert: Command history should record command even without OSC 133;E
+        Assert.Contains("dir /w", vm.CommandHistory);
+    }
+
+    [Fact]
+    public void NavigateToHistoryDirectory_NonPowerShellShell_UpdatesWorkingDirectory()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("WSL", "/home/user") { ShellType = ShellType.WSL };
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Act
+        vm.NavigateToHistoryDirectory("/etc/nginx");
+
+        // Assert: Working directory should update to /etc/nginx
+        Assert.Equal("/etc/nginx", vm.WorkingDirectory);
+    }
 }
 
 

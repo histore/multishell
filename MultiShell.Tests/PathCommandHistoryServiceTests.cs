@@ -188,4 +188,25 @@ public class PathCommandHistoryServiceTests : IDisposable
         Assert.Equal("step 1", importedHistory[0]);
         Assert.Equal("step 2", importedHistory[1]);
     }
+
+    [Fact]
+    public void PruneNonExistentPaths_PreservesWslPosixPaths()
+    {
+        // Arrange
+        var service = new PathCommandHistoryService();
+        service.RecordCommand("/home/user/project", "cargo build");
+        service.RecordCommand(@"\\wsl$\Ubuntu\var\log", "cat syslog");
+
+        // Act
+        service.PruneNonExistentPaths();
+
+        // Assert
+        var wslHistory = service.GetHistory("/home/user/project");
+        Assert.Single(wslHistory);
+        Assert.Equal("cargo build", wslHistory[0]);
+
+        var uncWslHistory = service.GetHistory(@"\\wsl$\Ubuntu\var\log");
+        Assert.Single(uncWslHistory);
+        Assert.Equal("cat syslog", uncWslHistory[0]);
+    }
 }

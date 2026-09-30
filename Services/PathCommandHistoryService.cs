@@ -39,6 +39,12 @@ public class PathCommandHistoryService : IPathCommandHistoryService
         }
 
         var trimmed = path.Trim();
+        if (trimmed.StartsWith('/'))
+        {
+            var normalizedPosix = trimmed.TrimEnd('/');
+            return string.IsNullOrEmpty(normalizedPosix) ? "/" : normalizedPosix;
+        }
+
         try
         {
             var fullPath = Path.GetFullPath(trimmed);
@@ -118,7 +124,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
         lock (_lock)
         {
             var keysToRemove = _pathHistories.Keys
-                .Where(p => string.IsNullOrWhiteSpace(p) || !Directory.Exists(p))
+                .Where(p => string.IsNullOrWhiteSpace(p) || !DirectoryHistoryService.DirectoryExistsOrNonWindows(p))
                 .ToList();
 
             foreach (var key in keysToRemove)

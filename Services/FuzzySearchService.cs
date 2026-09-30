@@ -35,7 +35,8 @@ public class FuzzySearchService : IFuzzySearchService
         // Prefix match gets very high score
         if (target.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
         {
-            score = 800 - (target.Length - pattern.Length);
+            var lengthPenalty = Math.Min(150, target.Length - pattern.Length);
+            score = 800 - lengthPenalty;
             return true;
         }
 
@@ -43,7 +44,8 @@ public class FuzzySearchService : IFuzzySearchService
         var substringIndex = target.IndexOf(pattern, StringComparison.OrdinalIgnoreCase);
         if (substringIndex >= 0)
         {
-            score = 600 - substringIndex - (target.Length - pattern.Length);
+            var lengthPenalty = Math.Min(150, substringIndex + (target.Length - pattern.Length));
+            score = 600 - lengthPenalty;
             return true;
         }
 
@@ -105,7 +107,7 @@ public class FuzzySearchService : IFuzzySearchService
             // Matched all characters of pattern
             // Length penalty so shorter exact matches rank higher than bloated strings
             var lengthPenalty = Math.Min(50, (target.Length - pattern.Length) * 2);
-            score = Math.Max(1, currentScore - lengthPenalty);
+            score = Math.Clamp(currentScore - lengthPenalty, 1, 440);
             return true;
         }
 

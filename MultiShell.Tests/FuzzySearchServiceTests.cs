@@ -138,4 +138,22 @@ public class FuzzySearchServiceTests
         Assert.Single(tabVm.FilteredDirectoryHistory);
         Assert.Equal(@"C:\projekte\csharp\multishell", tabVm.FilteredDirectoryHistory[0]);
     }
+
+    [Fact]
+    public void IsMatch_LongTargetPath_PrefixMatchScoresHigherThanSubsequenceMatch()
+    {
+        // Arrange
+        var service = new FuzzySearchService();
+        var longPrefixMatch = "C:\\Projects\\VeryLongProjectDirectoryName\\SubFolder1\\SubFolder2\\SubFolder3\\Target";
+        var shortSubsequenceMatch = "C:\\X\\T_a_r_g_e_t";
+
+        // Act
+        var hasPrefix = service.IsMatch("C:\\Projects", longPrefixMatch, out var prefixScore);
+        var hasSubseq = service.IsMatch("C:\\Projects", shortSubsequenceMatch, out var subseqScore);
+
+        // Assert
+        Assert.True(hasPrefix);
+        Assert.True(prefixScore > 0, "Prefix score must not be negative on long target strings.");
+        Assert.True(prefixScore > subseqScore, "Prefix match must rank above loose subsequence match.");
+    }
 }

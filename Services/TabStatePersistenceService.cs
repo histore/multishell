@@ -15,11 +15,6 @@ public class TabStatePersistenceService : ITabStatePersistenceService
 {
     private readonly string _filePath;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true
-    };
 
     public TabStatePersistenceService(string? customFilePath = null)
     {

@@ -183,4 +183,22 @@ public class DirectoryHistoryServiceTests
         Assert.Equal(DirectoryHistoryService.NormalizePath(existingDir), history[0]);
         Assert.True(eventFired);
     }
+
+    [Fact]
+    public void PruneNonExistentDirectories_PreservesWslPosixDirectories()
+    {
+        // Arrange
+        var service = new DirectoryHistoryService();
+        service.RecordDirectory("/home/user/workspace");
+        service.RecordDirectory(@"\\wsl.localhost\Ubuntu\etc");
+
+        // Act
+        service.PruneNonExistentDirectories();
+
+        // Assert
+        var history = service.GetHistory();
+        Assert.Equal(2, history.Count);
+        Assert.Contains("/home/user/workspace", history);
+        Assert.Contains(@"\\wsl.localhost\Ubuntu\etc", history);
+    }
 }

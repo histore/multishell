@@ -136,8 +136,8 @@ public sealed class ShellSession : IShellSession
     {
         lock (_syncRoot)
         {
-            cols = Math.Max(cols, 1);
-            rows = Math.Max(rows, 1);
+            cols = Math.Clamp(cols, 1, short.MaxValue);
+            rows = Math.Clamp(rows, 1, short.MaxValue);
             if (_lastResize.HasValue && _lastResize.Value == (cols, rows)) return;
             _lastResize = (cols, rows);
             if (_pseudoConsole == null || _pseudoConsole.IsClosed || _pseudoConsole.IsInvalid) return;
@@ -188,31 +188,49 @@ public sealed class ShellSession : IShellSession
                 _oscBuffer.Append(text);
                 var currentBuffer = _oscBuffer.ToString();
 
+                int lastProcessedIndex = -1;
+
                 var matches133E = Osc133ERegex.Matches(currentBuffer);
-                if (matches133E.Count > 0)
+                foreach (Match match in matches133E)
                 {
-                    var lastMatch = matches133E[^1];
-                    string base64 = (lastMatch.Groups[1].Success ? lastMatch.Groups[1].Value : lastMatch.Groups[2].Value).Trim();
+                    string base64 = (match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).Trim();
                     try
                     {
                         var bytes = Convert.FromBase64String(base64);
                         var cmd = Encoding.UTF8.GetString(bytes).Trim();
-                        if (!string.IsNullOrWhiteSpace(cmd) && !string.Equals(_lastExecutedCommand, cmd, StringComparison.Ordinal))
+                        if (!string.IsNullOrWhiteSpace(cmd))
                         {
                             _lastExecutedCommand = cmd;
                             CommandExecuted?.Invoke(cmd);
                         }
                     }
                     catch { }
+
+                    lastProcessedIndex = Math.Max(lastProcessedIndex, match.Index + match.Length);
                 }
 
                 var matches9 = Osc9Regex.Matches(currentBuffer);
-                if (matches9.Count > 0) UpdateDirectory(matches9[^1].Groups[1].Value.Trim());
+                if (matches9.Count > 0)
+                {
+                    UpdateDirectory(matches9[^1].Groups[1].Value.Trim());
+                    lastProcessedIndex = Math.Max(lastProcessedIndex, matches9[^1].Index + matches9[^1].Length);
+                }
 
                 var matches7 = Osc7Regex.Matches(currentBuffer);
-                if (matches7.Count > 0) UpdateDirectory(Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim()));
+                if (matches7.Count > 0)
+                {
+                    UpdateDirectory(Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim()));
+                    lastProcessedIndex = Math.Max(lastProcessedIndex, matches7[^1].Index + matches7[^1].Length);
+                }
 
-                if (_oscBuffer.Length > 8192) _oscBuffer.Remove(0, 4096);
+                if (lastProcessedIndex > 0)
+                {
+                    _oscBuffer.Remove(0, lastProcessedIndex);
+                }
+                else if (_oscBuffer.Length > 8192)
+                {
+                    _oscBuffer.Remove(0, 4096);
+                }
             }
         }
         catch { }

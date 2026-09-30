@@ -84,8 +84,13 @@ public class SingleInstanceService : ISingleInstanceService
 
                     await server.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
 
+                    using var readCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+                    readCts.CancelAfter(TimeSpan.FromSeconds(5));
+
                     using var reader = new StreamReader(server, Encoding.UTF8);
-                    var message = await reader.ReadToEndAsync(_cts.Token).ConfigureAwait(false);
+                    var buffer = new char[4096];
+                    int charsRead = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), readCts.Token).ConfigureAwait(false);
+                    var message = new string(buffer, 0, charsRead);
 
                     var targetDirectory = string.IsNullOrWhiteSpace(message) ? null : message.Trim();
                     DirectoryOpenRequested?.Invoke(targetDirectory);
