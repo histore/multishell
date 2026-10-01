@@ -49,7 +49,7 @@
                                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Loc[Help_Tab_Jump]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
 
                                      <Border Grid.Row="4" Grid.Column="0" Classes="kbdBadge" Margin="0,2,8,2" HorizontalAlignment="Left">
-                                         <TextBlock Text="Ctrl + Shift + W / Ctrl + F4" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
+                                         <TextBlock Text="Ctrl + Shift + W / Ctrl + Shift + F4" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
                                      </Border>
                                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Loc[Help_Tab_Close]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
 
@@ -99,12 +99,12 @@
                                      <TextBlock Grid.Row="13" Grid.Column="1" Text="{Binding Loc[Help_Search_Terminal]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
 
                                      <Border Grid.Row="14" Grid.Column="0" Classes="kbdBadge" Margin="0,2,8,2" HorizontalAlignment="Left">
-                                         <TextBlock Text="F1" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
+                                         <TextBlock Text="Ctrl + Shift + F1" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
                                      </Border>
                                      <TextBlock Grid.Row="14" Grid.Column="1" Text="{Binding Loc[Help_Nav_F1]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
 
                                      <Border Grid.Row="15" Grid.Column="0" Classes="kbdBadge" Margin="0,2,8,2" HorizontalAlignment="Left">
-                                         <TextBlock Text="F2" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
+                                         <TextBlock Text="Ctrl + Shift + F2" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppTextPrimary}" />
                                      </Border>
                                      <TextBlock Grid.Row="15" Grid.Column="1" Text="{Binding Loc[Menu_Tab_Rename]}" VerticalAlignment="Center" Foreground="{DynamicResource AppTextKbd}" FontSize="12" />
 

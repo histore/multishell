@@ -194,35 +194,48 @@ public partial class MainWindow
             }
         }
 
-        // F1: Help Modal
-        if (e.Key == Key.F1)
+        // Function keys (F1..F24) are fundamentally passed through to the terminal.
+        // They are intercepted by MultiShell strictly when pressed with Ctrl+Shift.
+        if (FunctionKeyRouting.IsFunctionKey(e.Key))
         {
-            ShowHelpModal();
-            e.Handled = true;
-            return;
-        }
-
-        // F2: Rename active tab (REQ-TAB-020)
-        if (e.Key == Key.F2 && DataContext is MainViewModel f2Vm && f2Vm.SelectedTab != null)
-        {
-            f2Vm.SelectedTab.StartRenaming();
-            e.Handled = true;
-            return;
-        }
-
-        // F3 / Shift+F3: In-Terminal Search Match Navigation (REQ-TERM-006)
-        if (e.Key == Key.F3 && DataContext is MainViewModel f3Vm && f3Vm.SelectedTab?.IsSearchOpen == true)
-        {
-            var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
-            if (isShift)
+            if (!FunctionKeyRouting.ShouldInterceptFunctionKey(e.Key, e.KeyModifiers))
             {
-                f3Vm.SelectedTab.SearchPrevious();
+                return;
             }
-            else
+
+            // Ctrl+Shift+F1: Help Modal
+            if (e.Key == Key.F1)
+            {
+                ShowHelpModal();
+                e.Handled = true;
+                return;
+            }
+
+            // Ctrl+Shift+F2: Rename active tab (REQ-TAB-020)
+            if (e.Key == Key.F2 && DataContext is MainViewModel f2Vm && f2Vm.SelectedTab != null)
+            {
+                f2Vm.SelectedTab.StartRenaming();
+                e.Handled = true;
+                return;
+            }
+
+            // Ctrl+Shift+F3: In-Terminal Search Match Navigation (REQ-TERM-006)
+            if (e.Key == Key.F3 && DataContext is MainViewModel f3Vm && f3Vm.SelectedTab?.IsSearchOpen == true)
             {
                 f3Vm.SelectedTab.SearchNext();
+                e.Handled = true;
+                return;
             }
-            e.Handled = true;
+
+            // Ctrl+Shift+F4: Close active tab
+            if (e.Key == Key.F4 && DataContext is MainViewModel f4Vm)
+            {
+                f4Vm.CloseSelectedTab();
+                e.Handled = true;
+                return;
+            }
+
+            // Other Ctrl+Shift+Fn combinations pass through to terminal
             return;
         }
 
@@ -292,8 +305,8 @@ public partial class MainWindow
                     return;
                 }
 
-                // 2. Ctrl+Shift+W / Ctrl+F4: Close active tab
-                if ((isCtrl && isShift && e.Key == Key.W) || (isCtrl && !isShift && e.Key == Key.F4))
+                // 2. Ctrl+Shift+W / Ctrl+Shift+F4: Close active tab
+                if (isCtrl && isShift && (e.Key == Key.W || e.Key == Key.F4))
                 {
                     vm.CloseSelectedTab();
                     e.Handled = true;

@@ -84,8 +84,8 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Verlaufs-Overlay öffnen/schließen (▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Befehlsverlauf öffnen/schließen (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Verzeichnisverlauf öffnen/schließen (▲/▼, Enter)",
-        ["Help_Search_Terminal"] = "Terminal-Textsuche öffnen/schließen (F3/Enter: Weiter, Shift+F3: Zurück, Esc)",
-        ["Help_Nav_F1"] = "Diesen Hilfe-Dialog öffnen",
+        ["Help_Search_Terminal"] = "Terminal-Textsuche öffnen/schließen (Strg+Umschalt+F / Strg+Umschalt+F3, Esc)",
+        ["Help_Nav_F1"] = "Diesen Hilfe-Dialog öffnen (Strg+Umschalt+F1)",
         ["Help_Nav_Esc"] = "Aktives Overlay/Dialog schließen und Terminal fokussieren",
         ["Help_Feature_1"] = "• Tab-Verlauf: Linke Kante berühren oder Strg+Umschalt+H (Befehle) / Strg+Umschalt+L (Verzeichnisse) drücken. Mit Klick/Enter übernehmen, per Rechtsklick direkt ausführen.",
         ["Help_Feature_2"] = "• Drag & Drop: Tabs mit der linken Maustaste per Ziehen neu anordnen.",
@@ -136,7 +136,7 @@ public partial class LocalizationService
         ["EmptyState_Title"] = "Keine aktiven Terminal-Tabs",
         ["EmptyState_Description"] = "Wähle ein Terminal-Profil aus oder starte eine neue Sitzung per Tastenkürzel.",
         ["EmptyState_QuickLaunch"] = "SCHNELLSTART",
-        ["EmptyState_ShortcutsHint"] = "[ Strg+T Neuer Tab  |  Strg+Umschalt+T Profilauswahl  |  F1 Hilfe ]",
+        ["EmptyState_ShortcutsHint"] = "[ Strg+T Neuer Tab  |  Strg+Umschalt+T Profilauswahl  |  Strg+Umschalt+F1 Hilfe ]",
 
         // Recently Closed Tabs History (REQ-TAB-021)
         ["ClosedTabs_Title"] = "Zuletzt geschlossene Tabs",
@@ -148,8 +148,8 @@ public partial class LocalizationService
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Im Terminal suchen...",
-        ["Search_Terminal_Previous"] = "Vorheriger Treffer (Umschalt+Eingabe / Umschalt+F3)",
-        ["Search_Terminal_Next"] = "Nächster Treffer (Eingabe / F3)",
+        ["Search_Terminal_Previous"] = "Vorheriger Treffer (Umschalt+Eingabe)",
+        ["Search_Terminal_Next"] = "Nächster Treffer (Eingabe / Strg+Umschalt+F3)",
         ["Search_Terminal_Close"] = "Suche schließen (Esc)",
         ["Search_Terminal_NoResults"] = "Keine Treffer",
         ["Search_Terminal_Matches"] = "{0} von {1}",
@@ -252,8 +252,8 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Toggle History Overlay (Navigate with ▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Toggle command history drawer (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Toggle directory history drawer (▲/▼, Enter)",
-        ["Help_Search_Terminal"] = "Open/close in-terminal search (F3/Enter: next, Shift+F3: prev, Esc)",
-        ["Help_Nav_F1"] = "Open this Help dialog",
+        ["Help_Search_Terminal"] = "Open/close in-terminal search (Ctrl+Shift+F / Ctrl+Shift+F3, Esc)",
+        ["Help_Nav_F1"] = "Open this Help dialog (Ctrl+Shift+F1)",
         ["Help_Nav_Esc"] = "Close active overlay / dialog and focus terminal",
         ["Help_Feature_1"] = "• Tab History: Hover left edge or press Ctrl+Shift+H (Commands) / Ctrl+Shift+L (Directories). Left-click/Enter to insert, right-click to execute.",
         ["Help_Feature_2"] = "• Drag & Drop: Reorder tabs by dragging with left mouse button.",
@@ -300,7 +300,7 @@ public partial class LocalizationService
         ["EmptyState_Title"] = "No Active Terminal Tabs",
         ["EmptyState_Description"] = "Select a terminal profile below or start a new session using shortcuts.",
         ["EmptyState_QuickLaunch"] = "QUICK LAUNCH",
-        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T New Tab  |  Ctrl+Shift+T Profile Menu  |  F1 Help ]",
+        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T New Tab  |  Ctrl+Shift+T Profile Menu  |  Ctrl+Shift+F1 Help ]",
 
         // Recently Closed Tabs History (REQ-TAB-021)
         ["ClosedTabs_Title"] = "Recently Closed Tabs",
@@ -312,8 +312,8 @@ public partial class LocalizationService
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Find in terminal...",
-        ["Search_Terminal_Previous"] = "Previous match (Shift+Enter / Shift+F3)",
-        ["Search_Terminal_Next"] = "Next match (Enter / F3)",
+        ["Search_Terminal_Previous"] = "Previous match (Shift+Enter)",
+        ["Search_Terminal_Next"] = "Next match (Enter / Ctrl+Shift+F3)",
         ["Search_Terminal_Close"] = "Close search (Esc)",
         ["Search_Terminal_NoResults"] = "No results",
         ["Search_Terminal_Matches"] = "{0} of {1}",
@@ -416,8 +416,8 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Afficher/Masquer le volet d'historique (▲/▼, Entrée)",
         ["Help_Hist_Commands"] = "Afficher/Masquer l'historique des commandes (▲/▼, Entrée)",
         ["Help_Hist_Directories"] = "Afficher/Masquer l'historique des répertoires (▲/▼, Entrée)",
-        ["Help_Search_Terminal"] = "Ouvrir/fermer la recherche dans le terminal (F3/Entrée: suivant, Échap)",
-        ["Help_Nav_F1"] = "Ouvrir cette boîte de dialogue d'aide",
+        ["Help_Search_Terminal"] = "Ouvrir/fermer la recherche dans le terminal (Ctrl+Maj+F / Ctrl+Maj+F3, Échap)",
+        ["Help_Nav_F1"] = "Ouvrir cette boîte de dialogue d'aide (Ctrl+Maj+F1)",
         ["Help_Nav_Esc"] = "Fermer le dialogue actif et donner le focus au terminal",
         ["Help_Feature_1"] = "• Historique : Survoler le bord gauche ou Ctrl+Maj+H (Commandes) / Ctrl+Maj+L (Répertoires). Clic/Entrée pour insérer, clic droit pour exécuter.",
         ["Help_Feature_2"] = "• Glisser-déposer : Réorganiser les onglets en les faisant glisser avec le bouton gauche.",
@@ -468,7 +468,7 @@ public partial class LocalizationService
         ["EmptyState_Title"] = "Aucun onglet de terminal actif",
         ["EmptyState_Description"] = "Sélectionnez un profil de terminal ci-dessous ou démarrez une nouvelle session avec les raccourcis.",
         ["EmptyState_QuickLaunch"] = "LANCEMENT RAPIDE",
-        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nouvel onglet  |  Ctrl+Shift+T Menu profils  |  F1 Aide ]",
+        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nouvel onglet  |  Ctrl+Maj+T Menu profils  |  Ctrl+Maj+F1 Aide ]",
 
         // Recently Closed Tabs History (REQ-TAB-021)
         ["ClosedTabs_Title"] = "Onglets récemment fermés",
@@ -480,8 +480,8 @@ public partial class LocalizationService
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Rechercher dans le terminal...",
-        ["Search_Terminal_Previous"] = "Occurrence précédente (Maj+Entrée / Maj+F3)",
-        ["Search_Terminal_Next"] = "Occurrence suivante (Entrée / F3)",
+        ["Search_Terminal_Previous"] = "Occurrence précédente (Maj+Entrée)",
+        ["Search_Terminal_Next"] = "Occurrence suivante (Entrée / Ctrl+Maj+F3)",
         ["Search_Terminal_Close"] = "Fermer la recherche (Échap)",
         ["Search_Terminal_NoResults"] = "Aucun résultat",
         ["Search_Terminal_Matches"] = "{0} sur {1}",
@@ -584,8 +584,8 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Alternar panel de historial (Navegar con ▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Alternar historial de comandos (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Alternar historial de directorios (▲/▼, Enter)",
-        ["Help_Search_Terminal"] = "Abrir/cerrar búsqueda en la terminal (F3/Enter: siguiente, Esc)",
-        ["Help_Nav_F1"] = "Abrir este diálogo de ayuda",
+        ["Help_Search_Terminal"] = "Abrir/cerrar búsqueda en la terminal (Ctrl+Mayús+F / Ctrl+Mayús+F3, Esc)",
+        ["Help_Nav_F1"] = "Abrir este diálogo de ayuda (Ctrl+Mayús+F1)",
         ["Help_Nav_Esc"] = "Cerrar el diálogo activo y enfocar el terminal",
         ["Help_Feature_1"] = "• Historial: Pase el ratón por el borde izquierdo o Ctrl+Mayús+H (Comandos) / Ctrl+Mayús+L (Directorios). Clic/Enter para insertar, clic derecho para ejecutar.",
         ["Help_Feature_2"] = "• Arrastrar y soltar: Reordene las pestañas arrastrándolas con el ratón.",
@@ -632,7 +632,7 @@ public partial class LocalizationService
         ["EmptyState_Title"] = "No hay pestañas de terminal activas",
         ["EmptyState_Description"] = "Seleccione un perfil de terminal a continuación o inicie una nueva sesión mediante atajos.",
         ["EmptyState_QuickLaunch"] = "INICIO RÁPIDO",
-        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nueva pestaña  |  Ctrl+Shift+T Menú de perfiles  |  F1 Ayuda ]",
+        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nueva pestaña  |  Ctrl+Mayús+T Menú de perfiles  |  Ctrl+Mayús+F1 Ayuda ]",
 
         // Recently Closed Tabs History (REQ-TAB-021)
         ["ClosedTabs_Title"] = "Pestañas cerradas recientemente",
@@ -644,8 +644,8 @@ public partial class LocalizationService
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Buscar en la terminal...",
-        ["Search_Terminal_Previous"] = "Coincidencia anterior (Mayús+Intro / Mayús+F3)",
-        ["Search_Terminal_Next"] = "Siguiente coincidencia (Intro / F3)",
+        ["Search_Terminal_Previous"] = "Coincidencia anterior (Mayús+Intro)",
+        ["Search_Terminal_Next"] = "Siguiente coincidencia (Intro / Ctrl+Mayús+F3)",
         ["Search_Terminal_Close"] = "Cerrar búsqueda (Esc)",
         ["Search_Terminal_NoResults"] = "Sin resultados",
         ["Search_Terminal_Matches"] = "{0} de {1}",
@@ -748,8 +748,8 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Attiva pannello cronologia (Naviga con ▲/▼, Invio)",
         ["Help_Hist_Commands"] = "Attiva cronologia comandi (▲/▼, Invio)",
         ["Help_Hist_Directories"] = "Attiva cronologia directory (▲/▼, Invio)",
-        ["Help_Search_Terminal"] = "Apri/chiudi ricerca nel terminale (F3/Invio: successivo, Esc)",
-        ["Help_Nav_F1"] = "Apri questa finestra di guida",
+        ["Help_Search_Terminal"] = "Apri/chiudi ricerca nel terminale (Ctrl+Maiusc+F / Ctrl+Maiusc+F3, Esc)",
+        ["Help_Nav_F1"] = "Apri questa finestra di guida (Ctrl+Maiusc+F1)",
         ["Help_Nav_Esc"] = "Chiudi finestra / dialogo attivo e focalizza il terminale",
         ["Help_Feature_1"] = "• Cronologia scheda: Passa il mouse sul bordo sinistro o premi Ctrl+Shift+H (Comandi) / Ctrl+Shift+L (Directory). Clic sinistro/Invio per inserire, clic destro per eseguire.",
         ["Help_Feature_2"] = "• Trascina & Rilascia: Riordina le schede trascinandole con il tasto sinistro del mouse.",
@@ -796,7 +796,7 @@ public partial class LocalizationService
         ["EmptyState_Title"] = "Nessuna scheda terminale attiva",
         ["EmptyState_Description"] = "Seleziona un profilo terminale in basso o avvia una nuova sessione con le scorciatoie.",
         ["EmptyState_QuickLaunch"] = "AVVIO RAPIDO",
-        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nuova scheda  |  Ctrl+Shift+T Menu profili  |  F1 Guida ]",
+        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nuova scheda  |  Ctrl+Maiusc+T Menu profili  |  Ctrl+Maiusc+F1 Guida ]",
 
         // Recently Closed Tabs History (REQ-TAB-021)
         ["ClosedTabs_Title"] = "Schede chiuse di recente",
@@ -809,8 +809,8 @@ public partial class LocalizationService
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Cerca nel terminale...",
-        ["Search_Terminal_Previous"] = "Corrispondenza precedente (Maiusc+Invio / Maiusc+F3)",
-        ["Search_Terminal_Next"] = "Corrispondenza successiva (Invio / F3)",
+        ["Search_Terminal_Previous"] = "Corrispondenza precedente (Maiusc+Invio)",
+        ["Search_Terminal_Next"] = "Corrispondenza successiva (Invio / Ctrl+Maiusc+F3)",
         ["Search_Terminal_Close"] = "Chiudi ricerca (Esc)",
         ["Search_Terminal_NoResults"] = "Nessun risultato",
         ["Search_Terminal_Matches"] = "{0} di {1}",
@@ -913,8 +913,8 @@ public partial class LocalizationService
         ["Help_Hist_Toggle"] = "Alternar painel de histórico (Navegar com ▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Alternar histórico de comandos (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Alternar histórico de diretórios (▲/▼, Enter)",
-        ["Help_Search_Terminal"] = "Abrir/fechar pesquisa no terminal (F3/Enter: seguinte, Esc)",
-        ["Help_Nav_F1"] = "Abrir este diálogo de ajuda",
+        ["Help_Search_Terminal"] = "Abrir/fechar pesquisa no terminal (Ctrl+Shift+F / Ctrl+Shift+F3, Esc)",
+        ["Help_Nav_F1"] = "Abrir este diálogo de ajuda (Ctrl+Shift+F1)",
         ["Help_Nav_Esc"] = "Fechar sobreposição / diálogo ativo e focar no terminal",
         ["Help_Feature_1"] = "• Histórico do separador: Passe o rato na margem esquerda ou prima Ctrl+Shift+H (Comandos) / Ctrl+Shift+L (Diretórios). Clique esquerdo/Enter para inserir, clique direito para executar.",
         ["Help_Feature_2"] = "• Arrastar & Largar: Reordene os separadores arrastando com o botão esquerdo do rato.",
@@ -961,7 +961,7 @@ public partial class LocalizationService
         ["EmptyState_Title"] = "Sem separadores de terminal ativos",
         ["EmptyState_Description"] = "Selecione um perfil de terminal abaixo ou inicie uma nova sessão através de atalhos.",
         ["EmptyState_QuickLaunch"] = "INÍCIO RÁPIDO",
-        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Novo separador  |  Ctrl+Shift+T Menu de perfis  |  F1 Ajuda ]",
+        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Novo separador  |  Ctrl+Shift+T Menu de perfis  |  Ctrl+Shift+F1 Ajuda ]",
 
         // Recently Closed Tabs History (REQ-TAB-021)
         ["ClosedTabs_Title"] = "Separadores fechados recentemente",
@@ -973,8 +973,8 @@ public partial class LocalizationService
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Localizar no terminal...",
-        ["Search_Terminal_Previous"] = "Correspondência anterior (Shift+Enter / Shift+F3)",
-        ["Search_Terminal_Next"] = "Próxima correspondência (Enter / F3)",
+        ["Search_Terminal_Previous"] = "Correspondência anterior (Shift+Enter)",
+        ["Search_Terminal_Next"] = "Próxima correspondência (Enter / Ctrl+Shift+F3)",
         ["Search_Terminal_Close"] = "Fechar pesquisa (Esc)",
         ["Search_Terminal_NoResults"] = "Nenhum resultado",
         ["Search_Terminal_Matches"] = "{0} de {1}",

@@ -411,7 +411,7 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Closes the currently selected tab (Ctrl+Shift+W / Ctrl+F4).
+    /// Closes the currently selected tab (Ctrl+Shift+W / Ctrl+Shift+F4).
     /// </summary>
     [RelayCommand]
     public void CloseSelectedTab()

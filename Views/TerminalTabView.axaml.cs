@@ -507,7 +507,7 @@ public partial class TerminalTabView : UserControl
             return;
         }
 
-        // When search overlay is open, F3 / Shift+F3 / Escape route to search navigation
+        // When search overlay is open, Escape closes search and Ctrl+Shift+F3 navigates matches
         if (vm.IsSearchOpen)
         {
             if (e.Key == Key.Escape)
@@ -517,16 +517,9 @@ public partial class TerminalTabView : UserControl
                 return;
             }
 
-            if (e.Key == Key.F3)
+            if (isCtrl && isShift && e.Key == Key.F3)
             {
-                if (isShift)
-                {
-                    vm.SearchPrevious();
-                }
-                else
-                {
-                    vm.SearchNext();
-                }
+                vm.SearchNext();
                 e.Handled = true;
                 return;
             }
@@ -740,16 +733,10 @@ public partial class TerminalTabView : UserControl
             return;
         }
 
-        if (e.Key == Key.F3)
+        var isCtrlShift = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift);
+        if (e.Key == Key.F3 && isCtrlShift)
         {
-            if (isShift)
-            {
-                vm.SearchPrevious();
-            }
-            else
-            {
-                vm.SearchNext();
-            }
+            vm.SearchNext();
             e.Handled = true;
             return;
         }

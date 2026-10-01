@@ -24,7 +24,7 @@
         <KeyBinding Gesture="Ctrl+Shift+T" Command="{Binding AddNewTabCommand}" />
         <KeyBinding Gesture="Ctrl+Shift+D" Command="{Binding DuplicateTabCommand}" />
         <KeyBinding Gesture="Ctrl+Shift+W" Command="{Binding CloseSelectedTabCommand}" />
-        <KeyBinding Gesture="Ctrl+F4" Command="{Binding CloseSelectedTabCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+F4" Command="{Binding CloseSelectedTabCommand}" />
     </Window.KeyBindings>
 
     <Grid RowDefinitions="Auto, *">
@@ -72,7 +72,7 @@
                                             <Button.ContextMenu>
                                                 <ContextMenu>
                                                     <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_Rename]}"
-                                                              InputGesture="F2"
+                                                              InputGesture="Ctrl+Shift+F2"
                                                               Command="{Binding StartRenamingCommand}" />
                                                     <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_ResetName]}"
                                                               IsEnabled="{Binding HasCustomTitle}"
@@ -605,7 +605,7 @@
                                                 HorizontalAlignment="Stretch">
                                             <Grid ColumnDefinitions="*, Auto">
                                                 <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Help_Title]}" FontSize="12" VerticalAlignment="Center" />
-                                                <TextBlock Grid.Column="1" Text="F1" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="Ctrl+Shift+F1" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
                                             </Grid>
                                         </Button>
 
