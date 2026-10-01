@@ -94,12 +94,13 @@ Backs an individual terminal tab instance:
 ### 4.1 `MainWindow.axaml` Layout
 * **Top Header / Draggable Tab Bar**:
   * Custom 30px draggable title bar integrating window controls (minimize, maximize, close).
-  * `ItemsControl` bound to `Tabs` with custom tab items supporting double-click or `F2` inline renaming (`TextBox.tabRenameBox`), top deterministic folder path color stripes (`ItemsControl` bound to `PathStripes`, REQ-TAB-025), bottom accent indicator bar (`TabColorBrush`), right-click `ContextMenu` (Rename `F2`, Reset Name, 9-color Palette submenu, Duplicate `Ctrl+Shift+D`, Close `Ctrl+Shift+W` / `Ctrl+F4`, Close Other Tabs, Close Tabs to Right), and active selection indication.
+  * `ItemsControl` bound to `Tabs` with custom tab items supporting double-click or `Ctrl+Shift+F2` inline renaming (`TextBox.tabRenameBox`), top deterministic folder path color stripes (`ItemsControl` bound to `PathStripes`, REQ-TAB-025), bottom accent indicator bar (`TabColorBrush`), right-click `ContextMenu` (Rename `Ctrl+Shift+F2`, Reset Name, 9-color Palette submenu, Duplicate `Ctrl+Shift+D`, Close `Ctrl+Shift+W` / `Ctrl+Shift+F4`, Close Other Tabs, Close Tabs to Right), and active selection indication.
   * Drag-and-drop support (`DragDrop.AllowDrop="True"`): dragging over tab items dynamically activates the hovered tab, and dropping files navigates or opens a new tab.
   * Drag hover auto-scrolling: hovering over overflow scroll arrow buttons (`‹` / `›`) during any active drag operation (external files or tab drag) automatically scrolls the tab bar sequentially (250ms dwell, then 320ms per tab step) to reveal hidden tabs.
-* **Window KeyBindings & Keyboard Routing (`MainWindow.Keyboard.cs`)**:
-  * Declarative `<Window.KeyBindings>` for quick tab actions: `Ctrl+Shift+T` (New Tab), `Ctrl+Shift+D` (Duplicate Tab), `Ctrl+Shift+W` and `Ctrl+F4` (Close Active Tab).
-  * Tunnel preview event handler `OnWindowKeyDown` intercepts global shortcuts before the terminal emulator control consumes them, routing tab switching (`Ctrl+Tab`, `Ctrl+PageUp`/`PageDown`), tab reordering (`Ctrl+Shift+PageUp`/`PageDown`), and tab closing (`Ctrl+Shift+W`, `Ctrl+F4`).
+* **Window KeyBindings & Keyboard Routing (`MainWindow.Keyboard.cs` & `FunctionKeyRouting.cs`)**:
+  * Declarative `<Window.KeyBindings>` for quick tab actions: `Ctrl+Shift+T` (New Tab), `Ctrl+Shift+D` (Duplicate Tab), `Ctrl+Shift+W` and `Ctrl+Shift+F4` (Close Active Tab).
+  * Function keys (`F1`..`F24`) are fundamentally passed through to the underlying terminal control to prevent collisions with CLI tools (Midnight Commander, htop, vim, Far Manager). MultiShell intercepts function keys strictly when pressed with `Ctrl+Shift` (`Ctrl+Shift+F1` Help Modal, `Ctrl+Shift+F2` Inline Rename, `Ctrl+Shift+F3` Search Navigation, `Ctrl+Shift+F4` Close Active Tab).
+  * Tunnel preview event handler `OnWindowKeyDown` intercepts global shortcuts before the terminal emulator control consumes them, routing tab switching (`Ctrl+Tab`, `Ctrl+PageUp`/`PageDown`), tab reordering (`Ctrl+Shift+PageUp`/`PageDown`), and tab closing (`Ctrl+Shift+W`, `Ctrl+Shift+F4`).
 * **Main Terminal Host Panel**:
   * Persistent tab hosting via `Panel` with `IsVisible="{Binding IsSelected}"` binding. This retains ConPTY streams, terminal ANSI buffers, and scrollback without unmounting controls upon tab switching.
   * Drag-and-drop surface (`TerminalContentArea`): dropping folders or files navigates the active terminal (or containing folder for files), and holding `Shift` opens a new tab.
