@@ -773,6 +773,70 @@ public class TerminalTabViewModelTests
     }
 
     [Fact]
+    public void SendPageUp_SendsCorrectVtSequenceToSession()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.SendPageUp(alt: false);
+
+        // Assert
+        Assert.Single(session.SentData);
+        Assert.Equal("\u001b[5~", Encoding.UTF8.GetString(session.SentData[0]));
+    }
+
+    [Fact]
+    public void SendPageUp_WithAlt_SendsCorrectVtSequenceToSession()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.SendPageUp(alt: true);
+
+        // Assert
+        Assert.Single(session.SentData);
+        Assert.Equal("\u001b[5;3~", Encoding.UTF8.GetString(session.SentData[0]));
+    }
+
+    [Fact]
+    public void SendPageDown_SendsCorrectVtSequenceToSession()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.SendPageDown(alt: false);
+
+        // Assert
+        Assert.Single(session.SentData);
+        Assert.Equal("\u001b[6~", Encoding.UTF8.GetString(session.SentData[0]));
+    }
+
+    [Fact]
+    public void SendPageDown_WithAlt_SendsCorrectVtSequenceToSession()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("Test Tab");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.SendPageDown(alt: true);
+
+        // Assert
+        Assert.Single(session.SentData);
+        Assert.Equal("\u001b[6;3~", Encoding.UTF8.GetString(session.SentData[0]));
+    }
+
+    [Fact]
     public void ClearBuffer_ExecutesWithoutException()
     {
         // Arrange

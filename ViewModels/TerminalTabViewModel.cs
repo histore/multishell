@@ -1209,6 +1209,24 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
+    /// Sends the VT escape sequence for PageUp to the active PTY shell session (REQ-TERM-003).
+    /// Plain PageUp: \x1b[5~, Alt+PageUp: \x1b[5;3~
+    /// </summary>
+    public void SendPageUp(bool alt = false)
+    {
+        SendInput(alt ? "\u001b[5;3~"u8.ToArray() : "\u001b[5~"u8.ToArray());
+    }
+
+    /// <summary>
+    /// Sends the VT escape sequence for PageDown to the active PTY shell session (REQ-TERM-003).
+    /// Plain PageDown: \x1b[6~, Alt+PageDown: \x1b[6;3~
+    /// </summary>
+    public void SendPageDown(bool alt = false)
+    {
+        SendInput(alt ? "\u001b[6;3~"u8.ToArray() : "\u001b[6~"u8.ToArray());
+    }
+
+    /// <summary>
     /// Clears the terminal screen and scrollback buffer (REQ-TERM-003).
     /// </summary>
     public void ClearBuffer()

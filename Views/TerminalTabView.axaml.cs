@@ -469,6 +469,27 @@ public partial class TerminalTabView : UserControl
                 return;
             }
         }
+        else if (!isShift && !isCtrl)
+        {
+            if (e.Key == Key.PageUp)
+            {
+                if (vm.IsRunning)
+                {
+                    vm.SendPageUp(isAltGrOrAlt);
+                }
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.PageDown)
+            {
+                if (vm.IsRunning)
+                {
+                    vm.SendPageDown(isAltGrOrAlt);
+                }
+                e.Handled = true;
+                return;
+            }
+        }
 
         // 3b. Ctrl+Shift+K: Clear terminal buffer and screen
         if (isCtrl && isShift && e.Key == Key.K)
