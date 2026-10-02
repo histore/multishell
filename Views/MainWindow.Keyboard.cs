@@ -1,7 +1,9 @@
 using System;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using MultiShell.ViewModels;
 
@@ -69,6 +71,18 @@ public partial class MainWindow
                     e.Handled = true;
                     return;
                 }
+            }
+            if (e.Key == Key.O)
+            {
+                _ = PickAndInsertFileAsync();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.E)
+            {
+                _ = PickAndInsertFolderAsync();
+                e.Handled = true;
+                return;
             }
         }
 
@@ -399,5 +413,101 @@ public partial class MainWindow
     private static bool IsSourceInsideTextBox(object? source)
     {
         return source is Visual visual && (visual is TextBox || visual.FindAncestorOfType<TextBox>() != null);
+    }
+
+    private async Task PickAndInsertFileAsync()
+    {
+        if (DataContext is not MainViewModel vm || vm.SelectedTab == null) return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider == null) return;
+
+        var options = new FilePickerOpenOptions
+        {
+            Title = vm.Loc["Dialog_PickFile_Title"],
+            AllowMultiple = false
+        };
+
+        var initialDir = !string.IsNullOrWhiteSpace(vm.SelectedTab.WorkingDirectory)
+            ? vm.SelectedTab.WorkingDirectory
+            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        if (!string.IsNullOrWhiteSpace(initialDir) && System.IO.Directory.Exists(initialDir))
+        {
+            try
+            {
+                var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(initialDir);
+                if (folder != null)
+                {
+                    options.SuggestedStartLocation = folder;
+                }
+            }
+            catch { }
+        }
+
+        try
+        {
+            var results = await topLevel.StorageProvider.OpenFilePickerAsync(options);
+            if (results.Count > 0)
+            {
+                var path = results[0].TryGetLocalPath();
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    vm.SelectedTab.InsertPath(path);
+                }
+            }
+        }
+        finally
+        {
+            FocusActiveTerminal();
+        }
+    }
+
+    private async Task PickAndInsertFolderAsync()
+    {
+        if (DataContext is not MainViewModel vm || vm.SelectedTab == null) return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider == null) return;
+
+        var options = new FolderPickerOpenOptions
+        {
+            Title = vm.Loc["Dialog_PickFolder_Title"],
+            AllowMultiple = false
+        };
+
+        var initialDir = !string.IsNullOrWhiteSpace(vm.SelectedTab.WorkingDirectory)
+            ? vm.SelectedTab.WorkingDirectory
+            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        if (!string.IsNullOrWhiteSpace(initialDir) && System.IO.Directory.Exists(initialDir))
+        {
+            try
+            {
+                var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(initialDir);
+                if (folder != null)
+                {
+                    options.SuggestedStartLocation = folder;
+                }
+            }
+            catch { }
+        }
+
+        try
+        {
+            var results = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
+            if (results.Count > 0)
+            {
+                var path = results[0].TryGetLocalPath();
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    vm.SelectedTab.InsertPath(path);
+                }
+            }
+        }
+        finally
+        {
+            FocusActiveTerminal();
+        }
     }
 }

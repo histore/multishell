@@ -303,6 +303,87 @@ public class TerminalTabViewModelTests
     }
 
     [Fact]
+    public void InsertPath_WithoutSpaces_PastesRawPathWithoutReturn()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.InsertPath(@"C:\projects\multishell\README.md");
+
+        // Assert - Pastes without quotes and without \r
+        Assert.Single(session.SentData);
+        var sentString = Encoding.UTF8.GetString(session.SentData[0]);
+        Assert.Equal(@"C:\projects\multishell\README.md", sentString);
+    }
+
+    [Fact]
+    public void InsertPath_WithSpaces_WrapsInQuotesWithoutReturn()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.InsertPath(@"C:\Program Files\My App\script.ps1");
+
+        // Assert - Automatically wrapped in double quotes
+        Assert.Single(session.SentData);
+        var sentString = Encoding.UTF8.GetString(session.SentData[0]);
+        Assert.Equal(@"""C:\Program Files\My App\script.ps1""", sentString);
+    }
+
+    [Fact]
+    public void InsertPath_AlreadyQuoted_DoesNotDoubleQuote()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.InsertPath(@"""C:\Program Files\My App""");
+
+        // Assert - Preserves existing quotes
+        Assert.Single(session.SentData);
+        var sentString = Encoding.UTF8.GetString(session.SentData[0]);
+        Assert.Equal(@"""C:\Program Files\My App""", sentString);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void InsertPath_NullOrWhitespace_SendsNothing(string? path)
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act
+        vm.InsertPath(path);
+
+        // Assert
+        Assert.Empty(session.SentData);
+    }
+
+    [Fact]
+    public void InsertPath_FiresFocusTerminalRequestedEvent()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PS 1");
+        using var vm = new TerminalTabViewModel(session);
+        var eventFired = false;
+        vm.FocusTerminalRequested += () => eventFired = true;
+
+        // Act
+        vm.InsertPath(@"C:\temp\file.txt");
+
+        // Assert
+        Assert.True(eventFired);
+    }
+
+    [Fact]
     public void NavigateToHistoryDirectory_SendsSetLocationToSessionWithReturn()
     {
         // Arrange

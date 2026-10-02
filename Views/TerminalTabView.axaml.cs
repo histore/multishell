@@ -507,6 +507,13 @@ public partial class TerminalTabView : UserControl
             return;
         }
 
+        // Prevent Ctrl+Shift+O and Ctrl+Shift+E from leaking VT sequences to shell
+        if (isCtrl && isShift && (e.Key is Key.O or Key.E))
+        {
+            e.Handled = true;
+            return;
+        }
+
         // When search overlay is open, Escape closes search and Ctrl+Shift+F3 navigates matches
         if (vm.IsSearchOpen)
         {

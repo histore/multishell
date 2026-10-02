@@ -1193,6 +1193,25 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     public void NavigateToDirectory(string? directory) => NavigateToHistoryDirectory(directory);
 
     /// <summary>
+    /// Inserts a file or folder path into the active terminal prompt without a newline,
+    /// automatically quoting the path if it contains spaces.
+    /// </summary>
+    [RelayCommand]
+    public void InsertPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        var clean = path.Trim();
+        var formatted = clean.Contains(' ') && !clean.StartsWith('"') && !clean.EndsWith('"')
+            ? $"\"{clean}\""
+            : clean;
+
+        var bytes = Encoding.UTF8.GetBytes(formatted);
+        _session.Send(bytes);
+        FocusTerminalRequested?.Invoke();
+    }
+
+    /// <summary>
     /// Scrolls the terminal scrollback buffer up by one page (REQ-TERM-003).
     /// </summary>
     public void PageUp()
