@@ -282,6 +282,10 @@ public class LocalizationServiceTests
         // Act & Assert
         Assert.False(string.IsNullOrWhiteSpace(service["Help_Hist_Commands"]));
         Assert.False(string.IsNullOrWhiteSpace(service["Help_Hist_Directories"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["Help_Hist_Global"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["Drawer_Tab_Global"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["Drawer_Search_Global_Placeholder"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["Drawer_Empty_Global"]));
         Assert.Contains("H", service["Btn_Tab_History_Tooltip"]);
         Assert.Contains("L", service["Btn_Tab_History_Tooltip"]);
         Assert.Contains("H", service["Help_Feature_1"]);

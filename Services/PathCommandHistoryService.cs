@@ -17,6 +17,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
 
     private readonly object _lock = new();
     private readonly Dictionary<string, List<string>> _pathHistories = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<string> _globalCommands = new();
 
     /// <inheritdoc />
     public event Action<string>? HistoryChangedForPath;
@@ -82,6 +83,20 @@ public class PathCommandHistoryService : IPathCommandHistoryService
     }
 
     /// <inheritdoc />
+    public IReadOnlyList<string> GetAllCommands()
+    {
+        lock (_lock)
+        {
+            var result = new List<string>(_globalCommands.Count);
+            for (var i = _globalCommands.Count - 1; i >= 0; i--)
+            {
+                result.Add(_globalCommands[i]);
+            }
+            return result;
+        }
+    }
+
+    /// <inheritdoc />
     public void RecordCommand(string? path, string command)
     {
         if (string.IsNullOrWhiteSpace(command) || TerminalTabViewModel.IsInternalConfigurationCommand(command))
@@ -107,6 +122,9 @@ public class PathCommandHistoryService : IPathCommandHistoryService
             list.Remove(command);
             list.Add(command);
 
+            _globalCommands.Remove(command);
+            _globalCommands.Add(command);
+
             // Cap at MaxHistoryPerPath (FIFO pruning: oldest entries are removed first)
             while (list.Count > MaxHistoryPerPath)
             {
@@ -131,6 +149,9 @@ public class PathCommandHistoryService : IPathCommandHistoryService
             {
                 _pathHistories.Remove(key);
             }
+
+            var remainingCmds = new HashSet<string>(_pathHistories.Values.SelectMany(l => l), StringComparer.Ordinal);
+            _globalCommands.RemoveAll(cmd => !remainingCmds.Contains(cmd));
         }
     }
 
@@ -181,6 +202,9 @@ public class PathCommandHistoryService : IPathCommandHistoryService
 
                     list.Remove(cmd);
                     list.Add(cmd);
+
+                    _globalCommands.Remove(cmd);
+                    _globalCommands.Add(cmd);
 
                     while (list.Count > MaxHistoryPerPath)
                     {

@@ -26,6 +26,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     private readonly IDirectoryHistoryService _directoryHistoryService;
     private readonly object _commandHistoryLock = new();
     private readonly object _directoryHistoryLock = new();
+    private readonly object _globalHistoryLock = new();
     private readonly EventHandler<Avalonia.AvaloniaPropertyChangedEventArgs>? _terminalModelPropertyChangedHandler;
     private string? _pendingCommandDirectory;
     private bool _isDisposed;
@@ -273,6 +274,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _directoryFilterQuery = string.Empty;
 
+    [ObservableProperty]
+    private string _globalFilterQuery = string.Empty;
+
     /// <summary>
     /// Dynamic localization service for the tab and in-terminal search.
     /// </summary>
@@ -350,6 +354,16 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     public ObservableCollection<string> FilteredDirectoryHistory { get; } = new();
 
+    /// <summary>
+    /// Unified history of commands and directories across all tabs.
+    /// </summary>
+    public ObservableCollection<GlobalHistoryItem> GlobalHistory { get; } = new();
+
+    /// <summary>
+    /// Score-ranked fuzzy-filtered global history of commands and directories.
+    /// </summary>
+    public ObservableCollection<GlobalHistoryItem> FilteredGlobalHistory { get; } = new();
+
     public TerminalTabViewModel(
         IShellSession session,
         IFuzzySearchService? fuzzySearchService = null,
@@ -379,6 +393,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
         _pathCommandHistoryService.HistoryChangedForPath += OnPathHistoryChanged;
         _directoryHistoryService.HistoryChanged += OnSharedDirectoryHistoryChanged;
+        SyncGlobalHistory();
 
         TerminalModel = new TerminalControlModel(new TerminalOptions
         {
@@ -423,6 +438,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         RefreshFilteredDirectories();
     }
 
+    partial void OnGlobalFilterQueryChanged(string value)
+    {
+        RefreshFilteredGlobalHistory();
+    }
+
     public void RefreshFilteredCommands()
     {
         lock (_commandHistoryLock)
@@ -448,6 +468,43 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             {
                 FilteredDirectoryHistory.Add(item);
             }
+        }
+    }
+
+    public void RefreshFilteredGlobalHistory()
+    {
+        lock (_globalHistoryLock)
+        {
+            var snapshot = GlobalHistory.ToArray();
+            var results = string.IsNullOrWhiteSpace(GlobalFilterQuery)
+                ? snapshot
+                : _fuzzySearchService.FilterAndRank(snapshot, GlobalFilterQuery, x => x.Text).ToArray();
+
+            FilteredGlobalHistory.Clear();
+            foreach (var item in results)
+            {
+                FilteredGlobalHistory.Add(item);
+            }
+        }
+    }
+
+    public void SyncGlobalHistory()
+    {
+        lock (_globalHistoryLock)
+        {
+            var commands = _pathCommandHistoryService.GetAllCommands();
+            var directories = _directoryHistoryService.GetHistory();
+
+            GlobalHistory.Clear();
+            foreach (var cmd in commands)
+            {
+                GlobalHistory.Add(new GlobalHistoryItem(cmd, GlobalHistoryItemType.Command));
+            }
+            foreach (var dir in directories)
+            {
+                GlobalHistory.Add(new GlobalHistoryItem(dir, GlobalHistoryItemType.Directory));
+            }
+            RefreshFilteredGlobalHistory();
         }
     }
 
@@ -560,6 +617,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         void Update()
         {
             SyncDirectoryHistory();
+            SyncGlobalHistory();
             HistoryChanged?.Invoke(this);
         }
 
@@ -589,15 +647,14 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     private void OnPathHistoryChanged(string changedNormalizedPath)
     {
-        var currentNormalized = PathCommandHistoryService.NormalizePath(WorkingDirectory);
-        if (!string.Equals(currentNormalized, changedNormalizedPath, StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
         void Update()
         {
-            SyncCommandHistoryFromPath();
+            var currentNormalized = PathCommandHistoryService.NormalizePath(WorkingDirectory);
+            if (string.Equals(currentNormalized, changedNormalizedPath, StringComparison.OrdinalIgnoreCase))
+            {
+                SyncCommandHistoryFromPath();
+            }
+            SyncGlobalHistory();
             HistoryChanged?.Invoke(this);
         }
 
@@ -1191,6 +1248,34 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     [RelayCommand]
     public void NavigateToDirectory(string? directory) => NavigateToHistoryDirectory(directory);
+
+    [RelayCommand]
+    public void ExecuteGlobalItem(GlobalHistoryItem? item)
+    {
+        if (item == null) return;
+        if (item.IsCommand)
+        {
+            ExecuteHistoryCommand(item.Text);
+        }
+        else
+        {
+            NavigateToHistoryDirectory(item.Text);
+        }
+    }
+
+    [RelayCommand]
+    public void PasteGlobalItem(GlobalHistoryItem? item)
+    {
+        if (item == null) return;
+        if (item.IsCommand)
+        {
+            PasteHistoryCommand(item.Text);
+        }
+        else
+        {
+            PasteHistoryDirectory(item.Text);
+        }
+    }
 
     /// <summary>
     /// Inserts a file or folder path into the active terminal prompt without a newline,

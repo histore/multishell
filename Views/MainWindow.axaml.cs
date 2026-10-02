@@ -182,6 +182,18 @@ public partial class MainWindow : Window
             };
         }
 
+        if (ClearGlobalFilterBtn != null)
+        {
+            ClearGlobalFilterBtn.Click += (_, _) =>
+            {
+                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+                {
+                    vm.SelectedTab.GlobalFilterQuery = string.Empty;
+                }
+                GlobalHistorySearchBox?.Focus();
+            };
+        }
+
         if (CommandHistorySearchBox != null)
         {
             CommandHistorySearchBox.PropertyChanged += (_, e) =>
@@ -232,6 +244,31 @@ public partial class MainWindow : Window
             };
         }
 
+        if (GlobalHistorySearchBox != null)
+        {
+            GlobalHistorySearchBox.PropertyChanged += (_, e) =>
+            {
+                if (e.Property == TextBox.TextProperty)
+                {
+                    var filterText = GlobalHistorySearchBox.Text;
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (GlobalHistoryListBox != null && GlobalHistoryListBox.ItemCount > 0)
+                        {
+                            GlobalHistoryListBox.SelectedIndex = !string.IsNullOrWhiteSpace(filterText)
+                                ? 0
+                                : GlobalHistoryListBox.ItemCount - 1;
+
+                            if (GlobalHistoryListBox.SelectedItem != null)
+                            {
+                                GlobalHistoryListBox.ScrollIntoView(GlobalHistoryListBox.SelectedItem);
+                            }
+                        }
+                    }, DispatcherPriority.Input);
+                }
+            };
+        }
+
         if (CloseHistoryButton != null)
         {
             CloseHistoryButton.Click += (_, _) => HideHistoryDrawerAndFocusTerminal();
@@ -251,6 +288,12 @@ public partial class MainWindow : Window
             DirectoryHistoryListBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
 
+        if (GlobalHistoryListBox != null)
+        {
+            GlobalHistoryListBox.KeyDown += OnHistoryListBoxKeyDown;
+            GlobalHistoryListBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+        }
+
         if (HistoryTabControl != null)
         {
             HistoryTabControl.SelectionChanged += (sender, e) =>
@@ -261,9 +304,12 @@ public partial class MainWindow : Window
                     var hasFilter = false;
                     if (DataContext is MainViewModel vm && vm.SelectedTab != null)
                     {
-                        hasFilter = HistoryTabControl.SelectedIndex == 1
-                            ? !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery)
-                            : !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery);
+                        hasFilter = HistoryTabControl.SelectedIndex switch
+                        {
+                            1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
+                            2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
+                            _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
+                        };
                     }
                     FocusActiveHistoryList(selectLastItem: !hasFilter);
                 }

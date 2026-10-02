@@ -507,8 +507,8 @@ public partial class TerminalTabView : UserControl
             return;
         }
 
-        // Prevent Ctrl+Shift+O and Ctrl+Shift+E from leaking VT sequences to shell
-        if (isCtrl && isShift && (e.Key is Key.O or Key.E))
+        // Prevent Ctrl+Shift+O, Ctrl+Shift+E, and Ctrl+Shift+P from leaking VT sequences to shell
+        if (isCtrl && isShift && (e.Key is Key.O or Key.E or Key.P))
         {
             e.Handled = true;
             return;

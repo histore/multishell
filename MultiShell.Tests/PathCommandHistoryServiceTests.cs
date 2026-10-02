@@ -209,4 +209,30 @@ public class PathCommandHistoryServiceTests : IDisposable
         Assert.Single(uncWslHistory);
         Assert.Equal("cat syslog", uncWslHistory[0]);
     }
+
+    [Fact]
+    public void GetAllCommands_ReturnsDeduplicatedCommandsAcrossPaths_InReverseChronologicalOrder()
+    {
+        // Arrange
+        var service = new PathCommandHistoryService();
+        var dirA = Path.Combine(_testTempDir, "dirA");
+        var dirB = Path.Combine(_testTempDir, "dirB");
+        Directory.CreateDirectory(dirA);
+        Directory.CreateDirectory(dirB);
+
+        // Record commands in sequence
+        service.RecordCommand(dirA, "git status");
+        service.RecordCommand(dirB, "npm test");
+        service.RecordCommand(dirA, "dotnet build");
+        service.RecordCommand(dirB, "git status"); // Duplicate of dirA's command, but more recent in dirB
+
+        // Act
+        var allCommands = service.GetAllCommands();
+
+        // Assert: 3 distinct commands, most recent first: "git status", "dotnet build", "npm test"
+        Assert.Equal(3, allCommands.Count);
+        Assert.Equal("git status", allCommands[0]);
+        Assert.Contains("dotnet build", allCommands);
+        Assert.Contains("npm test", allCommands);
+    }
 }

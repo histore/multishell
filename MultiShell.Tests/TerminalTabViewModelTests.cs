@@ -1450,6 +1450,124 @@ public class TerminalTabViewModelTests
         // Assert: Working directory should update to /etc/nginx
         Assert.Equal("/etc/nginx", vm.WorkingDirectory);
     }
+
+    [Fact]
+    public void GlobalHistory_ContainsCommandsAndDirectories_WithDistinctBadges()
+    {
+        // Arrange
+        var historyService = new PathCommandHistoryService();
+        var dirService = new DirectoryHistoryService();
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session, pathCommandHistoryService: historyService, directoryHistoryService: dirService);
+        vm.StartSession();
+
+        // Act: Record commands and directories
+        historyService.RecordCommand(@"C:\projekte\app", "dotnet build");
+        dirService.RecordDirectory(@"C:\projekte\app");
+        dirService.RecordDirectory(@"C:\projekte\other");
+
+        // Assert: GlobalHistory contains both command and directory items with badges
+        Assert.Contains(vm.GlobalHistory, item => item.IsCommand && item.Text == "dotnet build" && item.BadgeText == "CMD");
+        Assert.Contains(vm.GlobalHistory, item => item.IsDirectory && item.Text == @"C:\projekte\app" && item.BadgeText == "DIR");
+        Assert.Contains(vm.GlobalHistory, item => item.IsDirectory && item.Text == @"C:\projekte\other" && item.BadgeText == "DIR");
+    }
+
+    [Fact]
+    public void GlobalHistory_FilterQuery_FuzzyMatchesCommandOrDirectory()
+    {
+        // Arrange
+        var historyService = new PathCommandHistoryService();
+        var dirService = new DirectoryHistoryService();
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session, pathCommandHistoryService: historyService, directoryHistoryService: dirService);
+        vm.StartSession();
+
+        historyService.RecordCommand(@"C:\projekte\app", "git status");
+        historyService.RecordCommand(@"C:\projekte\app", "dotnet run");
+        dirService.RecordDirectory(@"C:\projekte\git-repo");
+
+        // Act: Filter by "git"
+        vm.GlobalFilterQuery = "git";
+
+        // Assert: FilteredGlobalHistory has "git status" and "C:\projekte\git-repo", but not "dotnet run"
+        Assert.Contains(vm.FilteredGlobalHistory, item => item.Text == "git status");
+        Assert.Contains(vm.FilteredGlobalHistory, item => item.Text == @"C:\projekte\git-repo");
+        Assert.DoesNotContain(vm.FilteredGlobalHistory, item => item.Text == "dotnet run");
+    }
+
+    [Fact]
+    public void ExecuteGlobalItem_Command_SendsCommandToSessionWithReturn()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+        var item = new GlobalHistoryItem("git push", GlobalHistoryItemType.Command);
+
+        // Act
+        vm.ExecuteGlobalItem(item);
+
+        // Assert
+        Assert.NotEmpty(session.SentData);
+        var sent = Encoding.UTF8.GetString(session.SentData[^1]);
+        Assert.Equal("git push\r", sent);
+    }
+
+    [Fact]
+    public void ExecuteGlobalItem_Directory_SendsNavigationToSessionWithReturn()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+        var item = new GlobalHistoryItem(@"C:\projekte\other", GlobalHistoryItemType.Directory);
+
+        // Act
+        vm.ExecuteGlobalItem(item);
+
+        // Assert: PowerShell sends Set-Location
+        Assert.NotEmpty(session.SentData);
+        var sent = Encoding.UTF8.GetString(session.SentData[^1]);
+        Assert.Equal("Set-Location -LiteralPath \"C:\\projekte\\other\"\r", sent);
+    }
+
+    [Fact]
+    public void PasteGlobalItem_Command_PastesWithoutReturn()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+        var item = new GlobalHistoryItem("npm start", GlobalHistoryItemType.Command);
+
+        // Act
+        vm.PasteGlobalItem(item);
+
+        // Assert
+        Assert.NotEmpty(session.SentData);
+        var sent = Encoding.UTF8.GetString(session.SentData[^1]);
+        Assert.Equal("npm start", sent);
+        Assert.False(sent.EndsWith("\r"));
+    }
+
+    [Fact]
+    public void PasteGlobalItem_Directory_PastesNavigationWithoutReturn()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+        var item = new GlobalHistoryItem(@"C:\projekte\other", GlobalHistoryItemType.Directory);
+
+        // Act
+        vm.PasteGlobalItem(item);
+
+        // Assert
+        Assert.NotEmpty(session.SentData);
+        var sent = Encoding.UTF8.GetString(session.SentData[^1]);
+        Assert.Equal("Set-Location -LiteralPath \"C:\\projekte\\other\"", sent);
+        Assert.False(sent.EndsWith("\r"));
+    }
 }
 
 

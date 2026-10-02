@@ -1061,6 +1061,90 @@
                                     </Border>
                                 </Grid>
                             </TabItem>
+
+                            <!-- Tab 3: Global (All Commands & Directories) -->
+                            <TabItem Header="{Binding Loc[Drawer_Tab_Global]}">
+                                <Grid RowDefinitions="Auto, *">
+                                    <!-- Search Filter Box -->
+                                    <Border Grid.Row="0"
+                                            Background="{DynamicResource AppSurfaceSubtle}"
+                                            BorderBrush="{DynamicResource AppBorder}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Margin="0,6,0,6"
+                                            Padding="4">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <TextBlock Grid.Column="0" Text="🔍" FontSize="11" Margin="6,0,6,0" VerticalAlignment="Center" Foreground="{DynamicResource AppTextMuted}" />
+                                            <TextBox Grid.Column="1"
+                                                     x:Name="GlobalHistorySearchBox"
+                                                     Text="{Binding SelectedTab.GlobalFilterQuery, Mode=TwoWay}"
+                                                     PlaceholderText="{Binding Loc[Drawer_Search_Global_Placeholder]}"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     FontSize="12"
+                                                     VerticalAlignment="Center" />
+                                            <Button Grid.Column="2"
+                                                    x:Name="ClearGlobalFilterBtn"
+                                                    Content="✕"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AppTextMuted}"
+                                                    FontSize="10"
+                                                    Padding="4,2"
+                                                    IsVisible="{Binding !!SelectedTab.GlobalFilterQuery.Length}" />
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Global List -->
+                                    <Border Grid.Row="1" Background="{DynamicResource AppSurfaceSubtle}" CornerRadius="6" Padding="4" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1">
+                                        <Grid>
+                                            <ListBox x:Name="GlobalHistoryListBox"
+                                                     Classes="historyListBox"
+                                                     SelectionMode="Single"
+                                                     Focusable="True"
+                                                     ItemsSource="{Binding SelectedTab.FilteredGlobalHistory}">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:GlobalHistoryItem">
+                                                        <Grid ColumnDefinitions="Auto, Auto, *">
+                                                            <Border Grid.Column="0"
+                                                                    CornerRadius="3"
+                                                                    Padding="3,1"
+                                                                    Margin="0,0,6,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Background="{DynamicResource AppSurfaceBackground}"
+                                                                    BorderBrush="{DynamicResource AppBorder}"
+                                                                    BorderThickness="1">
+                                                                <TextBlock Text="{Binding BadgeText}"
+                                                                           FontFamily="Consolas, Cascadia Code, monospace"
+                                                                           FontSize="9"
+                                                                           FontWeight="Bold"
+                                                                           Foreground="{DynamicResource AppTextMuted}" />
+                                                            </Border>
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding IconText}"
+                                                                       FontFamily="Consolas, Cascadia Code, monospace"
+                                                                       FontSize="12"
+                                                                       Foreground="{DynamicResource AppAccent}"
+                                                                       Margin="0,0,4,0" />
+                                                            <TextBlock Grid.Column="2"
+                                                                       Text="{Binding Text}"
+                                                                       FontFamily="Consolas, Cascadia Code, monospace"
+                                                                       FontSize="12"
+                                                                       Foreground="{DynamicResource AppTextSecondary}"
+                                                                       TextWrapping="Wrap" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <TextBlock Text="{Binding Loc[Drawer_Empty_Global]}"
+                                                       Foreground="{DynamicResource AppTextMuted}"
+                                                       FontSize="12"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       IsVisible="{Binding !SelectedTab.FilteredGlobalHistory.Count}" />
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </TabItem>
                         </TabControl>
                     </Grid>
                 </Border>
