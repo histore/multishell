@@ -333,14 +333,14 @@ public class TabRenamingAndColorTests : IDisposable
         public WorkspaceState? SavedState { get; set; }
         public int SaveCallCount { get; private set; }
 
-        public Task SaveStateAsync(WorkspaceState state)
+        public Task SaveStateAsync(WorkspaceState state, CancellationToken cancellationToken = default)
         {
             SavedState = state;
             SaveCallCount++;
             return Task.CompletedTask;
         }
 
-        public Task<WorkspaceState?> LoadStateAsync()
+        public Task<WorkspaceState?> LoadStateAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(SavedState);
         }

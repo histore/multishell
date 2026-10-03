@@ -61,18 +61,30 @@ To avoid monolithic classes, `MainViewModel` is divided across functional partia
   * Quick switcher model backing `Ctrl+Tab` navigation with MRU (Most Recently Used) ordering.
 
 ### 3.2 `TerminalTabViewModel`
-Backs an individual terminal tab instance:
-* Encapsulates an `IShellSession` and binds to `TerminalControlModel`.
-* Tracks shell lifecycle: process exit, working directory updates, active title updates.
-* Path-Bound Command History Integration:
-  * Injected with `IPathCommandHistoryService`.
+Backs an individual terminal tab instance and is structured into 4 clean partial classes:
+* **`TerminalTabViewModel.cs`**:
+  * Encapsulates an `IShellSession` and binds to `TerminalControlModel`.
+  * Tracks shell lifecycle: process exit, working directory updates, active title updates.
+  * Zero-allocation ANSI stream processing via `AnsiStreamProcessor` and batched UI thread flushing (`FlushPendingUiFeed`).
+  * Scrolling commands (`PageUp`, `PageDown`, `SendPageUp`, `SendPageDown`, `ClearBuffer`) and keyboard state (`IsAltGrActive`).
+* **`TerminalTabViewModel.History.cs`**:
+  * Injected with `IPathCommandHistoryService` and `IDirectoryHistoryService`.
   * Binds `CommandHistory` dynamically to the tab's current `WorkingDirectory`.
-  * Listens to `IPathCommandHistoryService.HistoryChangedForPath` to synchronize changes across all tabs sharing that directory in real time.
+  * Synchronizes path history changes in real time across tabs sharing the directory.
   * Records commands under their originating directory (tracking pending directory changes before OSC updates).
-* Maintains live history:
-  * `CommandHistory`: Dynamically synced list of commands executed in the current directory.
-  * `DirectoryHistory`: List of visited working directories captured via OSC 7 / OSC 9;9.
-* Deterministic Folder Path Color Stripes (REQ-TAB-025):
+  * Exposes filtered collections (`FilteredCommandHistory`, `FilteredDirectoryHistory`, `FilteredGlobalHistory`).
+  * Commands for executing, pasting, and navigating history entries (`ExecuteHistoryCommand`, `PasteHistoryCommand`, `NavigateToHistoryDirectory`, `PasteHistoryDirectory`, `InsertPath`).
+* **`TerminalTabViewModel.Search.cs`**:
+  * Exposes in-terminal search state: `IsSearchOpen`, `SearchQuery`, `SearchResultCount`, `CurrentSearchResultIndex`, and `SearchMatchSummary`.
+  * Commands: `OpenSearchCommand`, `CloseSearchCommand`, `ToggleSearchCommand`, `SearchNextCommand`, `SearchPreviousCommand`.
+  * Events: `FocusSearchBoxRequested`, `FocusTerminalRequested` ensuring crisp focus transitions between the input overlay and terminal canvas.
+* **`TerminalTabViewModel.Renaming.cs`**:
+  * Custom Tab Renaming & Tab Color Palette Tagging (REQ-TAB-020).
+  * Exposes `CustomTitle`, `TabColor`, `IsRenaming`, `RenameBuffer`, `HasCustomTitle`, `HasTabColor`, `TabColorBrush`.
+  * `DisplayTitle` returns user-assigned custom title when set, falling back to dynamic middle-ellipsis formatted path/title.
+  * Commands: `StartRenamingCommand`, `CommitRenamingCommand`, `CancelRenamingCommand`, `ResetCustomTitleCommand`, `SetTabColorCommand`.
+  * Event: `FocusRenameBoxRequested` dispatched to view to select and focus the inline `TextBox`.
+* **Deterministic Folder Path Color Stripes (REQ-TAB-025)**:
   * Exposes `PathColorStripes` collection (`IReadOnlyList<PathColorStripe>`) and `HasPathColorStripes` boolean indicator.
   * Populated with deterministic color stripes representing each directory depth level from left to right (up to 16 visible stripes).
   * Color stripes use Padovan sequence width multipliers (1, 2, 3, 4, 5, 7, 9, 12, 16, 21, 28, 37) and golden-ratio hue distribution for distinct, aesthetically harmonious identification.

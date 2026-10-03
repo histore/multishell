@@ -67,13 +67,13 @@ public class SharedDirectoryHistoryIntegrationTests
     {
         public WorkspaceState? SavedState { get; set; }
 
-        public Task SaveStateAsync(WorkspaceState state)
+        public Task SaveStateAsync(WorkspaceState state, CancellationToken cancellationToken = default)
         {
             SavedState = state;
             return Task.CompletedTask;
         }
 
-        public Task<WorkspaceState?> LoadStateAsync()
+        public Task<WorkspaceState?> LoadStateAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(SavedState);
         }

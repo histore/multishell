@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using MultiShell.Models;
 
@@ -11,10 +12,10 @@ public interface ITabStatePersistenceService
     /// <summary>
     /// Saves the current workspace state to persistent storage.
     /// </summary>
-    Task SaveStateAsync(WorkspaceState state);
+    Task SaveStateAsync(WorkspaceState state, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Loads the previously saved workspace state, or null if no saved state exists or an error occurs.
     /// </summary>
-    Task<WorkspaceState?> LoadStateAsync();
+    Task<WorkspaceState?> LoadStateAsync(CancellationToken cancellationToken = default);
 }

@@ -222,7 +222,7 @@ public class TabPathColorCodingIntegrationTests
 
     private class FakePersistenceService : ITabStatePersistenceService
     {
-        public Task SaveStateAsync(WorkspaceState state) => Task.CompletedTask;
-        public Task<WorkspaceState?> LoadStateAsync() => Task.FromResult<WorkspaceState?>(null);
+        public Task SaveStateAsync(WorkspaceState state, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<WorkspaceState?> LoadStateAsync(CancellationToken cancellationToken = default) => Task.FromResult<WorkspaceState?>(null);
     }
 }

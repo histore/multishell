@@ -201,4 +201,29 @@ public class TabStatePersistenceServiceTests : IDisposable
         Assert.NotNull(loadedState);
         Assert.Equal(ShellType.CMD, loadedState.DefaultShellType);
     }
+
+    [Fact]
+    public async Task SaveStateAsync_WithCancelledToken_ThrowsOperationCanceledException()
+    {
+        // Arrange
+        var service = new TabStatePersistenceService(_tempFile);
+        var state = new WorkspaceState(new List<TabState>(), 0);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.SaveStateAsync(state, cts.Token));
+    }
+
+    [Fact]
+    public async Task LoadStateAsync_WithCancelledToken_ThrowsOperationCanceledException()
+    {
+        // Arrange
+        var service = new TabStatePersistenceService(_tempFile);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.LoadStateAsync(cts.Token));
+    }
 }

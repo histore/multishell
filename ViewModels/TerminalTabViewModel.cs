@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using Avalonia.Media;
@@ -16,7 +14,7 @@ namespace MultiShell.ViewModels;
 
 /// <summary>
 /// ViewModel representing a terminal tab backed by a real shell session and native Avalonia TerminalControl.
-/// Tracks live command history and visited directory history for the tab overlay with Fuzzy Search filtering.
+/// Core partial class managing session lifecycle, PTY I/O streaming, terminal buffer formatting, and theme coordination.
 /// </summary>
 public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 {
@@ -41,41 +39,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [NotifyPropertyChangedFor(nameof(TabTooltip))]
     private string? _workingDirectory;
 
-    private string? _customTitle;
-    /// <summary>
-    /// Gets or sets the custom user-assigned title for this tab (REQ-TAB-020).
-    /// </summary>
-    public string? CustomTitle
-    {
-        get => _customTitle;
-        set
-        {
-            if (SetProperty(ref _customTitle, value))
-            {
-                OnPropertyChanged(nameof(DisplayTitle));
-                OnPropertyChanged(nameof(HasCustomTitle));
-                OnPropertyChanged(nameof(TabTooltip));
-            }
-        }
-    }
-
-    private string? _tabColor;
-    /// <summary>
-    /// Gets or sets the custom tab color hex string (REQ-TAB-020).
-    /// </summary>
-    public string? TabColor
-    {
-        get => _tabColor;
-        set
-        {
-            if (SetProperty(ref _tabColor, value))
-            {
-                OnPropertyChanged(nameof(HasTabColor));
-                OnPropertyChanged(nameof(TabColorBrush));
-            }
-        }
-    }
-
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasPathColorStripes))]
     private IReadOnlyList<PathColorStripe> _pathColorStripes = Array.Empty<PathColorStripe>();
@@ -84,48 +47,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// Gets whether this tab currently has one or more dynamic path color stripes (REQ-TAB-025).
     /// </summary>
     public bool HasPathColorStripes => PathColorStripes != null && PathColorStripes.Count > 0;
-
-    private bool _isRenaming;
-    /// <summary>
-    /// Gets or sets whether inline tab renaming is currently active (REQ-TAB-020).
-    /// </summary>
-    public bool IsRenaming
-    {
-        get => _isRenaming;
-        set => SetProperty(ref _isRenaming, value);
-    }
-
-    private string _renameBuffer = string.Empty;
-    /// <summary>
-    /// Gets or sets the temporary buffer during inline tab renaming (REQ-TAB-020).
-    /// </summary>
-    public string RenameBuffer
-    {
-        get => _renameBuffer;
-        set => SetProperty(ref _renameBuffer, value);
-    }
-
-    /// <summary>
-    /// Event fired when inline renaming starts to focus and select the rename text box.
-    /// </summary>
-    public event Action? FocusRenameBoxRequested;
-
-    /// <summary>
-    /// Gets whether a user-assigned custom tab title is active.
-    /// </summary>
-    public bool HasCustomTitle => !string.IsNullOrWhiteSpace(CustomTitle);
-
-    /// <summary>
-    /// Gets whether a user-assigned tab color is active and valid.
-    /// </summary>
-    public bool HasTabColor => !string.IsNullOrWhiteSpace(TabColor) && Color.TryParse(TabColor, out _);
-
-    /// <summary>
-    /// Gets the brush corresponding to the assigned tab color tag.
-    /// </summary>
-    public IBrush? TabColorBrush => HasTabColor && Color.TryParse(TabColor, out var color)
-        ? new ImmutableSolidColorBrush(color)
-        : null;
 
     /// <summary>
     /// Formats the tab title with a middle-ellipsis (e.g. C:\...\multishell) when space is limited,
@@ -184,10 +105,10 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     public TerminalControlModel TerminalModel { get; }
 
-    private static readonly IBrush DarkTerminalBackground = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#0E0F15"));
-    private static readonly IBrush LightTerminalBackground = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#F8F9FC"));
-    private static readonly IBrush DarkTerminalCaret = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#7AA2F7"));
-    private static readonly IBrush LightTerminalCaret = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#2563EB"));
+    private static readonly IBrush DarkTerminalBackground = new ImmutableSolidColorBrush(Color.Parse("#0E0F15"));
+    private static readonly IBrush LightTerminalBackground = new ImmutableSolidColorBrush(Color.Parse("#F8F9FC"));
+    private static readonly IBrush DarkTerminalCaret = new ImmutableSolidColorBrush(Color.Parse("#7AA2F7"));
+    private static readonly IBrush LightTerminalCaret = new ImmutableSolidColorBrush(Color.Parse("#2563EB"));
 
     [ObservableProperty]
     private bool _isDarkTerminalTheme = true;
@@ -204,44 +125,10 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private FontFamily _terminalFontFamily = new("avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace");
 
-    [ObservableProperty]
-    private string _commandFilterQuery = string.Empty;
-
-    [ObservableProperty]
-    private string _directoryFilterQuery = string.Empty;
-
-    [ObservableProperty]
-    private string _globalFilterQuery = string.Empty;
-
     /// <summary>
     /// Dynamic localization service for the tab and in-terminal search.
     /// </summary>
     public ILocalizationService Loc { get; }
-
-    [ObservableProperty]
-    private bool _isSearchOpen;
-
-    [ObservableProperty]
-    private string _searchQuery = string.Empty;
-
-    [ObservableProperty]
-    private int _searchResultCount;
-
-    [ObservableProperty]
-    private int _currentSearchResultIndex;
-
-    [ObservableProperty]
-    private string _searchMatchSummary = string.Empty;
-
-    /// <summary>
-    /// Event fired when in-terminal search is opened to request input focus on the search box.
-    /// </summary>
-    public event Action? FocusSearchBoxRequested;
-
-    /// <summary>
-    /// Event fired when in-terminal search is closed to restore input focus back to the terminal.
-    /// </summary>
-    public event Action? FocusTerminalRequested;
 
     public void UpdateTheme(bool isDark)
     {
@@ -264,41 +151,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// Event triggered when the active working directory changes.
     /// </summary>
     public event Action<TerminalTabViewModel, string>? DirectoryChanged;
-
-    /// <summary>
-    /// Event triggered when command or directory history changes.
-    /// </summary>
-    public event Action<TerminalTabViewModel>? HistoryChanged;
-
-    /// <summary>
-    /// Live history of commands executed in this tab.
-    /// </summary>
-    public ObservableCollection<string> CommandHistory { get; } = new();
-
-    /// <summary>
-    /// Chronological history of visited directories in this tab.
-    /// </summary>
-    public ObservableCollection<string> DirectoryHistory { get; } = new();
-
-    /// <summary>
-    /// Score-ranked fuzzy-filtered command history.
-    /// </summary>
-    public ObservableCollection<string> FilteredCommandHistory { get; } = new();
-
-    /// <summary>
-    /// Score-ranked fuzzy-filtered directory history.
-    /// </summary>
-    public ObservableCollection<string> FilteredDirectoryHistory { get; } = new();
-
-    /// <summary>
-    /// Unified history of commands and directories across all tabs.
-    /// </summary>
-    public ObservableCollection<GlobalHistoryItem> GlobalHistory { get; } = new();
-
-    /// <summary>
-    /// Score-ranked fuzzy-filtered global history of commands and directories.
-    /// </summary>
-    public ObservableCollection<GlobalHistoryItem> FilteredGlobalHistory { get; } = new();
 
     public TerminalTabViewModel(
         IShellSession session,
@@ -364,86 +216,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         TerminalModel.SizeChanged += OnTerminalSizeChanged;
     }
 
-    partial void OnCommandFilterQueryChanged(string value)
-    {
-        RefreshFilteredCommands();
-    }
-
-    partial void OnDirectoryFilterQueryChanged(string value)
-    {
-        RefreshFilteredDirectories();
-    }
-
-    partial void OnGlobalFilterQueryChanged(string value)
-    {
-        RefreshFilteredGlobalHistory();
-    }
-
-    public void RefreshFilteredCommands()
-    {
-        lock (_commandHistoryLock)
-        {
-            var snapshot = CommandHistory.ToArray();
-            var results = _fuzzySearchService.FilterAndRank(snapshot, CommandFilterQuery, x => x).ToList();
-            FilteredCommandHistory.Clear();
-            foreach (var item in results)
-            {
-                FilteredCommandHistory.Add(item);
-            }
-        }
-    }
-
-    public void RefreshFilteredDirectories()
-    {
-        lock (_directoryHistoryLock)
-        {
-            var snapshot = DirectoryHistory.ToArray();
-            var results = _fuzzySearchService.FilterAndRank(snapshot, DirectoryFilterQuery, x => x).ToList();
-            FilteredDirectoryHistory.Clear();
-            foreach (var item in results)
-            {
-                FilteredDirectoryHistory.Add(item);
-            }
-        }
-    }
-
-    public void RefreshFilteredGlobalHistory()
-    {
-        lock (_globalHistoryLock)
-        {
-            var snapshot = GlobalHistory.ToArray();
-            var results = string.IsNullOrWhiteSpace(GlobalFilterQuery)
-                ? snapshot
-                : _fuzzySearchService.FilterAndRank(snapshot, GlobalFilterQuery, x => x.Text).ToArray();
-
-            FilteredGlobalHistory.Clear();
-            foreach (var item in results)
-            {
-                FilteredGlobalHistory.Add(item);
-            }
-        }
-    }
-
-    public void SyncGlobalHistory()
-    {
-        lock (_globalHistoryLock)
-        {
-            var commands = _pathCommandHistoryService.GetAllCommands();
-            var directories = _directoryHistoryService.GetHistory();
-
-            GlobalHistory.Clear();
-            foreach (var cmd in commands)
-            {
-                GlobalHistory.Add(new GlobalHistoryItem(cmd, GlobalHistoryItemType.Command));
-            }
-            foreach (var dir in directories)
-            {
-                GlobalHistory.Add(new GlobalHistoryItem(dir, GlobalHistoryItemType.Directory));
-            }
-            RefreshFilteredGlobalHistory();
-        }
-    }
-
     /// <summary>
     /// Starts the underlying ConPTY shell session.
     /// </summary>
@@ -479,132 +251,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             TrackInputBuffer(input);
             _session.Send(input);
         }
-    }
-
-    /// <summary>
-    /// Checks if a command is an internal configuration, setup, or prompt-hook command that should be excluded from CommandHistory.
-    /// </summary>
-    public static bool IsInternalConfigurationCommand(string? command) =>
-        ShellCommandFilter.IsInternalConfigurationCommand(command);
-
-    public void RestoreHistory(IEnumerable<string>? commands, IEnumerable<string>? directories)
-    {
-        if (commands != null)
-        {
-            var existingHistory = _pathCommandHistoryService.GetHistory(WorkingDirectory);
-            if (existingHistory.Count == 0)
-            {
-                var validCommands = commands
-                    .Where(c => !string.IsNullOrWhiteSpace(c) && !IsInternalConfigurationCommand(c))
-                    .ToList();
-
-                if (validCommands.Count > 0)
-                {
-                    _pathCommandHistoryService.ImportAll(new Dictionary<string, List<string>>
-                    {
-                        [WorkingDirectory ?? string.Empty] = validCommands
-                    });
-                }
-            }
-            SyncCommandHistoryFromPath();
-        }
-
-        if (directories != null)
-        {
-            _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
-            try
-            {
-                _directoryHistoryService.ImportAll(directories);
-            }
-            finally
-            {
-                _directoryHistoryService.HistoryChanged += OnSharedDirectoryHistoryChanged;
-            }
-            SyncDirectoryHistory();
-        }
-
-        RefreshFilteredCommands();
-        RefreshFilteredDirectories();
-    }
-
-    private void SyncDirectoryHistory()
-    {
-        lock (_directoryHistoryLock)
-        {
-            var history = _directoryHistoryService.GetHistory();
-            DirectoryHistory.Clear();
-            foreach (var dir in history)
-            {
-                DirectoryHistory.Add(dir);
-            }
-            RefreshFilteredDirectories();
-        }
-    }
-
-    private void OnSharedDirectoryHistoryChanged()
-    {
-        void Update()
-        {
-            SyncDirectoryHistory();
-            SyncGlobalHistory();
-            HistoryChanged?.Invoke(this);
-        }
-
-        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            Update();
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
-        }
-    }
-
-    private void SyncCommandHistoryFromPath()
-    {
-        lock (_commandHistoryLock)
-        {
-            var history = _pathCommandHistoryService.GetHistory(WorkingDirectory);
-            CommandHistory.Clear();
-            foreach (var cmd in history)
-            {
-                CommandHistory.Add(cmd);
-            }
-            RefreshFilteredCommands();
-        }
-    }
-
-    private void OnPathHistoryChanged(string changedNormalizedPath)
-    {
-        void Update()
-        {
-            var currentNormalized = PathCommandHistoryService.NormalizePath(WorkingDirectory);
-            if (string.Equals(currentNormalized, changedNormalizedPath, StringComparison.OrdinalIgnoreCase))
-            {
-                SyncCommandHistoryFromPath();
-            }
-            SyncGlobalHistory();
-            HistoryChanged?.Invoke(this);
-        }
-
-        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            Update();
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
-        }
-    }
-
-    private void OnSessionCommandExecuted(string command)
-    {
-        if (string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
-
-        var targetDir = _pendingCommandDirectory ?? WorkingDirectory;
-        _pendingCommandDirectory = null;
-
-        _pathCommandHistoryService.RecordCommand(targetDir, command);
     }
 
     private void OnSessionWorkingDirectoryChanged(string newDir)
@@ -843,15 +489,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void CheckForDirectoryChangeCommand(string command)
-    {
-        if (ShellDirectoryChangeDetector.TryDetectDirectoryChange(command, WorkingDirectory, out var newDir) &&
-            !string.IsNullOrWhiteSpace(newDir))
-        {
-            OnSessionWorkingDirectoryChanged(newDir);
-        }
-    }
-
     private void OnTerminalSizeChanged(object? sender, TerminalSizeChangedEventArgs e)
     {
         if (!IsRunning) return;
@@ -883,128 +520,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     [RelayCommand]
     public void RequestClose() => CloseRequested?.Invoke(this);
-
-    [RelayCommand]
-    public void ExecuteHistoryCommand(string? command)
-    {
-        if (string.IsNullOrWhiteSpace(command)) return;
-
-        var clean = command.Trim();
-        _pendingCommandDirectory = WorkingDirectory;
-        if (ShellType != ShellType.PowerShell)
-        {
-            OnSessionCommandExecuted(clean);
-            CheckForDirectoryChangeCommand(clean);
-        }
-
-        var commandWithEnter = clean.EndsWith('\r') || clean.EndsWith('\n') ? clean : clean + "\r";
-        var bytes = Encoding.UTF8.GetBytes(commandWithEnter);
-        _session.Send(bytes);
-    }
-
-    /// <summary>
-    /// Inserts the history command into the active terminal prompt without executing it.
-    /// </summary>
-    [RelayCommand]
-    public void PasteHistoryCommand(string? command)
-    {
-        if (string.IsNullOrWhiteSpace(command)) return;
-
-        var clean = command.Trim();
-        var bytes = Encoding.UTF8.GetBytes(clean);
-        _session.Send(bytes);
-    }
-
-    [RelayCommand]
-    public void NavigateToHistoryDirectory(string? directory)
-    {
-        if (string.IsNullOrWhiteSpace(directory)) return;
-
-        var escapedPath = $"\"{directory}\"";
-        string command = ShellType switch
-        {
-            ShellType.CMD => $"cd /d {escapedPath}\r",
-            ShellType.WSL => $"cd {escapedPath}\n",
-            _ => $"Set-Location -LiteralPath {escapedPath}\r"
-        };
-
-        if (ShellType != ShellType.PowerShell)
-        {
-            CheckForDirectoryChangeCommand(command.Trim());
-        }
-
-        var bytes = Encoding.UTF8.GetBytes(command);
-        _session.Send(bytes);
-    }
-
-    /// <summary>
-    /// Inserts the directory navigation command into the active terminal prompt without executing it.
-    /// </summary>
-    [RelayCommand]
-    public void PasteHistoryDirectory(string? directory)
-    {
-        if (string.IsNullOrWhiteSpace(directory)) return;
-
-        var escapedPath = $"\"{directory}\"";
-        string command = ShellType switch
-        {
-            ShellType.CMD => $"cd /d {escapedPath}",
-            ShellType.WSL => $"cd {escapedPath}",
-            _ => $"Set-Location -LiteralPath {escapedPath}"
-        };
-        var bytes = Encoding.UTF8.GetBytes(command);
-        _session.Send(bytes);
-    }
-
-    [RelayCommand]
-    public void NavigateToDirectory(string? directory) => NavigateToHistoryDirectory(directory);
-
-    [RelayCommand]
-    public void ExecuteGlobalItem(GlobalHistoryItem? item)
-    {
-        if (item == null) return;
-        if (item.IsCommand)
-        {
-            ExecuteHistoryCommand(item.Text);
-        }
-        else
-        {
-            NavigateToHistoryDirectory(item.Text);
-        }
-    }
-
-    [RelayCommand]
-    public void PasteGlobalItem(GlobalHistoryItem? item)
-    {
-        if (item == null) return;
-        if (item.IsCommand)
-        {
-            PasteHistoryCommand(item.Text);
-        }
-        else
-        {
-            PasteHistoryDirectory(item.Text);
-        }
-    }
-
-    /// <summary>
-    /// Inserts a file or folder path into the active terminal prompt without a newline,
-    /// automatically quoting the path if it contains spaces.
-    /// </summary>
-    [RelayCommand]
-    public void InsertPath(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path)) return;
-
-        var clean = path.Trim();
-        var formatted = clean.Contains(' ') && !clean.StartsWith('"') && !clean.EndsWith('"')
-            ? $"\"{clean}\""
-            : clean;
-
-        var bytes = Encoding.UTF8.GetBytes(formatted);
-        _session.Send(bytes);
-        FocusTerminalRequested?.Invoke();
-    }
 
     /// <summary>
     /// Scrolls the terminal scrollback buffer up by one page (REQ-TERM-003).
@@ -1060,181 +575,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
                 TerminalModel.ClearSelection();
             });
         }
-    }
-
-    /// <summary>
-    /// Opens the in-terminal search overlay and focuses the search input box (REQ-TERM-006).
-    /// </summary>
-    [RelayCommand]
-    public void OpenSearch()
-    {
-        IsSearchOpen = true;
-        if (TerminalModel.HasSelection && !string.IsNullOrWhiteSpace(TerminalModel.SelectedText))
-        {
-            SearchQuery = TerminalModel.SelectedText.Trim();
-        }
-        else if (!string.IsNullOrEmpty(SearchQuery))
-        {
-            ExecuteSearch(SearchQuery);
-        }
-        FocusSearchBoxRequested?.Invoke();
-    }
-
-    /// <summary>
-    /// Closes the in-terminal search overlay, clears the search, and restores focus to terminal (REQ-TERM-006).
-    /// </summary>
-    [RelayCommand]
-    public void CloseSearch()
-    {
-        IsSearchOpen = false;
-        SearchQuery = string.Empty;
-        TerminalModel.Search(string.Empty);
-        TerminalModel.ClearSelection();
-        SearchResultCount = 0;
-        CurrentSearchResultIndex = 0;
-        SearchMatchSummary = string.Empty;
-        FocusTerminalRequested?.Invoke();
-    }
-
-    /// <summary>
-    /// Toggles the in-terminal search overlay on or off (REQ-TERM-006).
-    /// </summary>
-    [RelayCommand]
-    public void ToggleSearch()
-    {
-        if (IsSearchOpen)
-        {
-            CloseSearch();
-        }
-        else
-        {
-            OpenSearch();
-        }
-    }
-
-    /// <summary>
-    /// Selects and scrolls to the next matching search result (REQ-TERM-006).
-    /// </summary>
-    [RelayCommand]
-    public void SearchNext()
-    {
-        if (SearchResultCount > 0)
-        {
-            TerminalModel.SelectNextSearchResult();
-            CurrentSearchResultIndex = TerminalModel.CurrentSearchResultIndex;
-            UpdateSearchMatchSummary();
-        }
-    }
-
-    /// <summary>
-    /// Selects and scrolls to the previous matching search result (REQ-TERM-006).
-    /// </summary>
-    [RelayCommand]
-    public void SearchPrevious()
-    {
-        if (SearchResultCount > 0)
-        {
-            TerminalModel.SelectPreviousSearchResult();
-            CurrentSearchResultIndex = TerminalModel.CurrentSearchResultIndex;
-            UpdateSearchMatchSummary();
-        }
-    }
-
-    partial void OnSearchQueryChanged(string value)
-    {
-        ExecuteSearch(value);
-    }
-
-    private void ExecuteSearch(string query)
-    {
-        if (string.IsNullOrEmpty(query))
-        {
-            TerminalModel.Search(string.Empty);
-            SearchResultCount = 0;
-            CurrentSearchResultIndex = 0;
-            SearchMatchSummary = string.Empty;
-            return;
-        }
-
-        TerminalModel.Search(query);
-        SearchResultCount = TerminalModel.SearchResultCount;
-        CurrentSearchResultIndex = TerminalModel.CurrentSearchResultIndex;
-        UpdateSearchMatchSummary();
-    }
-
-    private void UpdateSearchMatchSummary()
-    {
-        if (string.IsNullOrEmpty(SearchQuery))
-        {
-            SearchMatchSummary = string.Empty;
-        }
-        else if (SearchResultCount == 0)
-        {
-            SearchMatchSummary = Loc["Search_Terminal_NoResults"];
-        }
-        else
-        {
-            SearchMatchSummary = string.Format(Loc["Search_Terminal_Matches"], CurrentSearchResultIndex + 1, SearchResultCount);
-        }
-    }
-
-    /// <summary>
-    /// Initiates inline tab renaming (REQ-TAB-020).
-    /// </summary>
-    [RelayCommand]
-    public void StartRenaming()
-    {
-        if (!IsRenaming)
-        {
-            RenameBuffer = CustomTitle ?? Title ?? string.Empty;
-            IsRenaming = true;
-        }
-        FocusRenameBoxRequested?.Invoke();
-    }
-
-    /// <summary>
-    /// Confirms and commits the new tab title from the inline edit buffer (REQ-TAB-020).
-    /// </summary>
-    [RelayCommand]
-    public void CommitRenaming()
-    {
-        if (!IsRenaming) return;
-        var trimmed = RenameBuffer?.Trim();
-        CustomTitle = string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
-        IsRenaming = false;
-        RenameBuffer = string.Empty;
-    }
-
-    /// <summary>
-    /// Cancels inline tab renaming without altering the existing custom title (REQ-TAB-020).
-    /// </summary>
-    [RelayCommand]
-    public void CancelRenaming()
-    {
-        IsRenaming = false;
-        RenameBuffer = string.Empty;
-    }
-
-    /// <summary>
-    /// Clears any custom tab title and restores default dynamic directory/process naming (REQ-TAB-020).
-    /// </summary>
-    [RelayCommand]
-    public void ResetCustomTitle()
-    {
-        CustomTitle = null;
-        IsRenaming = false;
-        RenameBuffer = string.Empty;
-    }
-
-    /// <summary>
-    /// Assigns or clears the tab's accent color tag (REQ-TAB-020).
-    /// </summary>
-    [RelayCommand]
-    public void SetTabColor(string? colorHex)
-    {
-        TabColor = string.IsNullOrWhiteSpace(colorHex) || !Color.TryParse(colorHex.Trim(), out _)
-            ? null
-            : colorHex.Trim();
     }
 
     private void OnLocalizationPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

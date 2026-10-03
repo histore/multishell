@@ -26,9 +26,9 @@ The Workspace State Persistence module provides reliable, atomic serialization a
     * `PathCommandHistory`: Dictionary mapping normalized filesystem paths to lists of recent commands (`Dictionary<string, List<string>>`).
 
 ### 2.2 Contracts (`Services/ITabStatePersistenceService.cs`)
-* **`SaveWorkspaceStateAsync(WorkspaceState state, CancellationToken ct)`**:
+* **`SaveStateAsync(WorkspaceState state, CancellationToken cancellationToken = default)`**:
   * Serializes and writes workspace snapshot to disk atomically.
-* **`LoadWorkspaceStateAsync(CancellationToken ct)`**:
+* **`LoadStateAsync(CancellationToken cancellationToken = default)`**:
   * Reads and deserializes saved workspace snapshot; returns default empty state if the file does not exist or is corrupted.
 
 ## 3. High-Performance AOT Serialization

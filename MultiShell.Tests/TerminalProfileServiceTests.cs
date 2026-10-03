@@ -220,4 +220,30 @@ public class TerminalProfileServiceTests : IDisposable
         Assert.NotNull(legacy);
         Assert.Equal(TerminalProfileService.GetDefaultWorkingDirectory(), legacy.WorkingDirectory);
     }
+
+    [Fact]
+    public async Task AddProfileAsync_WithCancelledToken_ThrowsOperationCanceledException()
+    {
+        // Arrange
+        var service = new TerminalProfileService(_tempFile);
+        var profile = new TerminalProfile(Guid.NewGuid(), "Test", "pwsh.exe", "", "C:\\", "PS", ShellType.PowerShell);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.AddProfileAsync(profile, cts.Token));
+    }
+
+    [Fact]
+    public async Task LoadProfilesAsync_WithCancelledToken_ThrowsOperationCanceledException()
+    {
+        // Arrange
+        var service = new TerminalProfileService(_tempFile);
+        await File.WriteAllTextAsync(_tempFile, "[]");
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.LoadProfilesAsync(cts.Token));
+    }
 }

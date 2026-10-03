@@ -30,9 +30,9 @@ public class TabStatePersistenceService : ITabStatePersistenceService
         }
     }
 
-    public async Task SaveStateAsync(WorkspaceState state)
+    public async Task SaveStateAsync(WorkspaceState state, CancellationToken cancellationToken = default)
     {
-        await _semaphore.WaitAsync().ConfigureAwait(false);
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var directory = Path.GetDirectoryName(_filePath);
@@ -43,8 +43,12 @@ public class TabStatePersistenceService : ITabStatePersistenceService
 
             var json = JsonSerializer.Serialize(state, MultiShellJsonSerializerContext.Default.WorkspaceState);
             var tempPath = _filePath + ".tmp";
-            await File.WriteAllTextAsync(tempPath, json).ConfigureAwait(false);
+            await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);
             File.Move(tempPath, _filePath, overwrite: true);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -56,9 +60,9 @@ public class TabStatePersistenceService : ITabStatePersistenceService
         }
     }
 
-    public async Task<WorkspaceState?> LoadStateAsync()
+    public async Task<WorkspaceState?> LoadStateAsync(CancellationToken cancellationToken = default)
     {
-        await _semaphore.WaitAsync().ConfigureAwait(false);
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (!File.Exists(_filePath))
@@ -66,13 +70,17 @@ public class TabStatePersistenceService : ITabStatePersistenceService
                 return null;
             }
 
-            var json = await File.ReadAllTextAsync(_filePath).ConfigureAwait(false);
+            var json = await File.ReadAllTextAsync(_filePath, cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(json))
             {
                 return null;
             }
 
             return JsonSerializer.Deserialize(json, MultiShellJsonSerializerContext.Default.WorkspaceState);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

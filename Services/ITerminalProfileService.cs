@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using MultiShell.Models;
 
@@ -23,27 +24,27 @@ public interface ITerminalProfileService
     /// <summary>
     /// Adds a new terminal profile and persists the changes.
     /// </summary>
-    Task AddProfileAsync(TerminalProfile profile);
+    Task AddProfileAsync(TerminalProfile profile, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates an existing terminal profile and persists the changes.
     /// </summary>
-    Task UpdateProfileAsync(TerminalProfile profile);
+    Task UpdateProfileAsync(TerminalProfile profile, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a terminal profile and persists the changes.
     /// </summary>
-    Task<bool> DeleteProfileAsync(Guid id);
+    Task<bool> DeleteProfileAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resets all profiles to detected system defaults.
     /// </summary>
-    Task ResetToDefaultsAsync();
+    Task ResetToDefaultsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Loads profiles from storage or initializes defaults.
     /// </summary>
-    Task LoadProfilesAsync();
+    Task LoadProfilesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Event triggered when the profiles list is modified.

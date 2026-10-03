@@ -86,17 +86,17 @@ public class TerminalProfileService : ITerminalProfileService
         }
     }
 
-    public async Task AddProfileAsync(TerminalProfile profile)
+    public async Task AddProfileAsync(TerminalProfile profile, CancellationToken cancellationToken = default)
     {
         var normalized = NormalizeProfile(profile);
-        await _semaphore.WaitAsync().ConfigureAwait(false);
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             lock (_profiles)
             {
                 _profiles.Add(normalized);
             }
-            await SaveInternalAsync().ConfigureAwait(false);
+            await SaveInternalAsync(cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -105,10 +105,10 @@ public class TerminalProfileService : ITerminalProfileService
         ProfilesChanged?.Invoke();
     }
 
-    public async Task UpdateProfileAsync(TerminalProfile profile)
+    public async Task UpdateProfileAsync(TerminalProfile profile, CancellationToken cancellationToken = default)
     {
         var normalized = NormalizeProfile(profile);
-        await _semaphore.WaitAsync().ConfigureAwait(false);
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             lock (_profiles)
@@ -119,7 +119,7 @@ public class TerminalProfileService : ITerminalProfileService
                     _profiles[index] = normalized;
                 }
             }
-            await SaveInternalAsync().ConfigureAwait(false);
+            await SaveInternalAsync(cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -128,10 +128,10 @@ public class TerminalProfileService : ITerminalProfileService
         ProfilesChanged?.Invoke();
     }
 
-    public async Task<bool> DeleteProfileAsync(Guid id)
+    public async Task<bool> DeleteProfileAsync(Guid id, CancellationToken cancellationToken = default)
     {
         bool removed = false;
-        await _semaphore.WaitAsync().ConfigureAwait(false);
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             lock (_profiles)
@@ -145,7 +145,7 @@ public class TerminalProfileService : ITerminalProfileService
             }
             if (removed)
             {
-                await SaveInternalAsync().ConfigureAwait(false);
+                await SaveInternalAsync(cancellationToken).ConfigureAwait(false);
             }
         }
         finally
@@ -159,9 +159,9 @@ public class TerminalProfileService : ITerminalProfileService
         return removed;
     }
 
-    public async Task ResetToDefaultsAsync()
+    public async Task ResetToDefaultsAsync(CancellationToken cancellationToken = default)
     {
-        await _semaphore.WaitAsync().ConfigureAwait(false);
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var defaults = CreateDefaultProfiles();
@@ -170,7 +170,7 @@ public class TerminalProfileService : ITerminalProfileService
                 _profiles.Clear();
                 _profiles.AddRange(defaults);
             }
-            await SaveInternalAsync().ConfigureAwait(false);
+            await SaveInternalAsync(cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -179,17 +179,17 @@ public class TerminalProfileService : ITerminalProfileService
         ProfilesChanged?.Invoke();
     }
 
-    public async Task LoadProfilesAsync()
+    public async Task LoadProfilesAsync(CancellationToken cancellationToken = default)
     {
         if (!File.Exists(_filePath))
         {
             return;
         }
 
-        await _semaphore.WaitAsync().ConfigureAwait(false);
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var json = await File.ReadAllTextAsync(_filePath).ConfigureAwait(false);
+            var json = await File.ReadAllTextAsync(_filePath, cancellationToken).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(json))
             {
                 var loaded = JsonSerializer.Deserialize(json, MultiShellJsonSerializerContext.Default.ListTerminalProfile);
@@ -290,7 +290,7 @@ public class TerminalProfileService : ITerminalProfileService
         return list;
     }
 
-    private async Task SaveInternalAsync()
+    private async Task SaveInternalAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -308,8 +308,12 @@ public class TerminalProfileService : ITerminalProfileService
 
             var json = JsonSerializer.Serialize(copy, MultiShellJsonSerializerContext.Default.ListTerminalProfile);
             var tempPath = _filePath + ".tmp";
-            await File.WriteAllTextAsync(tempPath, json).ConfigureAwait(false);
+            await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);
             File.Move(tempPath, _filePath, overwrite: true);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
