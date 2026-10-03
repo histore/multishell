@@ -318,19 +318,8 @@ public partial class MainWindow : Window
 
         if (TabSwitcherOverlay != null)
         {
-            TabSwitcherOverlay.PointerPressed += (_, e) =>
-            {
-                if (e.Source == TabSwitcherOverlay && DataContext is MainViewModel vm)
-                {
-                    vm.CancelTabSwitcher();
-                    FocusActiveTerminal();
-                }
-            };
-        }
-
-        if (TabSwitcherListBox != null)
-        {
-            TabSwitcherListBox.AddHandler(InputElement.PointerPressedEvent, OnTabSwitcherListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+            TabSwitcherOverlay.TabSelected += FocusActiveTerminal;
+            TabSwitcherOverlay.DismissRequested += FocusActiveTerminal;
         }
 
         // Window-level Keyboard Filter

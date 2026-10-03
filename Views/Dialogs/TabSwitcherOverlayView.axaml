@@ -1,0 +1,128 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MultiShell.ViewModels"
+             xmlns:dialogs="using:MultiShell.Views.Dialogs"
+             x:Class="MultiShell.Views.Dialogs.TabSwitcherOverlayView"
+             x:DataType="vm:MainViewModel">
+
+    <!-- Unified Tab Switcher HUD Overlay (Ctrl+Tab & Tab Bar Button) (REQ-TAB-019) -->
+    <Grid x:Name="TabSwitcherOverlayGrid"
+          Background="#66000000"
+          IsVisible="{Binding IsTabSwitcherOpen}"
+          ZIndex="45"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch">
+        <Border Width="520"
+                MaxHeight="420"
+                Background="{DynamicResource AppSurfaceModal}"
+                BorderBrush="{DynamicResource AppBorder}"
+                BorderThickness="1"
+                CornerRadius="8"
+                BoxShadow="0 8 32 0 #88000000"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Padding="16">
+            <Grid RowDefinitions="Auto, *, Auto">
+                <!-- Switcher Header -->
+                <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" Margin="0,0,0,12">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <TextBlock Text="📑" FontSize="14" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Loc[Tab_Switcher_Title]}"
+                                   FontWeight="Bold"
+                                   FontSize="13"
+                                   Foreground="{DynamicResource AppAccent}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding TabSwitcherCountText}"
+                               FontSize="11"
+                               Foreground="{DynamicResource AppTextMuted}"
+                               VerticalAlignment="Center"
+                               Margin="12,0,0,0" />
+                    <Button Grid.Column="2"
+                            Content="✕"
+                            Classes="tabCloseBtn"
+                            Command="{Binding CancelTabSwitcherCommand}"
+                            Width="22" Height="22"
+                            FontSize="11"
+                            Padding="0" />
+                </Grid>
+
+                <!-- Switcher Tab List -->
+                <Border Grid.Row="1" Classes="modalSection" Margin="0,0,0,10" Padding="4">
+                    <ListBox x:Name="TabSwitcherListBox"
+                             Classes="tabSwitcherListBox"
+                             ItemsSource="{Binding Tabs}"
+                             SelectedIndex="{Binding TabSwitcherSelectedIndex, Mode=TwoWay}"
+                             MaxHeight="280">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TerminalTabViewModel">
+                                <Grid ColumnDefinitions="Auto, *, Auto, Auto"
+                                      Background="Transparent">
+                                    <!-- Shell Badge Icon -->
+                                    <Border Grid.Column="0"
+                                            Background="{DynamicResource AppSurfaceSubtle}"
+                                            BorderBrush="{DynamicResource AppBorder}"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            Padding="6,3"
+                                            Margin="0,0,10,0"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text=">_"
+                                                   FontFamily="Consolas, monospace"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource AppAccent}" />
+                                    </Border>
+
+                                    <!-- Tab Title & Directory -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource AppTextPrimary}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding WorkingDirectory}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource AppTextMuted}"
+                                                   TextTrimming="PrefixCharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <!-- Active Badge Indicator -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="8,0,4,0">
+                                        <TextBlock Text="●"
+                                                   FontSize="9"
+                                                   Foreground="{DynamicResource AppSuccess}"
+                                                   IsVisible="{Binding IsSelected}"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+
+                                    <!-- Close Tab Button (REQ-TAB-023) -->
+                                    <Button Grid.Column="3"
+                                            Classes="tabSwitcherCloseBtn"
+                                            Command="{Binding $parent[dialogs:TabSwitcherOverlayView].((vm:MainViewModel)DataContext).CloseTabFromSwitcherCommand}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="{Binding $parent[dialogs:TabSwitcherOverlayView].((vm:MainViewModel)DataContext).Loc[Btn_Tab_Close_Tooltip]}"
+                                            Margin="6,0,2,0">
+                                        <TextBlock Text="✕"
+                                                   FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+
+                <!-- Switcher Footer (Shortcuts / Navigation Hint) -->
+                <TextBlock Grid.Row="2"
+                           Text="{Binding TabSwitcherHintText}"
+                           FontSize="10"
+                           Foreground="{DynamicResource AppTextMuted}"
+                           HorizontalAlignment="Center" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
