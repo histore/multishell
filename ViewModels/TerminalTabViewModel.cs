@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -23,9 +24,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     private readonly IFuzzySearchService _fuzzySearchService;
     private readonly IPathCommandHistoryService _pathCommandHistoryService;
     private readonly IDirectoryHistoryService _directoryHistoryService;
-    private readonly object _commandHistoryLock = new();
-    private readonly object _directoryHistoryLock = new();
-    private readonly object _globalHistoryLock = new();
+    private readonly Lock _commandHistoryLock = new();
+    private readonly Lock _directoryHistoryLock = new();
+    private readonly Lock _globalHistoryLock = new();
     private readonly EventHandler<Avalonia.AvaloniaPropertyChangedEventArgs>? _terminalModelPropertyChangedHandler;
     private string? _pendingCommandDirectory;
     private bool _isDisposed;
@@ -709,7 +710,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     }
 
     private readonly StringBuilder _pendingUiFeedBuffer = new();
-    private readonly object _pendingUiFeedLock = new();
+    private readonly Lock _pendingUiFeedLock = new();
     private bool _isUiFeedScheduled;
 
     /// <summary>

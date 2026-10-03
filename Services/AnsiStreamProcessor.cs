@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace MultiShell.Services;
 
@@ -16,7 +17,7 @@ public sealed class AnsiStreamProcessor
 
     private readonly Decoder _outputDecoder = Encoding.UTF8.GetDecoder();
     private readonly StringBuilder _streamBuffer = new();
-    private readonly object _syncRoot = new();
+    private readonly Lock _syncRoot = new();
 
     /// <summary>
     /// Processes incoming raw PTY byte chunks, decoding UTF-8 characters and buffering incomplete ANSI/VT sequences.

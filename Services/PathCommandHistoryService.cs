@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace MultiShell.Services;
 
@@ -14,7 +15,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
 {
     public const int MaxHistoryPerPath = 100;
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly Dictionary<string, List<string>> _pathHistories = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _globalCommands = new();
 

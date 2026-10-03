@@ -21,7 +21,7 @@ public class SingleInstanceService : ISingleInstanceService
     private readonly IStartupPathResolver _pathResolver;
     private readonly Mutex? _mutex;
     private readonly CancellationTokenSource _cts = new();
-    private readonly object _pipeLock = new();
+    private readonly Lock _pipeLock = new();
     private NamedPipeServerStream? _currentServer;
     private Task? _serverTask;
     private bool _isDisposed;

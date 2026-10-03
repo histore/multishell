@@ -25,7 +25,7 @@ public sealed class ShellSession : IShellSession
     private CancellationTokenSource? _lifetimeCancellation;
     private bool _isDisposed;
     private (int cols, int rows)? _lastResize;
-    private readonly object _syncRoot = new();
+    private readonly Lock _syncRoot = new();
     private readonly string? _initialWorkingDirectory;
     private readonly StringBuilder _oscBuffer = new();
     private string? _lastExecutedCommand;
@@ -116,7 +116,7 @@ public sealed class ShellSession : IShellSession
         }
     }
 
-    private readonly object _inputWriteLock = new();
+    private readonly Lock _inputWriteLock = new();
 
     public void Send(byte[] input)
     {

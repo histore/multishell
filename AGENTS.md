@@ -16,7 +16,7 @@ For universal principles (Clean Architecture layer separation, Inner-Loop TDD pr
 - **Target OS**: Windows (Win32 ConPTY API integration)
 - **Primary Shell**: PowerShell (`pwsh -NoProfile`)
 - **Runtime & Language**: .NET 10 / C# 13 (nullable reference types enabled)
-- **UI Framework**: Avalonia UI 11.2 (Desktop)
+- **UI Framework**: Avalonia UI 12.1 (Desktop)
 - **MVVM Framework**: CommunityToolkit.Mvvm (source generators)
 - **Test Runner**: Native .NET CLI in quiet mode (`dotnet test --verbosity quiet`)
 
