@@ -69,9 +69,9 @@ public sealed class PathColorCodingService : IPathColorCodingService
         {
             var folder = folders[i];
             var color = GetColorForFolderName(folder);
-            var brush = new ImmutableSolidColorBrush(color);
+            string hexColor = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
             double width = BaseStripeWidth * GetPadovanMultiplier(i);
-            stripes.Add(new PathColorStripe(folder, color, brush, width, BaseStripeHeight));
+            stripes.Add(new PathColorStripe(folder, hexColor, width, BaseStripeHeight));
         }
 
         return stripes;

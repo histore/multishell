@@ -111,7 +111,7 @@ public class PathColorCodingServiceTests
         Assert.Equal("projectB", stripes2[1].FolderName);
 
         // Common structure has identical color
-        Assert.Equal(stripes1[0].Color, stripes2[0].Color);
+        Assert.Equal(stripes1[0].HexColor, stripes2[0].HexColor);
     }
 
     [Fact]
@@ -135,8 +135,8 @@ public class PathColorCodingServiceTests
         Assert.Equal("Core", stripes2[2].FolderName);
 
         // Common structure has identical color
-        Assert.Equal(stripes1[0].Color, stripes2[0].Color);
-        Assert.Equal(stripes1[1].Color, stripes2[1].Color);
+        Assert.Equal(stripes1[0].HexColor, stripes2[0].HexColor);
+        Assert.Equal(stripes1[1].HexColor, stripes2[1].HexColor);
     }
 
     [Fact]
@@ -162,8 +162,8 @@ public class PathColorCodingServiceTests
         Assert.Equal("Services", stripes2[2].FolderName);
 
         // Shared level colors match between both tabs
-        Assert.Equal(stripes1[0].Color, stripes2[0].Color);
-        Assert.Equal(stripes1[1].Color, stripes2[1].Color);
+        Assert.Equal(stripes1[0].HexColor, stripes2[0].HexColor);
+        Assert.Equal(stripes1[1].HexColor, stripes2[1].HexColor);
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public class PathColorCodingServiceTests
     [Fact]
     public void PathColorStripe_DefaultDimensions_WidthIsNineAndHeightIsThree()
     {
-        var stripe = new MultiShell.Models.PathColorStripe("multishell", Color.FromRgb(100, 150, 200), Brushes.Blue);
+        var stripe = new MultiShell.Models.PathColorStripe("multishell", "#6496C8");
 
         Assert.Equal(3.0, stripe.Height);
         Assert.Equal(9.0, stripe.Width);
@@ -267,11 +267,11 @@ public class PathColorCodingServiceTests
         for (int i = 0; i < stripesAlone.Count; i++)
         {
             Assert.Equal(stripesAlone[i].FolderName, stripesWithSibling[i].FolderName);
-            Assert.Equal(stripesAlone[i].Color, stripesWithSibling[i].Color);
+            Assert.Equal(stripesAlone[i].HexColor, stripesWithSibling[i].HexColor);
             Assert.Equal(stripesAlone[i].Width, stripesWithSibling[i].Width);
 
             Assert.Equal(stripesAlone[i].FolderName, stripesWithDifferentDrive[i].FolderName);
-            Assert.Equal(stripesAlone[i].Color, stripesWithDifferentDrive[i].Color);
+            Assert.Equal(stripesAlone[i].HexColor, stripesWithDifferentDrive[i].HexColor);
             Assert.Equal(stripesAlone[i].Width, stripesWithDifferentDrive[i].Width);
         }
     }

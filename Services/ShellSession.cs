@@ -14,7 +14,7 @@ using MultiShell.Models;
 
 namespace MultiShell.Services;
 
-public sealed class ShellSession : IShellSession
+public sealed partial class ShellSession : IShellSession
 {
     private WindowsPseudoConsoleSafeHandle? _pseudoConsole;
     private SafeFileHandle? _inputWriteHandle;
@@ -477,22 +477,58 @@ public sealed class ShellSession : IShellSession
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] private struct StartupInfoEx { public StartupInfo StartupInfo; public IntPtr lpAttributeList; }
     [StructLayout(LayoutKind.Sequential)] private struct ProcessInformation { public IntPtr hProcess; public IntPtr hThread; public int dwProcessId; public int dwThreadId; }
 
-    private static class NativeMethods
+    private static partial class NativeMethods
     {
         public const int EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
         public const int CREATE_UNICODE_ENVIRONMENT = 0x00000400;
         public const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
 
-        [DllImport("kernel32.dll", SetLastError = true)] public static extern bool CreatePipe(out IntPtr hReadPipe, out IntPtr hWritePipe, IntPtr lpPipeAttributes, int nSize);
-        [DllImport("kernel32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] public static extern bool InitializeProcThreadAttributeList(IntPtr lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
-        [DllImport("kernel32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] public static extern bool UpdateProcThreadAttribute(IntPtr lpAttributeList, uint dwFlags, IntPtr attribute, IntPtr lpValue, IntPtr cbSize, IntPtr lpPreviousValue, IntPtr lpReturnSize);
-        [DllImport("kernel32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] public static extern bool DeleteProcThreadAttributeList(IntPtr lpAttributeList);
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)] [return: MarshalAs(UnmanagedType.Bool)] public static extern bool CreateProcess(string? lpApplicationName, IntPtr lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment, string? lpCurrentDirectory, ref StartupInfoEx lpStartupInfo, out ProcessInformation lpProcessInformation);
-        [DllImport("kernel32.dll", SetLastError = true)] internal static extern int CreatePseudoConsole(Coord size, IntPtr hConsoleInput, IntPtr hConsoleOutput, uint dwFlags, out IntPtr phPC);
-        [DllImport("kernel32.dll", SetLastError = true)] internal static extern int ResizePseudoConsole(IntPtr hPC, Coord size);
-        [DllImport("kernel32.dll", SetLastError = true)] internal static extern void ClosePseudoConsole(IntPtr hPC);
-        [DllImport("kernel32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] public static extern bool SetHandleInformation(IntPtr hObject, int dwMask, int dwFlags);
-        [DllImport("kernel32.dll", SetLastError = true)] public static extern bool CloseHandle(IntPtr hObject);
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool CreatePipe(out IntPtr hReadPipe, out IntPtr hWritePipe, IntPtr lpPipeAttributes, int nSize);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool InitializeProcThreadAttributeList(IntPtr lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool UpdateProcThreadAttribute(IntPtr lpAttributeList, uint dwFlags, IntPtr attribute, IntPtr lpValue, IntPtr cbSize, IntPtr lpPreviousValue, IntPtr lpReturnSize);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool DeleteProcThreadAttributeList(IntPtr lpAttributeList);
+
+        [LibraryImport("kernel32.dll", EntryPoint = "CreateProcessW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool CreateProcess(
+            string? lpApplicationName,
+            IntPtr lpCommandLine,
+            IntPtr lpProcessAttributes,
+            IntPtr lpThreadAttributes,
+            [MarshalAs(UnmanagedType.Bool)] bool bInheritHandles,
+            uint dwCreationFlags,
+            IntPtr lpEnvironment,
+            string? lpCurrentDirectory,
+            ref StartupInfoEx lpStartupInfo,
+            out ProcessInformation lpProcessInformation);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        internal static partial int CreatePseudoConsole(Coord size, IntPtr hConsoleInput, IntPtr hConsoleOutput, uint dwFlags, out IntPtr phPC);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        internal static partial int ResizePseudoConsole(IntPtr hPC, Coord size);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        internal static partial void ClosePseudoConsole(IntPtr hPC);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool SetHandleInformation(IntPtr hObject, int dwMask, int dwFlags);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool CloseHandle(IntPtr hObject);
 
         public static bool CreatePipePair(out SafeFileHandle readPipe, out SafeFileHandle writePipe)
         {

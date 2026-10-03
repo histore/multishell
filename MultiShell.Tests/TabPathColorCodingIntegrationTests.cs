@@ -31,7 +31,7 @@ public class TabPathColorCodingIntegrationTests
         var session = new MockShellSession("Test");
         using var tabVm = new TerminalTabViewModel(session);
 
-        var stripe = new PathColorStripe("multishell", Color.FromRgb(100, 150, 200), Brushes.Blue);
+        var stripe = new PathColorStripe("multishell", "#6496C8");
         tabVm.PathColorStripes = new[] { stripe };
 
         Assert.Single(tabVm.PathColorStripes);

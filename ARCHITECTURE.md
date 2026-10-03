@@ -10,7 +10,7 @@ MultiShell strictly adheres to **Clean Architecture** and **MVVM** principles:
 
 - **Domain Layer (`Models/`)**: Core immutable entities, value objects, and serialization records (`TabState`, `TerminalProfile`, `LanguageOption`, `PathColorStripe`, `ShellType`) with zero external service or presentation dependencies.
 - **Services Layer (`Services/`)**: Application contracts and infrastructure implementations (`ShellSession` for ConPTY Win32 pipes, `TerminalProfileService`, `ThemeService`, `LocalizationService`, `TabStatePersistenceService`, `FuzzySearchService`, `PathCommandHistoryService`, `DirectoryHistoryService`, `PathColorCodingService`, `PathNormalizer`, `ShellCommandFilter`, `AnsiStreamProcessor`, `ShellDirectoryChangeDetector`).
-- **Presentation Layer (`ViewModels/` & `Views/`)**: Reactive view models (`MainViewModel`, `TerminalTabViewModel`) using `CommunityToolkit.Mvvm`, decoupled from Avalonia UI controls, and XAML views using compiled bindings (`x:DataType`) and modularized dialog views (`TabSwitcherOverlayView`).
+- **Presentation Layer (`ViewModels/` & `Views/`)**: Reactive view models (`MainViewModel`, `TerminalTabViewModel`) using `CommunityToolkit.Mvvm`, decoupled from Avalonia UI controls, and XAML views using compiled bindings (`x:DataType`) and modularized dialog views (`TabSwitcherOverlayView`, `HistoryDrawerView`).
 - **Automated Test Suite (`MultiShell.Tests/`)**: Comprehensive xUnit tests adhering to the AAA pattern.
 
 ### Core Architectural Invariants
@@ -18,7 +18,7 @@ MultiShell strictly adheres to **Clean Architecture** and **MVVM** principles:
 2. **Framework Decoupling**: ViewModels contain presentation logic and observable state without referencing concrete UI controls (`Window`, `Control`, `Visual`).
 3. **Compiled Bindings**: All Avalonia XAML views use compiled bindings (`x:DataType`) for compile-time type safety and peak runtime performance.
 4. **Bilingual & Dynamic i18n**: 0% hardcoded strings in UI/XAML; all strings are resolved dynamically through `LocalizationService` (English, German, French, Spanish, Italian, Portuguese).
-5. **Safe Native Interop**: Low-level Win32 ConPTY and kernel32 pipe handles are safely wrapped in `SafeHandle` instances with leak-free disposal lifecycles.
+5. **Safe Native Interop**: Low-level Win32 ConPTY and kernel32 pipe handles are safely wrapped using modern C# 13 source-generated `[LibraryImport]` and `SafeHandle` instances with leak-free disposal lifecycles.
 6. **Modern C# 13 Concurrency**: Synchronization primitives use `System.Threading.Lock` instead of legacy Monitor lock objects, ensuring minimal synchronization overhead.
 
 ## Cross-Cutting Concerns
