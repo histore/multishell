@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -144,82 +143,18 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             ? WorkingDirectory
             : (!string.IsNullOrWhiteSpace(Title) ? Title : _session.Title));
 
-    public static string FormatMiddleEllipsis(string? text, int maxLength = 22)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
-        if (maxLength <= 0) return string.Empty;
-        if (text.Length <= maxLength) return text;
-
-        if (maxLength <= 3)
-        {
-            return text[..maxLength];
-        }
-
-        char sep = text.Contains('/') && !text.Contains('\\') ? '/' : '\\';
-        var parts = text.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
-
-        if (parts.Length <= 2)
-        {
-            if (maxLength < 5)
-            {
-                return text[..maxLength];
-            }
-
-            int keep = (maxLength - 3) / 2;
-            int suffixKeep = maxLength - 3 - keep;
-            return text[..keep] + "..." + text[^suffixKeep..];
-        }
-
-        string root = text.StartsWith('/')
-            ? ""
-            : (text.StartsWith(@"\\") ? $@"\\{parts[0]}" : parts[0]);
-        string leaf = parts[^1];
-
-        // Format: C:\...\multishell or \\server\...\multishell or /.../multishell
-        string compact = $"{root}{sep}...{sep}{leaf}";
-        if (compact.Length <= maxLength)
-        {
-            return compact;
-        }
-
-        // If leaf itself can fit within the budget with a trailing ellipsis
-        int rootLength = root.Length + 1; // root + sep
-        int availableForLeaf = maxLength - rootLength - 5; // minus ...\ and trailing …
-        if (availableForLeaf >= 3 && leaf.Length > availableForLeaf)
-        {
-            string truncatedLeafCompact = $"{root}{sep}...{sep}{leaf[..availableForLeaf]}…";
-            if (truncatedLeafCompact.Length <= maxLength)
-            {
-                return truncatedLeafCompact;
-            }
-        }
-
-        // If root itself or compact form still exceeds maxLength, fallback to strict middle ellipsis
-        if (maxLength < 5)
-        {
-            return text[..maxLength];
-        }
-
-        int generalKeep = (maxLength - 3) / 2;
-        int generalSuffixKeep = maxLength - 3 - generalKeep;
-        return text[..generalKeep] + "..." + text[^generalSuffixKeep..];
-    }
+    /// <summary>
+    /// Formats the tab title with a middle-ellipsis (e.g. C:\...\multishell) when space is limited.
+    /// </summary>
+    public static string FormatMiddleEllipsis(string? text, int maxLength = 22) =>
+        TerminalTextFormatter.FormatMiddleEllipsis(text, maxLength);
 
     /// <summary>
     /// Cleans raw text copied from the terminal buffer by trimming trailing spaces from each line
     /// and removing trailing blank lines caused by fixed rectangular buffer selection.
     /// </summary>
-    public static string CleanSelectedTerminalText(string? rawSelectedText)
-    {
-        if (string.IsNullOrEmpty(rawSelectedText)) return string.Empty;
-        var lines = rawSelectedText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-        var trimmedLines = lines.Select(l => l.TrimEnd()).ToList();
-        while (trimmedLines.Count > 0 && string.IsNullOrEmpty(trimmedLines[^1]))
-        {
-            trimmedLines.RemoveAt(trimmedLines.Count - 1);
-        }
-        return string.Join(Environment.NewLine, trimmedLines);
-    }
+    public static string CleanSelectedTerminalText(string? rawSelectedText) =>
+        TerminalTextFormatter.CleanSelectedTerminalText(rawSelectedText);
 
     [ObservableProperty]
     private bool _isSelected;
@@ -698,11 +633,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private static readonly Regex OscSequenceRegex = new(@"\x1b\][^\x1b\x07]*(\x1b\\|\x07)", RegexOptions.Compiled);
-    private static readonly Regex OscColorQueryRegex = new(@"\x1b\](10|11);\?(\x07|\x1b\\)", RegexOptions.Compiled);
-    private readonly Decoder _outputDecoder = Encoding.UTF8.GetDecoder();
-    private readonly StringBuilder _streamBuffer = new();
-    private readonly object _decoderLock = new();
+    private readonly AnsiStreamProcessor _ansiStreamProcessor = new();
 
     /// <summary>
     /// Checks if incoming text from the shell contains terminal color queries (OSC 10 foreground, OSC 11 background)
@@ -710,186 +641,46 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     internal void CheckAndRespondToOscColorQueries(string text)
     {
-        if (string.IsNullOrEmpty(text) || !text.Contains("\x1b]")) return;
-
-        var matches = OscColorQueryRegex.Matches(text);
-        if (matches.Count == 0) return;
-
-        foreach (Match match in matches)
+        AnsiStreamProcessor.DispatchOscColorQueries(text, IsDarkTerminalTheme, response =>
         {
-            var code = match.Groups[1].Value;
-            string response;
-            if (code == "11")
-            {
-                // Background color query (X11 16-bit-per-channel RGB format)
-                response = IsDarkTerminalTheme
-                    ? "\x1b]11;rgb:0e0e/0f0f/1515\x1b\\"
-                    : "\x1b]11;rgb:f8f8/f9f9/fcfc\x1b\\";
-            }
-            else
-            {
-                // Foreground color query
-                response = IsDarkTerminalTheme
-                    ? "\x1b]10;rgb:c0c0/caca/f5f5\x1b\\"
-                    : "\x1b]10;rgb:1a1a/1d1d/2b2b\x1b\\";
-            }
-
             try
             {
                 _session.Send(Encoding.ASCII.GetBytes(response));
             }
             catch { }
-        }
+        });
     }
 
     /// <summary>
     /// Strips unsupported OSC escape sequences (e.g. OSC 8 hyperlinks, OSC 9/133 shell integration)
     /// to prevent terminal controls from misparsing them and printing stray ']' characters at column 0.
     /// </summary>
-    public static string SanitizeTerminalText(string text)
-    {
-        if (string.IsNullOrEmpty(text)) return text;
-        return OscSequenceRegex.Replace(text, string.Empty);
-    }
+    public static string SanitizeTerminalText(string text) =>
+        AnsiStreamProcessor.SanitizeTerminalText(text);
 
     /// <summary>
     /// Finds the start index of an incomplete ANSI/VT100 escape sequence at the end of the text stream,
     /// or -1 if the text ends with complete escape sequences / plain characters.
     /// Used to buffer fragmented sequences across stream chunks and prevent color bleeding and render corruption.
     /// </summary>
-    public static int FindIncompleteEscapeSequenceIndex(string text)
-    {
-        if (string.IsNullOrEmpty(text)) return -1;
-
-        int lastEsc = text.LastIndexOf('\x1b');
-        if (lastEsc < 0) return -1;
-
-        // If ESC is the very last character in the buffer, it is definitely incomplete
-        if (lastEsc == text.Length - 1)
-        {
-            // Check if this trailing ESC is the beginning of ST (\x1b\) for a preceding unclosed multi-character sequence (OSC, DCS, APC, PM, SOS)
-            int lastOsc = text.LastIndexOf("\x1b]", lastEsc, StringComparison.Ordinal);
-            int lastDcs = text.LastIndexOf("\x1bP", lastEsc, StringComparison.Ordinal);
-            int lastApc = text.LastIndexOf("\x1b_", lastEsc, StringComparison.Ordinal);
-            int lastPm = text.LastIndexOf("\x1b^", lastEsc, StringComparison.Ordinal);
-            int lastSos = text.LastIndexOf("\x1bX", lastEsc, StringComparison.Ordinal);
-
-            int prevMultiCharEsc = Math.Max(lastOsc, Math.Max(lastDcs, Math.Max(lastApc, Math.Max(lastPm, lastSos))));
-            if (prevMultiCharEsc >= 0)
-            {
-                int bel = text.IndexOf('\x07', prevMultiCharEsc);
-                int st = text.IndexOf("\x1b\\", prevMultiCharEsc, StringComparison.Ordinal);
-                if (bel < 0 && st < 0)
-                {
-                    return prevMultiCharEsc;
-                }
-            }
-            return lastEsc;
-        }
-
-        char nextChar = text[lastEsc + 1];
-
-        // 1. CSI sequence: \x1b[ ...
-        if (nextChar == '[')
-        {
-            // Scan subsequent characters up to end of string for a final byte (0x40..0x7E, e.g. 'm', 'H', 'K', 'J', 'h', 'l', etc.)
-            for (int i = lastEsc + 2; i < text.Length; i++)
-            {
-                char ch = text[i];
-                if (ch >= 0x40 && ch <= 0x7E)
-                {
-                    // CSI is complete!
-                    return -1;
-                }
-            }
-            // No final byte found -> CSI is incomplete
-            return lastEsc;
-        }
-
-        // 2. OSC sequence: \x1b] ... (terminated by BEL \x07 or ST \x1b\)
-        if (nextChar == ']')
-        {
-            int bel = text.IndexOf('\x07', lastEsc + 2);
-            int st = text.IndexOf("\x1b\\", lastEsc + 2, StringComparison.Ordinal);
-            if (bel < 0 && st < 0)
-            {
-                return lastEsc;
-            }
-            return -1;
-        }
-
-        // 3. DCS / APC / PM / SOS sequences (\x1bP, \x1b_, \x1b^, \x1bX) terminated by ST (\x1b\) or BEL (\x07)
-        if (nextChar is 'P' or '_' or '^' or 'X')
-        {
-            int bel = text.IndexOf('\x07', lastEsc + 2);
-            int st = text.IndexOf("\x1b\\", lastEsc + 2, StringComparison.Ordinal);
-            if (bel < 0 && st < 0)
-            {
-                return lastEsc;
-            }
-            return -1;
-        }
-
-        // 4. Two-character designation sequences: \x1b(, \x1b), \x1b*, \x1b+, \x1b#, \x1b%
-        if (nextChar is '(' or ')' or '*' or '+' or '#' or '%')
-        {
-            // Requires 1 more character after nextChar
-            if (lastEsc + 2 >= text.Length)
-            {
-                return lastEsc;
-            }
-            return -1;
-        }
-
-        // 5. Standalone 2-character escape sequences (e.g. \x1bM, \x1bD, \x1bE, \x1b7, \x1b8, \x1bc, \x1b=, \x1b>)
-        // Since lastEsc < text.Length - 1, the 2nd character is already present.
-        return -1;
-    }
+    public static int FindIncompleteEscapeSequenceIndex(string text) =>
+        AnsiStreamProcessor.FindIncompleteEscapeSequenceIndex(text);
 
     private void OnSessionDataReceived(byte[] data)
     {
         if (_isDisposed || data.Length == 0) return;
 
-        string textToFeed;
-        lock (_decoderLock)
-        {
-            int charCount = _outputDecoder.GetCharCount(data, 0, data.Length, flush: false);
-            if (charCount > 0)
+        string? textToFeed = _ansiStreamProcessor.ProcessChunk(
+            data,
+            onOscColorResponse: response =>
             {
-                char[] chars = new char[charCount];
-                _outputDecoder.GetChars(data, 0, data.Length, chars, 0, flush: false);
-                _streamBuffer.Append(chars);
-            }
-            else
-            {
-                return;
-            }
-
-            var current = _streamBuffer.ToString();
-            _streamBuffer.Clear();
-
-            // 1. Check if there is an incomplete ANSI/VT100 escape sequence at the end of the current stream
-            int incompleteIndex = FindIncompleteEscapeSequenceIndex(current);
-            if (incompleteIndex >= 0)
-            {
-                // Buffer the incomplete tail for the next incoming chunk
-                _streamBuffer.Append(current[incompleteIndex..]);
-                current = current[..incompleteIndex];
-            }
-
-            // 2. Intercept and respond to OSC 10 / OSC 11 color queries (e.g. Neovim background detection)
-            CheckAndRespondToOscColorQueries(current);
-
-            // 3. Strip unsupported complete OSC sequences (e.g. OSC 133 / OSC 9;9 shell integration)
-            textToFeed = SanitizeTerminalText(current);
-
-            // Safety boundary on stream buffer: flush remaining sanitized text rather than dropping
-            if (_streamBuffer.Length > 16384)
-            {
-                textToFeed += SanitizeTerminalText(_streamBuffer.ToString());
-                _streamBuffer.Clear();
-            }
-        }
+                try
+                {
+                    _session.Send(Encoding.ASCII.GetBytes(response));
+                }
+                catch { }
+            },
+            isDarkTheme: IsDarkTerminalTheme);
 
         if (string.IsNullOrEmpty(textToFeed) || _isDisposed) return;
 
@@ -1053,86 +844,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     private void CheckForDirectoryChangeCommand(string command)
     {
-        if (string.IsNullOrWhiteSpace(command) || string.IsNullOrWhiteSpace(WorkingDirectory)) return;
-
-        var trimmed = command.Trim();
-        string? targetPath = null;
-
-        if (trimmed.StartsWith("cd ", StringComparison.OrdinalIgnoreCase))
+        if (ShellDirectoryChangeDetector.TryDetectDirectoryChange(command, WorkingDirectory, out var newDir) &&
+            !string.IsNullOrWhiteSpace(newDir))
         {
-            targetPath = trimmed[3..].Trim().Trim('"', '\'');
-            if (targetPath.StartsWith("/d ", StringComparison.OrdinalIgnoreCase))
-            {
-                targetPath = targetPath[3..].Trim().Trim('"', '\'');
-            }
+            OnSessionWorkingDirectoryChanged(newDir);
         }
-        else if (trimmed.Equals("cd..", StringComparison.OrdinalIgnoreCase))
-        {
-            targetPath = "..";
-        }
-        else if (trimmed.Equals("cd\\", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("cd/", StringComparison.OrdinalIgnoreCase))
-        {
-            targetPath = "\\";
-        }
-        else if (trimmed.StartsWith("Set-Location ", StringComparison.OrdinalIgnoreCase))
-        {
-            targetPath = trimmed[13..].Trim().Trim('"', '\'');
-            if (targetPath.StartsWith("-LiteralPath ", StringComparison.OrdinalIgnoreCase))
-            {
-                targetPath = targetPath[13..].Trim().Trim('"', '\'');
-            }
-            else if (targetPath.StartsWith("-Path ", StringComparison.OrdinalIgnoreCase))
-            {
-                targetPath = targetPath[6..].Trim().Trim('"', '\'');
-            }
-        }
-        else if ((trimmed.Length == 2 && char.IsLetter(trimmed[0]) && trimmed[1] == ':') ||
-                 (trimmed.Length == 3 && char.IsLetter(trimmed[0]) && trimmed[1] == ':' && (trimmed[2] == '\\' || trimmed[2] == '/')))
-        {
-            targetPath = trimmed[..2] + "\\";
-        }
-
-        if (string.IsNullOrWhiteSpace(targetPath)) return;
-
-        try
-        {
-            if (targetPath == "..")
-            {
-                var parent = System.IO.Directory.GetParent(WorkingDirectory)?.FullName;
-                if (!string.IsNullOrEmpty(parent) && System.IO.Directory.Exists(parent))
-                {
-                    OnSessionWorkingDirectoryChanged(parent);
-                }
-            }
-            else if (targetPath == "\\" || targetPath == "/")
-            {
-                var root = System.IO.Path.GetPathRoot(WorkingDirectory);
-                if (!string.IsNullOrEmpty(root) && System.IO.Directory.Exists(root))
-                {
-                    OnSessionWorkingDirectoryChanged(root);
-                }
-            }
-            else if (targetPath.StartsWith('/'))
-            {
-                OnSessionWorkingDirectoryChanged(targetPath);
-            }
-            else if (System.IO.Path.IsPathRooted(targetPath))
-            {
-                if (System.IO.Directory.Exists(targetPath))
-                {
-                    OnSessionWorkingDirectoryChanged(System.IO.Path.GetFullPath(targetPath));
-                }
-            }
-            else
-            {
-                var combined = System.IO.Path.Combine(WorkingDirectory, targetPath);
-                if (System.IO.Directory.Exists(combined))
-                {
-                    OnSessionWorkingDirectoryChanged(System.IO.Path.GetFullPath(combined));
-                }
-            }
-        }
-        catch { }
     }
 
     private void OnTerminalSizeChanged(object? sender, TerminalSizeChangedEventArgs e)
