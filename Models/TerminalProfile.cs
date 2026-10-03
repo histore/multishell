@@ -1,5 +1,4 @@
 using System;
-using MultiShell.Services;
 
 namespace MultiShell.Models;
 

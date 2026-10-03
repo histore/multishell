@@ -27,35 +27,7 @@ public class DirectoryHistoryService : IDirectoryHistoryService
     /// Normalizes a directory path for consistent comparison and display.
     /// Resolves full paths where possible, trims whitespace, and strips non-root trailing directory separators.
     /// </summary>
-    public static string NormalizePath(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            return string.Empty;
-        }
-
-        var trimmed = path.Trim();
-        if (trimmed.StartsWith('/'))
-        {
-            var normalizedPosix = trimmed.TrimEnd('/');
-            return string.IsNullOrEmpty(normalizedPosix) ? "/" : normalizedPosix;
-        }
-
-        try
-        {
-            var fullPath = Path.GetFullPath(trimmed);
-            var root = Path.GetPathRoot(fullPath);
-            if (!string.Equals(fullPath, root, StringComparison.OrdinalIgnoreCase))
-            {
-                fullPath = fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            }
-            return fullPath;
-        }
-        catch
-        {
-            return trimmed.TrimEnd('\\', '/');
-        }
-    }
+    public static string NormalizePath(string? path) => PathNormalizer.Normalize(path, fallbackToCurrentDirectory: false);
 
     /// <inheritdoc />
     public IReadOnlyList<string> GetHistory()
@@ -100,16 +72,7 @@ public class DirectoryHistoryService : IDirectoryHistoryService
     /// <summary>
     /// Checks if a directory path exists on disk, or if it represents a POSIX or WSL path that cannot be resolved via standard Windows filesystem APIs.
     /// </summary>
-    public static bool DirectoryExistsOrNonWindows(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path)) return false;
-        // Do not prune WSL / POSIX style paths on Windows
-        if (path.StartsWith('/') || path.StartsWith(@"\\wsl", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-        return Directory.Exists(path);
-    }
+    public static bool DirectoryExistsOrNonWindows(string? path) => PathNormalizer.DirectoryExistsOrNonWindows(path);
 
     /// <inheritdoc />
     public void PruneNonExistentDirectories()

@@ -1,3 +1,5 @@
+using MultiShell.Models;
+
 namespace MultiShell.Services;
 
 public class ShellProcessService : IShellProcessService

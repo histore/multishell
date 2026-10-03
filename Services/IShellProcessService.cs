@@ -1,15 +1,6 @@
-namespace MultiShell.Services;
+using MultiShell.Models;
 
-/// <summary>
-/// Shell types supported by the terminal.
-/// </summary>
-public enum ShellType
-{
-    PowerShell,
-    NuShell,
-    WSL,
-    CMD
-}
+namespace MultiShell.Services;
 
 /// <summary>
 /// Factory service for creating isolated shell sessions.

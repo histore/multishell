@@ -545,18 +545,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private static readonly Regex InternalConfigCommandRegex = new(
-        @"^(chcp(\s+.*)?|\[Console\]::.*|\$OutputEncoding.*|\$function:prompt.*|Set-PSReadLineOption.*|__multishell_.*)$",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
     /// <summary>
     /// Checks if a command is an internal configuration, setup, or prompt-hook command that should be excluded from CommandHistory.
     /// </summary>
-    public static bool IsInternalConfigurationCommand(string? command)
-    {
-        if (string.IsNullOrWhiteSpace(command)) return true;
-        return InternalConfigCommandRegex.IsMatch(command.Trim());
-    }
+    public static bool IsInternalConfigurationCommand(string? command) =>
+        ShellCommandFilter.IsInternalConfigurationCommand(command);
 
     public void RestoreHistory(IEnumerable<string>? commands, IEnumerable<string>? directories)
     {

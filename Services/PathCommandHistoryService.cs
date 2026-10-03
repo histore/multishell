@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MultiShell.ViewModels;
 
 namespace MultiShell.Services;
 
@@ -26,41 +25,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
     /// Normalizes a directory path for consistent lookups across shells and platforms.
     /// Resolves full paths, normalizes directory separators, and strips non-root trailing separators.
     /// </summary>
-    public static string NormalizePath(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            var current = Directory.GetCurrentDirectory();
-            var currentRoot = Path.GetPathRoot(current);
-            if (!string.Equals(current, currentRoot, StringComparison.OrdinalIgnoreCase))
-            {
-                current = current.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            }
-            return current;
-        }
-
-        var trimmed = path.Trim();
-        if (trimmed.StartsWith('/'))
-        {
-            var normalizedPosix = trimmed.TrimEnd('/');
-            return string.IsNullOrEmpty(normalizedPosix) ? "/" : normalizedPosix;
-        }
-
-        try
-        {
-            var fullPath = Path.GetFullPath(trimmed);
-            var root = Path.GetPathRoot(fullPath);
-            if (!string.Equals(fullPath, root, StringComparison.OrdinalIgnoreCase))
-            {
-                fullPath = fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            }
-            return fullPath;
-        }
-        catch
-        {
-            return trimmed.TrimEnd('\\', '/');
-        }
-    }
+    public static string NormalizePath(string? path) => PathNormalizer.Normalize(path, fallbackToCurrentDirectory: true);
 
     /// <inheritdoc />
     public IReadOnlyList<string> GetHistory(string? path)
@@ -99,7 +64,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
     /// <inheritdoc />
     public void RecordCommand(string? path, string command)
     {
-        if (string.IsNullOrWhiteSpace(command) || TerminalTabViewModel.IsInternalConfigurationCommand(command))
+        if (string.IsNullOrWhiteSpace(command) || ShellCommandFilter.IsInternalConfigurationCommand(command))
         {
             return;
         }
@@ -195,7 +160,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
 
                 foreach (var cmd in commands)
                 {
-                    if (string.IsNullOrWhiteSpace(cmd) || TerminalTabViewModel.IsInternalConfigurationCommand(cmd))
+                    if (string.IsNullOrWhiteSpace(cmd) || ShellCommandFilter.IsInternalConfigurationCommand(cmd))
                     {
                         continue;
                     }
