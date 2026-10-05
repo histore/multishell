@@ -537,6 +537,23 @@ public class TerminalTabViewModelTests
     }
 
     [Fact]
+    public void TerminalControl_ThemePalette_AppliesSolidColorBrushCorrectly()
+    {
+        var terminal = new SvcSystems.UI.Terminal.TerminalControl();
+        var resolveMethod = typeof(SvcSystems.UI.Terminal.TerminalControl).GetMethod("ResolvePaletteBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+        // With ImmutableSolidColorBrush, TerminalControl ignores it because it checks "value is Brush"
+        terminal.Resources["SvcSystems.UI.TerminalColor0"] = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Colors.LightYellow);
+        var brushIgnored = resolveMethod.Invoke(terminal, [0]);
+        Assert.NotEqual(Avalonia.Media.Colors.LightYellow, ((Avalonia.Media.ISolidColorBrush)brushIgnored!).Color);
+
+        // With SolidColorBrush (inherits from Brush), TerminalControl accepts it
+        terminal.Resources["SvcSystems.UI.TerminalColor0"] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.LightYellow);
+        var brushAccepted = resolveMethod.Invoke(terminal, [0]);
+        Assert.Equal(Avalonia.Media.Colors.LightYellow, ((Avalonia.Media.ISolidColorBrush)brushAccepted!).Color);
+    }
+
+    [Fact]
     public void ControlCharacters_PassedThroughWhenAltGrInactive_FilteredWhenActive()
     {
         var session = new MockPowerShellSession("PS 1");

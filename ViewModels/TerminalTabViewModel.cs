@@ -105,10 +105,10 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// </summary>
     public TerminalControlModel TerminalModel { get; }
 
-    private static readonly IBrush DarkTerminalBackground = new ImmutableSolidColorBrush(Color.Parse("#0E0F15"));
-    private static readonly IBrush LightTerminalBackground = new ImmutableSolidColorBrush(Color.Parse("#F8F9FC"));
-    private static readonly IBrush DarkTerminalCaret = new ImmutableSolidColorBrush(Color.Parse("#7AA2F7"));
-    private static readonly IBrush LightTerminalCaret = new ImmutableSolidColorBrush(Color.Parse("#2563EB"));
+    private static readonly IBrush DarkTerminalBackground = new SolidColorBrush(Color.Parse("#0E0F15"));
+    private static readonly IBrush LightTerminalBackground = new SolidColorBrush(Color.Parse("#F8F9FC"));
+    private static readonly IBrush DarkTerminalCaret = new SolidColorBrush(Color.Parse("#7AA2F7"));
+    private static readonly IBrush LightTerminalCaret = new SolidColorBrush(Color.Parse("#2563EB"));
 
     [ObservableProperty]
     private bool _isDarkTerminalTheme = true;
