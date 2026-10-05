@@ -193,7 +193,7 @@ public partial class MainWindow
                 e.Handled = true;
                 return;
             }
-            if (HistoryDrawer?.IsVisible == true)
+            if (HistoryDrawer?.IsDrawerOpen == true)
             {
                 HideHistoryDrawerAndFocusTerminal();
                 e.Handled = true;

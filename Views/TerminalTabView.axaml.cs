@@ -398,9 +398,10 @@ public partial class TerminalTabView : UserControl
         var isAltGr = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Alt);
         if (DataContext is not TerminalTabViewModel vm) return;
 
+        vm.IsAltGrActive = isAltGr;
+
         if (isAltGr)
         {
-            vm.IsAltGrActive = true;
             if (vm.IsRunning)
             {
                 var text = ResolveAltGrText(e);
@@ -649,16 +650,21 @@ public partial class TerminalTabView : UserControl
             Terminal.Cursor = Cursor.Default;
         }
 
+        var isAltGr = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Alt);
+        if (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt)
+        {
+            isAltGr = false;
+        }
+
+        if (DataContext is TerminalTabViewModel vm)
+        {
+            vm.IsAltGrActive = isAltGr;
+        }
+
         if (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin)
         {
             e.Handled = true;
             return;
-        }
-
-        var isAltGr = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Alt);
-        if (DataContext is TerminalTabViewModel vm)
-        {
-            vm.IsAltGrActive = isAltGr;
         }
     }
 

@@ -516,6 +516,57 @@ public class TerminalTabViewModelTests
     }
 
     [Fact]
+    public void TerminalControl_WhenEscapePressed_SendsEscapeByte()
+    {
+        var session = new MockPowerShellSession("PS 1");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+        var terminal = new SvcSystems.UI.Terminal.TerminalControl
+        {
+            Model = vm.TerminalModel
+        };
+
+        terminal.RaiseEvent(new Avalonia.Input.KeyEventArgs
+        {
+            RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent,
+            Key = Avalonia.Input.Key.Escape
+        });
+
+        Assert.Single(session.SentData);
+        Assert.Equal(new byte[] { 0x1B }, session.SentData[0]);
+    }
+
+    [Fact]
+    public void ControlCharacters_PassedThroughWhenAltGrInactive_FilteredWhenActive()
+    {
+        var session = new MockPowerShellSession("PS 1");
+        session.Start();
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act 1: AltGr inactive (default) -> ESC (0x1B) and Ctrl+C (0x03) must pass through
+        vm.TerminalModel.Send(new byte[] { 0x1B });
+        vm.TerminalModel.Send(new byte[] { 0x03 });
+
+        Assert.Equal(2, session.SentData.Count);
+        Assert.Equal(new byte[] { 0x1B }, session.SentData[0]);
+        Assert.Equal(new byte[] { 0x03 }, session.SentData[1]);
+
+        session.SentData.Clear();
+
+        // Act 2: AltGr active -> rogue control chars filtered out
+        vm.IsAltGrActive = true;
+        vm.TerminalModel.Send(new byte[] { 0x1B });
+        vm.TerminalModel.Send(new byte[] { 0x03 });
+        Assert.Empty(session.SentData);
+
+        // Act 3: AltGr reset to inactive -> control chars pass through again
+        vm.IsAltGrActive = false;
+        vm.TerminalModel.Send(new byte[] { 0x1B });
+        Assert.Single(session.SentData);
+        Assert.Equal(new byte[] { 0x1B }, session.SentData[0]);
+    }
+
+    [Fact]
     public void TerminalFontFamily_DefaultsToMonospaceFamilyChain()
     {
         // Arrange
