@@ -6,7 +6,7 @@ This workspace adheres to the multi-agent governance, role definitions, executio
 - **Role & Model Tier Allocations**: [`_agents/rules/model-tiers.json`](_agents/rules/model-tiers.json)
 - **Skill Definitions**: [`_agents/skills/`](_agents/skills/)
 
-For universal principles (Clean Architecture layer separation, Inner-Loop TDD profiles A/B/C, Two-Stage Quality Gates, Lifecycle Action Governance with Adaptive Gate Resolution, 4-step codebase analysis protocol, context compaction, and KV-cache optimization), refer strictly to [`_agents/AGENTS.md`](_agents/AGENTS.md).
+For universal principles (Clean Architecture layer separation, Inner-Loop TDD profiles A/B/C, Two-Stage Quality Gates, Lifecycle Action Governance with Adaptive Gate Resolution and Clean Release Tagging Invariant, 4-step codebase analysis protocol, context compaction, and KV-cache optimization), refer strictly to [`_agents/AGENTS.md`](_agents/AGENTS.md).
 
 ---
 
