@@ -1636,6 +1636,54 @@ public class TerminalTabViewModelTests
         Assert.Equal("Set-Location -LiteralPath \"C:\\projekte\\other\"", sent);
         Assert.False(sent.EndsWith("\r"));
     }
+
+    [Fact]
+    public void GlobalSearch_EqualMatchScore_RanksMostRecentlyUsedFirst()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Simulate two commands with the exact same prefix/score for "git"
+        session.SimulateCommandExecuted("git pull");
+        session.SimulateCommandExecuted("git push");
+
+        // Act: search for "git"
+        vm.GlobalFilterQuery = "git";
+
+        // Assert: both match, but "git push" was executed after "git pull", so "git push" is first
+        Assert.True(vm.FilteredGlobalHistory.Count >= 2);
+        var pushIndex = vm.FilteredGlobalHistory.ToList().FindIndex(x => x.Text == "git push");
+        var pullIndex = vm.FilteredGlobalHistory.ToList().FindIndex(x => x.Text == "git pull");
+        Assert.True(pushIndex >= 0 && pullIndex >= 0);
+        Assert.True(pushIndex < pullIndex, "Most recently executed command should rank before older command with identical score.");
+    }
+
+    [Fact]
+    public void GlobalSearch_CommandAndDirectoryWithEqualScore_RanksMostRecentlyUsedFirst()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // 1. Command executed first with target @"C:\tool"
+        session.SimulateCommandExecuted(@"C:\tool");
+
+        // 2. Directory visited second with target @"C:\tool"
+        session.SimulateDirectoryChange(@"C:\tool");
+
+        // Act: search for "C:\tool" (both produce exact match with score 1000)
+        vm.GlobalFilterQuery = @"C:\tool";
+
+        // Assert: directory was visited more recently than command, so directory is ranked above command
+        Assert.True(vm.FilteredGlobalHistory.Count >= 2);
+        var dirIndex = vm.FilteredGlobalHistory.ToList().FindIndex(x => x.IsDirectory && x.Text == @"C:\tool");
+        var cmdIndex = vm.FilteredGlobalHistory.ToList().FindIndex(x => x.IsCommand && x.Text == @"C:\tool");
+        Assert.True(dirIndex >= 0 && cmdIndex >= 0);
+        Assert.True(dirIndex < cmdIndex, "Most recently visited directory should rank above older command with equal score.");
+    }
 }
 
 

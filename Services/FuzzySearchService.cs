@@ -136,4 +136,35 @@ public class FuzzySearchService : IFuzzySearchService
             .OrderByDescending(x => x.Score)
             .Select(x => x.Item);
     }
+
+    public IEnumerable<T> FilterAndRank<T, TSecondary>(
+        IEnumerable<T> items,
+        string pattern,
+        Func<T, string> textSelector,
+        Func<T, TSecondary> secondaryKeySelector,
+        bool secondaryDescending = true)
+    {
+        if (items == null) return Enumerable.Empty<T>();
+
+        var trimmedPattern = pattern?.Trim();
+        if (string.IsNullOrEmpty(trimmedPattern))
+        {
+            return secondaryDescending
+                ? items.OrderByDescending(secondaryKeySelector)
+                : items.OrderBy(secondaryKeySelector);
+        }
+
+        var query = items
+            .Select(item =>
+            {
+                var text = textSelector(item) ?? string.Empty;
+                var isMatch = IsMatch(trimmedPattern, text, out var score);
+                return new { Item = item, IsMatch = isMatch, Score = score };
+            })
+            .Where(x => x.IsMatch);
+
+        return secondaryDescending
+            ? query.OrderByDescending(x => x.Score).ThenByDescending(x => secondaryKeySelector(x.Item)).Select(x => x.Item)
+            : query.OrderByDescending(x => x.Score).ThenBy(x => secondaryKeySelector(x.Item)).Select(x => x.Item);
+    }
 }

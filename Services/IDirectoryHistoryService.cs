@@ -20,6 +20,12 @@ public interface IDirectoryHistoryService
     IReadOnlyList<string> GetHistory();
 
     /// <summary>
+    /// Gets the current list of visited directories in chronological order (oldest to newest),
+    /// paired with their last used UTC timestamps.
+    /// </summary>
+    IReadOnlyList<(string Directory, DateTime LastUsedAt)> GetHistoryWithTimestamps();
+
+    /// <summary>
     /// Records a visited directory into the shared history.
     /// If the path already exists, it is moved to the newest position (MRU).
     /// If the total entries exceed 100, the oldest entries are evicted (FIFO).

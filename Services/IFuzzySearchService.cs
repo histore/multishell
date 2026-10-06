@@ -26,4 +26,23 @@ public interface IFuzzySearchService
     /// <param name="textSelector">Function to extract the string to match from an item.</param>
     /// <returns>Filtered and score-sorted items.</returns>
     IEnumerable<T> FilterAndRank<T>(IEnumerable<T> items, string pattern, Func<T, string> textSelector);
+
+    /// <summary>
+    /// Filters and ranks a collection of items according to a fuzzy search pattern,
+    /// breaking score ties with a secondary ordering key.
+    /// </summary>
+    /// <typeparam name="T">The type of the item.</typeparam>
+    /// <typeparam name="TSecondary">The type of the secondary ordering key.</typeparam>
+    /// <param name="items">The collection of candidate items.</param>
+    /// <param name="pattern">The search pattern.</param>
+    /// <param name="textSelector">Function to extract the string to match from an item.</param>
+    /// <param name="secondaryKeySelector">Function to extract the secondary ordering key.</param>
+    /// <param name="secondaryDescending">Whether to sort the secondary key descending.</param>
+    /// <returns>Filtered and score-sorted items.</returns>
+    IEnumerable<T> FilterAndRank<T, TSecondary>(
+        IEnumerable<T> items,
+        string pattern,
+        Func<T, string> textSelector,
+        Func<T, TSecondary> secondaryKeySelector,
+        bool secondaryDescending = true);
 }

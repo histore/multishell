@@ -201,4 +201,22 @@ public class DirectoryHistoryServiceTests
         Assert.Contains("/home/user/workspace", history);
         Assert.Contains(@"\\wsl.localhost\Ubuntu\etc", history);
     }
+
+    [Fact]
+    public void GetHistoryWithTimestamps_ReturnsDirectoriesWithTimestamps()
+    {
+        // Arrange
+        var service = new DirectoryHistoryService();
+        service.RecordDirectory(@"C:\dir1");
+        service.RecordDirectory(@"C:\dir2");
+
+        // Act
+        var result = service.GetHistoryWithTimestamps();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Equal(DirectoryHistoryService.NormalizePath(@"C:\dir1"), result[0].Directory);
+        Assert.Equal(DirectoryHistoryService.NormalizePath(@"C:\dir2"), result[1].Directory);
+        Assert.True(result[1].LastUsedAt >= result[0].LastUsedAt);
+    }
 }

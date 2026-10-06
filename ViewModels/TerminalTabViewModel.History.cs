@@ -109,8 +109,13 @@ public partial class TerminalTabViewModel
         {
             var snapshot = GlobalHistory.ToArray();
             var results = string.IsNullOrWhiteSpace(GlobalFilterQuery)
-                ? snapshot
-                : _fuzzySearchService.FilterAndRank(snapshot, GlobalFilterQuery, x => x.Text).ToArray();
+                ? snapshot.OrderByDescending(x => x.LastUsedAt).ToArray()
+                : _fuzzySearchService.FilterAndRank(
+                    snapshot,
+                    GlobalFilterQuery,
+                    x => x.Text,
+                    x => x.LastUsedAt,
+                    secondaryDescending: true).ToArray();
 
             FilteredGlobalHistory.Clear();
             foreach (var item in results)
@@ -124,17 +129,25 @@ public partial class TerminalTabViewModel
     {
         lock (_globalHistoryLock)
         {
-            var commands = _pathCommandHistoryService.GetAllCommands();
-            var directories = _directoryHistoryService.GetHistory();
+            var commands = _pathCommandHistoryService.GetAllCommandsWithTimestamps();
+            var directories = _directoryHistoryService.GetHistoryWithTimestamps();
+
+            var combined = new List<GlobalHistoryItem>(commands.Count + directories.Count);
+            foreach (var (cmd, lastUsed) in commands)
+            {
+                combined.Add(new GlobalHistoryItem(cmd, GlobalHistoryItemType.Command, lastUsed));
+            }
+            foreach (var (dir, lastUsed) in directories)
+            {
+                combined.Add(new GlobalHistoryItem(dir, GlobalHistoryItemType.Directory, lastUsed));
+            }
+
+            var sorted = combined.OrderByDescending(x => x.LastUsedAt).ToList();
 
             GlobalHistory.Clear();
-            foreach (var cmd in commands)
+            foreach (var item in sorted)
             {
-                GlobalHistory.Add(new GlobalHistoryItem(cmd, GlobalHistoryItemType.Command));
-            }
-            foreach (var dir in directories)
-            {
-                GlobalHistory.Add(new GlobalHistoryItem(dir, GlobalHistoryItemType.Directory));
+                GlobalHistory.Add(item);
             }
             RefreshFilteredGlobalHistory();
         }
@@ -178,6 +191,7 @@ public partial class TerminalTabViewModel
 
         RefreshFilteredCommands();
         RefreshFilteredDirectories();
+        SyncGlobalHistory();
     }
 
     private void SyncDirectoryHistory()

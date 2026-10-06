@@ -156,4 +156,60 @@ public class FuzzySearchServiceTests
         Assert.True(prefixScore > 0, "Prefix score must not be negative on long target strings.");
         Assert.True(prefixScore > subseqScore, "Prefix match must rank above loose subsequence match.");
     }
+
+    [Fact]
+    public void FilterAndRank_EqualScores_SortsBySecondaryKeyDescending()
+    {
+        // Arrange
+        var service = new FuzzySearchService();
+        var baseTime = DateTime.UtcNow;
+        var items = new List<(string Name, DateTime LastUsed)>
+        {
+            ("git pull", baseTime.AddMinutes(-10)),
+            ("git push", baseTime.AddMinutes(-2)),
+            ("git init", baseTime.AddMinutes(-5))
+        };
+
+        // Act: All 3 match "git " with exact same length and score
+        var results = service.FilterAndRank(
+            items,
+            "git ",
+            x => x.Name,
+            x => x.LastUsed,
+            secondaryDescending: true).ToList();
+
+        // Assert: Newest item must be first
+        Assert.Equal(3, results.Count);
+        Assert.Equal("git push", results[0].Name);
+        Assert.Equal("git init", results[1].Name);
+        Assert.Equal("git pull", results[2].Name);
+    }
+
+    [Fact]
+    public void FilterAndRank_EmptyPattern_SortsBySecondaryKeyDescending()
+    {
+        // Arrange
+        var service = new FuzzySearchService();
+        var baseTime = DateTime.UtcNow;
+        var items = new List<(string Name, DateTime LastUsed)>
+        {
+            ("cmd1", baseTime.AddMinutes(-10)),
+            ("cmd2", baseTime.AddMinutes(-1)),
+            ("cmd3", baseTime.AddMinutes(-5))
+        };
+
+        // Act
+        var results = service.FilterAndRank(
+            items,
+            "",
+            x => x.Name,
+            x => x.LastUsed,
+            secondaryDescending: true).ToList();
+
+        // Assert: Sorted newest first
+        Assert.Equal(3, results.Count);
+        Assert.Equal("cmd2", results[0].Name);
+        Assert.Equal("cmd3", results[1].Name);
+        Assert.Equal("cmd1", results[2].Name);
+    }
 }

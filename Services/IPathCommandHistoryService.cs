@@ -28,6 +28,12 @@ public interface IPathCommandHistoryService
     IReadOnlyList<string> GetAllCommands();
 
     /// <summary>
+    /// Gets all unique commands recorded across all tracked directory paths in reverse chronological (MRU) order,
+    /// paired with their last used UTC timestamps.
+    /// </summary>
+    IReadOnlyList<(string Command, DateTime LastUsedAt)> GetAllCommandsWithTimestamps();
+
+    /// <summary>
     /// Records an executed command for the given path.
     /// Moves existing commands to the end (MRU), caps the total count at 100 entries per path,
     /// and triggers <see cref="HistoryChangedForPath"/>.

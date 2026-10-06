@@ -10,7 +10,8 @@ MultiShell integrates quick-access developer utilities directly into the termina
   * Case-insensitive subsequence fuzzy matcher with character distance scoring.
   * Bonuses awarded for prefix matches, word boundary matches (following `/`, `\`, `-`, `_`, or whitespace), and contiguous character runs.
 * **APIs**:
-  * `FilterAndScore(IEnumerable<string> items, string pattern)`: Returns matched strings ordered by descending relevance score.
+  * `FilterAndRank<T>(items, pattern, textSelector)`: Returns matched items ordered by descending relevance score.
+  * `FilterAndRank<T, TSecondary>(items, pattern, textSelector, secondaryKeySelector, secondaryDescending)`: Orders items by descending relevance score, breaking equal-score ties via secondary key ordering (e.g., `LastUsedAt` descending).
   * Zero-allocation optimizations where feasible to maintain low latency during keystroke-by-keystroke interactive filtering.
 
 ### 2.2 Path-Bound Command History Service (`Services/IPathCommandHistoryService.cs` / `PathCommandHistoryService.cs`)
@@ -45,9 +46,10 @@ MultiShell integrates quick-access developer utilities directly into the termina
   * Centered modal floating overlay with dark backdrop over the terminal workspace (`Margin="32"`, `MaxWidth="780"`, `MaxHeight="520"`).
   * Toggled via `Ctrl+Shift` + middle mouse click (scroll wheel click) anywhere on the terminal surface or workspace, toolbar button, or dedicated keyboard shortcuts (`Ctrl+Shift+H` for Command History, `Ctrl+Shift+L` for Directory History).
   * Dismissed by pressing `Escape`, clicking the header close button ("✕"), or clicking anywhere on the outer semi-transparent backdrop outside the dialog.
-  * Displays two searchable tabs/sections:
+  * Displays three searchable tabs/sections:
     * **Command History**: Dynamic list of commands executed in the current tab's active directory path.
     * **Directory History**: Unified list of directories visited across all tabs in the session (capped at 100 MRU entries).
+    * **Global History**: Unified feed across all commands and visited directories, ranked by match score with equal-score ties resolved by `LastUsedAt` (newest first).
   * Selecting a command sends it to the active shell; selecting a directory executes `cd "<dir>"`.
 
 ### 2.5 Link Detection (`Services/LinkDetectionHelper.cs`)

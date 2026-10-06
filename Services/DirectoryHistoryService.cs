@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace MultiShell.Services;
@@ -19,9 +20,25 @@ public class DirectoryHistoryService : IDirectoryHistoryService
 
     private readonly Lock _lock = new();
     private readonly List<string> _directories = [];
+    private readonly Dictionary<string, DateTime> _directoryTimestamps = new(StringComparer.OrdinalIgnoreCase);
+    private DateTime _lastRecordedTimestamp = DateTime.MinValue;
 
     /// <inheritdoc />
     public event Action? HistoryChanged;
+
+    /// <summary>
+    /// Generates a strictly monotonic UTC timestamp to ensure sequential order is preserved.
+    /// </summary>
+    private DateTime GetMonotonicTimestamp()
+    {
+        var now = DateTime.UtcNow;
+        if (now <= _lastRecordedTimestamp)
+        {
+            now = _lastRecordedTimestamp.AddTicks(1);
+        }
+        _lastRecordedTimestamp = now;
+        return now;
+    }
 
     /// <summary>
     /// Normalizes a directory path for consistent comparison and display.
@@ -35,6 +52,21 @@ public class DirectoryHistoryService : IDirectoryHistoryService
         lock (_lock)
         {
             return [.. _directories];
+        }
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<(string Directory, DateTime LastUsedAt)> GetHistoryWithTimestamps()
+    {
+        lock (_lock)
+        {
+            var result = new List<(string Directory, DateTime LastUsedAt)>(_directories.Count);
+            foreach (var d in _directories)
+            {
+                var time = _directoryTimestamps.TryGetValue(d, out var dt) ? dt : DateTime.MinValue;
+                result.Add((d, time));
+            }
+            return result;
         }
     }
 
@@ -57,11 +89,14 @@ public class DirectoryHistoryService : IDirectoryHistoryService
             }
 
             _directories.Add(normalized);
+            _directoryTimestamps[normalized] = GetMonotonicTimestamp();
 
             // Cap at MaxHistoryCount using FIFO eviction
             while (_directories.Count > MaxHistoryCount)
             {
+                var evicted = _directories[0];
                 _directories.RemoveAt(0);
+                _directoryTimestamps.Remove(evicted);
             }
         }
 
@@ -83,6 +118,15 @@ public class DirectoryHistoryService : IDirectoryHistoryService
             var countBefore = _directories.Count;
             _directories.RemoveAll(d => string.IsNullOrWhiteSpace(d) || !DirectoryExistsOrNonWindows(d));
             changed = _directories.Count != countBefore;
+            if (changed)
+            {
+                var activeSet = new HashSet<string>(_directories, StringComparer.OrdinalIgnoreCase);
+                var keysToRemove = _directoryTimestamps.Keys.Where(k => !activeSet.Contains(k)).ToList();
+                foreach (var k in keysToRemove)
+                {
+                    _directoryTimestamps.Remove(k);
+                }
+            }
         }
 
         if (changed)
@@ -120,11 +164,14 @@ public class DirectoryHistoryService : IDirectoryHistoryService
                 }
 
                 _directories.Add(normalized);
+                _directoryTimestamps[normalized] = GetMonotonicTimestamp();
                 changed = true;
 
                 while (_directories.Count > MaxHistoryCount)
                 {
+                    var evicted = _directories[0];
                     _directories.RemoveAt(0);
+                    _directoryTimestamps.Remove(evicted);
                 }
             }
         }
@@ -143,6 +190,7 @@ public class DirectoryHistoryService : IDirectoryHistoryService
         {
             changed = _directories.Count > 0;
             _directories.Clear();
+            _directoryTimestamps.Clear();
         }
 
         if (changed)

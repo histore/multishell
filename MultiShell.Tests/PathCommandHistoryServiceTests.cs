@@ -229,10 +229,34 @@ public class PathCommandHistoryServiceTests : IDisposable
         // Act
         var allCommands = service.GetAllCommands();
 
-        // Assert: 3 distinct commands, most recent first: "git status", "dotnet build", "npm test"
+        // Assert: 3 distinct commands, most recent recent first: "git status", "dotnet build", "npm test"
         Assert.Equal(3, allCommands.Count);
         Assert.Equal("git status", allCommands[0]);
         Assert.Contains("dotnet build", allCommands);
         Assert.Contains("npm test", allCommands);
+    }
+
+    [Fact]
+    public void GetAllCommandsWithTimestamps_ReturnsCommandsWithUpdatedTimestamps_InReverseChronologicalOrder()
+    {
+        // Arrange
+        var service = new PathCommandHistoryService();
+        var dirA = Path.Combine(_testTempDir, "dirA");
+        Directory.CreateDirectory(dirA);
+
+        service.RecordCommand(dirA, "cmd1");
+        service.RecordCommand(dirA, "cmd2");
+        service.RecordCommand(dirA, "cmd3");
+
+        // Act
+        var result = service.GetAllCommandsWithTimestamps();
+
+        // Assert
+        Assert.Equal(3, result.Count);
+        Assert.Equal("cmd3", result[0].Command);
+        Assert.Equal("cmd2", result[1].Command);
+        Assert.Equal("cmd1", result[2].Command);
+        Assert.True(result[0].LastUsedAt >= result[1].LastUsedAt);
+        Assert.True(result[1].LastUsedAt >= result[2].LastUsedAt);
     }
 }

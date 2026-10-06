@@ -464,6 +464,50 @@ This document defines the functional and non-functional requirements specific to
 
 ---
 
+### `[REQ-UI-009]` Modal Command Palette (`Ctrl+Shift+P`)
+
+- **Status**: `BACKLOG`
+- **Type**: `Functional`
+- **Target Release**: `v1.2.0`
+
+#### User Story
+> **As a** keyboard-centric developer,  
+> **I want** a quick command palette overlay invoked via `Ctrl+Shift+P`,  
+> **so that** I can trigger any MultiShell action, setting, profile launch, or view toggle purely via fuzzy-typed keyboard input without touching the mouse.
+
+#### Acceptance Criteria (Given-When-Then)
+- [ ] **AC-1**: **Given** the application is focused, **When** pressing `Ctrl+Shift+P`, **Then** a centered modal command palette overlay opens with an active fuzzy-search input.
+- [ ] **AC-2**: **When** typing in the search box, **Then** all registered actions (new tab, close tab, switch themes, open settings, font size changes, split pane actions, profiles) are filtered with highlighted matching characters.
+- [ ] **AC-3**: **When** pressing `Down`/`Up` arrow keys, **Then** selection moves through the filtered action list, displaying associated shortcut key hints on the right.
+- [ ] **AC-4**: **When** pressing `Enter`, **Then** the selected action executes immediately and the palette closes.
+- [ ] **AC-5**: **When** pressing `Escape` or clicking outside, **Then** the palette dismisses without executing actions, restoring focus to the previously active terminal.
+
+#### Traceability & Verification
+- **Architecture Contract**: `docs/architecture/modules/presentation.md`
+
+---
+
+### `[REQ-TAB-026]` Detachable Window Undocking & Redocking for Multi-Monitor Workflows
+
+- **Status**: `BACKLOG`
+- **Type**: `Functional`
+- **Target Release**: `v1.3.0`
+
+#### User Story
+> **As a** multi-monitor user,  
+> **I want** to drag a tab outside the main application window or select "Detach Tab" from the tab context menu,  
+> **so that** the terminal session continues running uninterrupted in a standalone secondary window and can be docked back into the primary window.
+
+#### Acceptance Criteria (Given-When-Then)
+- [ ] **AC-1**: **Given** an open tab, **When** dragging the tab header beyond the MultiShell window boundary, **Then** a new independent MultiShell window spawns hosting that tab session without PTY restart.
+- [ ] **AC-2**: **When** dragging a detached tab back onto the tab bar of the primary window, **Then** it seamlessly re-integrates into the primary tab strip.
+- [ ] **AC-3**: **When** closing a detached secondary window containing its last tab, **Then** the underlying shell process terminates cleanly without leaving orphaned PTY handles.
+
+#### Traceability & Verification
+- **Architecture Contract**: `docs/architecture/modules/presentation.md`
+
+---
+
 ## Requirements Index
 
 | ID | Title | Type | Status | Target Release |
@@ -490,3 +534,5 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | Functional | BACKLOG | `v1.2.0` |
 | `REQ-AI-001` | Context-Aware AI Command Generator & Auto-Suggest | Functional | BACKLOG | `v1.3.0` |
 | `REQ-LNC-001` | Launcher Search & Item Filtering | Functional | BACKLOG | `v1.3.0` |
+| `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | Functional | BACKLOG | `v1.2.0` |
+| `REQ-TAB-026` | Detachable Window Undocking & Redocking for Multi-Monitor Workflows | Functional | BACKLOG | `v1.3.0` |

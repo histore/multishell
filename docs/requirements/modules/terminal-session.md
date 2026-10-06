@@ -334,6 +334,47 @@ This document defines the functional and non-functional requirements specific to
 
 ---
 
+### `[REQ-TERM-012]` Long-Running Process Completion Desktop & Tab Notifications
+
+- **Status**: `BACKLOG`
+- **Type**: `Functional`
+- **Target Release**: `v1.2.0`
+
+#### User Story
+> **As a** developer running long build or deployment tasks (e.g. `dotnet build`, `docker build`, `npm install`),  
+> **I want** to receive a Windows toast notification or tab badge flash when a backgrounded command completes,  
+> **so that** I am immediately alerted without constantly switching windows or staring at the terminal.
+
+#### Acceptance Criteria (Given-When-Then)
+- [ ] **AC-1**: **Given** a command runs longer than a configurable threshold (default: 10 seconds), **When** the process finishes while MultiShell or that tab is inactive, **Then** a native Windows toast notification displays the command name, duration, and exit status code.
+- [ ] **AC-2**: **When** the tab is in the background within the active window, **Then** a visual completion indicator (badge/accent glow) highlights on the tab header until selected.
+- [ ] **AC-3**: **When** clicking the desktop notification, **Then** MultiShell brings itself to the foreground and focuses the notifying tab.
+
+#### Traceability & Verification
+- **Architecture Contract**: `docs/architecture/modules/terminal-session.md`
+
+---
+
+### `[REQ-TERM-013]` Terminal Scrollback Buffer Export & Continuous Session Logging
+
+- **Status**: `BACKLOG`
+- **Type**: `Functional`
+- **Target Release**: `v1.2.0`
+
+#### User Story
+> **As an** engineer or auditor,  
+> **I want** to export the entire terminal scrollback buffer to a text or HTML file (`Ctrl+Shift+S`) or enable automatic continuous session logging to a file,  
+> **so that** terminal output and command transcripts are preserved for documentation, debugging, or compliance audits.
+
+#### Acceptance Criteria (Given-When-Then)
+- [ ] **AC-1**: **Given** an active terminal session, **When** pressing `Ctrl+Shift+S` or selecting "Export Buffer" from the context menu, **Then** a file save dialog prompts to save the scrollback buffer as plain text (`.txt`) or styled HTML (`.html`).
+- [ ] **AC-2**: **When** enabling "Auto-Log Session" in tab context settings, **Then** raw terminal output continuously appends to a timestamped log file in the configured logging directory.
+
+#### Traceability & Verification
+- **Architecture Contract**: `docs/architecture/modules/terminal-session.md`
+
+---
+
 ## Requirements Index
 
 | ID | Title | Type | Status | Target Release |
@@ -353,3 +394,5 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-TERM-011` | Smooth Terminal Rendering & Overlay Scrollbar Anti-Flicker | Performance | IMPLEMENTED | `v0.1.0` |
 | `REQ-CLI-001` | Startup Arguments & Single-Instance Tab Activation | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-TERM-007` | Broadcast / Multi-Input Mode across Tabs / Panes | Functional | BACKLOG | `v1.1.0` |
+| `REQ-TERM-012` | Long-Running Process Completion Desktop & Tab Notifications | Functional | BACKLOG | `v1.2.0` |
+| `REQ-TERM-013` | Terminal Scrollback Buffer Export & Continuous Session Logging | Functional | BACKLOG | `v1.2.0` |

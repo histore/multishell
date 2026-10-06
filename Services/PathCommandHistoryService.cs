@@ -18,9 +18,25 @@ public class PathCommandHistoryService : IPathCommandHistoryService
     private readonly Lock _lock = new();
     private readonly Dictionary<string, List<string>> _pathHistories = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _globalCommands = new();
+    private readonly Dictionary<string, DateTime> _commandTimestamps = new(StringComparer.Ordinal);
+    private DateTime _lastRecordedTimestamp = DateTime.MinValue;
 
     /// <inheritdoc />
     public event Action<string>? HistoryChangedForPath;
+
+    /// <summary>
+    /// Generates a strictly monotonic UTC timestamp to ensure sequential order is preserved.
+    /// </summary>
+    private DateTime GetMonotonicTimestamp()
+    {
+        var now = DateTime.UtcNow;
+        if (now <= _lastRecordedTimestamp)
+        {
+            now = _lastRecordedTimestamp.AddTicks(1);
+        }
+        _lastRecordedTimestamp = now;
+        return now;
+    }
 
     /// <summary>
     /// Normalizes a directory path for consistent lookups across shells and platforms.
@@ -63,6 +79,22 @@ public class PathCommandHistoryService : IPathCommandHistoryService
     }
 
     /// <inheritdoc />
+    public IReadOnlyList<(string Command, DateTime LastUsedAt)> GetAllCommandsWithTimestamps()
+    {
+        lock (_lock)
+        {
+            var result = new List<(string Command, DateTime LastUsedAt)>(_globalCommands.Count);
+            for (var i = _globalCommands.Count - 1; i >= 0; i--)
+            {
+                var cmd = _globalCommands[i];
+                var time = _commandTimestamps.TryGetValue(cmd, out var dt) ? dt : DateTime.MinValue;
+                result.Add((cmd, time));
+            }
+            return result;
+        }
+    }
+
+    /// <inheritdoc />
     public void RecordCommand(string? path, string command)
     {
         if (string.IsNullOrWhiteSpace(command) || ShellCommandFilter.IsInternalConfigurationCommand(command))
@@ -90,6 +122,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
 
             _globalCommands.Remove(command);
             _globalCommands.Add(command);
+            _commandTimestamps[command] = GetMonotonicTimestamp();
 
             // Cap at MaxHistoryPerPath (FIFO pruning: oldest entries are removed first)
             while (list.Count > MaxHistoryPerPath)
@@ -118,6 +151,11 @@ public class PathCommandHistoryService : IPathCommandHistoryService
 
             var remainingCmds = new HashSet<string>(_pathHistories.Values.SelectMany(l => l), StringComparer.Ordinal);
             _globalCommands.RemoveAll(cmd => !remainingCmds.Contains(cmd));
+            var timestampKeysToRemove = _commandTimestamps.Keys.Where(cmd => !remainingCmds.Contains(cmd)).ToList();
+            foreach (var key in timestampKeysToRemove)
+            {
+                _commandTimestamps.Remove(key);
+            }
         }
     }
 
@@ -171,6 +209,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
 
                     _globalCommands.Remove(cmd);
                     _globalCommands.Add(cmd);
+                    _commandTimestamps[cmd] = GetMonotonicTimestamp();
 
                     while (list.Count > MaxHistoryPerPath)
                     {

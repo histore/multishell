@@ -13,9 +13,9 @@ public enum GlobalHistoryItemType
 
 /// <summary>
 /// Represents a unified history entry (either a shell command or a visited directory)
-/// for global fuzzy search across all workspace tabs and projects.
+/// for global fuzzy search across all workspace tabs and projects, tracking its last used timestamp.
 /// </summary>
-public record GlobalHistoryItem(string Text, GlobalHistoryItemType Type)
+public record GlobalHistoryItem(string Text, GlobalHistoryItemType Type, DateTime LastUsedAt = default)
 {
     public bool IsCommand => Type == GlobalHistoryItemType.Command;
     public bool IsDirectory => Type == GlobalHistoryItemType.Directory;
