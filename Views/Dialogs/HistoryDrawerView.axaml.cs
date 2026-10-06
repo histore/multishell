@@ -349,6 +349,7 @@ public partial class HistoryDrawerView : UserControl
         if (e.Key == Key.Up)
         {
             NavigateHistorySelection(-1);
+            ClearSearchBoxSelection();
             e.Handled = true;
             return true;
         }
@@ -356,6 +357,7 @@ public partial class HistoryDrawerView : UserControl
         if (e.Key == Key.Down)
         {
             NavigateHistorySelection(1);
+            ClearSearchBoxSelection();
             e.Handled = true;
             return true;
         }
@@ -436,9 +438,27 @@ public partial class HistoryDrawerView : UserControl
         return false;
     }
 
+    private void ClearSearchBoxSelection()
+    {
+        var tabIndex = HistoryTabControl?.SelectedIndex ?? 0;
+        TextBox? activeSearchBox = tabIndex switch
+        {
+            1 => DirectoryHistorySearchBox,
+            2 => GlobalHistorySearchBox,
+            _ => CommandHistorySearchBox
+        };
+
+        if (activeSearchBox != null && activeSearchBox.SelectionStart != activeSearchBox.SelectionEnd)
+        {
+            activeSearchBox.CaretIndex = activeSearchBox.Text?.Length ?? 0;
+            activeSearchBox.SelectionStart = activeSearchBox.CaretIndex;
+            activeSearchBox.SelectionEnd = activeSearchBox.CaretIndex;
+        }
+    }
+
     private void FocusActiveHistoryList(bool selectLastItem = true)
     {
-        Dispatcher.UIThread.Post(() =>
+        void DoFocusAndSelect()
         {
             var tabIndex = HistoryTabControl?.SelectedIndex ?? 0;
             ListBox? activeListBox = tabIndex switch
@@ -456,7 +476,7 @@ public partial class HistoryDrawerView : UserControl
 
             if (activeListBox != null && activeListBox.ItemCount > 0)
             {
-                activeListBox.SelectedIndex = selectLastItem ? activeListBox.ItemCount - 1 : 0;
+                activeListBox.SelectedIndex = (tabIndex == 2 || !selectLastItem) ? 0 : activeListBox.ItemCount - 1;
 
                 if (activeListBox.SelectedItem != null)
                 {
@@ -464,8 +484,18 @@ public partial class HistoryDrawerView : UserControl
                 }
             }
 
-            activeSearchBox?.Focus();
-        }, DispatcherPriority.Input);
+            if (activeSearchBox != null)
+            {
+                activeSearchBox.Focus();
+                if (!string.IsNullOrEmpty(activeSearchBox.Text))
+                {
+                    activeSearchBox.SelectAll();
+                }
+            }
+        }
+
+        Dispatcher.UIThread.Post(DoFocusAndSelect, DispatcherPriority.Input);
+        Dispatcher.UIThread.Post(DoFocusAndSelect, DispatcherPriority.Loaded);
     }
 
     private void OnHistoryListBoxPointerPressed(object? sender, PointerPressedEventArgs e)
