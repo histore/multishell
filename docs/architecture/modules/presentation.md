@@ -17,10 +17,15 @@ ViewModels/
 ├── ViewModelBase.cs                   # Base ObservableObject
 ├── MainViewModel.cs                   # Root orchestrator & dependency wiring
 ├── MainViewModel.Tabs.cs              # Tab collection & lifecycle management
+├── MainViewModel.ClosedTabs.cs        # Recently closed tab history & restore commands
 ├── MainViewModel.Profiles.cs          # Shell profile selection & management
 ├── MainViewModel.Settings.cs          # Theme, font, language, and modal states
 ├── MainViewModel.TabSwitcher.cs       # Quick tab switcher (Ctrl+Tab)
 ├── TerminalTabViewModel.cs            # Active terminal tab state & shell bridge
+├── TerminalTabViewModel.Streaming.cs  # PTY stream processing, ANSI color queries, input tracking
+├── TerminalTabViewModel.History.cs    # Path & directory history synchronization
+├── TerminalTabViewModel.Search.cs     # In-terminal search overlay state
+├── TerminalTabViewModel.Renaming.cs   # Custom renaming & color palette tagging
 ├── ClosedTabItemViewModel.cs          # Reopenable closed tab history item
 └── TerminalProfileItemViewModel.cs    # Selectable profile item in UI
 
@@ -28,12 +33,21 @@ Views/
 ├── MainWindow.axaml                   # Root window XAML layout
 ├── MainWindow.axaml.cs                # Window lifecycle & backdrop setup
 ├── MainWindow.Tabs.cs                 # Tab drag-and-drop & header interaction
+├── MainWindow.TabDropAndRename.cs     # Drag-and-drop navigation & inline tab renaming
 ├── MainWindow.Keyboard.cs             # Global keyboard shortcut routing
 ├── MainWindow.HistoryDrawer.cs        # History drawer slide-out animation & events
 ├── TerminalTabView.axaml              # Embedded terminal view control
-├── TerminalTabView.axaml.cs           # Palette mapping, clipboard & focus logic
+├── TerminalTabView.axaml.cs           # Palette mapping, base lifecycle & scrollbars
+├── TerminalTabView.Links.cs           # Pointer hover link inspection & URL opening
+├── TerminalTabView.Keyboard.cs        # Keystroke routing & AltGr translation
+├── TerminalTabView.Search.cs          # In-terminal search overlay & focus transitions
 ├── TerminalFocusHelper.cs             # Active terminal focus resolution & restoration
-└── Dialogs/                           # Modal overlay views (Profiles, About, etc.)
+└── Dialogs/                           # Modal overlay views (Profiles, About, HistoryDrawer)
+    ├── HistoryDrawerView.axaml        # History Drawer overlay layout
+    ├── HistoryDrawerView.axaml.cs     # Drawer open/toggle & filter selection sync
+    ├── HistoryDrawerView.Keyboard.cs  # Drawer arrow navigation & tab cycling
+    ├── HistoryDrawerView.Actions.cs   # Drawer command/directory execute & paste
+    └── TabSwitcherOverlayView.axaml.cs # Quick tab switcher HUD overlay
 ```
 
 ## 3. Core ViewModels

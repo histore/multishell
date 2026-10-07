@@ -16,10 +16,11 @@ The Terminal Session module encapsulates low-level operating system process mana
 
 ### 2.2 Implementations
 * **[`ShellSession`](../../../Services/ShellSession.cs)**:
-  * Manages ConPTY lifecycle via native `CreatePseudoConsole`, `ResizePseudoConsole`, and `ClosePseudoConsole` P/Invoke calls.
-  * Connects standard input/output anonymous pipes between ConPTY and the parent process.
-  * Spawns worker processes using `STARTUPINFOEX` and `PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE`.
-  * Runs background async reading loops on the stdout pipe.
+  * Structured into 4 modular partial files:
+    * `ShellSession.cs`: Core session lifecycle, start, input sending, resizing, and clean teardown.
+    * `ShellSession.Process.cs`: Process initialization, ConPTY attribute attachments, and shell command-line resolution.
+    * `ShellSession.Streams.cs`: Background output pump loop, stateful UTF-8 decoding, and OSC sequence parsing (OSC 7, 9;9, 133;E).
+    * `ShellSession.Native.cs`: Win32 P/Invoke interop (`kernel32.dll`) and safe handle wrappers (`WindowsPseudoConsoleSafeHandle`).
 * **[`ShellProcessService`](../../../Services/ShellProcessService.cs)**:
   * Concrete factory constructing `ShellSession` instances with initial buffer dimensions and environment configurations.
 * **[`ShellDiscoveryService`](../../../Services/ShellDiscoveryService.cs)**:

@@ -41,7 +41,11 @@ MultiShell integrates quick-access developer utilities directly into the termina
 * **Persistence**:
   * Persisted into `WorkspaceState.SharedDirectoryHistory` in `tabs_state.json`.
 
-### 2.4 History Overlay (`Views/MainWindow.HistoryDrawer.cs`)
+### 2.4 History Overlay (`Views/Dialogs/HistoryDrawerView.axaml` & `MainWindow.HistoryDrawer.cs`)
+* **Modular Implementation**:
+  * `HistoryDrawerView.axaml.cs`: Lifecycle, toggle visibility, filter selection synchronization (`WireFilterSelectionSync`), and auto-select on open (`FocusActiveHistoryList`).
+  * `HistoryDrawerView.Keyboard.cs`: Keyboard navigation (`Up`/`Down` item navigation, `Tab`/`Left`/`Right` tab cycling, `Escape` filter clearing/closing).
+  * `HistoryDrawerView.Actions.cs`: Item execution (`Enter` / Click) and paste operations (`Shift+Enter` / Right-click) for Commands, Directories, and Global entries.
 * **Overlay Interaction**:
   * Centered modal floating overlay with dark backdrop over the terminal workspace (`Margin="32"`, `MaxWidth="780"`, `MaxHeight="520"`).
   * Toggled via `Ctrl+Shift` + middle mouse click (scroll wheel click) anywhere on the terminal surface or workspace, toolbar button, or dedicated keyboard shortcuts (`Ctrl+Shift+H` for Command History, `Ctrl+Shift+L` for Directory History).
