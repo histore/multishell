@@ -102,8 +102,8 @@ public class SharedDirectoryHistoryIntegrationTests
         // Assert - Tab 2 must immediately reflect newfolder
         Assert.Contains(@"C:\projekte\newfolder", tab2.DirectoryHistory);
         Assert.Contains(@"C:\projekte\newfolder", tab2.FilteredDirectoryHistory);
-        Assert.Equal(@"C:\projekte\newfolder", tab2.DirectoryHistory[^1]);
-        Assert.Equal(@"C:\projekte\newfolder", tab1.DirectoryHistory[^1]);
+        Assert.Equal(@"C:\projekte\newfolder", tab2.DirectoryHistory[0]);
+        Assert.Equal(@"C:\projekte\newfolder", tab1.DirectoryHistory[0]);
     }
 
     [Fact]
@@ -120,13 +120,13 @@ public class SharedDirectoryHistoryIntegrationTests
         // Act - Tab 2 visits first folder again
         session2.TriggerDirectoryChange(@"C:\projekte\first");
 
-        // Assert - Both tabs have exactly 2 directories, and "first" is at the end (newest), no duplicate
+        // Assert - Both tabs have exactly 2 directories, and "first" is at the start (newest), no duplicate
         Assert.Equal(2, tab1.DirectoryHistory.Count);
         Assert.Equal(2, tab2.DirectoryHistory.Count);
-        Assert.Equal(@"C:\projekte\second", tab1.DirectoryHistory[0]);
-        Assert.Equal(@"C:\projekte\first", tab1.DirectoryHistory[1]);
-        Assert.Equal(@"C:\projekte\second", tab2.DirectoryHistory[0]);
-        Assert.Equal(@"C:\projekte\first", tab2.DirectoryHistory[1]);
+        Assert.Equal(@"C:\projekte\first", tab1.DirectoryHistory[0]);
+        Assert.Equal(@"C:\projekte\second", tab1.DirectoryHistory[1]);
+        Assert.Equal(@"C:\projekte\first", tab2.DirectoryHistory[0]);
+        Assert.Equal(@"C:\projekte\second", tab2.DirectoryHistory[1]);
     }
 
     [Fact]

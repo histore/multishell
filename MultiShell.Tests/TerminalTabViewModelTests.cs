@@ -232,8 +232,8 @@ public class TerminalTabViewModelTests
 
         // Assert
         Assert.Equal(2, vm.CommandHistory.Count);
-        Assert.Equal("Get-Process", vm.CommandHistory[0]);
-        Assert.Equal("git status", vm.CommandHistory[1]);
+        Assert.Equal("git status", vm.CommandHistory[0]);
+        Assert.Equal("Get-Process", vm.CommandHistory[1]);
     }
 
     [Fact]
@@ -248,10 +248,10 @@ public class TerminalTabViewModelTests
         session.SimulateCommandExecuted("dotnet test");
         session.SimulateCommandExecuted("git status");
 
-        // Assert - A should only exist once at the end
+        // Assert - A should only exist once at the beginning (newest first)
         Assert.Equal(2, vm.CommandHistory.Count);
-        Assert.Equal("dotnet test", vm.CommandHistory[0]);
-        Assert.Equal("git status", vm.CommandHistory[1]);
+        Assert.Equal("git status", vm.CommandHistory[0]);
+        Assert.Equal("dotnet test", vm.CommandHistory[1]);
     }
 
     [Fact]
@@ -471,8 +471,8 @@ public class TerminalTabViewModelTests
 
         // Assert
         Assert.Equal(2, vm.CommandHistory.Count);
-        Assert.Equal("git status", vm.CommandHistory[0]);
-        Assert.Equal("cls", vm.CommandHistory[1]);
+        Assert.Equal("cls", vm.CommandHistory[0]);
+        Assert.Equal("git status", vm.CommandHistory[1]);
     }
 
     [Fact]
@@ -1135,11 +1135,11 @@ public class TerminalTabViewModelTests
         // Act - Tab 2 executes another command
         session2.SimulateCommandExecuted("dotnet test");
 
-        // Assert - Both tabs have both commands in same chronological order
+        // Assert - Both tabs have both commands in same reverse chronological (newest first) order
         Assert.Equal(2, tab1.CommandHistory.Count);
-        Assert.Equal(new[] { "git status", "dotnet test" }, tab1.CommandHistory);
+        Assert.Equal(new[] { "dotnet test", "git status" }, tab1.CommandHistory);
         Assert.Equal(2, tab2.CommandHistory.Count);
-        Assert.Equal(new[] { "git status", "dotnet test" }, tab2.CommandHistory);
+        Assert.Equal(new[] { "dotnet test", "git status" }, tab2.CommandHistory);
     }
 
     [Fact]
@@ -1683,6 +1683,102 @@ public class TerminalTabViewModelTests
         var cmdIndex = vm.FilteredGlobalHistory.ToList().FindIndex(x => x.IsCommand && x.Text == @"C:\tool");
         Assert.True(dirIndex >= 0 && cmdIndex >= 0);
         Assert.True(dirIndex < cmdIndex, "Most recently visited directory should rank above older command with equal score.");
+    }
+
+    [Fact]
+    public void CommandHistory_And_FilteredCommandHistory_AreSortedNewestToOldest()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Act: execute commands sequentially
+        session.SimulateCommandExecuted("first command");
+        session.SimulateCommandExecuted("second command");
+        session.SimulateCommandExecuted("third command");
+
+        // Assert: both CommandHistory and FilteredCommandHistory have newest at index 0
+        Assert.Equal(3, vm.CommandHistory.Count);
+        Assert.Equal("third command", vm.CommandHistory[0]);
+        Assert.Equal("second command", vm.CommandHistory[1]);
+        Assert.Equal("first command", vm.CommandHistory[2]);
+
+        Assert.Equal(3, vm.FilteredCommandHistory.Count);
+        Assert.Equal("third command", vm.FilteredCommandHistory[0]);
+        Assert.Equal("second command", vm.FilteredCommandHistory[1]);
+        Assert.Equal("first command", vm.FilteredCommandHistory[2]);
+    }
+
+    [Fact]
+    public void DirectoryHistory_And_FilteredDirectoryHistory_AreSortedNewestToOldest()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\start");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Act: visit directories sequentially
+        session.SimulateDirectoryChange(@"C:\projekte\dir1");
+        session.SimulateDirectoryChange(@"C:\projekte\dir2");
+        session.SimulateDirectoryChange(@"C:\projekte\dir3");
+
+        // Assert: DirectoryHistory and FilteredDirectoryHistory have newest at index 0
+        Assert.Equal(@"C:\projekte\dir3", vm.DirectoryHistory[0]);
+        Assert.Equal(@"C:\projekte\dir2", vm.DirectoryHistory[1]);
+        Assert.Equal(@"C:\projekte\dir1", vm.DirectoryHistory[2]);
+
+        Assert.Equal(@"C:\projekte\dir3", vm.FilteredDirectoryHistory[0]);
+        Assert.Equal(@"C:\projekte\dir2", vm.FilteredDirectoryHistory[1]);
+        Assert.Equal(@"C:\projekte\dir1", vm.FilteredDirectoryHistory[2]);
+    }
+
+    [Fact]
+    public void CommandSearch_EqualMatchScore_RanksMostRecentlyUsedFirst()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Two commands with identical prefix and length matching "git"
+        session.SimulateCommandExecuted("git pull");
+        session.SimulateCommandExecuted("git push");
+
+        // Act: search for "git"
+        vm.CommandFilterQuery = "git";
+
+        // Assert: "git push" is newer, so it should rank before "git pull"
+        Assert.True(vm.FilteredCommandHistory.Count >= 2);
+        var pushIndex = vm.FilteredCommandHistory.IndexOf("git push");
+        var pullIndex = vm.FilteredCommandHistory.IndexOf("git pull");
+        Assert.True(pushIndex >= 0 && pullIndex >= 0);
+        Assert.True(pushIndex < pullIndex, "Most recently executed command should rank before older command with identical score in command search.");
+    }
+
+    [Fact]
+    public void DirectorySearch_EqualMatchScore_RanksMostRecentlyUsedFirst()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Two directory paths with identical score matching "folder"
+        session.SimulateDirectoryChange(@"C:\test\folder1");
+        session.SimulateDirectoryChange(@"C:\test\folder2");
+
+        // Act: search for "folder"
+        vm.DirectoryFilterQuery = "folder";
+
+        // Assert: "folder2" visited second (newer), so it ranks before "folder1"
+        Assert.True(vm.FilteredDirectoryHistory.Count >= 2);
+        var dir2Norm = DirectoryHistoryService.NormalizePath(@"C:\test\folder2");
+        var dir1Norm = DirectoryHistoryService.NormalizePath(@"C:\test\folder1");
+        var index2 = vm.FilteredDirectoryHistory.IndexOf(dir2Norm);
+        var index1 = vm.FilteredDirectoryHistory.IndexOf(dir1Norm);
+        Assert.True(index2 >= 0 && index1 >= 0);
+        Assert.True(index2 < index1, "Most recently visited directory should rank before older directory with identical score in directory search.");
     }
 }
 

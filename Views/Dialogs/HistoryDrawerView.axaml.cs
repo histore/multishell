@@ -214,17 +214,7 @@ public partial class HistoryDrawerView : UserControl
                 {
                     HistoryTabControl.SelectedIndex = targetTabIndex;
                 }
-                var hasFilter = false;
-                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-                {
-                    hasFilter = targetTabIndex switch
-                    {
-                        1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                        2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                        _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-                    };
-                }
-                FocusActiveHistoryList(selectLastItem: !hasFilter);
+                FocusActiveHistoryList();
             }
         }
         else
@@ -241,17 +231,7 @@ public partial class HistoryDrawerView : UserControl
     {
         if (HistoryDrawerGrid == null) return;
         HistoryDrawerGrid.IsVisible = true;
-        var hasFilter = false;
-        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-        {
-            hasFilter = HistoryTabControl?.SelectedIndex switch
-            {
-                1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-            };
-        }
-        FocusActiveHistoryList(selectLastItem: !hasFilter);
+        FocusActiveHistoryList();
     }
 
     public void HideHistoryDrawer()
@@ -456,7 +436,7 @@ public partial class HistoryDrawerView : UserControl
         }
     }
 
-    private void FocusActiveHistoryList(bool selectLastItem = true)
+    private void FocusActiveHistoryList(bool selectFirstItem = true, bool selectLastItem = false)
     {
         void DoFocusAndSelect()
         {
@@ -476,7 +456,10 @@ public partial class HistoryDrawerView : UserControl
 
             if (activeListBox != null && activeListBox.ItemCount > 0)
             {
-                activeListBox.SelectedIndex = (tabIndex == 2 || !selectLastItem) ? 0 : activeListBox.ItemCount - 1;
+                if (selectFirstItem || activeListBox.SelectedIndex < 0)
+                {
+                    activeListBox.SelectedIndex = 0;
+                }
 
                 if (activeListBox.SelectedItem != null)
                 {
@@ -644,7 +627,7 @@ public partial class HistoryDrawerView : UserControl
                 }
                 else if (vm.SelectedTab.CommandHistory.Count > 0)
                 {
-                    cmd = vm.SelectedTab.CommandHistory[^1];
+                    cmd = vm.SelectedTab.CommandHistory[0];
                 }
             }
             if (!string.IsNullOrWhiteSpace(cmd))
@@ -668,7 +651,7 @@ public partial class HistoryDrawerView : UserControl
                 }
                 else if (vm.SelectedTab.DirectoryHistory.Count > 0)
                 {
-                    dir = vm.SelectedTab.DirectoryHistory[^1];
+                    dir = vm.SelectedTab.DirectoryHistory[0];
                 }
             }
             if (!string.IsNullOrWhiteSpace(dir))
@@ -692,7 +675,7 @@ public partial class HistoryDrawerView : UserControl
                 }
                 else if (vm.SelectedTab.CommandHistory.Count > 0)
                 {
-                    cmd = vm.SelectedTab.CommandHistory[^1];
+                    cmd = vm.SelectedTab.CommandHistory[0];
                 }
             }
             if (!string.IsNullOrWhiteSpace(cmd))
@@ -716,7 +699,7 @@ public partial class HistoryDrawerView : UserControl
                 }
                 else if (vm.SelectedTab.DirectoryHistory.Count > 0)
                 {
-                    dir = vm.SelectedTab.DirectoryHistory[^1];
+                    dir = vm.SelectedTab.DirectoryHistory[0];
                 }
             }
             if (!string.IsNullOrWhiteSpace(dir))
@@ -740,7 +723,7 @@ public partial class HistoryDrawerView : UserControl
                 }
                 else if (vm.SelectedTab.GlobalHistory.Count > 0)
                 {
-                    item = vm.SelectedTab.GlobalHistory[^1];
+                    item = vm.SelectedTab.GlobalHistory[0];
                 }
             }
             if (item != null)
@@ -764,7 +747,7 @@ public partial class HistoryDrawerView : UserControl
                 }
                 else if (vm.SelectedTab.GlobalHistory.Count > 0)
                 {
-                    item = vm.SelectedTab.GlobalHistory[^1];
+                    item = vm.SelectedTab.GlobalHistory[0];
                 }
             }
             if (item != null)
