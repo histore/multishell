@@ -53,7 +53,7 @@ This document defines the functional and non-functional requirements specific to
 #### Acceptance Criteria (Given-When-Then)
 - [x] **AC-1**: `Ctrl+Shift+H` opens or toggles the History Drawer directly on the Commands tab (`Tab 0`).
 - [x] **AC-2**: `Ctrl+Shift+L` opens or toggles the History Drawer directly on the Directories tab (`Tab 1`).
-- [x] **AC-3**: When opening, the search filter box is focused and the last list item selected by default.
+- [x] **AC-3**: When opening, the search filter box is focused and the newest list item (index 0) selected by default.
 - [x] **AC-4**: `Up` / `Down` navigates entries; `Tab`, `Left`, `Right` switches tabs; `Enter` executes and closes; `Escape` closes and restores terminal focus.
 
 #### Traceability & Verification
