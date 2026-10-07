@@ -254,9 +254,10 @@ public partial class HistoryDrawerView : UserControl
             if (activeSearchBox != null)
             {
                 activeSearchBox.Focus();
-                activeSearchBox.CaretIndex = activeSearchBox.Text?.Length ?? 0;
-                activeSearchBox.SelectionStart = activeSearchBox.CaretIndex;
-                activeSearchBox.SelectionEnd = activeSearchBox.CaretIndex;
+                if (!string.IsNullOrEmpty(activeSearchBox.Text))
+                {
+                    activeSearchBox.SelectAll();
+                }
             }
         }
 
