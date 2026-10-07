@@ -64,6 +64,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public string AppVersion { get; } = DetermineAppVersion();
 
     /// <summary>
+    /// Gets the UI and terminal framework stack description displayed in the About dialog.
+    /// </summary>
+    public string UiTerminalStack { get; } = DetermineUiTerminalStack();
+
+    /// <summary>
     /// Maximum number of tabs restored from saved state to prevent UI freeze on corrupted state files.
     /// </summary>
     public const int MaxRestoreTabsLimit = 50;
@@ -119,6 +124,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
 
         return "v0.0.1";
+    }
+
+    private static string DetermineUiTerminalStack()
+    {
+        var avaloniaVersion = typeof(Avalonia.Application).Assembly.GetName().Version;
+        var versionStr = avaloniaVersion != null ? $"{avaloniaVersion.Major}.{avaloniaVersion.Minor}" : "12.1";
+        return $"Avalonia UI {versionStr} / ConPTY";
     }
 
     public MainViewModel(string? initialDirectory = null)

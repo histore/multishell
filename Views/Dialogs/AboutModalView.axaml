@@ -31,7 +31,7 @@
                         </Grid>
                         <Grid ColumnDefinitions="115, *">
                             <TextBlock Grid.Column="0" Text="{Binding Loc[About_UI_Terminal]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />
-                            <TextBlock Grid.Column="1" Text="Avalonia UI 11.2 / ConPTY" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
+                            <TextBlock Grid.Column="1" Text="{Binding UiTerminalStack}" Foreground="{DynamicResource AppTextSecondary}" FontSize="12" />
                         </Grid>
                         <Grid ColumnDefinitions="115, *">
                             <TextBlock Grid.Column="0" Text="{Binding Loc[About_License]}" Foreground="{DynamicResource AppTextMuted}" FontSize="12" />

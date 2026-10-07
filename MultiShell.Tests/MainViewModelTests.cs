@@ -38,6 +38,23 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public void UiTerminalStack_ContainsAvalonia12AndConPTY()
+    {
+        // Arrange & Act
+        using var vm = CreateIsolatedViewModel(out var tempFile);
+        try
+        {
+            // Assert
+            Assert.Contains("Avalonia UI 12", vm.UiTerminalStack);
+            Assert.Contains("ConPTY", vm.UiTerminalStack);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
     public void GitHubUrl_IsConfiguredCorrectly()
     {
         // Arrange & Act

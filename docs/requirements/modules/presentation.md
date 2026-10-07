@@ -322,7 +322,7 @@ This document defines the functional and non-functional requirements specific to
 > **I want** an About dialog displaying version information, architecture overview, and technology stack.
 
 #### Acceptance Criteria (Given-When-Then)
-- [x] **AC-1**: Dialog displays semantic version, tech stack (.NET 10, Avalonia 11, ConPTY), and third-party notices.
+- [x] **AC-1**: Dialog displays semantic version, tech stack (.NET 10, Avalonia 12, ConPTY), and third-party notices.
 - [x] **AC-2**: Pressing `Escape` or clicking `✕` closes the modal.
 
 #### Traceability & Verification

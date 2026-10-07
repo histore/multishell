@@ -4,9 +4,9 @@
 [![Release](https://img.shields.io/github/v/release/histore/multishell)](https://github.com/histore/multishell/releases)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Framework: .NET 10](https://img.shields.io/badge/Framework-.NET_10-purple.svg)](https://dotnet.microsoft.com/)
-[![UI: Avalonia 11.2](https://img.shields.io/badge/UI-Avalonia_11.2-red.svg)](https://avaloniaui.net/)
+[![UI: Avalonia 12.1](https://img.shields.io/badge/UI-Avalonia_12.1-red.svg)](https://avaloniaui.net/)
 
-**MultiShell** is a high-performance, ergonomic Windows PowerShell workspace and terminal multiplexer built with **C# 13**, **.NET 10**, and **Avalonia UI 11.2**, following the principles of **Clean Architecture** and **Clean Code**.
+**MultiShell** is a high-performance, ergonomic Windows PowerShell workspace and terminal multiplexer built with **C# 13**, **.NET 10**, and **Avalonia UI 12.1**, following the principles of **Clean Architecture** and **Clean Code**.
 
 ---
 
