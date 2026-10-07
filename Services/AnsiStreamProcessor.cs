@@ -29,12 +29,12 @@ public sealed class AnsiStreamProcessor
 
         lock (_syncRoot)
         {
-            int charCount = _outputDecoder.GetCharCount(data, 0, data.Length, flush: false);
-            if (charCount == 0) return null;
+            int maxChars = Encoding.UTF8.GetMaxCharCount(data.Length);
+            char[] chars = new char[maxChars];
+            int actualChars = _outputDecoder.GetChars(data, 0, data.Length, chars, 0, flush: false);
+            if (actualChars == 0 && _streamBuffer.Length == 0) return null;
 
-            char[] chars = new char[charCount];
-            _outputDecoder.GetChars(data, 0, data.Length, chars, 0, flush: false);
-            _streamBuffer.Append(chars);
+            _streamBuffer.Append(chars, 0, actualChars);
 
             var current = _streamBuffer.ToString();
             _streamBuffer.Clear();
