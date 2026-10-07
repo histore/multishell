@@ -1,10 +1,8 @@
 using System;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using MultiShell.ViewModels;
 
 namespace MultiShell.Views.Dialogs;
@@ -35,153 +33,81 @@ public partial class HistoryDrawerView : UserControl
             };
         }
 
-        if (ClearCommandFilterBtn != null)
-        {
-            ClearCommandFilterBtn.Click += (_, _) =>
-            {
-                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-                {
-                    vm.SelectedTab.CommandFilterQuery = string.Empty;
-                }
-            };
-        }
+        WireClearFilterButton(ClearCommandFilterBtn, tab => tab.CommandFilterQuery = string.Empty);
+        WireClearFilterButton(ClearDirectoryFilterBtn, tab => tab.DirectoryFilterQuery = string.Empty);
+        WireClearFilterButton(ClearGlobalFilterBtn, tab => tab.GlobalFilterQuery = string.Empty);
 
-        if (ClearDirectoryFilterBtn != null)
-        {
-            ClearDirectoryFilterBtn.Click += (_, _) =>
-            {
-                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-                {
-                    vm.SelectedTab.DirectoryFilterQuery = string.Empty;
-                }
-            };
-        }
-
-        if (ClearGlobalFilterBtn != null)
-        {
-            ClearGlobalFilterBtn.Click += (_, _) =>
-            {
-                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-                {
-                    vm.SelectedTab.GlobalFilterQuery = string.Empty;
-                }
-            };
-        }
-
-        // History ListBox Selection & Keyboard Execution
-        if (CommandHistoryListBox != null)
-        {
-            CommandHistoryListBox.KeyDown += OnHistoryListBoxKeyDown;
-            CommandHistoryListBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
-        }
-
-        if (DirectoryHistoryListBox != null)
-        {
-            DirectoryHistoryListBox.KeyDown += OnHistoryListBoxKeyDown;
-            DirectoryHistoryListBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
-        }
-
-        if (GlobalHistoryListBox != null)
-        {
-            GlobalHistoryListBox.KeyDown += OnHistoryListBoxKeyDown;
-            GlobalHistoryListBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
-        }
+        WireHistoryListBox(CommandHistoryListBox);
+        WireHistoryListBox(DirectoryHistoryListBox);
+        WireHistoryListBox(GlobalHistoryListBox);
 
         if (HistoryTabControl != null)
         {
             HistoryTabControl.SelectionChanged += (sender, e) =>
             {
-                if (e.Source == HistoryTabControl)
+                if (e.Source != HistoryTabControl) return;
+
+                var hasFilter = false;
+                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
                 {
-                    var hasFilter = false;
-                    if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+                    hasFilter = HistoryTabControl.SelectedIndex switch
                     {
-                        hasFilter = HistoryTabControl.SelectedIndex switch
-                        {
-                            1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                            2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                            _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-                        };
-                    }
-                    FocusActiveHistoryList(selectLastItem: !hasFilter);
+                        1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
+                        2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
+                        _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
+                    };
                 }
+                FocusActiveHistoryList(selectLastItem: !hasFilter);
             };
         }
 
-        if (CommandHistorySearchBox != null)
+        WireFilterSelectionSync(CommandHistorySearchBox, CommandHistoryListBox);
+        WireFilterSelectionSync(DirectoryHistorySearchBox, DirectoryHistoryListBox);
+        WireFilterSelectionSync(GlobalHistorySearchBox, GlobalHistoryListBox);
+    }
+
+    private void WireClearFilterButton(Button? button, Action<TerminalTabViewModel> clearAction)
+    {
+        if (button == null) return;
+        button.Click += (_, _) =>
         {
-            CommandHistorySearchBox.PropertyChanged += (_, e) =>
+            if (DataContext is MainViewModel vm && vm.SelectedTab != null)
             {
-                if (e.Property == TextBox.TextProperty)
-                {
-                    var filterText = CommandHistorySearchBox.Text;
-                    Dispatcher.UIThread.Post(() =>
-                    {
-                        if (CommandHistoryListBox != null && CommandHistoryListBox.ItemCount > 0)
-                        {
-                            CommandHistoryListBox.SelectedIndex = !string.IsNullOrWhiteSpace(filterText)
-                                ? 0
-                                : CommandHistoryListBox.ItemCount - 1;
+                clearAction(vm.SelectedTab);
+            }
+        };
+    }
 
-                            if (CommandHistoryListBox.SelectedItem != null)
-                            {
-                                CommandHistoryListBox.ScrollIntoView(CommandHistoryListBox.SelectedItem);
-                            }
-                        }
-                    }, DispatcherPriority.Input);
-                }
-            };
-        }
+    private void WireHistoryListBox(ListBox? listBox)
+    {
+        if (listBox == null) return;
+        listBox.KeyDown += OnHistoryListBoxKeyDown;
+        listBox.AddHandler(InputElement.PointerPressedEvent, OnHistoryListBoxPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
 
-        if (DirectoryHistorySearchBox != null)
+    private static void WireFilterSelectionSync(TextBox? searchBox, ListBox? listBox)
+    {
+        if (searchBox is null || listBox is null) return;
+
+        searchBox.PropertyChanged += (_, e) =>
         {
-            DirectoryHistorySearchBox.PropertyChanged += (_, e) =>
+            if (e.Property != TextBox.TextProperty) return;
+
+            var filterText = searchBox.Text;
+            Dispatcher.UIThread.Post(() =>
             {
-                if (e.Property == TextBox.TextProperty)
+                if (listBox.ItemCount <= 0) return;
+
+                listBox.SelectedIndex = !string.IsNullOrWhiteSpace(filterText)
+                    ? 0
+                    : listBox.ItemCount - 1;
+
+                if (listBox.SelectedItem != null)
                 {
-                    var filterText = DirectoryHistorySearchBox.Text;
-                    Dispatcher.UIThread.Post(() =>
-                    {
-                        if (DirectoryHistoryListBox != null && DirectoryHistoryListBox.ItemCount > 0)
-                        {
-                            DirectoryHistoryListBox.SelectedIndex = !string.IsNullOrWhiteSpace(filterText)
-                                ? 0
-                                : DirectoryHistoryListBox.ItemCount - 1;
-
-                            if (DirectoryHistoryListBox.SelectedItem != null)
-                            {
-                                DirectoryHistoryListBox.ScrollIntoView(DirectoryHistoryListBox.SelectedItem);
-                            }
-                        }
-                    }, DispatcherPriority.Input);
+                    listBox.ScrollIntoView(listBox.SelectedItem);
                 }
-            };
-        }
-
-        if (GlobalHistorySearchBox != null)
-        {
-            GlobalHistorySearchBox.PropertyChanged += (_, e) =>
-            {
-                if (e.Property == TextBox.TextProperty)
-                {
-                    var filterText = GlobalHistorySearchBox.Text;
-                    Dispatcher.UIThread.Post(() =>
-                    {
-                        if (GlobalHistoryListBox != null && GlobalHistoryListBox.ItemCount > 0)
-                        {
-                            GlobalHistoryListBox.SelectedIndex = !string.IsNullOrWhiteSpace(filterText)
-                                ? 0
-                                : GlobalHistoryListBox.ItemCount - 1;
-
-                            if (GlobalHistoryListBox.SelectedItem != null)
-                            {
-                                GlobalHistoryListBox.ScrollIntoView(GlobalHistoryListBox.SelectedItem);
-                            }
-                        }
-                    }, DispatcherPriority.Input);
-                }
-            };
-        }
+            }, DispatcherPriority.Input);
+        };
     }
 
     public void ToggleHistoryDrawer()
@@ -272,152 +198,6 @@ public partial class HistoryDrawerView : UserControl
         }
     }
 
-    public bool HandleKeyDown(KeyEventArgs e)
-    {
-        if (!IsDrawerOpen) return false;
-
-        if (e.Key == Key.Escape)
-        {
-            if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-            {
-                if (HistoryTabControl?.SelectedIndex == 2 && !string.IsNullOrEmpty(vm.SelectedTab.GlobalFilterQuery))
-                {
-                    vm.SelectedTab.GlobalFilterQuery = string.Empty;
-                    e.Handled = true;
-                    return true;
-                }
-                if (HistoryTabControl?.SelectedIndex == 1 && !string.IsNullOrEmpty(vm.SelectedTab.DirectoryFilterQuery))
-                {
-                    vm.SelectedTab.DirectoryFilterQuery = string.Empty;
-                    e.Handled = true;
-                    return true;
-                }
-                if (HistoryTabControl?.SelectedIndex == 0 && !string.IsNullOrEmpty(vm.SelectedTab.CommandFilterQuery))
-                {
-                    vm.SelectedTab.CommandFilterQuery = string.Empty;
-                    e.Handled = true;
-                    return true;
-                }
-            }
-            HideHistoryDrawer();
-            e.Handled = true;
-            return true;
-        }
-
-        if (e.Key == Key.Enter)
-        {
-            var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
-            if (HistoryTabControl?.SelectedIndex == 2)
-            {
-                if (isShift) PasteSelectedGlobalItem();
-                else ExecuteSelectedGlobalItem();
-            }
-            else if (HistoryTabControl?.SelectedIndex == 1)
-            {
-                if (isShift) PasteSelectedDirectory();
-                else ExecuteSelectedDirectory();
-            }
-            else
-            {
-                if (isShift) PasteSelectedCommand();
-                else ExecuteSelectedCommand();
-            }
-            e.Handled = true;
-            return true;
-        }
-
-        if (e.Key == Key.Up)
-        {
-            NavigateHistorySelection(-1);
-            ClearSearchBoxSelection();
-            e.Handled = true;
-            return true;
-        }
-
-        if (e.Key == Key.Down)
-        {
-            NavigateHistorySelection(1);
-            ClearSearchBoxSelection();
-            e.Handled = true;
-            return true;
-        }
-
-        if (e.Key == Key.Left)
-        {
-            if (e.Source is TextBox) return false;
-
-            if (HistoryTabControl != null)
-            {
-                var next = (HistoryTabControl.SelectedIndex - 1 + 3) % 3;
-                HistoryTabControl.SelectedIndex = next;
-                var hasFilter = false;
-                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-                {
-                    hasFilter = next switch
-                    {
-                        1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                        2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                        _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-                    };
-                }
-                FocusActiveHistoryList(selectLastItem: !hasFilter);
-            }
-            e.Handled = true;
-            return true;
-        }
-
-        if (e.Key == Key.Right)
-        {
-            if (e.Source is TextBox) return false;
-
-            if (HistoryTabControl != null)
-            {
-                var next = (HistoryTabControl.SelectedIndex + 1) % 3;
-                HistoryTabControl.SelectedIndex = next;
-                var hasFilter = false;
-                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-                {
-                    hasFilter = next switch
-                    {
-                        1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                        2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                        _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-                    };
-                }
-                FocusActiveHistoryList(selectLastItem: !hasFilter);
-            }
-            e.Handled = true;
-            return true;
-        }
-
-        if (e.Key == Key.Tab)
-        {
-            if (HistoryTabControl != null)
-            {
-                var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
-                var next = isShift
-                    ? (HistoryTabControl.SelectedIndex - 1 + 3) % 3
-                    : (HistoryTabControl.SelectedIndex + 1) % 3;
-                HistoryTabControl.SelectedIndex = next;
-                var hasFilter = false;
-                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-                {
-                    hasFilter = next switch
-                    {
-                        1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                        2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                        _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-                    };
-                }
-                FocusActiveHistoryList(selectLastItem: !hasFilter);
-            }
-            e.Handled = true;
-            return true;
-        }
-
-        return false;
-    }
-
     private void ClearSearchBoxSelection()
     {
         var tabIndex = HistoryTabControl?.SelectedIndex ?? 0;
@@ -456,7 +236,11 @@ public partial class HistoryDrawerView : UserControl
 
             if (activeListBox != null && activeListBox.ItemCount > 0)
             {
-                if (selectFirstItem || activeListBox.SelectedIndex < 0)
+                if (selectLastItem)
+                {
+                    activeListBox.SelectedIndex = activeListBox.ItemCount - 1;
+                }
+                else if (selectFirstItem)
                 {
                     activeListBox.SelectedIndex = 0;
                 }
@@ -470,291 +254,13 @@ public partial class HistoryDrawerView : UserControl
             if (activeSearchBox != null)
             {
                 activeSearchBox.Focus();
-                if (!string.IsNullOrEmpty(activeSearchBox.Text))
-                {
-                    activeSearchBox.SelectAll();
-                }
+                activeSearchBox.CaretIndex = activeSearchBox.Text?.Length ?? 0;
+                activeSearchBox.SelectionStart = activeSearchBox.CaretIndex;
+                activeSearchBox.SelectionEnd = activeSearchBox.CaretIndex;
             }
         }
 
         Dispatcher.UIThread.Post(DoFocusAndSelect, DispatcherPriority.Input);
         Dispatcher.UIThread.Post(DoFocusAndSelect, DispatcherPriority.Loaded);
-    }
-
-    private void OnHistoryListBoxPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        var props = e.GetCurrentPoint(this).Properties;
-
-        if (props.IsLeftButtonPressed)
-        {
-            e.Handled = true;
-            if (sender == CommandHistoryListBox)
-            {
-                var clickedItem = GetHistoryItemFromPointerSource(e.Source as Visual);
-                if (!string.IsNullOrWhiteSpace(clickedItem)) PasteSelectedCommand(clickedItem);
-            }
-            else if (sender == DirectoryHistoryListBox)
-            {
-                var clickedItem = GetHistoryItemFromPointerSource(e.Source as Visual);
-                if (!string.IsNullOrWhiteSpace(clickedItem)) PasteSelectedDirectory(clickedItem);
-            }
-            else if (sender == GlobalHistoryListBox)
-            {
-                var clickedItem = GetGlobalHistoryItemFromPointerSource(e.Source as Visual);
-                if (clickedItem != null) PasteSelectedGlobalItem(clickedItem);
-            }
-        }
-        else if (props.IsRightButtonPressed)
-        {
-            e.Handled = true;
-            if (sender == CommandHistoryListBox)
-            {
-                var clickedItem = GetHistoryItemFromPointerSource(e.Source as Visual);
-                if (!string.IsNullOrWhiteSpace(clickedItem)) ExecuteSelectedCommand(clickedItem);
-            }
-            else if (sender == DirectoryHistoryListBox)
-            {
-                var clickedItem = GetHistoryItemFromPointerSource(e.Source as Visual);
-                if (!string.IsNullOrWhiteSpace(clickedItem)) ExecuteSelectedDirectory(clickedItem);
-            }
-            else if (sender == GlobalHistoryListBox)
-            {
-                var clickedItem = GetGlobalHistoryItemFromPointerSource(e.Source as Visual);
-                if (clickedItem != null) ExecuteSelectedGlobalItem(clickedItem);
-            }
-        }
-    }
-
-    private static GlobalHistoryItem? GetGlobalHistoryItemFromPointerSource(Visual? visual)
-    {
-        while (visual != null)
-        {
-            if (visual.DataContext is GlobalHistoryItem item)
-            {
-                return item;
-            }
-            visual = visual.GetVisualParent();
-        }
-        return null;
-    }
-
-    private static string? GetHistoryItemFromPointerSource(Visual? visual)
-    {
-        while (visual != null)
-        {
-            if (visual.DataContext is string str && !string.IsNullOrWhiteSpace(str))
-            {
-                return str;
-            }
-            visual = visual.GetVisualParent();
-        }
-        return null;
-    }
-
-    private void OnHistoryListBoxKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-        {
-            var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
-            if (sender == GlobalHistoryListBox || HistoryTabControl?.SelectedIndex == 2)
-            {
-                if (isShift) PasteSelectedGlobalItem();
-                else ExecuteSelectedGlobalItem();
-            }
-            else if (sender == CommandHistoryListBox || HistoryTabControl?.SelectedIndex == 0)
-            {
-                if (isShift) PasteSelectedCommand();
-                else ExecuteSelectedCommand();
-            }
-            else
-            {
-                if (isShift) PasteSelectedDirectory();
-                else ExecuteSelectedDirectory();
-            }
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Left && HistoryTabControl != null)
-        {
-            var next = (HistoryTabControl.SelectedIndex - 1 + 3) % 3;
-            HistoryTabControl.SelectedIndex = next;
-            var hasFilter = false;
-            if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-            {
-                hasFilter = next switch
-                {
-                    1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                    2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                    _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-                };
-            }
-            FocusActiveHistoryList(selectLastItem: !hasFilter);
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Right && HistoryTabControl != null)
-        {
-            var next = (HistoryTabControl.SelectedIndex + 1) % 3;
-            HistoryTabControl.SelectedIndex = next;
-            var hasFilter = false;
-            if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-            {
-                hasFilter = next switch
-                {
-                    1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                    2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                    _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-                };
-            }
-            FocusActiveHistoryList(selectLastItem: !hasFilter);
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Escape)
-        {
-            HideHistoryDrawer();
-            e.Handled = true;
-        }
-    }
-
-    private void PasteSelectedCommand(string? explicitCommand = null)
-    {
-        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-        {
-            var cmd = explicitCommand ?? CommandHistoryListBox?.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(cmd))
-            {
-                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery) && vm.SelectedTab.FilteredCommandHistory.Count > 0)
-                {
-                    cmd = vm.SelectedTab.FilteredCommandHistory[0];
-                }
-                else if (vm.SelectedTab.CommandHistory.Count > 0)
-                {
-                    cmd = vm.SelectedTab.CommandHistory[0];
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(cmd))
-            {
-                vm.SelectedTab.PasteHistoryCommand(cmd);
-            }
-            HideHistoryDrawer();
-        }
-    }
-
-    private void PasteSelectedDirectory(string? explicitDirectory = null)
-    {
-        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-        {
-            var dir = explicitDirectory ?? DirectoryHistoryListBox?.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(dir))
-            {
-                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery) && vm.SelectedTab.FilteredDirectoryHistory.Count > 0)
-                {
-                    dir = vm.SelectedTab.FilteredDirectoryHistory[0];
-                }
-                else if (vm.SelectedTab.DirectoryHistory.Count > 0)
-                {
-                    dir = vm.SelectedTab.DirectoryHistory[0];
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(dir))
-            {
-                vm.SelectedTab.PasteHistoryDirectory(dir);
-            }
-            HideHistoryDrawer();
-        }
-    }
-
-    private void ExecuteSelectedCommand(string? explicitCommand = null)
-    {
-        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-        {
-            var cmd = explicitCommand ?? CommandHistoryListBox?.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(cmd))
-            {
-                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery) && vm.SelectedTab.FilteredCommandHistory.Count > 0)
-                {
-                    cmd = vm.SelectedTab.FilteredCommandHistory[0];
-                }
-                else if (vm.SelectedTab.CommandHistory.Count > 0)
-                {
-                    cmd = vm.SelectedTab.CommandHistory[0];
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(cmd))
-            {
-                vm.SelectedTab.ExecuteHistoryCommand(cmd);
-            }
-            HideHistoryDrawer();
-        }
-    }
-
-    private void ExecuteSelectedDirectory(string? explicitDirectory = null)
-    {
-        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-        {
-            var dir = explicitDirectory ?? DirectoryHistoryListBox?.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(dir))
-            {
-                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery) && vm.SelectedTab.FilteredDirectoryHistory.Count > 0)
-                {
-                    dir = vm.SelectedTab.FilteredDirectoryHistory[0];
-                }
-                else if (vm.SelectedTab.DirectoryHistory.Count > 0)
-                {
-                    dir = vm.SelectedTab.DirectoryHistory[0];
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(dir))
-            {
-                vm.SelectedTab.NavigateToHistoryDirectory(dir);
-            }
-            HideHistoryDrawer();
-        }
-    }
-
-    private void ExecuteSelectedGlobalItem(GlobalHistoryItem? explicitItem = null)
-    {
-        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-        {
-            var item = explicitItem ?? GlobalHistoryListBox?.SelectedItem as GlobalHistoryItem;
-            if (item == null)
-            {
-                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery) && vm.SelectedTab.FilteredGlobalHistory.Count > 0)
-                {
-                    item = vm.SelectedTab.FilteredGlobalHistory[0];
-                }
-                else if (vm.SelectedTab.GlobalHistory.Count > 0)
-                {
-                    item = vm.SelectedTab.GlobalHistory[0];
-                }
-            }
-            if (item != null)
-            {
-                vm.SelectedTab.ExecuteGlobalItem(item);
-            }
-            HideHistoryDrawer();
-        }
-    }
-
-    private void PasteSelectedGlobalItem(GlobalHistoryItem? explicitItem = null)
-    {
-        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-        {
-            var item = explicitItem ?? GlobalHistoryListBox?.SelectedItem as GlobalHistoryItem;
-            if (item == null)
-            {
-                if (!string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery) && vm.SelectedTab.FilteredGlobalHistory.Count > 0)
-                {
-                    item = vm.SelectedTab.FilteredGlobalHistory[0];
-                }
-                else if (vm.SelectedTab.GlobalHistory.Count > 0)
-                {
-                    item = vm.SelectedTab.GlobalHistory[0];
-                }
-            }
-            if (item != null)
-            {
-                vm.SelectedTab.PasteGlobalItem(item);
-            }
-            HideHistoryDrawer();
-        }
     }
 }

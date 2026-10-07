@@ -4,6 +4,7 @@
 [Aa]rtifacts/
 [Oo]ut/
 [Pp]ublish/
+[Pp]ublish-aot/
 [Tt]est[Rr]esults/
 
 # .NET & Visual Studio
