@@ -1,12 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
@@ -26,16 +22,12 @@ public sealed partial class ShellSession : IShellSession
     private bool _isDisposed;
     private (int cols, int rows)? _lastResize;
     private readonly Lock _syncRoot = new();
+    private readonly Lock _inputWriteLock = new();
     private readonly string? _initialWorkingDirectory;
-    private readonly StringBuilder _oscBuffer = new();
     private string? _lastExecutedCommand;
     private readonly ShellType _shellType;
     private readonly string? _customExecutable;
     private readonly string? _customArguments;
-
-    private static readonly Regex Osc9Regex = new(@"\x1b\]9;9;""?([^""\x1b\x07]+)""?(\x1b\\|\x07)", RegexOptions.Compiled);
-    private static readonly Regex Osc7Regex = new(@"\x1b\]7;file://[^/\x1b\x07]*/?([^\x1b\x07]+)(\x1b\\|\x07)", RegexOptions.Compiled);
-    private static readonly Regex Osc133ERegex = new(@"\x1b\]133;E;([A-Za-z0-9+/=]+)\x07|\x1b\]133;E;([A-Za-z0-9+/=]+)\x1b\\", RegexOptions.Compiled);
 
     public Guid SessionId { get; } = Guid.NewGuid();
     public string Title { get; }
@@ -116,8 +108,6 @@ public sealed partial class ShellSession : IShellSession
         }
     }
 
-    private readonly Lock _inputWriteLock = new();
-
     public void Send(byte[] input)
     {
         try
@@ -146,106 +136,6 @@ public sealed partial class ShellSession : IShellSession
         }
     }
 
-    private void PumpOutput(Stream stream, CancellationToken ct)
-    {
-        byte[] buffer = new byte[4096];
-        try
-        {
-            while (!ct.IsCancellationRequested)
-            {
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                if (bytesRead == 0) break;
-                var data = buffer.AsSpan(0, bytesRead).ToArray();
-                CheckForOscSequences(data);
-                DataReceived?.Invoke(data);
-            }
-        }
-        catch (IOException) { }
-        catch (ObjectDisposedException) { }
-        catch (OperationCanceledException) { }
-    }
-
-    private readonly Decoder _oscDecoder = Encoding.UTF8.GetDecoder();
-
-    private void CheckForOscSequences(byte[] data)
-    {
-        try
-        {
-            string text;
-            lock (_oscBuffer)
-            {
-                int charCount = _oscDecoder.GetCharCount(data, 0, data.Length, flush: false);
-                if (charCount > 0)
-                {
-                    char[] chars = new char[charCount];
-                    _oscDecoder.GetChars(data, 0, data.Length, chars, 0, flush: false);
-                    text = new string(chars);
-                }
-                else
-                {
-                    return;
-                }
-
-                _oscBuffer.Append(text);
-                var currentBuffer = _oscBuffer.ToString();
-
-                int lastProcessedIndex = -1;
-
-                var matches133E = Osc133ERegex.Matches(currentBuffer);
-                foreach (Match match in matches133E)
-                {
-                    string base64 = (match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).Trim();
-                    try
-                    {
-                        var bytes = Convert.FromBase64String(base64);
-                        var cmd = Encoding.UTF8.GetString(bytes).Trim();
-                        if (!string.IsNullOrWhiteSpace(cmd))
-                        {
-                            _lastExecutedCommand = cmd;
-                            CommandExecuted?.Invoke(cmd);
-                        }
-                    }
-                    catch { }
-
-                    lastProcessedIndex = Math.Max(lastProcessedIndex, match.Index + match.Length);
-                }
-
-                var matches9 = Osc9Regex.Matches(currentBuffer);
-                if (matches9.Count > 0)
-                {
-                    UpdateDirectory(matches9[^1].Groups[1].Value.Trim());
-                    lastProcessedIndex = Math.Max(lastProcessedIndex, matches9[^1].Index + matches9[^1].Length);
-                }
-
-                var matches7 = Osc7Regex.Matches(currentBuffer);
-                if (matches7.Count > 0)
-                {
-                    UpdateDirectory(Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim()));
-                    lastProcessedIndex = Math.Max(lastProcessedIndex, matches7[^1].Index + matches7[^1].Length);
-                }
-
-                if (lastProcessedIndex > 0)
-                {
-                    _oscBuffer.Remove(0, lastProcessedIndex);
-                }
-                else if (_oscBuffer.Length > 8192)
-                {
-                    _oscBuffer.Remove(0, 4096);
-                }
-            }
-        }
-        catch { }
-    }
-
-    private void UpdateDirectory(string path)
-    {
-        if (!string.IsNullOrWhiteSpace(path) && !string.Equals(WorkingDirectory, path, StringComparison.OrdinalIgnoreCase))
-        {
-            WorkingDirectory = path;
-            WorkingDirectoryChanged?.Invoke(path);
-        }
-    }
-
     private async Task WaitForExitAsync(CancellationToken ct)
     {
         if (_process == null) return;
@@ -257,190 +147,6 @@ public sealed partial class ShellSession : IShellSession
             Exited?.Invoke(exitCode);
         }
         catch (OperationCanceledException) { }
-    }
-
-    private void StartProcessAttachedToPseudoConsole(WindowsPseudoConsoleSafeHandle pseudoConsole, string? workingDir)
-    {
-        IntPtr attributeList = IntPtr.Zero;
-        IntPtr commandLine = IntPtr.Zero;
-        IntPtr environmentBlock = IntPtr.Zero;
-        SafeFileHandle? processHandle = null;
-        SafeFileHandle? threadHandle = null;
-
-        try
-        {
-            var size = IntPtr.Zero;
-            NativeMethods.InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref size);
-            attributeList = Marshal.AllocHGlobal(size);
-            if (!NativeMethods.InitializeProcThreadAttributeList(attributeList, 1, 0, ref size))
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-
-            if (!NativeMethods.UpdateProcThreadAttribute(attributeList, 0, (IntPtr)NativeMethods.PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, pseudoConsole.DangerousGetHandle(), (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero))
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-
-            var startupInfo = new StartupInfoEx();
-            startupInfo.StartupInfo.cb = Marshal.SizeOf<StartupInfoEx>();
-            startupInfo.lpAttributeList = attributeList;
-
-            var rawCommandLine = GenerateShellCommandLine(workingDir);
-            commandLine = Marshal.StringToHGlobalUni(rawCommandLine);
-
-            var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["PYTHONIOENCODING"] = "utf-8",
-                ["PYTHONUTF8"] = "1",
-                ["LANG"] = "en_US.UTF-8",
-                ["LC_ALL"] = "en_US.UTF-8"
-            };
-
-            // Only inject Unix-style xterm terminal emulation for WSL/Linux sessions.
-            // Native Windows shells (PowerShell, CMD, NuShell) run in standard Windows ConPTY
-            // mode (win32con), preventing applications like Neovim from emitting colon-separated
-            // SGR TrueColor sequences and unhandled terminal queries.
-            if (_shellType == ShellType.WSL)
-            {
-                envVars["TERM"] = "xterm-256color";
-                envVars["COLORTERM"] = "truecolor";
-            }
-            foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
-            {
-                if (de.Key is string k && de.Value is string v && !envVars.ContainsKey(k))
-                    envVars[k] = v;
-            }
-            var envString = BuildEnvironmentBlock(envVars);
-            environmentBlock = Marshal.StringToHGlobalUni(envString);
-
-            var creationFlags = NativeMethods.EXTENDED_STARTUPINFO_PRESENT | NativeMethods.CREATE_UNICODE_ENVIRONMENT;
-
-            string? effectiveWorkingDir = workingDir;
-            if (!string.IsNullOrWhiteSpace(effectiveWorkingDir) && !Directory.Exists(effectiveWorkingDir))
-            {
-                effectiveWorkingDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                if (string.IsNullOrWhiteSpace(effectiveWorkingDir) || !Directory.Exists(effectiveWorkingDir))
-                {
-                    effectiveWorkingDir = Environment.CurrentDirectory;
-                }
-            }
-
-            if (!NativeMethods.CreateProcess(null, commandLine, IntPtr.Zero, IntPtr.Zero, false, (uint)creationFlags, environmentBlock, effectiveWorkingDir, ref startupInfo, out var processInfo))
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-
-            processHandle = new SafeFileHandle(processInfo.hProcess, ownsHandle: true);
-            threadHandle = new SafeFileHandle(processInfo.hThread, ownsHandle: true);
-            _process = Process.GetProcessById(processInfo.dwProcessId);
-        }
-        finally
-        {
-            threadHandle?.Dispose();
-            processHandle?.Dispose();
-            if (attributeList != IntPtr.Zero) { NativeMethods.DeleteProcThreadAttributeList(attributeList); Marshal.FreeHGlobal(attributeList); }
-            if (commandLine != IntPtr.Zero) Marshal.FreeHGlobal(commandLine);
-            if (environmentBlock != IntPtr.Zero) Marshal.FreeHGlobal(environmentBlock);
-        }
-    }
-
-    private string GenerateShellCommandLine(string? workingDir)
-    {
-        if (!string.IsNullOrWhiteSpace(_customExecutable))
-        {
-            var args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments}";
-            if (_shellType == ShellType.WSL && !string.IsNullOrWhiteSpace(workingDir) && !args.Contains("--cd"))
-            {
-                return $"\"{_customExecutable}\" --cd \"{workingDir}\"{args}";
-            }
-            return $"\"{_customExecutable}\"{args}";
-        }
-
-        if (_shellType == ShellType.PowerShell)
-        {
-            string exePath = ResolveExecutable("pwsh.exe") ?? "powershell.exe";
-
-            // Build the prompt hook script as a plain string (no escaping needed here).
-            // Explicitly set Win32 console code page (65001), UTF-8 console output/input,
-            // and pipeline encoding to guarantee box-drawing characters and unicode glyphs
-            // are transmitted correctly through ConPTY across all CLI tools and sub-processes.
-            // It also emits OSC 133;E with Base64-encoded last command for history tracking,
-            // and OSC 9;9 for working-directory tracking (shell integration).
-            const string hookScript = """
-                chcp 65001 >$null
-                [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-                [Console]::InputEncoding = [System.Text.Encoding]::UTF8
-                $OutputEncoding = [System.Text.Encoding]::UTF8
-                if (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) {
-                    Set-PSReadLineOption -AddToHistoryHandler {
-                        param($cmd)
-                        if ([string]::IsNullOrWhiteSpace($cmd)) { return $false }
-                        $t = $cmd.Trim()
-                        if ($t -match '^(chcp(\s|$)|\[Console\]::|\$OutputEncoding|\$function:prompt|Set-PSReadLineOption|__multishell_)') {
-                            return $false
-                        }
-                        return $true
-                    }
-                }
-                $function:prompt = {
-                    $loc = $ExecutionContext.SessionState.Path.CurrentLocation.Path
-                    $last = (Get-History -Count 1).CommandLine
-                    if ($last -and ($last.Trim() -notmatch '^(chcp(\s|$)|\[Console\]::|\$OutputEncoding|\$function:prompt|Set-PSReadLineOption|__multishell_)')) {
-                        $b = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($last))
-                        [Console]::Write([char]27 + ']133;E;' + $b + [char]7)
-                    }
-                    [Console]::Write([char]27 + ']9;9;"' + $loc + '"' + [char]7)
-                    "PS $loc$('>' * ($nestedPromptLevel + 1)) "
-                }
-                """;
-
-            // Encode as UTF-16LE Base64 for -EncodedCommand; avoids all quoting issues.
-            string encodedHook = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(hookScript));
-            return $"\"{exePath}\" -NoLogo -NoExit -EncodedCommand {encodedHook}";
-        }
-        else if (_shellType == ShellType.NuShell)
-        {
-            string exePath = ResolveExecutable("nu.exe") ?? "nu.exe";
-            return $"\"{exePath}\"";
-        }
-        else if (_shellType == ShellType.WSL)
-        {
-            string exePath = ResolveExecutable("wsl.exe") ?? "wsl.exe";
-            if (!string.IsNullOrWhiteSpace(workingDir))
-            {
-                return $"\"{exePath}\" --cd \"{workingDir}\"";
-            }
-            return $"\"{exePath}\"";
-        }
-        else
-        {
-            return "cmd.exe /K \"chcp 65001 >nul\"";
-        }
-    }
-
-    private static string? ResolveExecutable(string name)
-    {
-        var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-        foreach (var dir in pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-        {
-            try
-            {
-                var candidate = Path.Combine(dir, name);
-                if (File.Exists(candidate)) return candidate;
-            }
-            catch { }
-        }
-        if (name == "pwsh.exe")
-        {
-            var windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-            var winPowerShell = Path.Combine(windir, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
-            if (File.Exists(winPowerShell)) return winPowerShell;
-        }
-        return null;
-    }
-
-    private static string BuildEnvironmentBlock(IReadOnlyDictionary<string, string> environmentVariables)
-    {
-        var builder = new StringBuilder();
-        foreach (var entry in environmentVariables.OrderBy(static pair => pair.Key, StringComparer.OrdinalIgnoreCase))
-            builder.Append(entry.Key).Append('=').Append(entry.Value).Append('\0');
-        builder.Append('\0');
-        return builder.ToString();
     }
 
     public void Dispose()
@@ -469,90 +175,4 @@ public sealed partial class ShellSession : IShellSession
         _process?.Dispose();
         _lifetimeCancellation?.Dispose();
     }
-
-    #region Win32 ConPTY Interop
-    [StructLayout(LayoutKind.Sequential)] private struct Coord(short x, short y) { public short X = x; public short Y = y; }
-    [StructLayout(LayoutKind.Sequential)] private struct SecurityAttributes { public int nLength; public IntPtr lpSecurityDescriptor; [MarshalAs(UnmanagedType.Bool)] public bool bInheritHandle; }
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] private struct StartupInfo { public int cb; public IntPtr lpReserved; public IntPtr lpDesktop; public IntPtr lpTitle; public int dwX; public int dwY; public int dwXSize; public int dwYSize; public int dwXCountChars; public int dwYCountChars; public int dwFillAttribute; public int dwFlags; public short wShowWindow; public short cbReserved2; public IntPtr lpReserved2; public IntPtr hStdInput; public IntPtr hStdOutput; public IntPtr hStdError; }
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] private struct StartupInfoEx { public StartupInfo StartupInfo; public IntPtr lpAttributeList; }
-    [StructLayout(LayoutKind.Sequential)] private struct ProcessInformation { public IntPtr hProcess; public IntPtr hThread; public int dwProcessId; public int dwThreadId; }
-
-    private static partial class NativeMethods
-    {
-        public const int EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
-        public const int CREATE_UNICODE_ENVIRONMENT = 0x00000400;
-        public const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
-
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static partial bool CreatePipe(out IntPtr hReadPipe, out IntPtr hWritePipe, IntPtr lpPipeAttributes, int nSize);
-
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static partial bool InitializeProcThreadAttributeList(IntPtr lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
-
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static partial bool UpdateProcThreadAttribute(IntPtr lpAttributeList, uint dwFlags, IntPtr attribute, IntPtr lpValue, IntPtr cbSize, IntPtr lpPreviousValue, IntPtr lpReturnSize);
-
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static partial bool DeleteProcThreadAttributeList(IntPtr lpAttributeList);
-
-        [LibraryImport("kernel32.dll", EntryPoint = "CreateProcessW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static partial bool CreateProcess(
-            string? lpApplicationName,
-            IntPtr lpCommandLine,
-            IntPtr lpProcessAttributes,
-            IntPtr lpThreadAttributes,
-            [MarshalAs(UnmanagedType.Bool)] bool bInheritHandles,
-            uint dwCreationFlags,
-            IntPtr lpEnvironment,
-            string? lpCurrentDirectory,
-            ref StartupInfoEx lpStartupInfo,
-            out ProcessInformation lpProcessInformation);
-
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        internal static partial int CreatePseudoConsole(Coord size, IntPtr hConsoleInput, IntPtr hConsoleOutput, uint dwFlags, out IntPtr phPC);
-
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        internal static partial int ResizePseudoConsole(IntPtr hPC, Coord size);
-
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        internal static partial void ClosePseudoConsole(IntPtr hPC);
-
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static partial bool SetHandleInformation(IntPtr hObject, int dwMask, int dwFlags);
-
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static partial bool CloseHandle(IntPtr hObject);
-
-        public static bool CreatePipePair(out SafeFileHandle readPipe, out SafeFileHandle writePipe)
-        {
-            if (CreatePipe(out IntPtr hRead, out IntPtr hWrite, IntPtr.Zero, 0))
-            {
-                readPipe = new SafeFileHandle(hRead, true);
-                writePipe = new SafeFileHandle(hWrite, true);
-                return true;
-            }
-            readPipe = new SafeFileHandle(IntPtr.Zero, true);
-            writePipe = new SafeFileHandle(IntPtr.Zero, true);
-            return false;
-        }
-
-        public static void ClearHandleInheritance(SafeFileHandle handle)
-        {
-            SetHandleInformation(handle.DangerousGetHandle(), 1, 0);
-        }
-    }
-
-    private sealed class WindowsPseudoConsoleSafeHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public WindowsPseudoConsoleSafeHandle(IntPtr preExistingHandle) : base(true) { SetHandle(preExistingHandle); }
-        protected override bool ReleaseHandle() { NativeMethods.ClosePseudoConsole(handle); return true; }
-    }
-    #endregion
 }

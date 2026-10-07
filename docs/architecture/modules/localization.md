@@ -24,14 +24,13 @@ MultiShell mandates **0% hardcoded user-facing strings** across all XAML views, 
 ## 3. Implementation Architecture (`Services/LocalizationService.cs`)
 
 ### 3.1 Resource Dictionary Management
-* Localized strings are organized into multilingual dictionaries in `LocalizationService.Dictionaries.cs`.
-* Primary supported languages:
-  * **English (`en`)**: Reference and fallback locale.
-  * **German (`de`)**: Fully localized.
-  * **French (`fr`)**: Fully localized.
-  * **Spanish (`es`)**: Fully localized.
-  * **Italian (`it`)**: Fully localized.
-  * **Portuguese (`pt`)**: Fully localized (base Portuguese).
+* Localized strings are organized into modular language-specific partial classes:
+  * `LocalizationService.de.cs` (German)
+  * `LocalizationService.en.cs` (English - reference and fallback locale)
+  * `LocalizationService.fr.cs` (French)
+  * `LocalizationService.es.cs` (Spanish)
+  * `LocalizationService.it.cs` (Italian)
+  * `LocalizationService.pt.cs` (Portuguese)
 
 ### 3.2 Dynamic Runtime Language Switching & Dropdown UI
 * The application provides a modern `ComboBox` dropdown selector in the Settings menu bound to `AvailableLanguages` and `SelectedLanguage`.
