@@ -1,7 +1,7 @@
 # Presentation & MVVM Architecture
 
 ## 1. Overview & Purpose
-The Presentation layer is built on **Avalonia UI 11.2** and **CommunityToolkit.Mvvm**, implementing strict separation between UI visual rendering (XAML Views) and reactive application state (ViewModels). It uses compiled bindings (`x:DataType`), modular partial classes for complex ViewModel management, and decoupled event handling for responsive terminal interactions.
+The Presentation layer is built on **Avalonia UI 12.1** and **CommunityToolkit.Mvvm**, implementing strict separation between UI visual rendering (XAML Views) and reactive application state (ViewModels). It uses compiled bindings (`x:DataType`), modular partial classes for complex ViewModel management, and decoupled event handling for responsive terminal interactions.
 
 ## 2. Component Structure
 

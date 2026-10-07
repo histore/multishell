@@ -1,6 +1,6 @@
 # MultiShell Architecture Overview
 
-This document provides the high-level architecture specification for **MultiShell**, a modern multi-tab terminal emulator built with **C# 13**, **.NET 10.0**, and **Avalonia UI 11.2**.
+This document provides the high-level architecture specification for **MultiShell**, a modern multi-tab terminal emulator built with **C# 13**, **.NET 10.0**, and **Avalonia UI 12.1**.
 
 ---
 
