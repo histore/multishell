@@ -530,8 +530,8 @@ public class MainViewModelTabTests
         // Assert
         Assert.Single(mainVm.Tabs);
         var tab = mainVm.Tabs[0];
-        Assert.Equal(new[] { "npm install", "npm run dev" }, tab.CommandHistory);
-        Assert.Equal(new[] { @"C:\projekte", @"C:\projekte\app" }, tab.DirectoryHistory);
+        Assert.Equal(new[] { "npm run dev", "npm install" }, tab.CommandHistory);
+        Assert.Equal(new[] { @"C:\projekte\app", @"C:\projekte" }, tab.DirectoryHistory);
     }
 
     [Fact]

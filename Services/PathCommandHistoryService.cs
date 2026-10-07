@@ -65,6 +65,33 @@ public class PathCommandHistoryService : IPathCommandHistoryService
     }
 
     /// <inheritdoc />
+    public IReadOnlyList<(string Command, DateTime LastUsedAt)> GetHistoryWithTimestamps(string? path)
+    {
+        var normalizedPath = NormalizePath(path);
+        if (string.IsNullOrEmpty(normalizedPath))
+        {
+            return Array.Empty<(string, DateTime)>();
+        }
+
+        lock (_lock)
+        {
+            if (_pathHistories.TryGetValue(normalizedPath, out var list))
+            {
+                var result = new List<(string Command, DateTime LastUsedAt)>(list.Count);
+                for (var i = list.Count - 1; i >= 0; i--)
+                {
+                    var cmd = list[i];
+                    var time = _commandTimestamps.TryGetValue(cmd, out var dt) ? dt : DateTime.MinValue;
+                    result.Add((cmd, time));
+                }
+                return result;
+            }
+        }
+
+        return Array.Empty<(string, DateTime)>();
+    }
+
+    /// <inheritdoc />
     public IReadOnlyList<string> GetAllCommands()
     {
         lock (_lock)

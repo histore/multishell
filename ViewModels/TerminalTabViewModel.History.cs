@@ -79,8 +79,23 @@ public partial class TerminalTabViewModel
     {
         lock (_commandHistoryLock)
         {
+            var historyWithTimestamps = _pathCommandHistoryService.GetHistoryWithTimestamps(WorkingDirectory);
+            var timestampMap = new Dictionary<string, DateTime>(StringComparer.Ordinal);
+            foreach (var (cmd, time) in historyWithTimestamps)
+            {
+                timestampMap[cmd] = time;
+            }
+
             var snapshot = CommandHistory.ToArray();
-            var results = _fuzzySearchService.FilterAndRank(snapshot, CommandFilterQuery, x => x).ToList();
+            var results = string.IsNullOrWhiteSpace(CommandFilterQuery)
+                ? snapshot
+                : _fuzzySearchService.FilterAndRank(
+                    snapshot,
+                    CommandFilterQuery,
+                    x => x,
+                    x => timestampMap.TryGetValue(x, out var t) ? t : DateTime.MinValue,
+                    secondaryDescending: true).ToArray();
+
             FilteredCommandHistory.Clear();
             foreach (var item in results)
             {
@@ -93,8 +108,23 @@ public partial class TerminalTabViewModel
     {
         lock (_directoryHistoryLock)
         {
+            var historyWithTimestamps = _directoryHistoryService.GetHistoryWithTimestamps();
+            var timestampMap = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (dir, time) in historyWithTimestamps)
+            {
+                timestampMap[dir] = time;
+            }
+
             var snapshot = DirectoryHistory.ToArray();
-            var results = _fuzzySearchService.FilterAndRank(snapshot, DirectoryFilterQuery, x => x).ToList();
+            var results = string.IsNullOrWhiteSpace(DirectoryFilterQuery)
+                ? snapshot
+                : _fuzzySearchService.FilterAndRank(
+                    snapshot,
+                    DirectoryFilterQuery,
+                    x => x,
+                    x => timestampMap.TryGetValue(x, out var t) ? t : DateTime.MinValue,
+                    secondaryDescending: true).ToArray();
+
             FilteredDirectoryHistory.Clear();
             foreach (var item in results)
             {
@@ -198,9 +228,9 @@ public partial class TerminalTabViewModel
     {
         lock (_directoryHistoryLock)
         {
-            var history = _directoryHistoryService.GetHistory();
+            var history = _directoryHistoryService.GetHistoryWithTimestamps();
             DirectoryHistory.Clear();
-            foreach (var dir in history)
+            foreach (var (dir, _) in history.OrderByDescending(x => x.LastUsedAt))
             {
                 DirectoryHistory.Add(dir);
             }
@@ -231,9 +261,9 @@ public partial class TerminalTabViewModel
     {
         lock (_commandHistoryLock)
         {
-            var history = _pathCommandHistoryService.GetHistory(WorkingDirectory);
+            var history = _pathCommandHistoryService.GetHistoryWithTimestamps(WorkingDirectory);
             CommandHistory.Clear();
-            foreach (var cmd in history)
+            foreach (var (cmd, _) in history.OrderByDescending(x => x.LastUsedAt))
             {
                 CommandHistory.Add(cmd);
             }

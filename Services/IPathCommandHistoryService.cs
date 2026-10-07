@@ -23,6 +23,11 @@ public interface IPathCommandHistoryService
     IReadOnlyList<string> GetHistory(string? path);
 
     /// <summary>
+    /// Gets the list of commands for the specified path paired with their last used UTC timestamps.
+    /// </summary>
+    IReadOnlyList<(string Command, DateTime LastUsedAt)> GetHistoryWithTimestamps(string? path);
+
+    /// <summary>
     /// Gets all unique commands recorded across all tracked directory paths in reverse chronological (MRU) order.
     /// </summary>
     IReadOnlyList<string> GetAllCommands();
