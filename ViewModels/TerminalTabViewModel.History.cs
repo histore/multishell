@@ -31,6 +31,19 @@ public partial class TerminalTabViewModel
     public event Action<TerminalTabViewModel>? HistoryChanged;
 
     /// <summary>
+    /// Event triggered when the active history search box should be focused and its content selected.
+    /// </summary>
+    public event Action? FocusAndSelectHistorySearchRequested;
+
+    /// <summary>
+    /// Requests focusing and selecting all text in the active history search box.
+    /// </summary>
+    public void RequestFocusAndSelectHistorySearch()
+    {
+        FocusAndSelectHistorySearchRequested?.Invoke();
+    }
+
+    /// <summary>
     /// Live history of commands executed in this tab.
     /// </summary>
     public ObservableCollection<string> CommandHistory { get; } = new();

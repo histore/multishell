@@ -64,6 +64,40 @@ public partial class HistoryDrawerView : UserControl
         WireFilterSelectionSync(CommandHistorySearchBox, CommandHistoryListBox);
         WireFilterSelectionSync(DirectoryHistorySearchBox, DirectoryHistoryListBox);
         WireFilterSelectionSync(GlobalHistorySearchBox, GlobalHistoryListBox);
+        DataContextChanged += (_, _) => ResubscribeTabEvents();
+    }
+
+    private TerminalTabViewModel? _subscribedTab;
+
+    private void ResubscribeTabEvents()
+    {
+        if (_subscribedTab != null)
+        {
+            _subscribedTab.FocusAndSelectHistorySearchRequested -= OnFocusAndSelectHistorySearchRequested;
+            _subscribedTab = null;
+        }
+
+        if (DataContext is MainViewModel vm)
+        {
+            vm.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainViewModel.SelectedTab))
+                {
+                    ResubscribeTabEvents();
+                }
+            };
+
+            if (vm.SelectedTab != null)
+            {
+                _subscribedTab = vm.SelectedTab;
+                _subscribedTab.FocusAndSelectHistorySearchRequested += OnFocusAndSelectHistorySearchRequested;
+            }
+        }
+    }
+
+    private void OnFocusAndSelectHistorySearchRequested()
+    {
+        FocusActiveHistoryList();
     }
 
     private void WireClearFilterButton(Button? button, Action<TerminalTabViewModel> clearAction)
@@ -157,7 +191,14 @@ public partial class HistoryDrawerView : UserControl
     {
         if (HistoryDrawerGrid == null) return;
         HistoryDrawerGrid.IsVisible = true;
-        FocusActiveHistoryList();
+        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+        {
+            vm.SelectedTab.RequestFocusAndSelectHistorySearch();
+        }
+        else
+        {
+            FocusActiveHistoryList();
+        }
     }
 
     public void HideHistoryDrawer()
