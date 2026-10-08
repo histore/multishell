@@ -68,8 +68,34 @@ public partial class HistoryDrawerView : UserControl
     }
 
     private TerminalTabViewModel? _subscribedTab;
+    private MainViewModel? _subscribedMainViewModel;
+
+    private void OnMainViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(MainViewModel.SelectedTab))
+        {
+            SubscribeToSelectedTab();
+        }
+    }
 
     private void ResubscribeTabEvents()
+    {
+        if (_subscribedMainViewModel != null)
+        {
+            _subscribedMainViewModel.PropertyChanged -= OnMainViewModelPropertyChanged;
+            _subscribedMainViewModel = null;
+        }
+
+        if (DataContext is MainViewModel vm)
+        {
+            _subscribedMainViewModel = vm;
+            vm.PropertyChanged += OnMainViewModelPropertyChanged;
+        }
+
+        SubscribeToSelectedTab();
+    }
+
+    private void SubscribeToSelectedTab()
     {
         if (_subscribedTab != null)
         {
@@ -77,21 +103,10 @@ public partial class HistoryDrawerView : UserControl
             _subscribedTab = null;
         }
 
-        if (DataContext is MainViewModel vm)
+        if (DataContext is MainViewModel { SelectedTab: { } selectedTab })
         {
-            vm.PropertyChanged += (_, args) =>
-            {
-                if (args.PropertyName == nameof(MainViewModel.SelectedTab))
-                {
-                    ResubscribeTabEvents();
-                }
-            };
-
-            if (vm.SelectedTab != null)
-            {
-                _subscribedTab = vm.SelectedTab;
-                _subscribedTab.FocusAndSelectHistorySearchRequested += OnFocusAndSelectHistorySearchRequested;
-            }
+            _subscribedTab = selectedTab;
+            selectedTab.FocusAndSelectHistorySearchRequested += OnFocusAndSelectHistorySearchRequested;
         }
     }
 

@@ -76,6 +76,42 @@ public class HistoryDrawerUiHeadlessTests
     }
 
     [Fact]
+    public async Task HistoryDrawerView_WhenSwitchingTabsRepeatedly_DoesNotAccumulatePropertyChangedHandlers()
+    {
+        await HeadlessTestSession.DispatchAsync(async () =>
+        {
+            // Arrange
+            var processService = new MockShellProcessService();
+            var persistenceService = new MockTabStatePersistenceService();
+            using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+            await mainVm.InitializeWorkspaceAsync();
+            mainVm.AddNewTab();
+
+            var view = new HistoryDrawerView { DataContext = mainVm };
+            var baseline = CountPropertyChangedHandlers(mainVm);
+
+            // Act
+            for (var i = 0; i < 10; i++)
+            {
+                mainVm.SelectedTab = mainVm.Tabs[i % 2];
+            }
+
+            // Assert
+            Assert.Equal(baseline, CountPropertyChangedHandlers(mainVm));
+            GC.KeepAlive(view);
+        });
+    }
+
+    private static int CountPropertyChangedHandlers(MainViewModel vm)
+    {
+        var field = typeof(CommunityToolkit.Mvvm.ComponentModel.ObservableObject)
+            .GetField("PropertyChanged", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(field);
+        var handler = (System.ComponentModel.PropertyChangedEventHandler?)field.GetValue(vm);
+        return handler?.GetInvocationList().Length ?? 0;
+    }
+
+    [Fact]
     public async Task HistoryDrawerView_WhenArrowKeyNavigates_ClearsSearchBoxSelection()
     {
         await HeadlessTestSession.DispatchAsync(async () =>
