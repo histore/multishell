@@ -298,4 +298,46 @@ public partial class TerminalTabView : UserControl
             // Gracefully ignore reflection access
         }
     }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+
+        if (_currentVm != null)
+        {
+            if (_propChangedHandler != null)
+            {
+                _currentVm.PropertyChanged -= _propChangedHandler;
+                _propChangedHandler = null;
+            }
+            _currentVm.FocusSearchBoxRequested -= OnFocusSearchBoxRequested;
+            _currentVm.FocusTerminalRequested -= OnFocusTerminalRequested;
+            _currentVm = null;
+        }
+
+        // Detach Model so TerminalControl unhooks RefreshFromModel from TerminalControlModel.UpdateUI
+        Terminal.Model = null;
+
+        // Clear native glyph layout cache on TerminalControl
+        try
+        {
+            var clearCacheMethod = typeof(TerminalControl).GetMethod("ClearFormattedTextCache", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (clearCacheMethod != null)
+            {
+                clearCacheMethod.Invoke(Terminal, null);
+            }
+            else
+            {
+                var cacheField = typeof(TerminalControl).GetField("_formattedTextCache", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (cacheField?.GetValue(Terminal) is IDictionary cache)
+                {
+                    cache.Clear();
+                }
+            }
+        }
+        catch
+        {
+            // Best effort cleanup
+        }
+    }
 }

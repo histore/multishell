@@ -1731,6 +1731,26 @@ public class MainViewModelTabTests
         Assert.Null(exception);
         Assert.Equal(initialTitle, vm.WindowTitle);
     }
+
+    [Fact]
+    public void CloseTab_DisposesViewModelAndDetachesModelUpdateUI()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        using var vm = new MainViewModel(processService, new FakeTabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService());
+        vm.AddNewTab(); // PS 1 and PS 2
+        var tab2 = vm.Tabs[1];
+        tab2.TerminalModel.UpdateUI = () => { };
+
+        // Act
+        vm.CloseTab(tab2);
+
+        // Assert
+        Assert.Single(vm.Tabs);
+        Assert.DoesNotContain(tab2, vm.Tabs);
+        Assert.Null(tab2.TerminalModel.UpdateUI);
+        Assert.Empty(tab2.CommandHistory);
+    }
 }
 
 

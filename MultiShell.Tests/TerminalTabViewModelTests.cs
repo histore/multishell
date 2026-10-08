@@ -1780,6 +1780,58 @@ public class TerminalTabViewModelTests
         Assert.True(index2 >= 0 && index1 >= 0);
         Assert.True(index2 < index1, "Most recently visited directory should rank before older directory with identical score in directory search.");
     }
+
+    [Fact]
+    public void Dispose_CleansUpTerminalModelUpdateUI_AndClearsHistoryCollections()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        var vm = new TerminalTabViewModel(session);
+        vm.TerminalModel.UpdateUI = () => { };
+        session.SimulateCommandExecuted("dir");
+        session.SimulateDirectoryChange(@"C:\projekte\app");
+
+        Assert.NotEmpty(vm.CommandHistory);
+        Assert.NotEmpty(vm.DirectoryHistory);
+        Assert.NotNull(vm.TerminalModel.UpdateUI);
+
+        // Act
+        vm.Dispose();
+
+        // Assert
+        Assert.Null(vm.TerminalModel.UpdateUI);
+        Assert.Empty(vm.CommandHistory);
+        Assert.Empty(vm.DirectoryHistory);
+        Assert.Empty(vm.GlobalHistory);
+    }
+
+    [Fact]
+    public void FlushPendingUiFeed_TrimsBufferCapacity_WhenExceedingLimit()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+
+        var largeChunk = new string('A', 70000);
+        var bufferField = typeof(TerminalTabViewModel).GetField("_pendingUiFeedBuffer", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(bufferField);
+        var sb = (StringBuilder)bufferField.GetValue(vm)!;
+
+        // Simulate incoming chunk in the buffer
+        lock (sb)
+        {
+            sb.Append(largeChunk);
+        }
+
+        Assert.True(sb.Capacity > 65536);
+
+        // Act
+        vm.FlushPendingUiFeed();
+
+        // Assert
+        Assert.Equal(0, sb.Length);
+        Assert.True(sb.Capacity <= 4096, "Buffer capacity should be trimmed down to 4096 to prevent memory retention.");
+    }
 }
 
 

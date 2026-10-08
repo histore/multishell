@@ -453,4 +453,28 @@ public partial class TerminalTabViewModel
         _session.Send(bytes);
         FocusTerminalRequested?.Invoke();
     }
+
+    /// <summary>
+    /// Clears all history collections to release memory upon tab disposal.
+    /// </summary>
+    internal void ClearHistory()
+    {
+        lock (_commandHistoryLock)
+        {
+            CommandHistory.Clear();
+            FilteredCommandHistory.Clear();
+        }
+
+        lock (_directoryHistoryLock)
+        {
+            DirectoryHistory.Clear();
+            FilteredDirectoryHistory.Clear();
+        }
+
+        lock (_globalHistoryLock)
+        {
+            GlobalHistory.Clear();
+            FilteredGlobalHistory.Clear();
+        }
+    }
 }

@@ -376,6 +376,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
         TerminalModel.UserInput -= OnTerminalUserInput;
         TerminalModel.SizeChanged -= OnTerminalSizeChanged;
+        TerminalModel.UpdateUI = null;
         if (_terminalModelPropertyChangedHandler != null)
         {
             TerminalModel.PropertyChanged -= _terminalModelPropertyChangedHandler;
@@ -390,9 +391,12 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
         _session.Dispose();
 
+        ClearHistory();
+
         lock (_pendingUiFeedLock)
         {
             _pendingUiFeedBuffer.Clear();
+            _pendingUiFeedBuffer.Capacity = 0;
             _isUiFeedScheduled = false;
         }
     }

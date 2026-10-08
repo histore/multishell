@@ -81,7 +81,7 @@ public partial class TerminalTabViewModel
         }
         else
         {
-            // Coalesce rapid PTY chunks onto the UI thread at Render priority to eliminate intermediate blank frames and flicker (REQ-TERM-011)
+            // Coalesce rapid PTY chunks onto the UI thread at Normal priority so background tabs process output reliably without starving (REQ-TERM-011)
             lock (_pendingUiFeedLock)
             {
                 if (_isDisposed) return;
@@ -89,7 +89,7 @@ public partial class TerminalTabViewModel
                 if (!_isUiFeedScheduled)
                 {
                     _isUiFeedScheduled = true;
-                    Avalonia.Threading.Dispatcher.UIThread.Post(FlushPendingUiFeed, Avalonia.Threading.DispatcherPriority.Render);
+                    Avalonia.Threading.Dispatcher.UIThread.Post(FlushPendingUiFeed, Avalonia.Threading.DispatcherPriority.Normal);
                 }
             }
         }
@@ -109,6 +109,12 @@ public partial class TerminalTabViewModel
             if (_isDisposed || _pendingUiFeedBuffer.Length == 0) return;
             batchText = _pendingUiFeedBuffer.ToString();
             _pendingUiFeedBuffer.Clear();
+
+            // Prevent StringBuilder from holding huge memory capacity permanently after massive output bursts
+            if (_pendingUiFeedBuffer.Capacity > 65536)
+            {
+                _pendingUiFeedBuffer.Capacity = 4096;
+            }
         }
 
         if (!_isDisposed)
