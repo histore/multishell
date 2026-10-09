@@ -302,6 +302,15 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     public void RequestClose() => CloseRequested?.Invoke(this);
 
     /// <summary>
+    /// Opens the platform-specific native file browser in this tab's current working directory.
+    /// </summary>
+    [RelayCommand]
+    public void OpenInFileBrowser()
+    {
+        FileBrowserHelper.OpenInFileBrowser(WorkingDirectory);
+    }
+
+    /// <summary>
     /// Scrolls the terminal scrollback buffer up by one page (REQ-TERM-003).
     /// </summary>
     public void PageUp()

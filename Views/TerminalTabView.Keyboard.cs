@@ -131,8 +131,8 @@ public partial class TerminalTabView
             return;
         }
 
-        // Prevent Ctrl+Shift+O, Ctrl+Shift+E, and Ctrl+Shift+P from leaking VT sequences to shell
-        if (isCtrl && isShift && (e.Key is Key.O or Key.E or Key.P))
+        // Prevent Ctrl+Shift+O, Ctrl+Shift+B, Ctrl+Shift+E, and Ctrl+Shift+P from leaking VT sequences to shell
+        if (isCtrl && isShift && (e.Key is Key.O or Key.B or Key.E or Key.P))
         {
             e.Handled = true;
             return;

@@ -291,4 +291,23 @@ public class LocalizationServiceTests
         Assert.Contains("H", service["Help_Feature_1"]);
         Assert.Contains("L", service["Help_Feature_1"]);
     }
+
+    [Theory]
+    [InlineData("de")]
+    [InlineData("en")]
+    [InlineData("fr")]
+    [InlineData("es")]
+    [InlineData("it")]
+    [InlineData("pt")]
+    public void LocalizationService_FileBrowserKeys_ExistInAllLanguages(string lang)
+    {
+        // Arrange
+        var service = new LocalizationService(lang);
+
+        // Act & Assert
+        Assert.False(string.IsNullOrWhiteSpace(service["Help_Open_Explorer"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["Menu_Tab_OpenInExplorer"]));
+        Assert.Contains("B", service["Help_Pick_Folder"]);
+        Assert.Contains("E", service["Help_Open_Explorer"]);
+    }
 }
