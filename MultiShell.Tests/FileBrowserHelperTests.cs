@@ -68,4 +68,34 @@ public class FileBrowserHelperTests
             }
         }
     }
+
+    [Fact]
+    public void ResolveTargetPath_WhenDirectoryHasTrailingSeparator_TrimsTrailingSeparator()
+    {
+        // Arrange
+        var tempDir = Path.GetTempPath(); // usually ends with slash on Windows
+        var dirWithoutTrailing = Path.TrimEndingDirectorySeparator(tempDir);
+        var dirWithTrailing = dirWithoutTrailing + Path.DirectorySeparatorChar;
+
+        // Act
+        var resolved = FileBrowserHelper.ResolveTargetPath(dirWithTrailing);
+
+        // Assert
+        Assert.NotNull(resolved);
+        Assert.Equal(dirWithoutTrailing, resolved);
+    }
+
+    [Fact]
+    public void ResolveTargetPath_WhenRootDirectoryProvided_PreservesRootDirectory()
+    {
+        // Arrange
+        var root = Path.GetPathRoot(Environment.CurrentDirectory)!;
+
+        // Act
+        var resolved = FileBrowserHelper.ResolveTargetPath(root);
+
+        // Assert
+        Assert.NotNull(resolved);
+        Assert.Equal(root, resolved);
+    }
 }
