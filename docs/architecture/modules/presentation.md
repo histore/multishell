@@ -11,7 +11,8 @@ Models/
 
 Services/
 ├── IPathColorCodingService.cs         # Path color stripe computation contract (REQ-TAB-025)
-└── PathColorCodingService.cs          # Deterministic folder color coding with Padovan scaling
+├── PathColorCodingService.cs          # Deterministic folder color coding with Padovan scaling
+└── FileBrowserHelper.cs               # Platform-native file manager launcher (Windows Explorer, Finder, xdg-open)
 
 ViewModels/
 ├── ViewModelBase.cs                   # Base ObservableObject
@@ -34,7 +35,7 @@ Views/
 ├── MainWindow.axaml.cs                # Window lifecycle & backdrop setup
 ├── MainWindow.Tabs.cs                 # Tab drag-and-drop & header interaction
 ├── MainWindow.TabDropAndRename.cs     # Drag-and-drop navigation & inline tab renaming
-├── MainWindow.Keyboard.cs             # Global keyboard shortcut routing
+├── MainWindow.Keyboard.cs             # Global keyboard shortcut routing (Ctrl+Shift+E/B/O, Ctrl+Shift+F1/F2/F3/F4, Drawer)
 ├── MainWindow.HistoryDrawer.cs        # History drawer slide-out animation & events
 ├── TerminalTabView.axaml              # Embedded terminal view control
 ├── TerminalTabView.axaml.cs           # Palette mapping, base lifecycle & scrollbars
@@ -81,6 +82,7 @@ Backs an individual terminal tab instance and is structured into 4 clean partial
   * Tracks shell lifecycle: process exit, working directory updates, active title updates.
   * Zero-allocation ANSI stream processing via `AnsiStreamProcessor` and batched UI thread flushing (`FlushPendingUiFeed`).
   * Scrolling commands (`PageUp`, `PageDown`, `SendPageUp`, `SendPageDown`, `ClearBuffer`) and keyboard state (`IsAltGrActive`).
+  * `OpenInFileBrowserCommand`: Launches the platform-native file browser (`FileBrowserHelper`) for the tab's current `WorkingDirectory` with user profile fallback.
 * **`TerminalTabViewModel.History.cs`**:
   * Injected with `IPathCommandHistoryService` and `IDirectoryHistoryService`.
   * Binds `CommandHistory` dynamically to the tab's current `WorkingDirectory`.

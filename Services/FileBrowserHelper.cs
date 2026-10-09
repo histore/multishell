@@ -27,17 +27,16 @@ public static class FileBrowserHelper
                 return false;
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            // 1. Direct directory opening via platform-native shell execution
+            if (Directory.Exists(targetPath))
             {
-                return OpenWindows(targetPath);
+                return OpenDirectory(targetPath);
             }
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+
+            // 2. File reveal inside its parent folder
+            if (File.Exists(targetPath))
             {
-                return OpenMac(targetPath);
-            }
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                return OpenLinux(targetPath);
+                return RevealFile(targetPath);
             }
 
             return false;
@@ -50,7 +49,7 @@ public static class FileBrowserHelper
 
     /// <summary>
     /// Resolves the target path candidate to a verified absolute directory or file path,
-    /// falling back to user profile or current directory if the candidate does not exist.
+    /// normalizing trailing separators and falling back to user profile or current directory.
     /// </summary>
     public static string? ResolveTargetPath(string? path)
     {
@@ -61,7 +60,8 @@ public static class FileBrowserHelper
                 var full = Path.GetFullPath(path);
                 if (Directory.Exists(full) || File.Exists(full))
                 {
-                    return full;
+                    // Platform-independently trims redundant trailing separators while preserving root drives (e.g. C:\ or /)
+                    return Path.TrimEndingDirectorySeparator(full);
                 }
             }
             catch
@@ -73,50 +73,77 @@ public static class FileBrowserHelper
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (!string.IsNullOrWhiteSpace(userProfile) && Directory.Exists(userProfile))
         {
-            return userProfile;
+            return Path.TrimEndingDirectorySeparator(userProfile);
         }
 
-        return Directory.GetCurrentDirectory();
+        return Path.TrimEndingDirectorySeparator(Directory.GetCurrentDirectory());
     }
 
-    private static bool OpenWindows(string path)
+    private static bool OpenDirectory(string directoryPath)
     {
-        var psi = new ProcessStartInfo
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            FileName = "explorer.exe",
-            Arguments = File.Exists(path) ? $"/select,\"{path}\"" : $"\"{path}\"",
-            UseShellExecute = false
-        };
-        Process.Start(psi);
-        return true;
-    }
-
-    private static bool OpenMac(string path)
-    {
-        var psi = new ProcessStartInfo
+            // Windows ShellExecuteEx natively handles directories without CLI quote-escaping pitfalls
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = directoryPath,
+                UseShellExecute = true
+            });
+            return true;
+        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            FileName = "open",
-            Arguments = File.Exists(path) ? $"-R \"{path}\"" : $"\"{path}\"",
-            UseShellExecute = false
-        };
-        Process.Start(psi);
-        return true;
-    }
-
-    private static bool OpenLinux(string path)
-    {
-        var targetDir = File.Exists(path) ? Path.GetDirectoryName(path) : path;
-        if (string.IsNullOrWhiteSpace(targetDir))
+            var psi = new ProcessStartInfo
+            {
+                FileName = "open",
+                UseShellExecute = false
+            };
+            psi.ArgumentList.Add(directoryPath);
+            Process.Start(psi);
+            return true;
+        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            targetDir = path;
+            var psi = new ProcessStartInfo
+            {
+                FileName = "xdg-open",
+                UseShellExecute = false
+            };
+            psi.ArgumentList.Add(directoryPath);
+            Process.Start(psi);
+            return true;
         }
 
-        var psi = new ProcessStartInfo
+        return false;
+    }
+
+    private static bool RevealFile(string filePath)
+    {
+        var psi = new ProcessStartInfo { UseShellExecute = false };
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            FileName = "xdg-open",
-            Arguments = $"\"{targetDir}\"",
-            UseShellExecute = false
-        };
+            psi.FileName = "explorer.exe";
+            // ArgumentList automatically applies Win32 escaping rules
+            psi.ArgumentList.Add($"/select,{filePath}");
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            psi.FileName = "open";
+            psi.ArgumentList.Add("-R");
+            psi.ArgumentList.Add(filePath);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            psi.FileName = "xdg-open";
+            var parentDir = Path.GetDirectoryName(filePath) ?? filePath;
+            psi.ArgumentList.Add(parentDir);
+        }
+        else
+        {
+            return false;
+        }
+
         Process.Start(psi);
         return true;
     }
