@@ -144,6 +144,9 @@
                                                               InputGesture="Ctrl+Shift+D"
                                                               Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).DuplicateTabCommand}"
                                                               CommandParameter="{Binding}" />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_OpenInExplorer]}"
+                                                              InputGesture="Ctrl+Shift+E"
+                                                              Command="{Binding OpenInFileBrowserCommand}" />
                                                     <Separator />
                                                     <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_Close]}"
                                                               InputGesture="Ctrl+Shift+W"

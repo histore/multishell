@@ -84,9 +84,15 @@ public partial class MainWindow
                 e.Handled = true;
                 return;
             }
-            if (e.Key == Key.E)
+            if (e.Key == Key.B)
             {
                 _ = PickAndInsertFolderAsync();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.E)
+            {
+                OpenActiveTabInFileBrowser();
                 e.Handled = true;
                 return;
             }
@@ -420,6 +426,14 @@ public partial class MainWindow
         finally
         {
             FocusActiveTerminal();
+        }
+    }
+
+    private void OpenActiveTabInFileBrowser()
+    {
+        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+        {
+            vm.SelectedTab.OpenInFileBrowser();
         }
     }
 }
