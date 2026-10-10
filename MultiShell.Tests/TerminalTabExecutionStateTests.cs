@@ -81,7 +81,7 @@ public class TerminalTabExecutionStateTests
         Assert.False(tab.IsProcessRunning);
         Assert.False(tab.HasProcessError);
         Assert.Equal("●", tab.ExecutionStatusGlyph);
-        Assert.Equal("Bereit", tab.ProcessActivityText);
+        Assert.Equal(tab.Loc["Process_Activity_Ready"], tab.ProcessActivityText);
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public class TerminalTabExecutionStateTests
         Assert.True(tab.IsOutputActive);
         Assert.Equal(1.0, tab.OutputActivityOpacity);
         Assert.Equal("●", tab.ExecutionStatusGlyph);
-        Assert.Equal("Aktiv", tab.ProcessActivityText);
+        Assert.Equal(tab.Loc["Process_Activity_Active"], tab.ProcessActivityText);
 
         // Simulate 1.5s silence cooldown: transition from working/outputting to waiting for input
         tab.SimulateActivityCooldownTick();
@@ -190,7 +190,7 @@ public class TerminalTabExecutionStateTests
         Assert.False(tab.IsOutputActive);
         Assert.Equal(0.65, tab.OutputActivityOpacity);
         Assert.Equal("○", tab.ExecutionStatusGlyph);
-        Assert.Equal("Wartet auf Eingabe", tab.ProcessActivityText);
+        Assert.Equal(tab.Loc["Process_Activity_Waiting"], tab.ProcessActivityText);
 
         // App produces output again (e.g. streaming LLM tokens)
         tab.PulseOutputActivity();
@@ -198,7 +198,7 @@ public class TerminalTabExecutionStateTests
         Assert.True(tab.IsOutputActive);
         Assert.Equal(1.0, tab.OutputActivityOpacity);
         Assert.Equal("●", tab.ExecutionStatusGlyph);
-        Assert.Equal("Aktiv", tab.ProcessActivityText);
+        Assert.Equal(tab.Loc["Process_Activity_Active"], tab.ProcessActivityText);
 
         // Command completes -> HUD hides, status shows success or failure
         session.SimulateCommandCompleted(0);
