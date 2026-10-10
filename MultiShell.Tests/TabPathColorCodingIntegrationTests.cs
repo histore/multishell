@@ -183,6 +183,7 @@ public class TabPathColorCodingIntegrationTests
         public event Action<int>? Exited;
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted;
+        public event Action<int>? CommandCompleted;
 #pragma warning restore CS0067
 
         public MockShellSession(string title, string? workingDirectory = null)

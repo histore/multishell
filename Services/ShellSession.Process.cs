@@ -132,6 +132,8 @@ public sealed partial class ShellSession
                     $loc = $ExecutionContext.SessionState.Path.CurrentLocation.Path
                     $last = (Get-History -Count 1).CommandLine
                     if ($last -and ($last.Trim() -notmatch '^(chcp(\s|$)|\[Console\]::|\$OutputEncoding|\$function:prompt|Set-PSReadLineOption|__multishell_)')) {
+                        $lastExit = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { if ($?) { 0 } else { 1 } }
+                        [Console]::Write([char]27 + ']133;D;' + $lastExit + [char]7)
                         $b = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($last))
                         [Console]::Write([char]27 + ']133;E;' + $b + [char]7)
                     }

@@ -336,7 +336,7 @@ This document defines the functional and non-functional requirements specific to
 
 ### `[REQ-TERM-012]` Long-Running Process Completion Desktop & Tab Notifications
 
-- **Status**: `BACKLOG`
+- **Status**: `IMPLEMENTED`
 - **Type**: `Functional`
 - **Target Release**: `v1.2.0`
 
@@ -346,12 +346,14 @@ This document defines the functional and non-functional requirements specific to
 > **so that** I am immediately alerted without constantly switching windows or staring at the terminal.
 
 #### Acceptance Criteria (Given-When-Then)
-- [ ] **AC-1**: **Given** a command runs longer than a configurable threshold (default: 10 seconds), **When** the process finishes while MultiShell or that tab is inactive, **Then** a native Windows toast notification displays the command name, duration, and exit status code.
-- [ ] **AC-2**: **When** the tab is in the background within the active window, **Then** a visual completion indicator (badge/accent glow) highlights on the tab header until selected.
-- [ ] **AC-3**: **When** clicking the desktop notification, **Then** MultiShell brings itself to the foreground and focuses the notifying tab.
+- [x] **AC-1**: **Given** a command runs longer than a configurable threshold (default: 10 seconds), **When** the process finishes while MultiShell or that tab is inactive, **Then** a native Windows toast notification displays the command name, duration, and exit status code.
+- [x] **AC-2**: **When** the tab is in the background within the active window, **Then** a visual completion indicator (badge/accent glow) highlights on the tab header until selected.
+- [x] **AC-3**: **When** clicking the desktop notification, **Then** MultiShell brings itself to the foreground and focuses the notifying tab.
+- [x] **AC-4**: **When** an interactive command or background process (e.g. AGY, REPL, build tool) is executing, **Then** terminal output activity is tracked: actively streaming output displays an active indicator (`●` / `Aktiv`) on the tab badge and floating terminal HUD, transitioning after 1.5 seconds of output silence to a calm waiting state (`○` / `Wartet auf Eingabe`).
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/terminal-session.md`
+- **Test Suite**: `MultiShell.Tests/TerminalTabExecutionStateTests.cs`
 
 ---
 
@@ -394,5 +396,5 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-TERM-011` | Smooth Terminal Rendering & Overlay Scrollbar Anti-Flicker | Performance | IMPLEMENTED | `v0.1.0` |
 | `REQ-CLI-001` | Startup Arguments & Single-Instance Tab Activation | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-TERM-007` | Broadcast / Multi-Input Mode across Tabs / Panes | Functional | BACKLOG | `v1.1.0` |
-| `REQ-TERM-012` | Long-Running Process Completion Desktop & Tab Notifications | Functional | BACKLOG | `v1.2.0` |
+| `REQ-TERM-012` | Long-Running Process Completion Desktop & Tab Notifications | Functional | IMPLEMENTED | `v1.2.0` |
 | `REQ-TERM-013` | Terminal Scrollback Buffer Export & Continuous Session Logging | Functional | BACKLOG | `v1.2.0` |

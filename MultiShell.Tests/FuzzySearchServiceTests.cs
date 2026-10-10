@@ -21,6 +21,7 @@ public class FuzzySearchServiceTests
         public event Action<int>? Exited { add { } remove { } }
         public event Action<string>? WorkingDirectoryChanged { add { } remove { } }
         public event Action<string>? CommandExecuted { add { } remove { } }
+        public event Action<int>? CommandCompleted { add { } remove { } }
 
         public void Start() { }
         public void Send(byte[] input) { }

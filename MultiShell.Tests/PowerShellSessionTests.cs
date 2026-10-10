@@ -142,5 +142,26 @@ public class PowerShellSessionTests
         Assert.Equal("dotnet test", executed[0]);
         Assert.Equal("dotnet test", executed[1]);
     }
+
+    [Theory]
+    [InlineData(0, "\x1b]133;D;0\x07")]
+    [InlineData(1, "\x1b]133;D;1\x07")]
+    [InlineData(127, "\x1b]133;D;127\x1b\\")]
+    [InlineData(-1, "\x1b]133;D;-1\x07")]
+    public void CheckForOscSequences_FiresCommandCompleted_WithExitCode(int expectedExitCode, string oscPacket)
+    {
+        using var session = new ShellSession("OscExitTest");
+        var exitCodes = new System.Collections.Generic.List<int>();
+        session.CommandCompleted += code => exitCodes.Add(code);
+
+        var method = typeof(ShellSession).GetMethod("CheckForOscSequences", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(method);
+
+        var packet = Encoding.UTF8.GetBytes(oscPacket);
+        method.Invoke(session, new object[] { packet });
+
+        Assert.Single(exitCodes);
+        Assert.Equal(expectedExitCode, exitCodes[0]);
+    }
 }
 

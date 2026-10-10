@@ -176,6 +176,29 @@ public partial class LocalizationService
         ["Color_Cyan"] = "Cian",
         ["Color_Blue"] = "Azul",
         ["Color_Purple"] = "Morado",
-        ["Color_Pink"] = "Rosa"
+        ["Color_Pink"] = "Rosa",
+
+        // Process Execution & Completion Status (REQ-TERM-012)
+        ["Process_Status_Active_Tooltip"] = "El comando se está ejecutando / emitiendo datos...",
+        ["Process_Status_Waiting_Tooltip"] = "El comando está esperando entrada...",
+        ["Process_Activity_Active"] = "Activo",
+        ["Process_Activity_Waiting"] = "Esperando entrada",
+        ["Process_Activity_Ready"] = "Listo",
+        ["Process_Activity_Success"] = "Correcto",
+        ["Process_Activity_Failed"] = "Fallido",
+        ["Process_Status_Running_Tooltip"] = "El comando se está ejecutando...",
+        ["Process_Status_Failed_Tooltip"] = "El comando finalizó con error (código de salida: {0}, duración: {1:0.1}s)",
+        ["Process_Status_Success_Tooltip"] = "El comando finalizó correctamente (duración: {0:0.1}s)",
+        ["Process_Notification_Title_Success"] = "MultiShell - Comando completado",
+        ["Process_Notification_Title_Failed"] = "MultiShell - Comando fallido",
+
+        // Keyboard Status Bar Indicators
+        ["Status_CapsLock_Tooltip"] = "Bloqueo de mayúsculas activado (Caps Lock)",
+
+        // Status Bar Path Breadcrumbs (REQ-TERM-013)
+        ["Status_Breadcrumb_Navigate_Tooltip"] = "Cambiar al directorio: {0}",
+        ["Status_Breadcrumb_Insert_Tooltip"] = "Insertar ruta: {0}",
+        ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Seleccionar carpeta y cambiar...",
+        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Seleccionar carpeta e insertar ruta..."
     };
 }

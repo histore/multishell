@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -38,6 +39,27 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     [NotifyPropertyChangedFor(nameof(DisplayTitle))]
     [NotifyPropertyChangedFor(nameof(TabTooltip))]
     private string? _workingDirectory;
+
+    partial void OnWorkingDirectoryChanged(string? oldValue, string? newValue)
+    {
+        UpdateBreadcrumbs();
+    }
+
+    [ObservableProperty]
+    private bool _hasDraftCommand;
+
+    partial void OnHasDraftCommandChanged(bool oldValue, bool newValue)
+    {
+        UpdateBreadcrumbs();
+    }
+
+    [ObservableProperty]
+    private IReadOnlyList<PathBreadcrumbSegment> _pathBreadcrumbs = Array.Empty<PathBreadcrumbSegment>();
+
+    /// <summary>
+    /// Delegate invoked by the UI layer to show a folder picker dialog and return the selected directory path.
+    /// </summary>
+    public Func<string?, Task<string?>>? RequestFolderPickerAsync { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasPathColorStripes))]
@@ -208,12 +230,15 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         _session.Exited += OnSessionExited;
         _session.WorkingDirectoryChanged += OnSessionWorkingDirectoryChanged;
         _session.CommandExecuted += OnSessionCommandExecuted;
+        _session.CommandCompleted += OnSessionCommandCompleted;
 
         // Wire terminal user input -> PTY stdin
         TerminalModel.UserInput += OnTerminalUserInput;
 
         // Wire terminal resize -> PTY resize
         TerminalModel.SizeChanged += OnTerminalSizeChanged;
+
+        UpdateBreadcrumbs();
     }
 
     /// <summary>
@@ -284,6 +309,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         void HandleExit()
         {
             OnPropertyChanged(nameof(IsRunning));
+            if (exitCode != 0)
+            {
+                ExecutionState = ProcessExecutionState.Failed;
+                LastExitCode = exitCode;
+            }
             TerminalModel.Feed($"\r\n[Process exited with code {exitCode}]\r\n");
             CloseRequested?.Invoke(this);
         }
@@ -369,6 +399,84 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     private void OnLocalizationPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         UpdateSearchMatchSummary();
+        OnPropertyChanged(nameof(ExecutionStatusTooltip));
+        OnPropertyChanged(nameof(ProcessActivityText));
+        UpdateBreadcrumbs();
+    }
+
+    /// <summary>
+    /// Regenerates path breadcrumb segments with localized tooltips based on current draft command state.
+    /// </summary>
+    public void UpdateBreadcrumbs()
+    {
+        var rawSegments = PathBreadcrumbParser.Parse(WorkingDirectory);
+        if (rawSegments.Count == 0)
+        {
+            PathBreadcrumbs = Array.Empty<PathBreadcrumbSegment>();
+            return;
+        }
+
+        var localizedSegments = new List<PathBreadcrumbSegment>(rawSegments.Count);
+        foreach (var s in rawSegments)
+        {
+            string tooltip = s.IsCurrent
+                ? (HasDraftCommand
+                    ? Loc["Status_Breadcrumb_PickAndInsert_Tooltip"]
+                    : Loc["Status_Breadcrumb_PickAndNavigate_Tooltip"])
+                : (HasDraftCommand
+                    ? string.Format(Loc["Status_Breadcrumb_Insert_Tooltip"], s.FullPath)
+                    : string.Format(Loc["Status_Breadcrumb_Navigate_Tooltip"], s.FullPath));
+
+            localizedSegments.Add(new PathBreadcrumbSegment(s.Name, s.FullPath, s.IsCurrent, tooltip));
+        }
+
+        PathBreadcrumbs = localizedSegments;
+    }
+
+    /// <summary>
+    /// Handles user interaction when clicking a path breadcrumb in the status bar (REQ-TERM-013).
+    /// - Parent directory (!IsCurrent):
+    ///     - Without draft command: Navigates to the parent directory.
+    ///     - With draft command: Appends the parent directory path to the active prompt.
+    /// - Current directory (IsCurrent):
+    ///     - Prompts folder selection dialog (RequestFolderPickerAsync).
+    ///     - If chosen, without draft command: Navigates to the selected directory.
+    ///     - If chosen, with draft command: Appends the selected directory path to the active prompt.
+    /// </summary>
+    [RelayCommand]
+    public async Task HandleBreadcrumbClickAsync(PathBreadcrumbSegment? segment)
+    {
+        if (segment == null) return;
+
+        if (segment.IsCurrent)
+        {
+            if (RequestFolderPickerAsync != null)
+            {
+                var selectedFolder = await RequestFolderPickerAsync(segment.FullPath);
+                if (!string.IsNullOrWhiteSpace(selectedFolder))
+                {
+                    if (HasDraftCommand)
+                    {
+                        InsertPath(selectedFolder);
+                    }
+                    else
+                    {
+                        NavigateToDirectory(selectedFolder);
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (HasDraftCommand)
+            {
+                InsertPath(segment.FullPath);
+            }
+            else
+            {
+                NavigateToDirectory(segment.FullPath);
+            }
+        }
     }
 
     public void Dispose()
@@ -381,6 +489,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         _session.Exited -= OnSessionExited;
         _session.WorkingDirectoryChanged -= OnSessionWorkingDirectoryChanged;
         _session.CommandExecuted -= OnSessionCommandExecuted;
+        _session.CommandCompleted -= OnSessionCommandCompleted;
         _pathCommandHistoryService.HistoryChangedForPath -= OnPathHistoryChanged;
         _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
         TerminalModel.UserInput -= OnTerminalUserInput;
@@ -391,6 +500,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             TerminalModel.PropertyChanged -= _terminalModelPropertyChangedHandler;
         }
 
+        RequestFolderPickerAsync = null;
         CloseRequested = null;
         DirectoryChanged = null;
         HistoryChanged = null;

@@ -360,6 +360,7 @@ public partial class TerminalTabViewModel
 
         var clean = command.Trim();
         var bytes = Encoding.UTF8.GetBytes(clean);
+        TrackInputBuffer(bytes);
         _session.Send(bytes);
     }
 
@@ -373,6 +374,7 @@ public partial class TerminalTabViewModel
         {
             ShellType.CMD => $"cd /d {escapedPath}\r",
             ShellType.WSL => $"cd {escapedPath}\n",
+            ShellType.NuShell => $"cd {escapedPath}\r",
             _ => $"Set-Location -LiteralPath {escapedPath}\r"
         };
 
@@ -398,9 +400,11 @@ public partial class TerminalTabViewModel
         {
             ShellType.CMD => $"cd /d {escapedPath}",
             ShellType.WSL => $"cd {escapedPath}",
+            ShellType.NuShell => $"cd {escapedPath}",
             _ => $"Set-Location -LiteralPath {escapedPath}"
         };
         var bytes = Encoding.UTF8.GetBytes(command);
+        TrackInputBuffer(bytes);
         _session.Send(bytes);
     }
 
@@ -450,6 +454,7 @@ public partial class TerminalTabViewModel
             : clean;
 
         var bytes = Encoding.UTF8.GetBytes(formatted);
+        TrackInputBuffer(bytes);
         _session.Send(bytes);
         FocusTerminalRequested?.Invoke();
     }

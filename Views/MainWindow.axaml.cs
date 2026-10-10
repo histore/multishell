@@ -30,6 +30,34 @@ public partial class MainWindow : Window
             TabsItemsControl.AddHandler(InputElement.LostFocusEvent, OnTabsLostFocus, RoutingStrategies.Bubble | RoutingStrategies.Tunnel);
         }
 
+        Activated += (_, _) =>
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.IsWindowInactive = false;
+                vm.UpdateCapsLockState();
+            }
+        };
+        Deactivated += (_, _) =>
+        {
+            if (DataContext is MainViewModel vm) vm.IsWindowInactive = true;
+        };
+
+        AddHandler(InputElement.KeyDownEvent, (_, e) =>
+        {
+            if (e.Key == Key.CapsLock && DataContext is MainViewModel vm)
+            {
+                vm.UpdateCapsLockState();
+            }
+        }, RoutingStrategies.Tunnel);
+        AddHandler(InputElement.KeyUpEvent, (_, e) =>
+        {
+            if (e.Key == Key.CapsLock && DataContext is MainViewModel vm)
+            {
+                vm.UpdateCapsLockState();
+            }
+        }, RoutingStrategies.Tunnel);
+
         if (TabBarContainer != null)
         {
             TabBarContainer.AddHandler(InputElement.PointerWheelChangedEvent, OnTabsPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
@@ -164,6 +192,7 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainViewModel vm)
             {
+                vm.FolderPickerHandler = ShowFolderPickerForBreadcrumbAsync;
                 AttachTabRenameListeners(vm);
                 vm.PropertyChanged += (_, args) =>
                 {
@@ -353,6 +382,51 @@ public partial class MainWindow : Window
                 vm.EditingWorkingDirectory = path;
             }
         }
+    }
+
+    private async Task<string?> ShowFolderPickerForBreadcrumbAsync(string? initialDirectory)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider == null) return null;
+
+        var options = new FolderPickerOpenOptions
+        {
+            AllowMultiple = false,
+            Title = (DataContext as MainViewModel)?.Loc["Dialog_SelectFolder_Title"] ?? "Ordner auswählen"
+        };
+
+        var startDir = !string.IsNullOrWhiteSpace(initialDirectory) && System.IO.Directory.Exists(initialDirectory)
+            ? initialDirectory
+            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        if (!string.IsNullOrWhiteSpace(startDir) && System.IO.Directory.Exists(startDir))
+        {
+            try
+            {
+                var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(startDir);
+                if (folder != null)
+                {
+                    options.SuggestedStartLocation = folder;
+                }
+            }
+            catch { }
+        }
+
+        try
+        {
+            var results = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
+            if (results.Count > 0)
+            {
+                return results[0].TryGetLocalPath();
+            }
+        }
+        catch { }
+        finally
+        {
+            FocusActiveTerminal();
+        }
+
+        return null;
     }
 
     /// <summary>

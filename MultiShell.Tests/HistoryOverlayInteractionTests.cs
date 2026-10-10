@@ -24,6 +24,7 @@ public class HistoryOverlayInteractionTests
         public event Action<int>? Exited { add { } remove { } }
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted;
+        public event Action<int>? CommandCompleted { add { } remove { } }
 
         public void Start() { }
         public void Send(byte[] input) => SentInputs.Add(input);
