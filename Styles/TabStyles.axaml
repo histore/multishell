@@ -217,10 +217,31 @@
         <Setter Property="FontFamily" Value="Segoe UI, Inter, sans-serif" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
-    <Style Selector="Button.toolbarActionBtn:pointerover">
+    <!-- Status Bar Path Breadcrumb Buttons (REQ-TERM-013) -->
+    <Style Selector="Button.statusBreadcrumbBtn">
+        <Setter Property="Height" Value="18" />
+        <Setter Property="MinHeight" Value="18" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="4,1" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.statusBreadcrumbBtn:pointerover">
         <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
-        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource AppAccent}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}" />
+    </Style>
+    <Style Selector="Button.statusBreadcrumbBtn.current">
+        <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.statusBreadcrumbBtn.current:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppAccentHover}" />
     </Style>
 
 </Styles>

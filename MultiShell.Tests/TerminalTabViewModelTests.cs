@@ -27,6 +27,9 @@ public class TerminalTabViewModelTests
         public event Action<int>? Exited;
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted;
+        public event Action<int>? CommandCompleted;
+
+        public void SimulateCommandCompleted(int exitCode) => CommandCompleted?.Invoke(exitCode);
 
         public MockPowerShellSession(string title, string? workingDirectory = null)
         {

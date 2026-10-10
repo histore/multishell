@@ -54,6 +54,11 @@ public interface IShellSession : IDisposable
     event Action<string>? CommandExecuted;
 
     /// <summary>
+    /// Triggered when a command execution completes with an exit status code (e.g. via OSC 133;D shell integration).
+    /// </summary>
+    event Action<int>? CommandCompleted;
+
+    /// <summary>
     /// Starts the underlying shell session.
     /// </summary>
     void Start();

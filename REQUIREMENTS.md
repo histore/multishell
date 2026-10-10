@@ -231,7 +231,7 @@ docs/requirements/modules/
 | `REQ-LNC-001` | Launcher Search & Item Filtering | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
 | `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
 | `REQ-TAB-026` | Detachable Window Undocking & Redocking for Multi-Monitor Workflows | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
-| `REQ-TERM-012` | Long-Running Process Completion Desktop & Tab Notifications | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `BACKLOG` |
+| `REQ-TERM-012` | Long-Running Process Completion Desktop & Tab Notifications | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
 | `REQ-TERM-013` | Terminal Scrollback Buffer Export & Continuous Session Logging | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `BACKLOG` |
 | `REQ-PROF-002` | SSH Config Auto-Discovery & Remote Profile Management | [`docs/requirements/modules/profiles-and-configuration.md`](docs/requirements/modules/profiles-and-configuration.md) | `BACKLOG` |
 | `REQ-PROF-003` | Custom Profile Environment Variables, Shell Arguments & Icons | [`docs/requirements/modules/profiles-and-configuration.md`](docs/requirements/modules/profiles-and-configuration.md) | `BACKLOG` |

@@ -176,6 +176,29 @@ public partial class LocalizationService
         ["Color_Cyan"] = "Cyan",
         ["Color_Blue"] = "Blue",
         ["Color_Purple"] = "Purple",
-        ["Color_Pink"] = "Pink"
+        ["Color_Pink"] = "Pink",
+
+        // Process Execution & Completion Status (REQ-TERM-012)
+        ["Process_Status_Active_Tooltip"] = "Command is running / producing output...",
+        ["Process_Status_Waiting_Tooltip"] = "Command is waiting for input...",
+        ["Process_Activity_Active"] = "Active",
+        ["Process_Activity_Waiting"] = "Waiting for input",
+        ["Process_Activity_Ready"] = "Ready",
+        ["Process_Activity_Success"] = "Success",
+        ["Process_Activity_Failed"] = "Failed",
+        ["Process_Status_Running_Tooltip"] = "Command is running...",
+        ["Process_Status_Failed_Tooltip"] = "Command failed (Exit code: {0}, Duration: {1:0.1}s)",
+        ["Process_Status_Success_Tooltip"] = "Command completed successfully (Duration: {0:0.1}s)",
+        ["Process_Notification_Title_Success"] = "MultiShell - Command Completed",
+        ["Process_Notification_Title_Failed"] = "MultiShell - Command Failed",
+
+        // Keyboard Status Bar Indicators
+        ["Status_CapsLock_Tooltip"] = "Caps Lock is active",
+
+        // Status Bar Path Breadcrumbs (REQ-TERM-013)
+        ["Status_Breadcrumb_Navigate_Tooltip"] = "Switch to directory: {0}",
+        ["Status_Breadcrumb_Insert_Tooltip"] = "Insert path: {0}",
+        ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Select folder and switch to it...",
+        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Select folder and insert path..."
     };
 }

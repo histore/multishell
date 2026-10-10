@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MultiShell.Models;
 using MultiShell.Services;
@@ -22,11 +23,46 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly IPathCommandHistoryService _pathCommandHistoryService;
     private readonly IDirectoryHistoryService _directoryHistoryService;
     private readonly IPathColorCodingService _pathColorCodingService;
+    private readonly IToastNotificationService _toastNotificationService;
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
     private bool _isApplyingLoadedTabs;
     private readonly string? _initialDirectory;
+
+    /// <summary>
+    /// Gets or sets whether the application window is currently inactive (unfocused) in the OS.
+    /// </summary>
+    public bool IsWindowInactive { get; set; }
+
+    [ObservableProperty]
+    private bool _isCapsLockActive;
+
+    /// <summary>
+    /// Queries the native operating system keyboard state and updates the Caps Lock indicator.
+    /// </summary>
+    public void UpdateCapsLockState()
+    {
+        IsCapsLockActive = KeyboardStateHelper.QueryCapsLockState();
+    }
+
+    private Func<string?, Task<string?>>? _folderPickerHandler;
+
+    /// <summary>
+    /// Gets or sets the UI folder picker handler used by terminal status bar breadcrumbs (REQ-TERM-013).
+    /// </summary>
+    public Func<string?, Task<string?>>? FolderPickerHandler
+    {
+        get => _folderPickerHandler;
+        set
+        {
+            _folderPickerHandler = value;
+            foreach (var tab in Tabs)
+            {
+                tab.RequestFolderPickerAsync = value;
+            }
+        }
+    }
 
     /// <summary>
     /// Gets the shared directory history service.
@@ -159,6 +195,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IPathCommandHistoryService? pathCommandHistoryService = null,
         IDirectoryHistoryService? directoryHistoryService = null,
         IPathColorCodingService? pathColorCodingService = null,
+        IToastNotificationService? toastNotificationService = null,
         string? initialDirectory = null)
     {
         _initialDirectory = initialDirectory;
@@ -173,6 +210,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
         _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
         _pathColorCodingService = pathColorCodingService ?? new PathColorCodingService();
+        _toastNotificationService = toastNotificationService ?? new WindowsToastNotificationService();
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;
@@ -180,6 +218,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _terminalFontSizeLevel = _fontSizeService.TerminalFontSizeLevel;
         _appFontScale = _fontSizeService.AppFontScale;
         _terminalFontSize = _fontSizeService.TerminalFontSize;
+        UpdateCapsLockState();
 
         Tabs.CollectionChanged += (s, e) =>
         {

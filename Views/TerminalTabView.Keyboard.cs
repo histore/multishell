@@ -21,6 +21,15 @@ public partial class TerminalTabView
         var isAltGr = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Alt);
         if (DataContext is not TerminalTabViewModel vm) return;
 
+        if (e.Key == Key.CapsLock)
+        {
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel?.DataContext is MainViewModel mainVm)
+            {
+                mainVm.UpdateCapsLockState();
+            }
+        }
+
         vm.IsAltGrActive = isAltGr;
 
         if (isAltGr)
@@ -282,6 +291,15 @@ public partial class TerminalTabView
         if (DataContext is TerminalTabViewModel vm)
         {
             vm.IsAltGrActive = isAltGr;
+        }
+
+        if (e.Key == Key.CapsLock)
+        {
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel?.DataContext is MainViewModel mainVm)
+            {
+                mainVm.UpdateCapsLockState();
+            }
         }
 
         if (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin)

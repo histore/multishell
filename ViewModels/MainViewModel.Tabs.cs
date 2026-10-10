@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MultiShell.Models;
@@ -353,6 +354,8 @@ public partial class MainViewModel
         tab.DirectoryChanged += OnTabDirectoryChanged;
         tab.HistoryChanged += OnTabHistoryChanged;
         tab.PropertyChanged += OnTabPropertyChanged;
+        tab.CommandExecutionCompleted += OnTabCommandExecutionCompleted;
+        tab.RequestFolderPickerAsync = FolderPickerHandler;
         tab.UpdateTheme(IsDarkTerminalTheme);
         tab.UpdateFontSize(_fontSizeService.TerminalFontSize);
     }
@@ -363,6 +366,44 @@ public partial class MainViewModel
         tab.DirectoryChanged -= OnTabDirectoryChanged;
         tab.HistoryChanged -= OnTabHistoryChanged;
         tab.PropertyChanged -= OnTabPropertyChanged;
+        tab.CommandExecutionCompleted -= OnTabCommandExecutionCompleted;
+        tab.RequestFolderPickerAsync = null;
+    }
+
+    /// <summary>
+    /// Handles user interaction on a status bar path breadcrumb (REQ-TERM-013).
+    /// </summary>
+    [RelayCommand]
+    public async Task HandleBreadcrumbClickAsync(PathBreadcrumbSegment? segment)
+    {
+        if (SelectedTab != null && segment != null)
+        {
+            await SelectedTab.HandleBreadcrumbClickAsync(segment);
+        }
+    }
+
+    private void OnTabCommandExecutionCompleted(TerminalTabViewModel tab, CommandExecutionResult result)
+    {
+        // Only notify if tab is in the background or window is inactive (REQ-TERM-012)
+        if (tab != SelectedTab || IsWindowInactive)
+        {
+            _toastNotificationService.ShowProcessCompletionNotification(
+                tab.DisplayTitle,
+                result.Command,
+                result.Duration,
+                result.ExitCode,
+                onActivated: () =>
+                {
+                    if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+                    {
+                        SelectedTab = tab;
+                    }
+                    else
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() => SelectedTab = tab);
+                    }
+                });
+        }
     }
 
     private void OnTabPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

@@ -176,6 +176,29 @@ public partial class LocalizationService
         ["Color_Cyan"] = "Ciano",
         ["Color_Blue"] = "Blu",
         ["Color_Purple"] = "Viola",
-        ["Color_Pink"] = "Rosa"
+        ["Color_Pink"] = "Rosa",
+
+        // Process Execution & Completion Status (REQ-TERM-012)
+        ["Process_Status_Active_Tooltip"] = "Il comando è in esecuzione / sta emettendo dati...",
+        ["Process_Status_Waiting_Tooltip"] = "Il comando è in attesa di input...",
+        ["Process_Activity_Active"] = "Attivo",
+        ["Process_Activity_Waiting"] = "In attesa di input",
+        ["Process_Activity_Ready"] = "Pronto",
+        ["Process_Activity_Success"] = "Completato",
+        ["Process_Activity_Failed"] = "Non riuscito",
+        ["Process_Status_Running_Tooltip"] = "Il comando è in esecuzione...",
+        ["Process_Status_Failed_Tooltip"] = "Il comando è terminato con errore (codice di uscita: {0}, durata: {1:0.1}s)",
+        ["Process_Status_Success_Tooltip"] = "Il comando è stato completato con successo (durata: {0:0.1}s)",
+        ["Process_Notification_Title_Success"] = "MultiShell - Comando completato",
+        ["Process_Notification_Title_Failed"] = "MultiShell - Comando non riuscito",
+
+        // Keyboard Status Bar Indicators
+        ["Status_CapsLock_Tooltip"] = "Blocco maiuscole attivo (Caps Lock)",
+
+        // Status Bar Path Breadcrumbs (REQ-TERM-013)
+        ["Status_Breadcrumb_Navigate_Tooltip"] = "Passa alla directory: {0}",
+        ["Status_Breadcrumb_Insert_Tooltip"] = "Inserisci percorso: {0}",
+        ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Seleziona cartella e passa...",
+        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Seleziona cartella e inserisci percorso..."
     };
 }

@@ -180,6 +180,29 @@ public partial class LocalizationService
         ["Color_Cyan"] = "Cyan",
         ["Color_Blue"] = "Bleu",
         ["Color_Purple"] = "Violet",
-        ["Color_Pink"] = "Rose"
+        ["Color_Pink"] = "Rose",
+
+        // Process Execution & Completion Status (REQ-TERM-012)
+        ["Process_Status_Active_Tooltip"] = "La commande s'exécute / émet des données...",
+        ["Process_Status_Waiting_Tooltip"] = "La commande est en attente d'une saisie...",
+        ["Process_Activity_Active"] = "Actif",
+        ["Process_Activity_Waiting"] = "En attente de saisie",
+        ["Process_Activity_Ready"] = "Prêt",
+        ["Process_Activity_Success"] = "Succès",
+        ["Process_Activity_Failed"] = "Échoué",
+        ["Process_Status_Running_Tooltip"] = "La commande s'exécute...",
+        ["Process_Status_Failed_Tooltip"] = "La commande a échoué (code de sortie: {0}, durée: {1:0.1}s)",
+        ["Process_Status_Success_Tooltip"] = "La commande s'est terminée avec succès (durée: {0:0.1}s)",
+        ["Process_Notification_Title_Success"] = "MultiShell - Commande terminée",
+        ["Process_Notification_Title_Failed"] = "MultiShell - Commande échouée",
+
+        // Keyboard Status Bar Indicators
+        ["Status_CapsLock_Tooltip"] = "Verrouillage des majuscules activé (Caps Lock)",
+
+        // Status Bar Path Breadcrumbs (REQ-TERM-013)
+        ["Status_Breadcrumb_Navigate_Tooltip"] = "Changer vers le répertoire : {0}",
+        ["Status_Breadcrumb_Insert_Tooltip"] = "Insérer le chemin : {0}",
+        ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Sélectionner un dossier et naviguer...",
+        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Sélectionner un dossier et insérer le chemin..."
     };
 }

@@ -28,6 +28,9 @@ public class MainViewModelTabTests
         public event Action<int>? Exited;
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted;
+        public event Action<int>? CommandCompleted;
+
+        public void TriggerCommandCompleted(int code) => CommandCompleted?.Invoke(code);
 
         public List<byte[]> SentInputs { get; } = new();
 

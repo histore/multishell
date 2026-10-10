@@ -57,6 +57,8 @@ public partial class TerminalTabViewModel
     {
         if (_isDisposed || data.Length == 0) return;
 
+        PulseOutputActivity();
+
         string? textToFeed = _ansiStreamProcessor.ProcessChunk(
             data,
             onOscColorResponse: response =>
@@ -176,6 +178,7 @@ public partial class TerminalTabViewModel
 
                     if (!string.IsNullOrWhiteSpace(executedCommand))
                     {
+                        MarkCommandStarted(executedCommand);
                         _pendingCommandDirectory = WorkingDirectory;
                         if (ShellType != ShellType.PowerShell)
                         {
@@ -217,6 +220,44 @@ public partial class TerminalTabViewModel
                 }
             }
         }
+
+        UpdateDraftCommandState();
+    }
+
+    /// <summary>
+    /// Synchronizes the HasDraftCommand property with the current content of the terminal input line buffer.
+    /// </summary>
+    internal void UpdateDraftCommandState()
+    {
+        bool hasDraft;
+        lock (_inputLineBuffer)
+        {
+            hasDraft = _inputLineBuffer.Length > 0;
+        }
+
+        if (HasDraftCommand != hasDraft)
+        {
+            if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+            {
+                HasDraftCommand = hasDraft;
+            }
+            else
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => HasDraftCommand = hasDraft);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears the input line buffer and updates draft command state.
+    /// </summary>
+    internal void ClearInputLineBuffer()
+    {
+        lock (_inputLineBuffer)
+        {
+            _inputLineBuffer.Clear();
+        }
+        UpdateDraftCommandState();
     }
 
     private void OnTerminalSizeChanged(object? sender, TerminalSizeChangedEventArgs e)

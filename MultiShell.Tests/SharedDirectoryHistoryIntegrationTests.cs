@@ -23,6 +23,7 @@ public class SharedDirectoryHistoryIntegrationTests
         public event Action<int>? Exited { add { } remove { } }
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted { add { } remove { } }
+        public event Action<int>? CommandCompleted { add { } remove { } }
 
         public TestPowerShellSession(string title, string? workingDirectory = null)
         {

@@ -180,6 +180,29 @@ public partial class LocalizationService
         ["Color_Cyan"] = "Cyan",
         ["Color_Blue"] = "Blau",
         ["Color_Purple"] = "Lila",
-        ["Color_Pink"] = "Rosa"
+        ["Color_Pink"] = "Rosa",
+
+        // Process Execution & Completion Status (REQ-TERM-012)
+        ["Process_Status_Active_Tooltip"] = "Befehl wird ausgeführt / gibt Daten aus...",
+        ["Process_Status_Waiting_Tooltip"] = "Befehl wartet auf Eingabe...",
+        ["Process_Activity_Active"] = "Aktiv",
+        ["Process_Activity_Waiting"] = "Wartet auf Eingabe",
+        ["Process_Activity_Ready"] = "Bereit",
+        ["Process_Activity_Success"] = "Erfolgreich",
+        ["Process_Activity_Failed"] = "Fehlgeschlagen",
+        ["Process_Status_Running_Tooltip"] = "Befehl wird ausgeführt...",
+        ["Process_Status_Failed_Tooltip"] = "Befehl mit Fehler beendet (Exit-Code: {0}, Dauer: {1:0.1}s)",
+        ["Process_Status_Success_Tooltip"] = "Befehl erfolgreich abgeschlossen (Dauer: {0:0.1}s)",
+        ["Process_Notification_Title_Success"] = "MultiShell - Befehl abgeschlossen",
+        ["Process_Notification_Title_Failed"] = "MultiShell - Befehl fehlgeschlagen",
+
+        // Keyboard Status Bar Indicators
+        ["Status_CapsLock_Tooltip"] = "Feststelltaste aktiviert (Caps Lock)",
+
+        // Status Bar Path Breadcrumbs (REQ-TERM-013)
+        ["Status_Breadcrumb_Navigate_Tooltip"] = "Zum Ordner wechseln: {0}",
+        ["Status_Breadcrumb_Insert_Tooltip"] = "Pfad einfügen: {0}",
+        ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Ordner auswählen und dorthin wechseln...",
+        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Ordner auswählen und Pfad einfügen..."
     };
 }

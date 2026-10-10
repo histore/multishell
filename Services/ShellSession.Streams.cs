@@ -11,6 +11,7 @@ public sealed partial class ShellSession
     private static readonly Regex Osc9Regex = new(@"\x1b\]9;9;""?([^""\x1b\x07]+)""?(\x1b\\|\x07)", RegexOptions.Compiled);
     private static readonly Regex Osc7Regex = new(@"\x1b\]7;file://[^/\x1b\x07]*/?([^\x1b\x07]+)(\x1b\\|\x07)", RegexOptions.Compiled);
     private static readonly Regex Osc133ERegex = new(@"\x1b\]133;E;([A-Za-z0-9+/=]+)\x07|\x1b\]133;E;([A-Za-z0-9+/=]+)\x1b\\", RegexOptions.Compiled);
+    private static readonly Regex Osc133DRegex = new(@"\x1b\]133;D;(-?\d+)\x07|\x1b\]133;D;(-?\d+)\x1b\\", RegexOptions.Compiled);
 
     private readonly StringBuilder _oscBuffer = new();
     private readonly Decoder _oscDecoder = Encoding.UTF8.GetDecoder();
@@ -67,6 +68,12 @@ public sealed partial class ShellSession
     {
         int lastProcessedIndex = -1;
 
+        foreach (Match match in Osc133DRegex.Matches(currentBuffer))
+        {
+            TryHandleOsc133DMatch(match);
+            lastProcessedIndex = Math.Max(lastProcessedIndex, match.Index + match.Length);
+        }
+
         foreach (Match match in Osc133ERegex.Matches(currentBuffer))
         {
             TryHandleOsc133EMatch(match);
@@ -88,6 +95,15 @@ public sealed partial class ShellSession
         }
 
         return lastProcessedIndex;
+    }
+
+    private void TryHandleOsc133DMatch(Match match)
+    {
+        string rawCode = (match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).Trim();
+        if (int.TryParse(rawCode, out int exitCode))
+        {
+            CommandCompleted?.Invoke(exitCode);
+        }
     }
 
     private void TryHandleOsc133EMatch(Match match)
