@@ -188,9 +188,10 @@ public class TerminalTabExecutionStateTests
         Assert.True(tab.IsProcessRunning);
         Assert.True(tab.IsProcessHudVisible);
         Assert.False(tab.IsOutputActive);
-        Assert.Equal(0.65, tab.OutputActivityOpacity);
+        Assert.Equal(1.0, tab.OutputActivityOpacity);
         Assert.Equal("○", tab.ExecutionStatusGlyph);
         Assert.Equal(tab.Loc["Process_Activity_Waiting"], tab.ProcessActivityText);
+        Assert.Same(TerminalTabViewModel.RunningWaitingDarkBrush, tab.ExecutionStatusForeground);
 
         // App produces output again (e.g. streaming LLM tokens)
         tab.PulseOutputActivity();
@@ -199,6 +200,7 @@ public class TerminalTabExecutionStateTests
         Assert.Equal(1.0, tab.OutputActivityOpacity);
         Assert.Equal("●", tab.ExecutionStatusGlyph);
         Assert.Equal(tab.Loc["Process_Activity_Active"], tab.ProcessActivityText);
+        Assert.Same(TerminalTabViewModel.RunningActiveDarkBrush, tab.ExecutionStatusForeground);
 
         // Command completes -> HUD hides, status shows success or failure
         session.SimulateCommandCompleted(0);
@@ -331,5 +333,25 @@ public class TerminalTabExecutionStateTests
         mainVm.UpdateCapsLockState();
         // Verifies the property is a valid boolean
         Assert.True(mainVm.IsCapsLockActive || !mainVm.IsCapsLockActive);
+    }
+
+    [Fact]
+    public void ExecutionStatusForeground_WhenWaitingForInput_UsesThemeAwareOrangeColor()
+    {
+        var session = new MockPowerShellSession("Tab1");
+        using var tab = new TerminalTabViewModel(session);
+
+        tab.MarkCommandStarted("dotnet watch");
+        tab.SimulateActivityCooldownTick();
+
+        // Dark theme: vibrant orange #FF9E64
+        tab.UpdateTheme(true);
+        Assert.Same(TerminalTabViewModel.RunningWaitingDarkBrush, tab.ExecutionStatusForeground);
+        Assert.Equal(Avalonia.Media.Color.Parse("#FF9E64"), ((Avalonia.Media.ISolidColorBrush)tab.ExecutionStatusForeground).Color);
+
+        // Light theme: high-contrast orange #E65100
+        tab.UpdateTheme(false);
+        Assert.Same(TerminalTabViewModel.RunningWaitingLightBrush, tab.ExecutionStatusForeground);
+        Assert.Equal(Avalonia.Media.Color.Parse("#E65100"), ((Avalonia.Media.ISolidColorBrush)tab.ExecutionStatusForeground).Color);
     }
 }

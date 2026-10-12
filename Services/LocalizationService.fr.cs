@@ -203,6 +203,7 @@ public partial class LocalizationService
         ["Status_Breadcrumb_Navigate_Tooltip"] = "Changer vers le répertoire : {0}",
         ["Status_Breadcrumb_Insert_Tooltip"] = "Insérer le chemin : {0}",
         ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Sélectionner un dossier et naviguer...",
-        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Sélectionner un dossier et insérer le chemin..."
+        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Sélectionner un dossier et insérer le chemin...",
+        ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navigation indisponible pendant l'exécution d'un processus"
     };
 }

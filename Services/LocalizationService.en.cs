@@ -199,6 +199,7 @@ public partial class LocalizationService
         ["Status_Breadcrumb_Navigate_Tooltip"] = "Switch to directory: {0}",
         ["Status_Breadcrumb_Insert_Tooltip"] = "Insert path: {0}",
         ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Select folder and switch to it...",
-        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Select folder and insert path..."
+        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Select folder and insert path...",
+        ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navigation not available while a process is running"
     };
 }

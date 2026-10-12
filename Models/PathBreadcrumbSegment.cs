@@ -7,8 +7,10 @@ namespace MultiShell.Models;
 /// <param name="FullPath">The cumulative full path up to and including this segment.</param>
 /// <param name="IsCurrent">Whether this segment represents the leaf / current active directory.</param>
 /// <param name="Tooltip">The dynamic contextual tooltip depending on command draft state and current segment status.</param>
+/// <param name="IsEnabled">Whether the breadcrumb segment is currently interactive (disabled when process is running for non-leaf segments).</param>
 public sealed record PathBreadcrumbSegment(
     string Name,
     string FullPath,
     bool IsCurrent,
-    string Tooltip = "");
+    string Tooltip = "",
+    bool IsEnabled = true);

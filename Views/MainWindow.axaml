@@ -1001,9 +1001,11 @@
                                     <StackPanel Orientation="Horizontal" Spacing="1" VerticalAlignment="Center">
                                         <Button Classes="statusBreadcrumbBtn"
                                                 Classes.current="{Binding IsCurrent}"
+                                                IsEnabled="{Binding IsEnabled}"
                                                 Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).HandleBreadcrumbClickCommand}"
                                                 CommandParameter="{Binding}"
                                                 ToolTip.Tip="{Binding Tooltip}"
+                                                ToolTip.ShowOnDisabled="True"
                                                 ToolTip.ShowDelay="150">
                                             <StackPanel Orientation="Horizontal" Spacing="3">
                                                 <TextBlock Text="📁"

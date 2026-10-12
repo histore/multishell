@@ -287,4 +287,104 @@ public class StatusBreadcrumbNavigationTests
 
         Assert.Empty(session.SentStrings);
     }
+
+    [Fact]
+    public void UpdateBreadcrumbs_WhenProcessRunning_DisablesParentBreadcrumbsAndShowsProcessTooltip()
+    {
+        var loc = new LocalizationService();
+        loc.SetLanguage("de", isUserSelection: true);
+
+        var session = new MockShellSession("TestTab", @"C:\projekte\multishell");
+        var tabVm = new TerminalTabViewModel(session, localizationService: loc);
+
+        // Before process starts: all segments enabled
+        Assert.All(tabVm.PathBreadcrumbs, seg => Assert.True(seg.IsEnabled));
+
+        // Start command / process
+        tabVm.MarkCommandStarted("ping 127.0.0.1");
+        Assert.True(tabVm.IsProcessRunning);
+
+        // Verify parent segments are disabled with process running tooltip
+        var driveSeg = tabVm.PathBreadcrumbs[0]; // C:\
+        var parentSeg = tabVm.PathBreadcrumbs[1]; // C:\projekte
+        var currentSeg = tabVm.PathBreadcrumbs[2]; // multishell
+
+        Assert.False(driveSeg.IsEnabled);
+        Assert.Contains("Navigation während eines aktiven Prozesses nicht verfügbar", driveSeg.Tooltip);
+
+        Assert.False(parentSeg.IsEnabled);
+        Assert.Contains("Navigation während eines aktiven Prozesses nicht verfügbar", parentSeg.Tooltip);
+
+        // Current directory segment remains enabled with pick-and-insert tooltip
+        Assert.True(currentSeg.IsEnabled);
+        Assert.Contains("Ordner auswählen und Pfad einfügen...", currentSeg.Tooltip);
+    }
+
+    [Fact]
+    public async Task HandleBreadcrumbClick_WhenProcessRunning_ParentBreadcrumbDoesNotNavigateOrInsert()
+    {
+        var session = new MockShellSession("TestTab", @"C:\projekte\csharp\multishell");
+        var tabVm = new TerminalTabViewModel(session);
+
+        tabVm.MarkCommandStarted("npm run dev");
+        session.SentStrings.Clear();
+
+        var parentSeg = tabVm.PathBreadcrumbs[1]; // C:\projekte
+        Assert.False(parentSeg.IsEnabled);
+
+        await tabVm.HandleBreadcrumbClickAsync(parentSeg);
+
+        // Should not send anything to session (no cd, no path insertion)
+        Assert.Empty(session.SentStrings);
+    }
+
+    [Fact]
+    public async Task HandleBreadcrumbClick_WhenProcessRunning_CurrentFolderOpensPickerAndInsertsPathWithoutDraftCommand()
+    {
+        var session = new MockShellSession("TestTab", @"C:\projekte\multishell");
+        var tabVm = new TerminalTabViewModel(session);
+
+        // Process running, no draft command
+        tabVm.MarkCommandStarted("python train.py");
+        Assert.False(tabVm.HasDraftCommand);
+        session.SentStrings.Clear();
+
+        string? requestedStartDir = null;
+        tabVm.RequestFolderPickerAsync = dir =>
+        {
+            requestedStartDir = dir;
+            return Task.FromResult<string?>(@"C:\datasets\images");
+        };
+
+        var currentSeg = tabVm.PathBreadcrumbs[2];
+        Assert.True(currentSeg.IsEnabled);
+
+        await tabVm.HandleBreadcrumbClickAsync(currentSeg);
+
+        // Picker was opened at current folder
+        Assert.Equal(@"C:\projekte\multishell", requestedStartDir);
+
+        // Inserts target path into prompt/input without cd/Set-Location navigation command
+        Assert.DoesNotContain(session.SentStrings, s => s.Contains("Set-Location"));
+        Assert.Contains(session.SentStrings, s => s.Contains(@"C:\datasets\images"));
+    }
+
+    [Fact]
+    public void ExecutionStateChanged_UpdatesBreadcrumbStateDynamically()
+    {
+        var session = new MockShellSession("TestTab", @"C:\projekte\multishell");
+        var tabVm = new TerminalTabViewModel(session);
+
+        // Initial: Idle -> Parents enabled
+        Assert.True(tabVm.PathBreadcrumbs[1].IsEnabled);
+
+        // Running -> Parents disabled
+        tabVm.MarkCommandStarted("dotnet build");
+        Assert.False(tabVm.PathBreadcrumbs[1].IsEnabled);
+
+        // Completed -> Parents re-enabled
+        tabVm.OnSessionCommandCompleted(0);
+        Assert.True(tabVm.PathBreadcrumbs[1].IsEnabled);
+    }
 }
+

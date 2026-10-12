@@ -243,5 +243,9 @@
         <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
         <Setter Property="Foreground" Value="{DynamicResource AppAccentHover}" />
     </Style>
+    <Style Selector="Button.statusBreadcrumbBtn:disabled">
+        <Setter Property="Opacity" Value="0.4" />
+        <Setter Property="Cursor" Value="Arrow" />
+    </Style>
 
 </Styles>

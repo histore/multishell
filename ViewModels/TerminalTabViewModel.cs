@@ -133,6 +133,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     private static readonly IBrush LightTerminalCaret = new SolidColorBrush(Color.Parse("#2563EB"));
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ExecutionStatusForeground))]
     private bool _isDarkTerminalTheme = true;
 
     [ObservableProperty]
@@ -405,43 +406,73 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Regenerates path breadcrumb segments with localized tooltips based on current draft command state.
+    /// Regenerates path breadcrumb segments with localized tooltips and interactive state
+    /// based on current draft command state and process execution state (REQ-TERM-013).
     /// </summary>
     public void UpdateBreadcrumbs()
     {
-        var rawSegments = PathBreadcrumbParser.Parse(WorkingDirectory);
-        if (rawSegments.Count == 0)
+        void DoUpdate()
         {
-            PathBreadcrumbs = Array.Empty<PathBreadcrumbSegment>();
-            return;
+            var rawSegments = PathBreadcrumbParser.Parse(WorkingDirectory);
+            if (rawSegments.Count == 0)
+            {
+                PathBreadcrumbs = Array.Empty<PathBreadcrumbSegment>();
+                return;
+            }
+
+            var localizedSegments = new List<PathBreadcrumbSegment>(rawSegments.Count);
+            foreach (var s in rawSegments)
+            {
+                bool isEnabled = true;
+                string tooltip;
+
+                if (s.IsCurrent)
+                {
+                    tooltip = (IsProcessRunning || HasDraftCommand)
+                        ? Loc["Status_Breadcrumb_PickAndInsert_Tooltip"]
+                        : Loc["Status_Breadcrumb_PickAndNavigate_Tooltip"];
+                }
+                else
+                {
+                    if (IsProcessRunning)
+                    {
+                        isEnabled = false;
+                        tooltip = Loc["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"];
+                    }
+                    else
+                    {
+                        tooltip = HasDraftCommand
+                            ? string.Format(Loc["Status_Breadcrumb_Insert_Tooltip"], s.FullPath)
+                            : string.Format(Loc["Status_Breadcrumb_Navigate_Tooltip"], s.FullPath);
+                    }
+                }
+
+                localizedSegments.Add(new PathBreadcrumbSegment(s.Name, s.FullPath, s.IsCurrent, tooltip, isEnabled));
+            }
+
+            PathBreadcrumbs = localizedSegments;
         }
 
-        var localizedSegments = new List<PathBreadcrumbSegment>(rawSegments.Count);
-        foreach (var s in rawSegments)
+        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
         {
-            string tooltip = s.IsCurrent
-                ? (HasDraftCommand
-                    ? Loc["Status_Breadcrumb_PickAndInsert_Tooltip"]
-                    : Loc["Status_Breadcrumb_PickAndNavigate_Tooltip"])
-                : (HasDraftCommand
-                    ? string.Format(Loc["Status_Breadcrumb_Insert_Tooltip"], s.FullPath)
-                    : string.Format(Loc["Status_Breadcrumb_Navigate_Tooltip"], s.FullPath));
-
-            localizedSegments.Add(new PathBreadcrumbSegment(s.Name, s.FullPath, s.IsCurrent, tooltip));
+            DoUpdate();
         }
-
-        PathBreadcrumbs = localizedSegments;
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(DoUpdate);
+        }
     }
 
     /// <summary>
     /// Handles user interaction when clicking a path breadcrumb in the status bar (REQ-TERM-013).
     /// - Parent directory (!IsCurrent):
+    ///     - When process is running or disabled: Navigation is disabled / no-op.
     ///     - Without draft command: Navigates to the parent directory.
     ///     - With draft command: Appends the parent directory path to the active prompt.
     /// - Current directory (IsCurrent):
     ///     - Prompts folder selection dialog (RequestFolderPickerAsync).
-    ///     - If chosen, without draft command: Navigates to the selected directory.
-    ///     - If chosen, with draft command: Appends the selected directory path to the active prompt.
+    ///     - If chosen, when process is running or with draft command: Appends the selected directory path to the active prompt.
+    ///     - If chosen, without running process and without draft command: Navigates to the selected directory.
     /// </summary>
     [RelayCommand]
     public async Task HandleBreadcrumbClickAsync(PathBreadcrumbSegment? segment)
@@ -455,7 +486,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
                 var selectedFolder = await RequestFolderPickerAsync(segment.FullPath);
                 if (!string.IsNullOrWhiteSpace(selectedFolder))
                 {
-                    if (HasDraftCommand)
+                    if (IsProcessRunning || HasDraftCommand)
                     {
                         InsertPath(selectedFolder);
                     }
@@ -468,6 +499,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         }
         else
         {
+            if (IsProcessRunning || !segment.IsEnabled)
+            {
+                return;
+            }
+
             if (HasDraftCommand)
             {
                 InsertPath(segment.FullPath);

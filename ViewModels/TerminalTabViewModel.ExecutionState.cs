@@ -9,11 +9,13 @@ namespace MultiShell.ViewModels;
 
 public partial class TerminalTabViewModel
 {
-    private static readonly IBrush RunningActiveBrush = new SolidColorBrush(Color.Parse("#7DCFFF"));
-    private static readonly IBrush RunningWaitingBrush = new SolidColorBrush(Color.Parse("#757D96"));
-    private static readonly IBrush FailedStatusBrush = new SolidColorBrush(Color.Parse("#F7768E"));
-    private static readonly IBrush SuccessStatusBrush = new SolidColorBrush(Color.Parse("#9ECE6A"));
-    private static readonly IBrush IdleStatusBrush = new SolidColorBrush(Color.Parse("#757D96"));
+    public static readonly IBrush RunningActiveDarkBrush = new SolidColorBrush(Color.Parse("#7DCFFF"));
+    public static readonly IBrush RunningActiveLightBrush = new SolidColorBrush(Color.Parse("#0284C7"));
+    public static readonly IBrush RunningWaitingDarkBrush = new SolidColorBrush(Color.Parse("#FF9E64"));
+    public static readonly IBrush RunningWaitingLightBrush = new SolidColorBrush(Color.Parse("#E65100"));
+    public static readonly IBrush FailedStatusBrush = new SolidColorBrush(Color.Parse("#F7768E"));
+    public static readonly IBrush SuccessStatusBrush = new SolidColorBrush(Color.Parse("#9ECE6A"));
+    public static readonly IBrush IdleStatusBrush = new SolidColorBrush(Color.Parse("#757D96"));
 
     private long _commandStartTimestamp;
     private DispatcherTimer? _activityCooldownTimer;
@@ -34,6 +36,11 @@ public partial class TerminalTabViewModel
     [NotifyPropertyChangedFor(nameof(ProcessActivityText))]
     private ProcessExecutionState _executionState = ProcessExecutionState.Idle;
 
+    partial void OnExecutionStateChanged(ProcessExecutionState oldValue, ProcessExecutionState newValue)
+    {
+        UpdateBreadcrumbs();
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasProcessError))]
     [NotifyPropertyChangedFor(nameof(ExecutionStatusTooltip))]
@@ -51,7 +58,7 @@ public partial class TerminalTabViewModel
     private bool _isOutputActive;
 
     [ObservableProperty]
-    private double _outputActivityOpacity = 0.65;
+    private double _outputActivityOpacity = 1.0;
 
     [ObservableProperty]
     private string? _lastExecutedCommand;
@@ -90,10 +97,13 @@ public partial class TerminalTabViewModel
 
     /// <summary>
     /// Foreground brush for the status indicator badge and floating HUD pill.
+    /// When waiting for input, uses striking theme-aware orange (e.g. #FF9E64 in dark themes, #E65100 in light themes).
     /// </summary>
     public IBrush ExecutionStatusForeground => ExecutionState switch
     {
-        ProcessExecutionState.Running => IsOutputActive ? RunningActiveBrush : RunningWaitingBrush,
+        ProcessExecutionState.Running => IsOutputActive
+            ? (IsDarkTerminalTheme ? RunningActiveDarkBrush : RunningActiveLightBrush)
+            : (IsDarkTerminalTheme ? RunningWaitingDarkBrush : RunningWaitingLightBrush),
         ProcessExecutionState.Failed => FailedStatusBrush,
         ProcessExecutionState.Success => SuccessStatusBrush,
         _ => IdleStatusBrush
@@ -212,7 +222,7 @@ public partial class TerminalTabViewModel
                 _activityCooldownTimer.Stop();
                 if (ExecutionState == ProcessExecutionState.Running)
                 {
-                    OutputActivityOpacity = 0.65;
+                    OutputActivityOpacity = 1.0;
                     IsOutputActive = false;
                 }
             };
@@ -229,7 +239,7 @@ public partial class TerminalTabViewModel
     {
         if (ExecutionState == ProcessExecutionState.Running)
         {
-            OutputActivityOpacity = 0.65;
+            OutputActivityOpacity = 1.0;
             IsOutputActive = false;
         }
     }
@@ -243,7 +253,7 @@ public partial class TerminalTabViewModel
         _activityCooldownTimer?.Stop();
         ExecutionState = ProcessExecutionState.Idle;
         LastExitCode = null;
-        OutputActivityOpacity = 0.65;
+        OutputActivityOpacity = 1.0;
         IsOutputActive = false;
     }
 }

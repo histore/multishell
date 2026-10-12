@@ -203,6 +203,7 @@ public partial class LocalizationService
         ["Status_Breadcrumb_Navigate_Tooltip"] = "Zum Ordner wechseln: {0}",
         ["Status_Breadcrumb_Insert_Tooltip"] = "Pfad einfügen: {0}",
         ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Ordner auswählen und dorthin wechseln...",
-        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Ordner auswählen und Pfad einfügen..."
+        ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Ordner auswählen und Pfad einfügen...",
+        ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navigation während eines aktiven Prozesses nicht verfügbar"
     };
 }
