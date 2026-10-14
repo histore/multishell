@@ -163,5 +163,27 @@ public class PowerShellSessionTests
         Assert.Single(exitCodes);
         Assert.Equal(expectedExitCode, exitCodes[0]);
     }
+
+    [Fact]
+    public void GenerateShellCommandLine_PromptHook_PrioritizesCommandSuccessOverStaleLastExitCode()
+    {
+        using var session = new ShellSession("HookTestSession", shellType: ShellType.PowerShell);
+
+        var method = typeof(ShellSession).GetMethod("GenerateShellCommandLine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(method);
+
+        var cmdLine = (string?)method.Invoke(session, new object?[] { null });
+        Assert.NotNull(cmdLine);
+
+        var parts = cmdLine.Split(" -EncodedCommand ");
+        Assert.Equal(2, parts.Length);
+        var decodedScript = Encoding.Unicode.GetString(Convert.FromBase64String(parts[1]));
+
+        // Prompt must capture $? immediately before running any cmdlets
+        Assert.Contains("$success = $?", decodedScript);
+        Assert.Contains("$code = $LASTEXITCODE", decodedScript);
+        Assert.Contains("$lastExit = if ($success) { 0 } else { if ($code -ne $null -and $code -ne 0) { $code } else { 1 } }", decodedScript);
+        Assert.Contains("$global:__multishell_last_history_id = $h.Id", decodedScript);
+    }
 }
 

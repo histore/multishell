@@ -129,14 +129,20 @@ public sealed partial class ShellSession
                     }
                 }
                 $function:prompt = {
-                    $loc = $ExecutionContext.SessionState.Path.CurrentLocation.Path
-                    $last = (Get-History -Count 1).CommandLine
-                    if ($last -and ($last.Trim() -notmatch '^(chcp(\s|$)|\[Console\]::|\$OutputEncoding|\$function:prompt|Set-PSReadLineOption|__multishell_)')) {
-                        $lastExit = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { if ($?) { 0 } else { 1 } }
-                        [Console]::Write([char]27 + ']133;D;' + $lastExit + [char]7)
-                        $b = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($last))
-                        [Console]::Write([char]27 + ']133;E;' + $b + [char]7)
+                    $success = $?
+                    $code = $LASTEXITCODE
+                    $h = Get-History -Count 1
+                    if ($h -and $h.Id -ne $global:__multishell_last_history_id) {
+                        $global:__multishell_last_history_id = $h.Id
+                        $last = $h.CommandLine
+                        if ($last -and ($last.Trim() -notmatch '^(chcp(\s|$)|\[Console\]::|\$OutputEncoding|\$function:prompt|Set-PSReadLineOption|__multishell_)')) {
+                            $lastExit = if ($success) { 0 } else { if ($code -ne $null -and $code -ne 0) { $code } else { 1 } }
+                            [Console]::Write([char]27 + ']133;D;' + $lastExit + [char]7)
+                            $b = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($last))
+                            [Console]::Write([char]27 + ']133;E;' + $b + [char]7)
+                        }
                     }
+                    $loc = $ExecutionContext.SessionState.Path.CurrentLocation.Path
                     [Console]::Write([char]27 + ']9;9;"' + $loc + '"' + [char]7)
                     "PS $loc$('>' * ($nestedPromptLevel + 1)) "
                 }

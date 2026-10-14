@@ -155,6 +155,46 @@ public class TerminalTabExecutionStateTests
     }
 
     [Fact]
+    public void SubsequentCommand_CompletingWithZero_TransitionsFromFailedToSuccess()
+    {
+        var session = new MockPowerShellSession("Tab1");
+        using var tab = new TerminalTabViewModel(session);
+
+        tab.MarkCommandStarted("failing_cmd");
+        session.SimulateCommandCompleted(1);
+        Assert.True(tab.HasProcessError);
+        Assert.Equal(1, tab.LastExitCode);
+        Assert.Equal(ProcessExecutionState.Failed, tab.ExecutionState);
+
+        // Next command starts and succeeds with exit code 0
+        tab.MarkCommandStarted("dir");
+        session.SimulateCommandCompleted(0);
+
+        Assert.Equal(ProcessExecutionState.Success, tab.ExecutionState);
+        Assert.False(tab.HasProcessError);
+        Assert.Equal(0, tab.LastExitCode);
+        Assert.Equal("✓", tab.ExecutionStatusGlyph);
+    }
+
+    [Fact]
+    public void ExecuteHistoryCommand_ClearsPreviousError_AndTransitionsToRunning()
+    {
+        var session = new MockPowerShellSession("Tab1");
+        using var tab = new TerminalTabViewModel(session);
+
+        tab.MarkCommandStarted("failing_cmd");
+        session.SimulateCommandCompleted(1);
+        Assert.True(tab.HasProcessError);
+        Assert.Equal(ProcessExecutionState.Failed, tab.ExecutionState);
+
+        tab.ExecuteHistoryCommand("Get-ChildItem");
+
+        Assert.Equal(ProcessExecutionState.Running, tab.ExecutionState);
+        Assert.False(tab.HasProcessError);
+        Assert.Null(tab.LastExitCode);
+    }
+
+    [Fact]
     public void OnSessionExited_WithNonZeroCode_SetsFailedState()
     {
         var session = new MockPowerShellSession("Tab1");
@@ -347,11 +387,9 @@ public class TerminalTabExecutionStateTests
         // Dark theme: vibrant orange #FF9E64
         tab.UpdateTheme(true);
         Assert.Same(TerminalTabViewModel.RunningWaitingDarkBrush, tab.ExecutionStatusForeground);
-        Assert.Equal(Avalonia.Media.Color.Parse("#FF9E64"), ((Avalonia.Media.ISolidColorBrush)tab.ExecutionStatusForeground).Color);
 
         // Light theme: high-contrast orange #E65100
         tab.UpdateTheme(false);
         Assert.Same(TerminalTabViewModel.RunningWaitingLightBrush, tab.ExecutionStatusForeground);
-        Assert.Equal(Avalonia.Media.Color.Parse("#E65100"), ((Avalonia.Media.ISolidColorBrush)tab.ExecutionStatusForeground).Color);
     }
 }

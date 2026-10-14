@@ -338,6 +338,7 @@ public partial class TerminalTabViewModel
         if (string.IsNullOrWhiteSpace(command)) return;
 
         var clean = command.Trim();
+        MarkCommandStarted(clean);
         _pendingCommandDirectory = WorkingDirectory;
         if (ShellType != ShellType.PowerShell)
         {
