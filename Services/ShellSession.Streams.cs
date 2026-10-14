@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -18,7 +19,7 @@ public sealed partial class ShellSession
 
     private void PumpOutput(Stream stream, CancellationToken ct)
     {
-        byte[] buffer = new byte[4096];
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(4096);
         try
         {
             while (!ct.IsCancellationRequested)
@@ -33,6 +34,10 @@ public sealed partial class ShellSession
         catch (IOException) { }
         catch (ObjectDisposedException) { }
         catch (OperationCanceledException) { }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
     }
 
     private void CheckForOscSequences(byte[] data)
@@ -41,23 +46,32 @@ public sealed partial class ShellSession
         {
             lock (_oscBuffer)
             {
-                int charCount = _oscDecoder.GetCharCount(data, 0, data.Length, flush: false);
-                if (charCount <= 0) return;
+                int maxChars = Encoding.UTF8.GetMaxCharCount(data.Length);
+                if (maxChars <= 0) return;
 
-                char[] chars = new char[charCount];
-                _oscDecoder.GetChars(data, 0, data.Length, chars, 0, flush: false);
-                _oscBuffer.Append(chars);
-
-                var currentBuffer = _oscBuffer.ToString();
-                int lastProcessedIndex = ProcessOscMatches(currentBuffer);
-
-                if (lastProcessedIndex > 0)
+                char[] rentedChars = ArrayPool<char>.Shared.Rent(maxChars);
+                try
                 {
-                    _oscBuffer.Remove(0, lastProcessedIndex);
+                    int actualChars = _oscDecoder.GetChars(data, 0, data.Length, rentedChars, 0, flush: false);
+                    if (actualChars <= 0) return;
+
+                    _oscBuffer.Append(rentedChars, 0, actualChars);
+
+                    var currentBuffer = _oscBuffer.ToString();
+                    int lastProcessedIndex = ProcessOscMatches(currentBuffer);
+
+                    if (lastProcessedIndex > 0)
+                    {
+                        _oscBuffer.Remove(0, lastProcessedIndex);
+                    }
+                    else if (_oscBuffer.Length > 8192)
+                    {
+                        _oscBuffer.Remove(0, 4096);
+                    }
                 }
-                else if (_oscBuffer.Length > 8192)
+                finally
                 {
-                    _oscBuffer.Remove(0, 4096);
+                    ArrayPool<char>.Shared.Return(rentedChars);
                 }
             }
         }

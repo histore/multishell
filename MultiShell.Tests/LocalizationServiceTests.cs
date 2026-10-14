@@ -310,4 +310,53 @@ public class LocalizationServiceTests
         Assert.Contains("B", service["Help_Pick_Folder"]);
         Assert.Contains("E", service["Help_Open_Explorer"]);
     }
+
+    [Theory]
+    [InlineData("de")]
+    [InlineData("en")]
+    [InlineData("fr")]
+    [InlineData("es")]
+    [InlineData("it")]
+    [InlineData("pt")]
+    public void LocalizationService_AboutAndProfileKeys_ExistInAllLanguages(string lang)
+    {
+        // Arrange
+        var service = new LocalizationService(lang);
+
+        // Act & Assert
+        Assert.False(string.IsNullOrWhiteSpace(service["About_Font"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["About_Font_Value"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["About_Third_Party"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["About_Third_Party_Value"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["Profiles_Btn_Reset"]));
+        Assert.False(string.IsNullOrWhiteSpace(service["Dialog_PickFolder_Title"]));
+    }
+
+    [Fact]
+    public void LocalizationService_AllLanguageDictionaries_HaveIdenticalKeySets()
+    {
+        // Arrange
+        var languages = new Dictionary<string, IReadOnlyDictionary<string, string>>
+        {
+            ["de"] = LocalizationService.GermanStrings,
+            ["en"] = LocalizationService.EnglishStrings,
+            ["fr"] = LocalizationService.FrenchStrings,
+            ["es"] = LocalizationService.SpanishStrings,
+            ["it"] = LocalizationService.ItalianStrings,
+            ["pt"] = LocalizationService.PortugueseStrings
+        };
+
+        var referenceKeys = new HashSet<string>(LocalizationService.EnglishStrings.Keys);
+
+        // Assert
+        foreach (var (code, dict) in languages)
+        {
+            var dictKeys = new HashSet<string>(dict.Keys);
+            var missingInLang = referenceKeys.Except(dictKeys).ToList();
+            var extraInLang = dictKeys.Except(referenceKeys).ToList();
+
+            Assert.True(missingInLang.Count == 0, $"Language '{code}' is missing keys: {string.Join(", ", missingInLang)}");
+            Assert.True(extraInLang.Count == 0, $"Language '{code}' has unexpected extra keys: {string.Join(", ", extraInLang)}");
+        }
+    }
 }

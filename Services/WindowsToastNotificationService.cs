@@ -11,6 +11,13 @@ namespace MultiShell.Services;
 /// </summary>
 public sealed class WindowsToastNotificationService : IToastNotificationService
 {
+    private readonly ILocalizationService? _localizationService;
+
+    public WindowsToastNotificationService(ILocalizationService? localizationService = null)
+    {
+        _localizationService = localizationService;
+    }
+
     /// <inheritdoc />
     public void ShowProcessCompletionNotification(
         string tabTitle,
@@ -35,9 +42,11 @@ public sealed class WindowsToastNotificationService : IToastNotificationService
         });
     }
 
-    private static void ShowWindowsToast(string tabTitle, string command, TimeSpan duration, int exitCode)
+    private void ShowWindowsToast(string tabTitle, string command, TimeSpan duration, int exitCode)
     {
-        var status = exitCode == 0 ? "Erfolgreich" : $"Fehler (Exit-Code {exitCode})";
+        var successLabel = _localizationService?["Process_Activity_Success"] ?? "Success";
+        var failedLabel = _localizationService?["Process_Activity_Failed"] ?? "Failed";
+        var status = exitCode == 0 ? successLabel : $"{failedLabel} (Exit-Code {exitCode})";
         var safeCmd = (command.Length > 60 ? command[..57] + "..." : command).Replace("\"", "`\"");
         var safeTitle = tabTitle.Replace("\"", "`\"");
         var durationText = duration.TotalSeconds >= 60

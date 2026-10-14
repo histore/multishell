@@ -5,7 +5,7 @@ namespace MultiShell.Services;
 
 public partial class LocalizationService
 {
-    private static readonly Dictionary<string, string> FrenchStrings = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly Dictionary<string, string> FrenchStrings = new(StringComparer.OrdinalIgnoreCase)
     {
         // Settings Menu
         ["Settings_Menu_Title"] = "Paramètres & À propos",
@@ -124,7 +124,7 @@ public partial class LocalizationService
         ["Profiles_Btn_Edit"] = "Modifier",
         ["Profiles_Btn_Save"] = "Enregistrer",
         ["Profiles_Btn_Delete"] = "Supprimer",
-        ["Profiles_Btn_Default"] = "Définir par défaut",
+        ["Profiles_Btn_Reset"] = "Rétablir les paramètres par défaut",
         ["Profiles_Btn_Cancel"] = "Annuler",
         ["Profiles_Btn_Browse"] = "Parcourir...",
         ["Profiles_Browse_Exe_Title"] = "Sélectionner le fichier exécutable",

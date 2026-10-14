@@ -5,7 +5,7 @@ namespace MultiShell.Services;
 
 public partial class LocalizationService
 {
-    private static readonly Dictionary<string, string> GermanStrings = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly Dictionary<string, string> GermanStrings = new(StringComparer.OrdinalIgnoreCase)
     {
         // Settings Menu
         ["Settings_Menu_Title"] = "Einstellungen & Über",

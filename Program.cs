@@ -4,7 +4,7 @@ using MultiShell.Services;
 
 namespace MultiShell;
 
-sealed class Program
+sealed partial class Program
 {
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
@@ -48,9 +48,9 @@ sealed class Program
         }
     }
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [System.Runtime.InteropServices.LibraryImport("user32.dll", SetLastError = true)]
     [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-    private static extern bool AllowSetForegroundWindow(int dwProcessId);
+    private static partial bool AllowSetForegroundWindow(int dwProcessId);
 
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp()

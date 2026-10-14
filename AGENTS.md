@@ -21,21 +21,18 @@ For universal principles (Clean Architecture layer separation, Inner-Loop TDD pr
 - **Test Runner**: Native .NET CLI in quiet mode (`dotnet test --verbosity quiet`)
 
 ### 2. Clean Architecture & Solution Structure
-The solution is strictly layered according to Clean Architecture:
-- **`MultiShell.Core` (Domain & Contracts)**:
+The solution is strictly layered according to Clean Architecture (structured under `MultiShell.csproj` with namespace and directory separation per `ARCHITECTURE.md`):
+- **Domain Layer (`Models/`)**:
   - Agnostic of UI frameworks and external system details.
-  - Contains entity models, service interfaces, state machine contracts, and domain events.
-- **`MultiShell.Engine` (Infrastructure / Interop / Drivers)**:
-  - Low-level Win32 P/Invoke interop for Windows Pseudo Console (ConPTY).
+  - Contains entity models, value objects, serialization records (`TabState`, `TerminalProfile`, `LanguageOption`, `PathColorStripe`, `ShellType`).
+- **Services Layer (`Services/`)**:
+  - Low-level Win32 P/Invoke interop for Windows Pseudo Console (ConPTY) using source-generated `[LibraryImport]`.
   - Safe Win32 handle encapsulation (`SafeFileHandle`, `SafeProcessHandle`) with leak-free disposal.
-  - Pipe streaming, buffer management, and process lifecycle management.
-- **`MultiShell.ViewModels` (Application & Presentation Logic)**:
-  - UI-agnostic view models leveraging `[ObservableProperty]` and `[RelayCommand]`.
+  - Application services (`TerminalProfileService`, `LocalizationService`, `TabStatePersistenceService`, `FuzzySearchService`, `DirectoryHistoryService`, etc.).
+- **Presentation Layer (`ViewModels/` & `Views/`)**:
+  - UI-agnostic view models (`MainViewModel`, `TerminalTabViewModel`) leveraging `[ObservableProperty]` and `[RelayCommand]`.
+  - Avalonia UI XAML views (`MainWindow`, `TerminalTabView`, dialogs) using compiled bindings (`x:DataType`).
   - Terminal tab coordination, session history, and command routing.
-- **`MultiShell.UI` / `MultiShell.Desktop` (Presentation Layer)**:
-  - Avalonia UI XAML views and custom renderers.
-  - Strict compiled bindings (`x:DataType`) on all controls and data templates.
-  - Decoupled XAML style dictionaries and theme assets.
 - **`MultiShell.Tests` (Test Suite)**:
   - Automated unit and integration tests following the Arrange-Act-Assert (AAA) pattern.
   - 100% pass rate requirement with zero failing tests.

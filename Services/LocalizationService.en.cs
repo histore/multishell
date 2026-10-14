@@ -5,7 +5,7 @@ namespace MultiShell.Services;
 
 public partial class LocalizationService
 {
-    private static readonly Dictionary<string, string> EnglishStrings = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly Dictionary<string, string> EnglishStrings = new(StringComparer.OrdinalIgnoreCase)
     {
         // Settings Menu
         ["Settings_Menu_Title"] = "Settings & About",
@@ -107,6 +107,10 @@ public partial class LocalizationService
         ["About_Framework"] = "Framework:",
         ["About_UI_Terminal"] = "UI & Terminal:",
         ["About_License"] = "License:",
+        ["About_Font"] = "Terminal Font:",
+        ["About_Font_Value"] = "FiraCode Nerd Font Mono (OFL-1.1)",
+        ["About_Third_Party"] = "Third-Party Notices:",
+        ["About_Third_Party_Value"] = "THIRD_PARTY_NOTICES.md (OFL, MIT)",
         ["About_GitHub"] = "GitHub Repository:",
         ["About_Built_With"] = "Built With:",
         ["About_Built_With_Value"] = "Google Gemini & Antigravity",

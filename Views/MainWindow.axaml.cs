@@ -392,7 +392,7 @@ public partial class MainWindow : Window
         var options = new FolderPickerOpenOptions
         {
             AllowMultiple = false,
-            Title = (DataContext as MainViewModel)?.Loc["Dialog_SelectFolder_Title"] ?? "Ordner auswählen"
+            Title = (DataContext as MainViewModel)?.Loc["Dialog_PickFolder_Title"] ?? "Select Folder"
         };
 
         var startDir = !string.IsNullOrWhiteSpace(initialDirectory) && System.IO.Directory.Exists(initialDirectory)

@@ -210,7 +210,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
         _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
         _pathColorCodingService = pathColorCodingService ?? new PathColorCodingService();
-        _toastNotificationService = toastNotificationService ?? new WindowsToastNotificationService();
+        _toastNotificationService = toastNotificationService ?? new WindowsToastNotificationService(_localizationService);
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;

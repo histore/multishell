@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -23,47 +24,61 @@ public sealed class AnsiStreamProcessor
     /// Processes incoming raw PTY byte chunks, decoding UTF-8 characters and buffering incomplete ANSI/VT sequences.
     /// Detects OSC 10/11 color queries and returns clean sanitized text ready to feed to the terminal control.
     /// </summary>
-    public string? ProcessChunk(byte[] data, Action<string>? onOscColorResponse = null, bool isDarkTheme = true)
+    public string? ProcessChunk(byte[] data, Action<string>? onOscColorResponse = null, bool isDarkTheme = true) =>
+        ProcessChunk(data.AsSpan(), onOscColorResponse, isDarkTheme);
+
+    /// <summary>
+    /// Processes incoming raw PTY byte chunks as ReadOnlySpan, decoding UTF-8 characters and buffering incomplete ANSI/VT sequences.
+    /// Detects OSC 10/11 color queries and returns clean sanitized text ready to feed to the terminal control.
+    /// </summary>
+    public string? ProcessChunk(ReadOnlySpan<byte> data, Action<string>? onOscColorResponse = null, bool isDarkTheme = true)
     {
         if (data.Length == 0) return null;
 
         lock (_syncRoot)
         {
             int maxChars = Encoding.UTF8.GetMaxCharCount(data.Length);
-            char[] chars = new char[maxChars];
-            int actualChars = _outputDecoder.GetChars(data, 0, data.Length, chars, 0, flush: false);
-            if (actualChars == 0 && _streamBuffer.Length == 0) return null;
-
-            _streamBuffer.Append(chars, 0, actualChars);
-
-            var current = _streamBuffer.ToString();
-            _streamBuffer.Clear();
-
-            // 1. Check if there is an incomplete ANSI/VT100 escape sequence at the end of the current stream
-            int incompleteIndex = FindIncompleteEscapeSequenceIndex(current);
-            if (incompleteIndex >= 0)
+            char[] chars = ArrayPool<char>.Shared.Rent(maxChars);
+            try
             {
-                _streamBuffer.Append(current[incompleteIndex..]);
-                current = current[..incompleteIndex];
-            }
+                int actualChars = _outputDecoder.GetChars(data, chars, flush: false);
+                if (actualChars == 0 && _streamBuffer.Length == 0) return null;
 
-            // 2. Intercept and respond to OSC 10 / OSC 11 color queries (e.g. Neovim background detection)
-            if (onOscColorResponse != null)
-            {
-                DispatchOscColorQueries(current, isDarkTheme, onOscColorResponse);
-            }
+                _streamBuffer.Append(chars, 0, actualChars);
 
-            // 3. Strip unsupported complete OSC sequences (e.g. OSC 133 / OSC 9;9 shell integration)
-            var textToFeed = SanitizeTerminalText(current);
-
-            // Safety boundary on stream buffer: flush remaining sanitized text rather than dropping
-            if (_streamBuffer.Length > 16384)
-            {
-                textToFeed += SanitizeTerminalText(_streamBuffer.ToString());
+                var current = _streamBuffer.ToString();
                 _streamBuffer.Clear();
-            }
 
-            return string.IsNullOrEmpty(textToFeed) ? null : textToFeed;
+                // 1. Check if there is an incomplete ANSI/VT100 escape sequence at the end of the current stream
+                int incompleteIndex = FindIncompleteEscapeSequenceIndex(current);
+                if (incompleteIndex >= 0)
+                {
+                    _streamBuffer.Append(current[incompleteIndex..]);
+                    current = current[..incompleteIndex];
+                }
+
+                // 2. Intercept and respond to OSC 10 / OSC 11 color queries (e.g. Neovim background detection)
+                if (onOscColorResponse != null)
+                {
+                    DispatchOscColorQueries(current, isDarkTheme, onOscColorResponse);
+                }
+
+                // 3. Strip unsupported complete OSC sequences (e.g. OSC 133 / OSC 9;9 shell integration)
+                var textToFeed = SanitizeTerminalText(current);
+
+                // Safety boundary on stream buffer: flush remaining sanitized text rather than dropping
+                if (_streamBuffer.Length > 16384)
+                {
+                    textToFeed += SanitizeTerminalText(_streamBuffer.ToString());
+                    _streamBuffer.Clear();
+                }
+
+                return string.IsNullOrEmpty(textToFeed) ? null : textToFeed;
+            }
+            finally
+            {
+                ArrayPool<char>.Shared.Return(chars);
+            }
         }
     }
 

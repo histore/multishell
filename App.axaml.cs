@@ -30,6 +30,8 @@ public partial class App : Application
                 DataContext = vm,
             };
             desktop.MainWindow = window;
+            desktop.Exit += (_, _) => vm.Dispose();
+            window.Closed += (_, _) => vm.Dispose();
 
             if (SingleInstance != null)
             {
