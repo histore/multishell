@@ -47,6 +47,17 @@ public partial class LocalizationService
         ["Btn_Tab_Scroll_Right"] = "Desplazar pestañas a la derecha",
         ["Btn_Tab_Close_Tooltip"] = "Cerrar pestaña (Ctrl+Mayús+W)",
 
+        // Split Panes (REQ-UI-006)
+        ["Pane_Split_Right"] = "Dividir a la derecha (Alt+Shift+➔ / V)",
+        ["Pane_Split_Down"] = "Dividir hacia abajo (Alt+Shift+⬇ / H)",
+        ["Pane_Zoom"] = "Alternar zoom (Alt+Shift+Z)",
+        ["Pane_Zoomed_Badge"] = "Maximizado",
+        ["Pane_Zoomed_Restore"] = "Clic o Alt+Shift+Z: restaurar vista dividida",
+        ["Pane_Close"] = "Cerrar panel (Ctrl+Shift+W)",
+        ["Menu_Pane_SplitRight"] = "Dividir panel a la derecha",
+        ["Menu_Pane_SplitDown"] = "Dividir panel hacia abajo",
+        ["Menu_Pane_ToggleZoom"] = "Alternar zoom del panel",
+
         // Tab Switcher Overlay
         ["Tab_Switcher_Title"] = "VISTA GENERAL DE PESTAÑAS",
         ["Tab_Switcher_Hint_Keyboard"] = "[ Tab ▾  |  Mayús+Tab ▴  |  Soltar Ctrl para abrir  |  Esc Cancelar ]",

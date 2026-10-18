@@ -47,6 +47,17 @@ public partial class LocalizationService
         ["Btn_Tab_Scroll_Right"] = "Faire défiler les onglets à droite",
         ["Btn_Tab_Close_Tooltip"] = "Fermer l'onglet (Ctrl+Maj+W)",
 
+        // Split Panes (REQ-UI-006)
+        ["Pane_Split_Right"] = "Diviser à droite (Alt+Shift+➔ / V)",
+        ["Pane_Split_Down"] = "Diviser vers le bas (Alt+Shift+⬇ / H)",
+        ["Pane_Zoom"] = "Basculer le zoom (Alt+Shift+Z)",
+        ["Pane_Zoomed_Badge"] = "Agrandi",
+        ["Pane_Zoomed_Restore"] = "Clic ou Alt+Shift+Z : restaurer la vue divisée",
+        ["Pane_Close"] = "Fermer le volet (Ctrl+Shift+W)",
+        ["Menu_Pane_SplitRight"] = "Diviser le volet à droite",
+        ["Menu_Pane_SplitDown"] = "Diviser le volet vers le bas",
+        ["Menu_Pane_ToggleZoom"] = "Basculer le zoom du volet",
+
         // Tab Switcher Overlay
         ["Tab_Switcher_Title"] = "APERÇU DES ONGLETS",
         ["Tab_Switcher_Hint_Keyboard"] = "[ Tab ▾  |  Maj+Tab ▴  |  Relâcher Ctrl pour ouvrir  |  Échap Annuler ]",

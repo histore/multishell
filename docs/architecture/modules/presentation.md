@@ -7,6 +7,8 @@ The Presentation layer is built on **Avalonia UI 12.1** and **CommunityToolkit.M
 
 ```
 Models/
+├── PaneSplitDirection.cs              # Vertical and Horizontal split orientation (REQ-UI-006)
+├── PaneNavigationDirection.cs         # Left, Right, Up, Down directional focus (REQ-UI-006)
 └── PathColorStripe.cs                 # Deterministic folder path color stripe model (REQ-TAB-025)
 
 Services/
@@ -22,10 +24,14 @@ ViewModels/
 ├── MainViewModel.Profiles.cs          # Shell profile selection & management
 ├── MainViewModel.Settings.cs          # Theme, font, language, and modal states
 ├── MainViewModel.TabSwitcher.cs       # Quick tab switcher (Ctrl+Tab)
-├── TerminalTabViewModel.cs            # Active terminal tab state & shell bridge
-├── TerminalTabViewModel.Streaming.cs  # PTY stream processing, ANSI color queries, input tracking
+├── Panes/
+│   ├── IPaneNodeViewModel.cs          # Binary tree node contract (IsLeaf, GetLeaves, FindParent, FindLeaf)
+│   ├── LeafPaneNodeViewModel.cs       # Leaf node wrapping TerminalPaneViewModel
+│   ├── SplitPaneNodeViewModel.cs      # Binary split container (direction, ratio, child nodes)
+│   └── TerminalPaneViewModel.cs       # Independent pane session, ANSI processing, search & execution
+├── TerminalTabViewModel.cs            # Tab state, title coordination & delegation to active pane
+├── TerminalTabViewModel.Panes.cs      # Binary tree split operations, directional navigation, focus & zoom
 ├── TerminalTabViewModel.History.cs    # Path & directory history synchronization
-├── TerminalTabViewModel.Search.cs     # In-terminal search overlay state
 ├── TerminalTabViewModel.Renaming.cs   # Custom renaming & color palette tagging
 ├── ClosedTabItemViewModel.cs          # Reopenable closed tab history item
 └── TerminalProfileItemViewModel.cs    # Selectable profile item in UI
@@ -35,13 +41,14 @@ Views/
 ├── MainWindow.axaml.cs                # Window lifecycle & backdrop setup
 ├── MainWindow.Tabs.cs                 # Tab drag-and-drop & header interaction
 ├── MainWindow.TabDropAndRename.cs     # Drag-and-drop navigation & inline tab renaming
-├── MainWindow.Keyboard.cs             # Global keyboard shortcut routing (Ctrl+Shift+E/B/O, Ctrl+Shift+F1/F2/F3/F4, Drawer)
+├── MainWindow.Keyboard.cs             # Global keyboard shortcut routing
 ├── MainWindow.HistoryDrawer.cs        # History drawer slide-out animation & events
-├── TerminalTabView.axaml              # Embedded terminal view control
-├── TerminalTabView.axaml.cs           # Palette mapping, base lifecycle & scrollbars
-├── TerminalTabView.Links.cs           # Pointer hover link inspection & URL opening
-├── TerminalTabView.Keyboard.cs        # Keystroke routing & AltGr translation
-├── TerminalTabView.Search.cs          # In-terminal search overlay & focus transitions
+├── SplitPaneContainerControl.cs       # Dynamic recursive renderer with Grid & GridSplitter + View Cache
+├── TerminalPaneView.axaml             # Individual pane control with terminal, active border & mini toolbar
+├── TerminalPaneView.axaml.cs          # Pane lifecycle & focus handling
+├── TerminalPaneView.Links.cs          # Per-pane pointer link & hover detection, Ctrl+wheel zoom
+├── TerminalTabView.axaml              # Tab host containing SplitPaneContainerControl
+├── TerminalTabView.axaml.cs           # SplitPaneContainerControl data binding
 ├── TerminalFocusHelper.cs             # Active terminal focus resolution & restoration
 └── Dialogs/                           # Modal overlay views (Profiles, About, HistoryDrawer)
     ├── HistoryDrawerView.axaml        # History Drawer overlay layout
@@ -116,6 +123,20 @@ Backs an individual terminal tab instance and is structured into 4 clean partial
   * Commands: `StartRenamingCommand`, `CommitRenamingCommand`, `CancelRenamingCommand`, `ResetCustomTitleCommand`, `SetTabColorCommand`.
   * Event: `FocusRenameBoxRequested` dispatched to view to select and focus the inline `TextBox`.
 * Handles special keyboard input state (e.g. `IsAltGrActive` for international layouts).
+
+### 3.3 Split Pane Tree Architecture (`REQ-UI-006`)
+* **Binary Tree Representation (`ViewModels/Panes/`)**:
+  * An individual tab manages a recursive binary tree of `IPaneNodeViewModel` nodes (`LeafPaneNodeViewModel` and `SplitPaneNodeViewModel`).
+  * `TerminalPaneViewModel`: Encapsulates an independent `IShellSession`, `TerminalControlModel`, `AnsiStreamProcessor`, execution state, in-terminal search, and active focus state.
+  * Tree operations (`Split`, `Close`, `Navigate`, `Zoom`, `Resize`):
+    * `SplitActivePane(direction)`: Replaces the target leaf with a new `SplitPaneNodeViewModel` containing the original leaf and a freshly spawned sibling leaf sharing the working directory.
+    * `ClosePane(pane)`: Collapses the split node, lifting the surviving sibling up to replace the parent split node.
+    * Auto-collapse on exit: When a shell session inside a pane terminates, `PaneExited` automatically removes the pane and collapses the parent split.
+    * Directional navigation: `NavigatePane(direction)` performs spatial geometry calculations across leaf bounding boxes to transfer focus seamlessly with `Alt+ArrowKeys` or `F6`/`Shift+F6`.
+    * Zoom/Maximize: `ToggleZoom()` isolates the active leaf node in the visual tree without destroying the underlying binary tree state (`Alt+Shift+Z`).
+* **Zero-Reallocation Recursive View Host (`SplitPaneContainerControl.cs`)**:
+  * Dynamically maps `SplitPaneNodeViewModel` to an Avalonia `Grid` with star row/column definitions and interactive `GridSplitter`.
+  * Implements `_viewCache` dictionary reusing existing `TerminalPaneView` instances across tree reorganizations, preventing control recreation, input lag, or terminal disconnects.
 
 ## 4. UI Rendering & Views
 

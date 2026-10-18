@@ -392,23 +392,24 @@ This document defines the functional and non-functional requirements specific to
 
 ### `[REQ-UI-006]` Split Panes (Horizontal & Vertical Session Splits within Tab)
 
-- **Status**: `BACKLOG`
+- **Status**: `IMPLEMENTED`
 - **Type**: `Functional`
 - **Target Release**: `v1.1.0`
 
 #### User Story
 > **As a** power user,  
-> **I want** to split an active tab into horizontal or vertical panes (`Alt+Shift++` / `Alt+Shift+-`), navigating between them with `Alt+ArrowKeys` and resizing separators with the mouse.
+> **I want** to split an active tab into horizontal or vertical panes (`Alt+Shift+➔` / `Alt+Shift+V` and `Alt+Shift+⬇` / `Alt+Shift+H`), navigating between them with `Alt+ArrowKeys` (or `F6`/`Shift+F6`) and resizing separators with the mouse or `Ctrl+Alt+ArrowKeys`.
 
 #### Acceptance Criteria (Given-When-Then)
-- [ ] **AC-1**: **Given** an active tab, **When** triggering vertical split, **Then** the tab view divides vertically into two side-by-side panes with the same profile and working directory.
-- [ ] **AC-2**: **When** triggering horizontal split, **Then** the focused pane divides into two stacked panes.
-- [ ] **AC-3**: **When** typing keyboard inputs, **Then** only the currently focused pane receives keystrokes, indicated by an active border highlight.
-- [ ] **AC-4**: **When** pressing `Alt+ArrowKeys`, **Then** focus navigates to the adjacent pane in that direction.
-- [ ] **AC-5**: **When** a shell process inside a pane exits or the user closes the pane (`Ctrl+Shift+W`), **Then** that pane collapses and remaining panes expand.
+- [x] **AC-1**: **Given** an active tab, **When** triggering vertical split (`Alt+Shift+➔` or `Alt+Shift+V`), **Then** the tab view divides vertically into two side-by-side panes with the same profile and working directory.
+- [x] **AC-2**: **When** triggering horizontal split (`Alt+Shift+⬇` or `Alt+Shift+H`), **Then** the focused pane divides into two stacked panes.
+- [x] **AC-3**: **When** typing keyboard inputs, **Then** only the currently focused pane receives keystrokes, indicated by an active border highlight.
+- [x] **AC-4**: **When** pressing `Alt+ArrowKeys` (or `F6`/`Shift+F6`), **Then** focus navigates to the adjacent pane in that direction.
+- [x] **AC-5**: **When** a shell process inside a pane exits or the user closes the pane (`Ctrl+Shift+W`), **Then** that pane collapses and remaining panes expand.
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/presentation.md`
+- **Test Suite**: `MultiShell.Tests/SplitPaneTreeTests.cs`, `MultiShell.Tests/SplitPaneTabIntegrationTests.cs`
 
 ---
 
@@ -530,7 +531,7 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Wheel Shortcuts | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-008` | Empty State Welcome & Profile Selector Dashboard | UI/UX | IMPLEMENTED | `v0.1.0` |
-| `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits) | Functional | BACKLOG | `v1.1.0` |
+| `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits) | Functional | IMPLEMENTED | `v1.1.0` |
 | `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | Functional | BACKLOG | `v1.2.0` |
 | `REQ-AI-001` | Context-Aware AI Command Generator & Auto-Suggest | Functional | BACKLOG | `v1.3.0` |
 | `REQ-LNC-001` | Launcher Search & Item Filtering | Functional | BACKLOG | `v1.3.0` |

@@ -47,6 +47,17 @@ public partial class LocalizationService
         ["Btn_Tab_Scroll_Right"] = "Deslocar separadores para a direita",
         ["Btn_Tab_Close_Tooltip"] = "Fechar separador (Ctrl+Shift+W)",
 
+        // Split Panes (REQ-UI-006)
+        ["Pane_Split_Right"] = "Dividir à direita (Alt+Shift+➔ / V)",
+        ["Pane_Split_Down"] = "Dividir para baixo (Alt+Shift+⬇ / H)",
+        ["Pane_Zoom"] = "Alternar zoom (Alt+Shift+Z)",
+        ["Pane_Zoomed_Badge"] = "Maximizado",
+        ["Pane_Zoomed_Restore"] = "Clique ou Alt+Shift+Z: restaurar vista dividida",
+        ["Pane_Close"] = "Fechar painel (Ctrl+Shift+W)",
+        ["Menu_Pane_SplitRight"] = "Dividir painel à direita",
+        ["Menu_Pane_SplitDown"] = "Dividir painel para baixo",
+        ["Menu_Pane_ToggleZoom"] = "Alternar zoom do painel",
+
         // Tab Switcher Overlay
         ["Tab_Switcher_Title"] = "SEPARADORES ABERTOS",
         ["Tab_Switcher_Hint_Keyboard"] = "[ Tab ▾  |  Shift+Tab ▴  |  Solte Ctrl para abrir  |  Esc Cancelar ]",

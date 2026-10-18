@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -74,7 +76,25 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// Formats the tab title with a middle-ellipsis (e.g. C:\...\multishell) when space is limited,
     /// or returns the custom title if one has been assigned.
     /// </summary>
-    public string DisplayTitle => HasCustomTitle ? CustomTitle! : FormatMiddleEllipsis(Title);
+    public string DisplayTitle
+    {
+        get
+        {
+            var baseTitle = HasCustomTitle ? CustomTitle! : FormatMiddleEllipsis(Title);
+            if (!HasMultiplePanes)
+            {
+                return baseTitle;
+            }
+
+            if (IsZoomed)
+            {
+                var activeIndex = ActivePane != null ? Panes.IndexOf(ActivePane) + 1 : 1;
+                return $"⛶ {baseTitle} [{activeIndex}/{PaneCount}]";
+            }
+
+            return $"◫ {baseTitle} [{PaneCount}]";
+        }
+    }
 
     /// <summary>
     /// Gets the full, untruncated working directory path for display in the hover tooltip.
@@ -158,11 +178,25 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         IsDarkTerminalTheme = isDark;
         TerminalBackgroundBrush = isDark ? DarkTerminalBackground : LightTerminalBackground;
         TerminalCaretBrush = isDark ? DarkTerminalCaret : LightTerminalCaret;
+        if (_panes != null)
+        {
+            foreach (var pane in _panes)
+            {
+                pane.UpdateTheme(isDark);
+            }
+        }
     }
 
     public void UpdateFontSize(double fontSize)
     {
         TerminalFontSize = fontSize;
+        if (_panes != null)
+        {
+            foreach (var pane in _panes)
+            {
+                pane.UpdateFontSize(fontSize);
+            }
+        }
     }
 
     /// <summary>
@@ -225,6 +259,10 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             }
         };
         TerminalModel.PropertyChanged += _terminalModelPropertyChangedHandler;
+
+        Panes = new ReadOnlyObservableCollection<TerminalPaneViewModel>(_panes);
+        var initialPane = new TerminalPaneViewModel(this, session, IsDarkTerminalTheme, TerminalFontSize, TerminalFontFamily, TerminalModel);
+        InitializeSplitPanes(initialPane);
 
         // Wire PTY output -> terminal rendering, directory tracking & command tracking
         _session.DataReceived += OnSessionDataReceived;
@@ -545,6 +583,17 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
         FocusTerminalRequested = null;
 
         _session.Dispose();
+
+        if (_panes != null)
+        {
+            foreach (var pane in _panes.ToList())
+            {
+                if (pane.Session != _session)
+                {
+                    pane.Dispose();
+                }
+            }
+        }
 
         ClearHistory();
 

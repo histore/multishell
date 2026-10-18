@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using MultiShell.ViewModels;
@@ -8,32 +7,22 @@ using MultiShell.Views;
 namespace MultiShell;
 
 /// <summary>
-/// Given a view model, returns the corresponding view if possible.
+/// AOT-safe data template that maps view models to their corresponding views without reflection.
 /// </summary>
-[RequiresUnreferencedCode(
-    "Default implementation of ViewLocator involves reflection which may be trimmed away.",
-    Url = "https://docs.avaloniaui.net/docs/concepts/view-locator")]
 public class ViewLocator : IDataTemplate
 {
     public Control? Build(object? param)
     {
         if (param is null)
+        {
             return null;
-
-        if (param is TerminalTabViewModel)
-        {
-            return new TerminalTabView();
         }
 
-        var name = param.GetType().FullName!.Replace("ViewModel", "View", StringComparison.Ordinal);
-        var type = param.GetType().Assembly.GetType(name) ?? Type.GetType(name);
-
-        if (type != null)
+        return param switch
         {
-            return (Control)Activator.CreateInstance(type)!;
-        }
-
-        return new TextBlock { Text = "Not Found: " + name };
+            TerminalTabViewModel => new TerminalTabView(),
+            _ => new TextBlock { Text = "Not Found: " + param.GetType().Name }
+        };
     }
 
     public bool Match(object? data)

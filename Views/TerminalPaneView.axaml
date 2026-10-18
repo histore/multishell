@@ -1,0 +1,168 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MultiShell.ViewModels"
+             xmlns:terminal="using:SvcSystems.UI.Terminal"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+             x:Class="MultiShell.Views.TerminalPaneView"
+             x:DataType="vm:TerminalPaneViewModel"
+             Focusable="True"
+             UseLayoutRounding="True"
+             Background="{Binding TerminalBackgroundBrush}">
+
+    <ThemeVariantScope x:Name="TerminalScope" UseLayoutRounding="True">
+        <Border x:Name="OuterBorder"
+                BorderBrush="{Binding BorderBrush}"
+                BorderThickness="{Binding BorderThickness}"
+                CornerRadius="2"
+                ClipToBounds="True">
+            <Grid>
+                <!-- True terminal emulator control backed by ConPTY -->
+                <terminal:TerminalControl x:Name="Terminal"
+                                          Model="{Binding TerminalModel}"
+                                          RightClickAction="None"
+                                          Focusable="True"
+                                          UseLayoutRounding="True"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
+                                          Background="{Binding TerminalBackgroundBrush}"
+                                          CaretBrush="{Binding TerminalCaretBrush}"
+                                          FontSize="{Binding TerminalFontSize}"
+                                          FontFamily="{Binding TerminalFontFamily}"
+                                          Margin="6,4,6,4" />
+
+                <!-- Interactive Link / File Path Hover Highlighting Adorner (REQ-TERM-005) -->
+                <Canvas IsHitTestVisible="False" Margin="6,4,6,4">
+                    <Border x:Name="HoverLinkBorder"
+                            IsVisible="False"
+                            Background="#253B82F6"
+                            BorderBrush="#803B82F6"
+                            BorderThickness="0,0,0,1.5"
+                            CornerRadius="2" />
+                </Canvas>
+
+                <!-- Floating Mini Action Toolbar on Pane Hover (Top-Right) -->
+                <Border x:Name="MiniHeader"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,4,16,0"
+                        Background="#D9161822"
+                        BorderBrush="{DynamicResource AppBorder}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="3,2"
+                        Opacity="0"
+                        ZIndex="50">
+                    <Border.Transitions>
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                        </Transitions>
+                    </Border.Transitions>
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                        <Button x:Name="MiniSplitVBtn"
+                                Command="{Binding SplitVerticalCommand}"
+                                ToolTip.Tip="{Binding Tab.Loc[Pane_Split_Right]}"
+                                ToolTip.ShowDelay="150"
+                                Classes="tabScrollBtn"
+                                Width="22" Height="20"
+                                Padding="0"
+                                FontSize="10">
+                            <TextBlock Text="◫" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Button>
+                        <Button x:Name="MiniSplitHBtn"
+                                Command="{Binding SplitHorizontalCommand}"
+                                ToolTip.Tip="{Binding Tab.Loc[Pane_Split_Down]}"
+                                ToolTip.ShowDelay="150"
+                                Classes="tabScrollBtn"
+                                Width="22" Height="20"
+                                Padding="0"
+                                FontSize="10">
+                            <TextBlock Text="▭" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Button>
+                        <Button x:Name="MiniZoomBtn"
+                                Command="{Binding ToggleZoomCommand}"
+                                ToolTip.Tip="{Binding Tab.Loc[Pane_Zoom]}"
+                                ToolTip.ShowDelay="150"
+                                Classes="tabScrollBtn"
+                                Width="22" Height="20"
+                                Padding="0"
+                                FontSize="10">
+                            <Panel>
+                                <TextBlock Text="⛶" IsVisible="{Binding !Tab.IsZoomed}" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                <TextBlock Text="❐" IsVisible="{Binding Tab.IsZoomed}" Foreground="#7AA2F7" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            </Panel>
+                        </Button>
+                        <Button x:Name="MiniCloseBtn"
+                                Command="{Binding CloseCommand}"
+                                ToolTip.Tip="{Binding Tab.Loc[Pane_Close]}"
+                                ToolTip.ShowDelay="150"
+                                Classes="tabScrollBtn"
+                                Width="22" Height="20"
+                                Padding="0"
+                                FontSize="10">
+                            <TextBlock Text="✕" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- In-Terminal Text & Scrollback Search Overlay (REQ-TERM-006) -->
+                <Border x:Name="SearchOverlay"
+                        ZIndex="100"
+                        IsVisible="{Binding IsSearchOpen}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,8,24,0"
+                        Background="{DynamicResource AppSurfaceModal}"
+                        BorderBrush="{DynamicResource AppBorder}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="6,4"
+                        BoxShadow="0 4 12 #40000000">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <TextBox x:Name="SearchInputBox"
+                                 Text="{Binding SearchQuery, Mode=TwoWay}"
+                                 PlaceholderText="{Binding Tab.Loc[Search_Terminal_Watermark]}"
+                                 Width="180"
+                                 Height="26"
+                                 FontSize="11"
+                                 VerticalContentAlignment="Center" />
+
+                        <TextBlock Text="{Binding SearchMatchSummary}"
+                                   VerticalAlignment="Center"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AppTextDimmed}"
+                                   Margin="4,0" />
+
+                        <Button x:Name="PrevMatchButton"
+                                Command="{Binding SearchPreviousCommand}"
+                                ToolTip.Tip="{Binding Tab.Loc[Search_Terminal_Previous]}"
+                                Width="24" Height="24"
+                                Padding="0"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                            <PathIcon Data="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z" Width="10" Height="10" />
+                        </Button>
+
+                        <Button x:Name="NextMatchButton"
+                                Command="{Binding SearchNextCommand}"
+                                ToolTip.Tip="{Binding Tab.Loc[Search_Terminal_Next]}"
+                                Width="24" Height="24"
+                                Padding="0"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                            <PathIcon Data="M7.41,8.59L12,13.17L16.59,8.59L18,10L12,16L6,10L7.41,8.59Z" Width="10" Height="10" />
+                        </Button>
+
+                        <Button x:Name="CloseSearchButton"
+                                Command="{Binding CloseSearchCommand}"
+                                ToolTip.Tip="{Binding Tab.Loc[Search_Terminal_Close]}"
+                                Width="24" Height="24"
+                                Padding="0"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                            <PathIcon Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" Width="10" Height="10" />
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </ThemeVariantScope>
+</UserControl>

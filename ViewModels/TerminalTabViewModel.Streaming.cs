@@ -53,14 +53,14 @@ public partial class TerminalTabViewModel
     public static int FindIncompleteEscapeSequenceIndex(string text) =>
         AnsiStreamProcessor.FindIncompleteEscapeSequenceIndex(text);
 
-    private void OnSessionDataReceived(byte[] data)
+    private void OnSessionDataReceived(ReadOnlyMemory<byte> data)
     {
-        if (_isDisposed || data.Length == 0) return;
+        if (_isDisposed || data.IsEmpty) return;
 
         PulseOutputActivity();
 
         string? textToFeed = _ansiStreamProcessor.ProcessChunk(
-            data,
+            data.Span,
             onOscColorResponse: response =>
             {
                 try

@@ -196,7 +196,7 @@ public class HistoryDrawerUiHeadlessTests
         public ShellType ShellType => ShellType.PowerShell;
         public bool IsRunning { get; set; } = true;
 
-        public event Action<byte[]>? DataReceived { add { } remove { } }
+        public event Action<ReadOnlyMemory<byte>>? DataReceived { add { } remove { } }
         public event Action<int>? Exited { add { } remove { } }
         public event Action<string>? WorkingDirectoryChanged { add { } remove { } }
         public event Action<string>? CommandExecuted { add { } remove { } }

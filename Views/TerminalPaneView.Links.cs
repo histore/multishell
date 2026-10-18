@@ -14,7 +14,7 @@ using SvcSystems.UI.Terminal;
 
 namespace MultiShell.Views;
 
-public partial class TerminalTabView
+public partial class TerminalPaneView
 {
     private void OnTerminalPointerWheelChanged(object? sender, PointerWheelEventArgs e)
     {
@@ -38,7 +38,7 @@ public partial class TerminalTabView
 
     private void OnTerminalPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (DataContext is not TerminalTabViewModel vm) return;
+        if (DataContext is not TerminalPaneViewModel vm) return;
 
         var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
         if (!isCtrl)
@@ -88,7 +88,7 @@ public partial class TerminalTabView
     {
         if (e.Handled) return;
         var point = e.GetCurrentPoint(Terminal);
-        if (DataContext is not TerminalTabViewModel vm) return;
+        if (DataContext is not TerminalPaneViewModel vm) return;
 
         var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
 
@@ -118,103 +118,94 @@ public partial class TerminalTabView
             }
         }
 
-        // 2. Right-Click: Copy selection or Paste clipboard
+        // 2. Right-Click: Instant Paste if Clipboard has text, or Copy if text is selected (REQ-TERM-004)
         if (point.Properties.IsRightButtonPressed)
         {
-            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            e.Handled = true;
 
             if (vm.TerminalModel.HasSelection)
             {
-                // Copy selection to clipboard and clear selection
                 var rawText = vm.TerminalModel.SelectedText;
                 var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
-                if (!string.IsNullOrEmpty(text) && clipboard != null)
+                if (!string.IsNullOrEmpty(text))
                 {
-                    await clipboard.SetTextAsync(text);
-                }
-                vm.TerminalModel.ClearSelection();
-                Terminal.InvalidateVisual();
-                e.Handled = true;
-            }
-            else
-            {
-                // No selection: paste clipboard content into terminal
-                if (clipboard != null)
-                {
-                    var text = await clipboard.TryGetTextAsync();
-                    if (!string.IsNullOrEmpty(text) && vm.IsRunning)
+                    var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+                    if (clipboard != null)
                     {
-                        vm.SendInput(Encoding.UTF8.GetBytes(text));
+                        await clipboard.SetTextAsync(text);
                     }
+                    vm.TerminalModel.ClearSelection();
                 }
-                e.Handled = true;
+                return;
+            }
+
+            // If no text is selected: paste from clipboard directly into the terminal
+            var clip = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clip != null)
+            {
+                var text = await clip.TryGetTextAsync();
+                if (!string.IsNullOrEmpty(text) && vm.IsRunning)
+                {
+                    vm.SendInput(Encoding.UTF8.GetBytes(text));
+                }
             }
         }
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Best-effort reflection on third-party TerminalControl buffer with graceful fallback for clickable hyperlinks")]
-    public static bool TryGetTerminalWordOrLine(TerminalControl terminal, TerminalTabViewModel vm, Point pos, out string lineText, out int colIndex, out int row, out double charWidth, out double charHeight)
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Reflection access for Link Detection")]
+    public static bool TryGetTerminalWordOrLine(
+        TerminalControl terminal,
+        TerminalPaneViewModel vm,
+        Point pos,
+        out string lineText,
+        out int colIndex,
+        out int row,
+        out double charWidth,
+        out double charHeight)
     {
         lineText = string.Empty;
         colIndex = 0;
         row = 0;
-        charWidth = 8.0;
-        charHeight = 16.0;
-
-        if (vm.TerminalModel.HasSelection && !string.IsNullOrWhiteSpace(vm.TerminalModel.SelectedText))
-        {
-            lineText = vm.TerminalModel.SelectedText.Trim();
-            colIndex = 0;
-            return true;
-        }
+        charWidth = 0;
+        charHeight = 0;
 
         try
         {
-            var charSize = ResolveCharacterSize(terminal);
-            charWidth = charSize.Width;
-            charHeight = charSize.Height;
+            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+            var terminalField = terminal.GetType().GetField("_terminal", bindingFlags);
+            var termObj = terminalField?.GetValue(terminal);
+            if (termObj == null) return false;
 
-            int col = Math.Max(0, (int)(pos.X / charWidth));
-            int r = Math.Max(0, (int)(pos.Y / charHeight));
-            colIndex = col;
-            row = r;
+            var charWidthProp = termObj.GetType().GetProperty("CharWidth", bindingFlags);
+            var charHeightProp = termObj.GetType().GetProperty("CharHeight", bindingFlags);
 
-            var termObj = vm.TerminalModel.Terminal;
-            var bufferProp = termObj.GetType().GetProperty("Buffer", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            var bufferObj = bufferProp?.GetValue(termObj);
-            if (bufferObj is null) return false;
+            charWidth = charWidthProp != null ? Convert.ToDouble(charWidthProp.GetValue(termObj)) : 0;
+            charHeight = charHeightProp != null ? Convert.ToDouble(charHeightProp.GetValue(termObj)) : 0;
 
-            var getLineMethod = bufferObj.GetType().GetMethod("GetLine", [typeof(int)]);
-            if (getLineMethod is null) return false;
+            if (charWidth <= 0 || charHeight <= 0) return false;
 
-            var yDisp = Convert.ToInt32(bufferObj.GetType().GetProperty("YDisp")?.GetValue(bufferObj) ?? 0);
-            int absoluteY = r + yDisp;
+            colIndex = (int)(pos.X / charWidth);
+            row = (int)(pos.Y / charHeight);
 
-            var lineObj = getLineMethod.Invoke(bufferObj, [absoluteY]);
-            if (lineObj is null) return false;
+            var linesProp = termObj.GetType().GetProperty("Screen", bindingFlags);
+            var screenObj = linesProp?.GetValue(termObj);
 
-            var strMethod = lineObj.GetType().GetMethod("TranslateToString", [typeof(bool), typeof(int), typeof(int)]);
-            if (strMethod is null) return false;
-
-            lineText = strMethod.Invoke(lineObj, [true, 0, vm.TerminalModel.Terminal.Cols])?.ToString() ?? string.Empty;
-            return !string.IsNullOrWhiteSpace(lineText);
+            if (screenObj is System.Collections.IEnumerable enumerable)
+            {
+                int currentRow = 0;
+                foreach (var line in enumerable)
+                {
+                    if (currentRow == row)
+                    {
+                        lineText = line?.ToString() ?? string.Empty;
+                        return true;
+                    }
+                    currentRow++;
+                }
+            }
         }
-        catch
-        {
-            // Graceful fallback if terminal internals differ or are trimmed
-            return false;
-        }
-    }
+        catch { }
 
-    private static Size ResolveCharacterSize(TerminalControl terminal)
-    {
-        var textSizeField = typeof(TerminalControl).GetField("_consoleTextSize", BindingFlags.NonPublic | BindingFlags.Instance);
-        if (textSizeField?.GetValue(terminal) is Size size && size.Width > 0 && size.Height > 0)
-        {
-            return size;
-        }
-
-        var glyph = new FormattedText("M", System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface(terminal.FontFamily), terminal.FontSize, Brushes.White);
-        return new Size(glyph.WidthIncludingTrailingWhitespace, glyph.Height);
+        return false;
     }
 }

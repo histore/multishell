@@ -18,7 +18,7 @@ public class TerminalTabExecutionStateTests
         public ShellType ShellType { get; set; } = ShellType.PowerShell;
         public bool IsRunning { get; set; } = true;
 
-        public event Action<byte[]>? DataReceived;
+        public event Action<ReadOnlyMemory<byte>>? DataReceived;
         public event Action<int>? Exited;
         public event Action<string>? WorkingDirectoryChanged { add { } remove { } }
         public event Action<string>? CommandExecuted { add { } remove { } }
@@ -31,7 +31,7 @@ public class TerminalTabExecutionStateTests
         public void Resize(int cols, int rows) { }
         public void Dispose() { }
 
-        public void SimulateDataReceived(byte[] data) => DataReceived?.Invoke(data);
+        public void SimulateDataReceived(ReadOnlyMemory<byte> data) => DataReceived?.Invoke(data);
         public void SimulateExit(int code) => Exited?.Invoke(code);
         public void SimulateCommandCompleted(int code) => CommandCompleted?.Invoke(code);
     }

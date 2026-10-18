@@ -1,0 +1,2 @@
+# Gitleaks ignore list
+58e7b990bceafd0c7e3717f43792e6e431519943:Views/MainWindow.axaml:generic-api-key:31

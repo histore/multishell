@@ -21,10 +21,18 @@
     </Design.DataContext>
 
     <Window.KeyBindings>
-        <KeyBinding Gesture="Ctrl+Shift+T" Command="{Binding AddNewTabCommand}" />
-        <KeyBinding Gesture="Ctrl+Shift+D" Command="{Binding DuplicateTabCommand}" />
-        <KeyBinding Gesture="Ctrl+Shift+W" Command="{Binding CloseSelectedTabCommand}" />
-        <KeyBinding Gesture="Ctrl+Shift+F4" Command="{Binding CloseSelectedTabCommand}" />
+        <KeyBinding Command="{Binding AddNewTabCommand}" Gesture="Ctrl+Shift+T" />
+        <KeyBinding Command="{Binding DuplicateTabCommand}" Gesture="Ctrl+Shift+D" />
+        <KeyBinding Command="{Binding CloseActivePaneOrTabCommand}" Gesture="Ctrl+Shift+W" />
+        <KeyBinding Command="{Binding CloseActivePaneOrTabCommand}" Gesture="Ctrl+Shift+F4" />
+        <!-- Split Panes Keybindings (REQ-UI-006) -->
+        <KeyBinding Command="{Binding SplitActiveTabRightCommand}" Gesture="Alt+Shift+Right" />
+        <KeyBinding Command="{Binding SplitActiveTabRightCommand}" Gesture="Alt+Shift+V" />
+        <KeyBinding Command="{Binding SplitActiveTabDownCommand}" Gesture="Alt+Shift+Down" />
+        <KeyBinding Command="{Binding SplitActiveTabDownCommand}" Gesture="Alt+Shift+H" />
+        <KeyBinding Command="{Binding ToggleZoomActiveTabCommand}" Gesture="Alt+Shift+Z" />
+        <KeyBinding Command="{Binding FocusNextPaneActiveTabCommand}" Gesture="F6" />
+        <KeyBinding Command="{Binding FocusPreviousPaneActiveTabCommand}" Gesture="Shift+F6" />
     </Window.KeyBindings>
 
     <Grid RowDefinitions="Auto, *, Auto">
@@ -147,6 +155,17 @@
                                                     <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_OpenInExplorer]}"
                                                               InputGesture="Ctrl+Shift+E"
                                                               Command="{Binding OpenInFileBrowserCommand}" />
+                                                    <Separator />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Pane_SplitRight]}"
+                                                              InputGesture="Alt+Shift+Right"
+                                                              Command="{Binding SplitRightCommand}" />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Pane_SplitDown]}"
+                                                              InputGesture="Alt+Shift+Down"
+                                                              Command="{Binding SplitDownCommand}" />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Pane_ToggleZoom]}"
+                                                              InputGesture="Alt+Shift+Z"
+                                                              Command="{Binding ToggleZoomCommand}"
+                                                              IsEnabled="{Binding HasMultiplePanes}" />
                                                     <Separator />
                                                     <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_Close]}"
                                                               InputGesture="Ctrl+Shift+W"
@@ -1035,6 +1054,28 @@
                                 Orientation="Horizontal"
                                 Spacing="8"
                                 VerticalAlignment="Center">
+                         <!-- Maximized Pane Indicator (click restores split view) -->
+                         <Button Classes="statusBreadcrumbBtn"
+                                 Command="{Binding SelectedTab.ToggleZoomCommand}"
+                                 IsVisible="{Binding SelectedTab.IsZoomed}"
+                                 ToolTip.Tip="{Binding Loc[Pane_Zoomed_Restore]}"
+                                 ToolTip.ShowDelay="150"
+                                 Background="#253B82F6"
+                                 Padding="6,1"
+                                 VerticalAlignment="Center">
+                             <StackPanel Orientation="Horizontal" Spacing="4">
+                                 <TextBlock Text="⛶"
+                                            FontSize="10"
+                                            Foreground="#7AA2F7"
+                                            VerticalAlignment="Center" />
+                                 <TextBlock Text="{Binding Loc[Pane_Zoomed_Badge]}"
+                                            FontSize="10"
+                                            FontWeight="SemiBold"
+                                            Foreground="#7AA2F7"
+                                            VerticalAlignment="Center" />
+                             </StackPanel>
+                         </Button>
+
                         <!-- Caps Lock Indicator Badge (Amber Highlight when active) -->
                         <Border Background="#25E0AF68"
                                 BorderBrush="#E0AF68"

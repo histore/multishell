@@ -35,7 +35,7 @@ public sealed partial class ShellSession : IShellSession
     public ShellType ShellType => _shellType;
     public bool IsRunning { get; private set; }
 
-    public event Action<byte[]>? DataReceived;
+    public event Action<ReadOnlyMemory<byte>>? DataReceived;
     public event Action<int>? Exited;
     public event Action<string>? WorkingDirectoryChanged;
     public event Action<string>? CommandExecuted;

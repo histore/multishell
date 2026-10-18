@@ -68,3 +68,6 @@ jobs:
       - name: Run Automated Tests
         run: dotnet test MultiShell.Tests/MultiShell.Tests.csproj --configuration Release --no-build --verbosity normal
 
+      - name: Verify NativeAOT Compilation (win-x64)
+        run: dotnet publish MultiShell.csproj --configuration Release -r win-x64 -o ./bin/aot-ci-check
+

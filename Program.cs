@@ -56,6 +56,27 @@ sealed partial class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            .With(new Win32PlatformOptions
+            {
+                RenderingMode = [Win32RenderingMode.AngleEgl, Win32RenderingMode.Vulkan, Win32RenderingMode.Wgl, Win32RenderingMode.Software],
+                CompositionMode = [Win32CompositionMode.WinUIComposition, Win32CompositionMode.DirectComposition, Win32CompositionMode.LowLatencyDxgiSwapChain, Win32CompositionMode.RedirectionSurface],
+                OverlayPopups = true
+            })
+            .With(new X11PlatformOptions
+            {
+                RenderingMode = [X11RenderingMode.Vulkan, X11RenderingMode.Egl, X11RenderingMode.Glx, X11RenderingMode.Software],
+                OverlayPopups = true,
+                UseDBusMenu = true,
+                EnableMultiTouch = true
+            })
+            .With(new AvaloniaNativePlatformOptions
+            {
+                RenderingMode = [AvaloniaNativeRenderingMode.Metal, AvaloniaNativeRenderingMode.OpenGl, AvaloniaNativeRenderingMode.Software]
+            })
+            .With(new MacOSPlatformOptions
+            {
+                ShowInDock = true
+            })
 #if DEBUG
             .WithDeveloperTools()
 #endif
