@@ -127,16 +127,13 @@ public class PowerShellSessionTests
         var executed = new System.Collections.Generic.List<string>();
         session.CommandExecuted += cmd => executed.Add(cmd);
 
-        var method = typeof(ShellSession).GetMethod("CheckForOscSequences", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        Assert.NotNull(method);
-
         var base64Cmd = Convert.ToBase64String(Encoding.UTF8.GetBytes("dotnet test"));
         var packet = Encoding.UTF8.GetBytes($"\x1b]133;E;{base64Cmd}\x07");
 
         // First execution
-        method.Invoke(session, new object[] { packet });
+        session.CheckForOscSequences(packet);
         // Second identical execution
-        method.Invoke(session, new object[] { packet });
+        session.CheckForOscSequences(packet);
 
         Assert.Equal(2, executed.Count);
         Assert.Equal("dotnet test", executed[0]);
@@ -154,11 +151,8 @@ public class PowerShellSessionTests
         var exitCodes = new System.Collections.Generic.List<int>();
         session.CommandCompleted += code => exitCodes.Add(code);
 
-        var method = typeof(ShellSession).GetMethod("CheckForOscSequences", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        Assert.NotNull(method);
-
         var packet = Encoding.UTF8.GetBytes(oscPacket);
-        method.Invoke(session, new object[] { packet });
+        session.CheckForOscSequences(packet);
 
         Assert.Single(exitCodes);
         Assert.Equal(expectedExitCode, exitCodes[0]);

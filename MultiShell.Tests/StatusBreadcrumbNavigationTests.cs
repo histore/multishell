@@ -21,7 +21,7 @@ public class StatusBreadcrumbNavigationTests
 
         public List<string> SentStrings { get; } = new();
 
-        public event Action<byte[]>? DataReceived;
+        public event Action<ReadOnlyMemory<byte>>? DataReceived;
         public event Action<int>? Exited;
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted { add { } remove { } }
@@ -43,7 +43,7 @@ public class StatusBreadcrumbNavigationTests
         public void Resize(int cols, int rows) { }
         public void Dispose() { }
 
-        public void SimulateDataReceived(byte[] data) => DataReceived?.Invoke(data);
+        public void SimulateDataReceived(ReadOnlyMemory<byte> data) => DataReceived?.Invoke(data);
         public void SimulateExit(int code) => Exited?.Invoke(code);
         public void SimulateWorkingDirectoryChanged(string newDir) => WorkingDirectoryChanged?.Invoke(newDir);
     }

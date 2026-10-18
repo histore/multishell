@@ -47,6 +47,17 @@ public partial class LocalizationService
         ["Btn_Tab_Scroll_Right"] = "Scorri schede a destra",
         ["Btn_Tab_Close_Tooltip"] = "Chiudi scheda (Ctrl+Shift+W)",
 
+        // Split Panes (REQ-UI-006)
+        ["Pane_Split_Right"] = "Dividi a destra (Alt+Shift+➔ / V)",
+        ["Pane_Split_Down"] = "Dividi in basso (Alt+Shift+⬇ / H)",
+        ["Pane_Zoom"] = "Attiva/disattiva zoom (Alt+Shift+Z)",
+        ["Pane_Zoomed_Badge"] = "Ingrandito",
+        ["Pane_Zoomed_Restore"] = "Clic o Alt+Shift+Z: ripristina la vista divisa",
+        ["Pane_Close"] = "Chiudi pannello (Ctrl+Shift+W)",
+        ["Menu_Pane_SplitRight"] = "Dividi pannello a destra",
+        ["Menu_Pane_SplitDown"] = "Dividi pannello in basso",
+        ["Menu_Pane_ToggleZoom"] = "Attiva/disattiva zoom pannello",
+
         // Tab Switcher Overlay
         ["Tab_Switcher_Title"] = "SCHEDE APERTE",
         ["Tab_Switcher_Hint_Keyboard"] = "[ Tab ▾  |  Shift+Tab ▴  |  Rilascia Ctrl per aprire  |  Esc Annulla ]",

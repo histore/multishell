@@ -23,10 +23,8 @@
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <PublishTrimmed Condition="'$(SelfContained)' == 'true'">true</PublishTrimmed>
-    <TrimMode Condition="'$(SelfContained)' == 'true'">partial</TrimMode>
-    <EnableCompressionInSingleFile Condition="'$(SelfContained)' == 'true'">true</EnableCompressionInSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <PublishAot Condition="'$(PublishAot)' == ''">true</PublishAot>
+    <StripSymbols>true</StripSymbols>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>

@@ -23,7 +23,7 @@ public class TerminalTabViewModelTests
         public List<byte[]> SentData { get; } = new();
         public (int Cols, int Rows)? LastResize { get; private set; }
 
-        public event Action<byte[]>? DataReceived;
+        public event Action<ReadOnlyMemory<byte>>? DataReceived;
         public event Action<int>? Exited;
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted;
@@ -53,7 +53,7 @@ public class TerminalTabViewModelTests
             LastResize = (cols, rows);
         }
 
-        public void SimulateDataReceived(byte[] data)
+        public void SimulateDataReceived(ReadOnlyMemory<byte> data)
         {
             DataReceived?.Invoke(data);
         }
@@ -1834,6 +1834,22 @@ public class TerminalTabViewModelTests
         // Assert
         Assert.Equal(0, sb.Length);
         Assert.True(sb.Capacity <= 4096, "Buffer capacity should be trimmed down to 4096 to prevent memory retention.");
+    }
+
+    [Fact]
+    public void OnSessionDataReceived_WhenTabHasInitialPane_FeedsTerminalModelExactlyOnce()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\test");
+        using var vm = new TerminalTabViewModel(session);
+
+        // Act - Simulate prompt output from shell
+        var promptText = "PS C:\\test> ";
+        session.SimulateDataReceived(Encoding.UTF8.GetBytes(promptText));
+
+        // Assert - The text must appear exactly once, not duplicated
+        var line = vm.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        Assert.Equal("PS C:\\test>", line);
     }
 }
 

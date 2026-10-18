@@ -47,6 +47,17 @@ public partial class LocalizationService
         ["Btn_Tab_Scroll_Right"] = "Scroll Tabs Right",
         ["Btn_Tab_Close_Tooltip"] = "Close Tab (Ctrl+Shift+W)",
 
+        // Split Panes (REQ-UI-006)
+        ["Pane_Split_Right"] = "Split Right (Alt+Shift+➔ / V)",
+        ["Pane_Split_Down"] = "Split Down (Alt+Shift+⬇ / H)",
+        ["Pane_Zoom"] = "Toggle Zoom (Alt+Shift+Z)",
+        ["Pane_Zoomed_Badge"] = "Maximized",
+        ["Pane_Zoomed_Restore"] = "Click or Alt+Shift+Z: restore split view",
+        ["Pane_Close"] = "Close Pane (Ctrl+Shift+W)",
+        ["Menu_Pane_SplitRight"] = "Split Pane Right",
+        ["Menu_Pane_SplitDown"] = "Split Pane Down",
+        ["Menu_Pane_ToggleZoom"] = "Toggle Pane Zoom",
+
         // Tab Switcher Overlay
         ["Tab_Switcher_Title"] = "OPEN TABS",
         ["Tab_Switcher_Hint_Keyboard"] = "[ Tab ▾  |  Shift+Tab ▴  |  Release Ctrl to Open  |  Esc Cancel ]",

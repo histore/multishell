@@ -179,7 +179,7 @@ public class TabPathColorCodingIntegrationTests
         public bool IsRunning { get; set; } = true;
 
 #pragma warning disable CS0067
-        public event Action<byte[]>? DataReceived;
+        public event Action<ReadOnlyMemory<byte>>? DataReceived;
         public event Action<int>? Exited;
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted;

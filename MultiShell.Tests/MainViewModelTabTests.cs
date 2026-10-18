@@ -24,7 +24,7 @@ public class MainViewModelTabTests
         public bool FailOnDispose { get; set; }
         public bool RefuseToStop { get; set; }
 
-        public event Action<byte[]>? DataReceived { add { } remove { } }
+        public event Action<ReadOnlyMemory<byte>>? DataReceived { add { } remove { } }
         public event Action<int>? Exited;
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted;

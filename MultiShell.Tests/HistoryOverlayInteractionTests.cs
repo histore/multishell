@@ -20,7 +20,7 @@ public class HistoryOverlayInteractionTests
         public bool IsRunning { get; set; } = true;
         public List<byte[]> SentInputs { get; } = new();
 
-        public event Action<byte[]>? DataReceived { add { } remove { } }
+        public event Action<ReadOnlyMemory<byte>>? DataReceived { add { } remove { } }
         public event Action<int>? Exited { add { } remove { } }
         public event Action<string>? WorkingDirectoryChanged;
         public event Action<string>? CommandExecuted;

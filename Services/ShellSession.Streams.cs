@@ -26,8 +26,8 @@ public sealed partial class ShellSession
             {
                 int bytesRead = stream.Read(buffer, 0, buffer.Length);
                 if (bytesRead == 0) break;
-                var data = buffer.AsSpan(0, bytesRead).ToArray();
-                CheckForOscSequences(data);
+                ReadOnlyMemory<byte> data = buffer.AsMemory(0, bytesRead);
+                CheckForOscSequences(data.Span);
                 DataReceived?.Invoke(data);
             }
         }
@@ -40,7 +40,9 @@ public sealed partial class ShellSession
         }
     }
 
-    private void CheckForOscSequences(byte[] data)
+    internal void CheckForOscSequences(byte[] data) => CheckForOscSequences(data.AsSpan());
+
+    private void CheckForOscSequences(ReadOnlySpan<byte> data)
     {
         try
         {
@@ -52,7 +54,7 @@ public sealed partial class ShellSession
                 char[] rentedChars = ArrayPool<char>.Shared.Rent(maxChars);
                 try
                 {
-                    int actualChars = _oscDecoder.GetChars(data, 0, data.Length, rentedChars, 0, flush: false);
+                    int actualChars = _oscDecoder.GetChars(data, rentedChars, flush: false);
                     if (actualChars <= 0) return;
 
                     _oscBuffer.Append(rentedChars, 0, actualChars);

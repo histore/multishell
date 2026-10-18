@@ -220,7 +220,7 @@ docs/requirements/modules/
 | `REQ-UI-003` | About Dialog & Technology Information | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Wheel Shortcuts | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
-| `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
+| `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-007` | Windows 11 Acrylic & Mica Window Backdrop Effects | [`docs/requirements/modules/theming-and-styling.md`](docs/requirements/modules/theming-and-styling.md) | `BACKLOG` |
 | `REQ-UI-008` | Empty State Welcome & Profile Selector Dashboard | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-SET-001` | Unified Settings Menu & Dynamic Theme Switching | [`docs/requirements/modules/profiles-and-configuration.md`](docs/requirements/modules/profiles-and-configuration.md) | `IMPLEMENTED` |

@@ -36,7 +36,7 @@ public interface IShellSession : IDisposable
     /// <summary>
     /// Triggered when output data is received from the shell.
     /// </summary>
-    event Action<byte[]>? DataReceived;
+    event Action<ReadOnlyMemory<byte>>? DataReceived;
 
     /// <summary>
     /// Triggered when the shell process exits.
