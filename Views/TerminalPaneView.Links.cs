@@ -10,6 +10,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using MultiShell.Services;
 using MultiShell.ViewModels;
+using System.Threading.Tasks;
 using SvcSystems.UI.Terminal;
 
 namespace MultiShell.Views;
@@ -36,9 +37,53 @@ public partial class TerminalPaneView
         }
     }
 
+    private bool _isShiftSelecting;
+    private bool _shiftSelectionStarted;
+
+    /// <summary>
+    /// Maps a pointer position to a terminal cell (viewport row/column) using the control bounds.
+    /// </summary>
+    private bool TryGetCell(TerminalPaneViewModel vm, Point position, out int row, out int col)
+    {
+        row = 0;
+        col = 0;
+        var cols = vm.TerminalModel.Terminal.Cols;
+        var rows = vm.TerminalModel.Terminal.Rows;
+        if (Terminal.Bounds.Width <= 0 || Terminal.Bounds.Height <= 0 || cols <= 0 || rows <= 0) return false;
+
+        col = Math.Clamp((int)(position.X / (Terminal.Bounds.Width / cols)), 0, cols - 1);
+        row = Math.Clamp((int)(position.Y / (Terminal.Bounds.Height / rows)), 0, rows - 1);
+        return true;
+    }
+
+    private void OnTerminalPointerReleasedForSelection(object? sender, PointerReleasedEventArgs e)
+    {
+        if (!_isShiftSelecting) return;
+
+        _isShiftSelecting = false;
+        _shiftSelectionStarted = false;
+        e.Pointer.Capture(null);
+        e.Handled = true;
+    }
+
     private void OnTerminalPointerMoved(object? sender, PointerEventArgs e)
     {
         if (DataContext is not TerminalPaneViewModel vm) return;
+
+        if (_isShiftSelecting)
+        {
+            if (TryGetCell(vm, e.GetPosition(Terminal), out var selRow, out var selCol))
+            {
+                if (!_shiftSelectionStarted)
+                {
+                    vm.TerminalModel.StartSelectionFromSoftStart();
+                    _shiftSelectionStarted = true;
+                }
+                vm.TerminalModel.DragExtendSelection(selRow, selCol);
+            }
+            e.Handled = true;
+            return;
+        }
 
         var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
         if (!isCtrl)
@@ -92,6 +137,21 @@ public partial class TerminalPaneView
 
         var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
 
+        // 0. Shift + Left-Drag while a TUI owns the mouse: select text locally instead of forwarding the click.
+        if (point.Properties.IsLeftButtonPressed
+            && (e.KeyModifiers & KeyModifiers.Shift) != 0
+            && vm.TerminalModel.IsMouseModeActive
+            && TryGetCell(vm, point.Position, out var startRow, out var startCol))
+        {
+            e.Handled = true;
+            vm.TerminalModel.ClearSelection();
+            vm.TerminalModel.SetSoftSelectionStart(startRow, startCol);
+            _isShiftSelecting = true;
+            _shiftSelectionStarted = false;
+            e.Pointer.Capture(Terminal);
+            return;
+        }
+
         // 1. Ctrl + Left-Click: Open Clickable Hyperlink or Local File Path (REQ-TERM-005)
         if (point.Properties.IsLeftButtonPressed && isCtrl)
         {
@@ -140,15 +200,62 @@ public partial class TerminalPaneView
             }
 
             // If no text is selected: paste from clipboard directly into the terminal
-            var clip = TopLevel.GetTopLevel(this)?.Clipboard;
-            if (clip != null)
+            await PasteFromClipboardAsync(vm);
+        }
+    }
+
+    /// <summary>
+    /// Copies the current terminal selection to the clipboard and clears it.
+    /// Returns false when nothing is selected, so Ctrl+C can fall through as an interrupt.
+    /// </summary>
+    private async Task<bool> TryCopySelectionAsync(TerminalPaneViewModel vm)
+    {
+        if (!vm.TerminalModel.HasSelection) return false;
+
+        var text = TerminalTabViewModel.CleanSelectedTerminalText(vm.TerminalModel.SelectedText);
+        if (string.IsNullOrEmpty(text)) return false;
+
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard != null)
+        {
+            await clipboard.SetTextAsync(text);
+        }
+        vm.TerminalModel.ClearSelection();
+        return true;
+    }
+
+    /// <summary>
+    /// Pastes clipboard text into the running shell session, normalizing line endings
+    /// and wrapping in bracketed paste escape sequences (\e[200~ ... \e[201~) if supported or multi-line.
+    /// </summary>
+    private async Task PasteFromClipboardAsync(TerminalPaneViewModel vm)
+    {
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard == null || !vm.IsRunning) return;
+
+        var text = await clipboard.TryGetTextAsync();
+        if (!string.IsNullOrEmpty(text))
+        {
+            // Normalize CRLF to LF for standard POSIX/ConPTY bracketed ingestion or CR for single lines
+            var normalized = text.Replace("\r\n", "\n").Replace('\r', '\n');
+
+            // Wrap in bracketed paste sequences (ESC [ 200 ~ <text> ESC [ 201 ~)
+            // Applications like Copilot CLI, PowerShell PSReadLine, Vim, etc. require bracketed paste
+            // to treat pasted text atomically without triggering accidental execution or mangling.
+            var isMultiLine = normalized.Contains('\n');
+            var isMouseMode = vm.TerminalModel.IsMouseModeActive;
+
+            byte[] payload;
+            if (isMultiLine || isMouseMode)
             {
-                var text = await clip.TryGetTextAsync();
-                if (!string.IsNullOrEmpty(text) && vm.IsRunning)
-                {
-                    vm.SendInput(Encoding.UTF8.GetBytes(text));
-                }
+                payload = Encoding.UTF8.GetBytes($"\u001b[200~{normalized}\u001b[201~");
             }
+            else
+            {
+                payload = Encoding.UTF8.GetBytes(normalized);
+            }
+
+            vm.SendInput(payload);
         }
     }
 

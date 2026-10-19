@@ -144,9 +144,12 @@ public partial class TerminalPaneView : UserControl
         };
 
         Terminal.AddHandler(InputElement.KeyDownEvent, OnTerminalKeyDown, RoutingStrategies.Tunnel);
+        Terminal.AddHandler(InputElement.KeyUpEvent, OnTerminalKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
+        Terminal.LostFocus += (_, _) => ResetAltGrState();
         Terminal.AddHandler(InputElement.PointerWheelChangedEvent, OnTerminalPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
         Terminal.AddHandler(InputElement.PointerMovedEvent, OnTerminalPointerMoved, RoutingStrategies.Tunnel);
         Terminal.AddHandler(InputElement.PointerPressedEvent, OnTerminalPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+        Terminal.AddHandler(InputElement.PointerReleasedEvent, OnTerminalPointerReleasedForSelection, RoutingStrategies.Tunnel, handledEventsToo: true);
         Terminal.PointerExited += (_, _) =>
         {
             HideLinkHighlight();
@@ -383,6 +386,25 @@ public partial class TerminalPaneView : UserControl
         }
     }
 
+    private void ResetAltGrState()
+    {
+        if (DataContext is TerminalPaneViewModel pane)
+        {
+            pane.Tab.IsAltGrActive = false;
+        }
+    }
+
+    private void OnTerminalKeyUp(object? sender, KeyEventArgs e)
+    {
+        // AltGr is reported as Ctrl+Alt; clear once either modifier is released.
+        var modifiers = e.KeyModifiers;
+        var stillAltGr = (modifiers & KeyModifiers.Control) != 0 && (modifiers & KeyModifiers.Alt) != 0;
+        if (!stillAltGr)
+        {
+            ResetAltGrState();
+        }
+    }
+
     private void OnTerminalKeyDown(object? sender, KeyEventArgs e)
     {
         if (DataContext is not TerminalPaneViewModel vm) return;
@@ -390,6 +412,39 @@ public partial class TerminalPaneView : UserControl
         var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
         var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
         var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+
+        // AltGr (e.g. AltGr+Q = '@' on German layouts) arrives as Ctrl+Alt. Flag it so the
+        // terminal control's bogus Ctrl+<letter> control byte is dropped and only the text input passes.
+        vm.Tab.IsAltGrActive = isCtrl && isAlt;
+
+        // The terminal control marks such a KeyDown as handled, which suppresses the TextInput event.
+        // Deliver the produced character (e.g. '@', '€', ']') ourselves.
+        if (isCtrl && isAlt && !string.IsNullOrEmpty(e.KeySymbol) && !char.IsControl(e.KeySymbol[0]))
+        {
+            e.Handled = true;
+            if (vm.IsRunning)
+            {
+                vm.SendInput(System.Text.Encoding.UTF8.GetBytes(e.KeySymbol));
+            }
+            return;
+        }
+
+        // Copy (Ctrl+C with selection) and paste (Ctrl+V / Ctrl+Shift+V) via the system clipboard.
+        if (isCtrl && !isAlt)
+        {
+            if (e.Key == Key.C && !isShift && vm.TerminalModel.HasSelection)
+            {
+                e.Handled = true;
+                _ = TryCopySelectionAsync(vm);
+                return;
+            }
+            if (e.Key == Key.V)
+            {
+                e.Handled = true;
+                _ = PasteFromClipboardAsync(vm);
+                return;
+            }
+        }
 
         // 1. Split Pane Shortcuts (Alt + Shift + Right / V for Vertical; Alt + Shift + Down / H for Horizontal)
         if (isAlt && isShift && !isCtrl)
