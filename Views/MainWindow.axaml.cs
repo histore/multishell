@@ -199,6 +199,7 @@ public partial class MainWindow : Window
                     if (args.PropertyName == nameof(MainViewModel.SelectedTab))
                     {
                         ScrollSelectedTabIntoView();
+                        FocusActiveTerminal();
                     }
                 };
                 vm.Tabs.CollectionChanged += (_, _) =>
@@ -259,14 +260,24 @@ public partial class MainWindow : Window
 
     private void FocusActiveTerminal()
     {
+        if (DataContext is MainViewModel mainVm && mainVm.SelectedTab?.IsRenaming == true)
+        {
+            return;
+        }
+
         void DoFocus()
         {
+            if (DataContext is not MainViewModel vm || vm.SelectedTab?.IsRenaming == true)
+            {
+                return;
+            }
+
             var targetTerminal = GetActiveTerminalControl();
             if (targetTerminal != null && targetTerminal.IsEffectivelyVisible)
             {
                 targetTerminal.Focus();
             }
-            else if (DataContext is MainViewModel vm && vm.SelectedTab != null)
+            else if (vm.SelectedTab != null)
             {
                 var activeTabView = TabContentControl?.GetVisualDescendants()
                     .OfType<TerminalTabView>()

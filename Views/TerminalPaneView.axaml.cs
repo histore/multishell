@@ -147,9 +147,8 @@ public partial class TerminalPaneView : UserControl
         Terminal.AddHandler(InputElement.KeyUpEvent, OnTerminalKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         Terminal.LostFocus += (_, _) => ResetAltGrState();
         Terminal.AddHandler(InputElement.PointerWheelChangedEvent, OnTerminalPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
-        Terminal.AddHandler(InputElement.PointerMovedEvent, OnTerminalPointerMoved, RoutingStrategies.Tunnel);
+        Terminal.AddHandler(InputElement.PointerMovedEvent, OnTerminalPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
         Terminal.AddHandler(InputElement.PointerPressedEvent, OnTerminalPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
-        Terminal.AddHandler(InputElement.PointerReleasedEvent, OnTerminalPointerReleasedForSelection, RoutingStrategies.Tunnel, handledEventsToo: true);
         Terminal.PointerExited += (_, _) =>
         {
             HideLinkHighlight();
@@ -396,6 +395,13 @@ public partial class TerminalPaneView : UserControl
 
     private void OnTerminalKeyUp(object? sender, KeyEventArgs e)
     {
+        // Standalone modifier keys: mark handled so terminal control doesn't misprocess
+        if (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin)
+        {
+            e.Handled = true;
+            return;
+        }
+
         // AltGr is reported as Ctrl+Alt; clear once either modifier is released.
         var modifiers = e.KeyModifiers;
         var stillAltGr = (modifiers & KeyModifiers.Control) != 0 && (modifiers & KeyModifiers.Alt) != 0;
@@ -407,6 +413,13 @@ public partial class TerminalPaneView : UserControl
 
     private void OnTerminalKeyDown(object? sender, KeyEventArgs e)
     {
+        // 1. Prevent standalone modifier keys (Ctrl, Shift, Alt, Meta) from destroying active text selection
+        if (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin)
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (DataContext is not TerminalPaneViewModel vm) return;
 
         var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
@@ -429,21 +442,51 @@ public partial class TerminalPaneView : UserControl
             return;
         }
 
-        // Copy (Ctrl+C with selection) and paste (Ctrl+V / Ctrl+Shift+V) via the system clipboard.
+        // Copy (Ctrl+C with selection, or Ctrl+Shift+C) and paste (Ctrl+V / Ctrl+Shift+V) via the system clipboard.
         if (isCtrl && !isAlt)
         {
-            if (e.Key == Key.C && !isShift && vm.TerminalModel.HasSelection)
+            var hasSelection = vm.TerminalModel.HasSelection || Terminal.HasSelection;
+
+            // Ctrl+Shift+C: Explicit copy shortcut (standard terminal practice)
+            if (e.Key == Key.C && isShift)
             {
                 e.Handled = true;
                 _ = TryCopySelectionAsync(vm);
                 return;
             }
+
+            // Ctrl+C: Copy if text is selected; otherwise explicitly transmit SIGINT (0x03) to ConPTY.
+            // Guarantees immediate, 100% reliable interrupt delivery even in raw mode / TUI apps like Copilot CLI.
+            if (e.Key == Key.C && !isShift)
+            {
+                if (hasSelection)
+                {
+                    e.Handled = true;
+                    _ = TryCopySelectionAsync(vm);
+                    return;
+                }
+                else
+                {
+                    e.Handled = true;
+                    vm.SendInput([0x03]);
+                    return;
+                }
+            }
+
             if (e.Key == Key.V)
             {
                 e.Handled = true;
                 _ = PasteFromClipboardAsync(vm);
                 return;
             }
+        }
+
+        // Shift+Insert: Classic terminal paste shortcut
+        if (isShift && !isCtrl && !isAlt && e.Key == Key.Insert)
+        {
+            e.Handled = true;
+            _ = PasteFromClipboardAsync(vm);
+            return;
         }
 
         // 1. Split Pane Shortcuts (Alt + Shift + Right / V for Vertical; Alt + Shift + Down / H for Horizontal)

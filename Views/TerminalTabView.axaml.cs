@@ -1,5 +1,8 @@
+using System;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MultiShell.ViewModels;
 
@@ -10,6 +13,15 @@ public partial class TerminalTabView : UserControl
     public TerminalTabView()
     {
         InitializeComponent();
+
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property == IsVisibleProperty && e.NewValue is true)
+            {
+                Dispatcher.UIThread.Post(FocusTerminal, DispatcherPriority.Input);
+                Dispatcher.UIThread.Post(FocusTerminal, DispatcherPriority.Loaded);
+            }
+        };
     }
 
     /// <summary>

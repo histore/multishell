@@ -270,6 +270,10 @@ public partial class MainWindow
     private void OnTabsPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         StopDragScrollTimer();
+        if (!_isDragging && _draggedTab != null && !_draggedTab.IsRenaming)
+        {
+            FocusActiveTerminal();
+        }
         _draggedTab = null;
         _isDragging = false;
     }

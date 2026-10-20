@@ -102,4 +102,35 @@ public class TerminalFocusHelperTests
         Assert.NotNull(resolved);
         Assert.Equal("Terminal_Tab1", resolved.Name);
     }
+
+    [Fact]
+    public void ResolveActiveControl_WithMultiplePanesInActiveTab_ReturnsActivePaneControl()
+    {
+        // Arrange
+        var tab0 = new object();
+        var tab1 = new object();
+
+        var control0 = new DummyControl { Name = "Tab0_Pane", IsEffectivelyVisible = false };
+        var control1_PaneLeft = new DummyControl { Name = "Tab1_PaneLeft_Inactive", IsEffectivelyVisible = true };
+        var control1_PaneRight = new DummyControl { Name = "Tab1_PaneRight_Active", IsEffectivelyVisible = true };
+
+        var view0 = new DummyView { DataContext = tab0, Control = control0 };
+        // View 1 represents a tab whose active pane selector resolves control1_PaneRight
+        var view1 = new DummyView { DataContext = tab1, Control = control1_PaneRight };
+
+        var views = new List<DummyView> { view0, view1 };
+
+        // Act
+        var resolved = TerminalFocusHelper.ResolveActiveControl(
+            views,
+            selectedTab: tab1,
+            dataContextSelector: v => v.DataContext,
+            controlSelector: v => v.Control,
+            isVisiblePredicate: c => c.IsEffectivelyVisible
+        );
+
+        // Assert
+        Assert.NotNull(resolved);
+        Assert.Equal("Tab1_PaneRight_Active", resolved.Name);
+    }
 }

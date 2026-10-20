@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using MultiShell.ViewModels;
@@ -95,6 +96,40 @@ public partial class MainWindow
                 OpenActiveTabInFileBrowser();
                 e.Handled = true;
                 return;
+            }
+            if (e.Key == Key.C)
+            {
+                var term = GetActiveTerminalControl();
+                if (DataContext is MainViewModel cVm && cVm.SelectedTab?.ActivePane != null)
+                {
+                    var pane = cVm.SelectedTab.ActivePane;
+                    var hasSelection = (term?.HasSelection == true) || pane.TerminalModel.HasSelection;
+                    if (hasSelection)
+                    {
+                        var rawText = (term != null && !string.IsNullOrEmpty(term.SelectedText)) ? term.SelectedText : pane.TerminalModel.SelectedText;
+                        var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
+                        if (!string.IsNullOrEmpty(text) && Clipboard != null)
+                        {
+                            _ = Clipboard.SetTextAsync(text);
+                            pane.TerminalModel.ClearSelection();
+                        }
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
+            if (e.Key == Key.V)
+            {
+                if (DataContext is MainViewModel pVm && pVm.SelectedTab?.ActivePane != null)
+                {
+                    var pane = pVm.SelectedTab.ActivePane;
+                    if (Clipboard != null && pane.IsRunning)
+                    {
+                        _ = PasteToPaneAsync(pane);
+                        e.Handled = true;
+                        return;
+                    }
+                }
             }
         }
 
@@ -434,6 +469,16 @@ public partial class MainWindow
         if (DataContext is MainViewModel vm && vm.SelectedTab != null)
         {
             vm.SelectedTab.OpenInFileBrowser();
+        }
+    }
+
+    private async Task PasteToPaneAsync(TerminalPaneViewModel pane)
+    {
+        if (Clipboard == null || !pane.IsRunning) return;
+        var text = await Clipboard.TryGetTextAsync();
+        if (!string.IsNullOrEmpty(text))
+        {
+            pane.PasteText(text);
         }
     }
 }

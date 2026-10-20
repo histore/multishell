@@ -220,6 +220,47 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Pastes text into the terminal session, wrapping in Bracketed Paste Mode (VT 2004h)
+    /// if requested by the active shell application (e.g. Copilot CLI, Readline, Vim, Node.js).
+    /// </summary>
+    public void PasteText(string text)
+    {
+        if (!Session.IsRunning || string.IsNullOrEmpty(text)) return;
+
+        // In Bracketed Paste Mode (VT 2004h), wrap pasted text with ESC [ 200 ~ and ESC [ 201 ~.
+        // This informs the interactive CLI / TUI that the input is a single pasted payload
+        // and prevents characters from being dropped or prematurely submitted.
+        if (TerminalModel.Terminal.Engine.BracketedPasteMode)
+        {
+            var bracketed = $"\x1b[200~{text}\x1b[201~";
+            SendInput(Encoding.UTF8.GetBytes(bracketed));
+        }
+        else
+        {
+            SendInput(Encoding.UTF8.GetBytes(text));
+        }
+    }
+
+    /// <summary>
+    /// Suppresses VT mouse tracking mode so that terminal pointer interactions (click, double-click, drag)
+    /// always perform native text selection instead of sending raw mouse reporting escape sequences.
+    /// </summary>
+    public void SuppressMouseTrackingMode()
+    {
+        try
+        {
+            var engine = TerminalModel.Terminal.Engine;
+            var trackerField = engine.GetType().GetField("_mouseTracker", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (trackerField?.GetValue(engine) is object tracker)
+            {
+                var prop = tracker.GetType().GetProperty("TrackingMode");
+                prop?.SetValue(tracker, 0); // MouseTrackingMode.None
+            }
+        }
+        catch { }
+    }
+
     private void OnTerminalUserInput(object? sender, TerminalUserInputEventArgs e)
     {
         if (!Session.IsRunning || e.Data.IsEmpty) return;

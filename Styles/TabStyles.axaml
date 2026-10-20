@@ -3,6 +3,7 @@
 
     <!-- Inactive Tab Button Style -->
     <Style Selector="Button.tabBtn">
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Height" Value="30" />
         <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
         <Setter Property="Foreground" Value="{DynamicResource AppTextDimmed}" />
@@ -22,6 +23,7 @@
 
     <!-- Active Tab Button Style -->
     <Style Selector="Button.tabBtn.active">
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Height" Value="30" />
         <Setter Property="Background" Value="{DynamicResource AppSurfaceActive}" />
         <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
@@ -36,6 +38,7 @@
 
     <!-- Close Tab Button Inside Tab -->
     <Style Selector="Button.tabCloseBtn">
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Width" Value="18" />
         <Setter Property="Height" Value="18" />
         <Setter Property="Background" Value="Transparent" />
@@ -70,6 +73,7 @@
 
     <!-- Add Tab (+) Button Style -->
     <Style Selector="Button.addTabBtn">
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Height" Value="30" />
         <Setter Property="Width" Value="28" />
         <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
@@ -92,6 +96,7 @@
 
     <!-- Shell Selector Dropdown Button (▾) Style -->
     <Style Selector="Button.tabShellDropdownBtn">
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Height" Value="30" />
         <Setter Property="Width" Value="20" />
         <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />
@@ -113,6 +118,7 @@
 
     <!-- Tab Scroll Buttons (◀ / ▶) -->
     <Style Selector="Button.tabScrollBtn">
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Height" Value="30" />
         <Setter Property="Width" Value="26" />
         <Setter Property="Background" Value="{DynamicResource AppSurfaceBackground}" />

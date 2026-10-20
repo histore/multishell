@@ -30,7 +30,16 @@ public static class TerminalFocusHelper
             tabViews,
             selectedTab,
             v => v.DataContext,
-            v => v.FindDescendantOfType<SvcSystems.UI.Terminal.TerminalControl>(),
+            v =>
+            {
+                var activePane = v.GetVisualDescendants()
+                    .OfType<TerminalPaneView>()
+                    .FirstOrDefault(p => (p.DataContext as TerminalPaneViewModel)?.IsActive == true)
+                    ?? v.FindDescendantOfType<TerminalPaneView>();
+
+                return activePane?.FindDescendantOfType<SvcSystems.UI.Terminal.TerminalControl>()
+                    ?? v.FindDescendantOfType<SvcSystems.UI.Terminal.TerminalControl>();
+            },
             c => c.IsEffectivelyVisible
         );
     }

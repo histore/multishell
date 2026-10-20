@@ -73,6 +73,7 @@
                                     <DataTemplate x:DataType="vm:TerminalTabViewModel">
                                         <Button Classes="tabBtn"
                                                 Classes.active="{Binding IsSelected}"
+                                                Focusable="False"
                                                 ToolTip.Tip="{Binding TabTooltip}"
                                                 ToolTip.ShowDelay="150"
                                                 Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).SelectTabCommand}"
@@ -266,6 +267,7 @@
                                                              MaxWidth="180"
                                                              IsVisible="{Binding IsRenaming}" />
                                                     <Button Classes="tabCloseBtn"
+                                                            Focusable="False"
                                                             Content="×"
                                                             Command="{Binding RequestCloseCommand}"
                                                             ToolTip.Tip="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Btn_Tab_Close_Tooltip]}" />
