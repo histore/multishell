@@ -412,8 +412,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             .Select(t => new TabState(
                 t.Title,
                 t.WorkingDirectory,
-                t.CommandHistory?.ToList() ?? new List<string>(),
-                t.DirectoryHistory?.ToList() ?? new List<string>(),
+                t.CommandHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
+                t.DirectoryHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
                 t.ShellType,
                 t.CustomTitle,
                 t.TabColor))
@@ -447,8 +447,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var tabStates = Tabs.Select(t => new TabState(
             t.Title,
             t.WorkingDirectory,
-            t.CommandHistory.ToList(),
-            t.DirectoryHistory.ToList(),
+            t.CommandHistory.AsEnumerable().Reverse().ToList(),
+            t.DirectoryHistory.AsEnumerable().Reverse().ToList(),
             t.ShellType,
             t.CustomTitle,
             t.TabColor)).ToList();

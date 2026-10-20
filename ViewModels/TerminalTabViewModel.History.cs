@@ -96,7 +96,10 @@ public partial class TerminalTabViewModel
             var timestampMap = new Dictionary<string, DateTime>(StringComparer.Ordinal);
             foreach (var (cmd, time) in historyWithTimestamps)
             {
-                timestampMap[cmd] = time;
+                if (!timestampMap.ContainsKey(cmd))
+                {
+                    timestampMap[cmd] = time;
+                }
             }
 
             var snapshot = CommandHistory.ToArray();
@@ -220,14 +223,21 @@ public partial class TerminalTabViewModel
 
         if (directories != null)
         {
-            _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
-            try
+            var validDirs = directories
+                .Where(d => !string.IsNullOrWhiteSpace(d))
+                .ToList();
+
+            if (validDirs.Count > 0)
             {
-                _directoryHistoryService.ImportAll(directories);
-            }
-            finally
-            {
-                _directoryHistoryService.HistoryChanged += OnSharedDirectoryHistoryChanged;
+                _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
+                try
+                {
+                    _directoryHistoryService.ImportAll(validDirs);
+                }
+                finally
+                {
+                    _directoryHistoryService.HistoryChanged += OnSharedDirectoryHistoryChanged;
+                }
             }
             SyncDirectoryHistory();
         }

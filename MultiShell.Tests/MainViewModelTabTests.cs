@@ -538,6 +538,47 @@ public class MainViewModelTabTests
     }
 
     [Fact]
+    public async Task InitializeWorkspaceAsync_RestoresTabHistories_FiltersByRecencyRegardlessOfLength()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService
+        {
+            StateToReturn = new WorkspaceState(
+                new List<TabState>
+                {
+                    new(
+                        "Tab 1",
+                        @"C:\projekte\app",
+                        new List<string> { "git log", "git commit -m \"fix\"" },
+                        new List<string> { @"C:\projekte", @"C:\projekte\app\very\long\nested\subfolder" })
+                },
+                0)
+        };
+
+        // Act
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Assert: FilteredCommandHistory ranks newer longer command ahead of older shorter command
+        var tab = mainVm.Tabs[0];
+        tab.CommandFilterQuery = "git";
+        Assert.Equal(2, tab.FilteredCommandHistory.Count);
+        Assert.Equal("git commit -m \"fix\"", tab.FilteredCommandHistory[0]);
+        Assert.Equal("git log", tab.FilteredCommandHistory[1]);
+
+        // Assert: FilteredDirectoryHistory ranks newer longer directory ahead of older shorter directory
+        tab.DirectoryFilterQuery = "projekte";
+        Assert.True(tab.FilteredDirectoryHistory.Count >= 2);
+        var longDir = DirectoryHistoryService.NormalizePath(@"C:\projekte\app\very\long\nested\subfolder");
+        var shortDir = DirectoryHistoryService.NormalizePath(@"C:\projekte");
+        var longIndex = tab.FilteredDirectoryHistory.IndexOf(longDir);
+        var shortIndex = tab.FilteredDirectoryHistory.IndexOf(shortDir);
+        Assert.True(longIndex >= 0 && shortIndex >= 0);
+        Assert.True(longIndex < shortIndex, "Newer directory must rank before older shorter directory.");
+    }
+
+    [Fact]
     public async Task HistoryChange_TriggersSaveState_WithLatestHistories()
     {
         // Arrange

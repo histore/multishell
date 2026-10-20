@@ -1785,6 +1785,53 @@ public class TerminalTabViewModelTests
     }
 
     [Fact]
+    public void CommandSearch_PrefixMatchesDifferentLengths_RanksMostRecentlyUsedFirst()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        // Commands with different lengths: git log (7 chars), git commit -m "fix" (19 chars)
+        session.SimulateCommandExecuted("git log");
+        session.SimulateCommandExecuted("git commit -m \"fix\"");
+
+        // Act: search for "git"
+        vm.CommandFilterQuery = "git";
+
+        // Assert: "git commit -m \"fix\"" is newer (executed second), so it should rank before "git log"
+        Assert.True(vm.FilteredCommandHistory.Count >= 2);
+        var commitIndex = vm.FilteredCommandHistory.IndexOf("git commit -m \"fix\"");
+        var logIndex = vm.FilteredCommandHistory.IndexOf("git log");
+        Assert.True(commitIndex >= 0 && logIndex >= 0);
+        Assert.True(commitIndex < logIndex, "Newer command with same match quality (prefix) must rank before older shorter command.");
+    }
+
+    [Fact]
+    public void DirectorySearch_DifferentLengths_RanksMostRecentlyUsedFirst()
+    {
+        // Arrange
+        var session = new MockPowerShellSession("PowerShell", @"C:\projekte\app");
+        using var vm = new TerminalTabViewModel(session);
+        vm.StartSession();
+
+        session.SimulateDirectoryChange(@"C:\projekte\short");
+        session.SimulateDirectoryChange(@"C:\projekte\very\long\nested\directory\path");
+
+        // Act: search for "projekte"
+        vm.DirectoryFilterQuery = "projekte";
+
+        // Assert: longer path visited second (newer), so it ranks before shorter older path
+        Assert.True(vm.FilteredDirectoryHistory.Count >= 2);
+        var shortNorm = DirectoryHistoryService.NormalizePath(@"C:\projekte\short");
+        var longNorm = DirectoryHistoryService.NormalizePath(@"C:\projekte\very\long\nested\directory\path");
+        var longIndex = vm.FilteredDirectoryHistory.IndexOf(longNorm);
+        var shortIndex = vm.FilteredDirectoryHistory.IndexOf(shortNorm);
+        Assert.True(longIndex >= 0 && shortIndex >= 0);
+        Assert.True(longIndex < shortIndex, "Newer directory with same match quality must rank before older shorter directory.");
+    }
+
+    [Fact]
     public void Dispose_CleansUpTerminalModelUpdateUI_AndClearsHistoryCollections()
     {
         // Arrange

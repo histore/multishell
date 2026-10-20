@@ -213,4 +213,85 @@ public class FuzzySearchServiceTests
         Assert.Equal("cmd3", results[1].Name);
         Assert.Equal("cmd1", results[2].Name);
     }
+
+    [Fact]
+    public void FilterAndRank_PrefixMatchesWithDifferentLengths_SortsNewerEntriesFirst()
+    {
+        // Arrange
+        var service = new FuzzySearchService();
+        var baseTime = DateTime.UtcNow;
+        var items = new List<(string Command, DateTime LastUsed)>
+        {
+            ("git log", baseTime.AddMinutes(-10)),             // 7 chars, oldest
+            ("git status", baseTime.AddMinutes(-1)),          // 10 chars, medium
+            ("git commit -m \"fix\"", baseTime.AddSeconds(-5)) // 19 chars, newest
+        };
+
+        // Act: Filter by "git" prefix
+        var results = service.FilterAndRank(
+            items,
+            "git",
+            x => x.Command,
+            x => x.LastUsed,
+            secondaryDescending: true).ToList();
+
+        // Assert: Equal match quality (prefix match) must prioritize recency over string length
+        Assert.Equal(3, results.Count);
+        Assert.Equal("git commit -m \"fix\"", results[0].Command);
+        Assert.Equal("git status", results[1].Command);
+        Assert.Equal("git log", results[2].Command);
+    }
+
+    [Fact]
+    public void FilterAndRank_EqualMatchQualityAndEqualTimestamps_SortsShorterLengthFirst()
+    {
+        // Arrange
+        var service = new FuzzySearchService();
+        var exactTime = DateTime.UtcNow;
+        var items = new List<(string Command, DateTime LastUsed)>
+        {
+            ("git status", exactTime),
+            ("git log", exactTime)
+        };
+
+        // Act: Same timestamp, same prefix match
+        var results = service.FilterAndRank(
+            items,
+            "git",
+            x => x.Command,
+            x => x.LastUsed,
+            secondaryDescending: true).ToList();
+
+        // Assert: When timestamps are identical, shorter length breaks tie
+        Assert.Equal(2, results.Count);
+        Assert.Equal("git log", results[0].Command);
+        Assert.Equal("git status", results[1].Command);
+    }
+
+    [Fact]
+    public void FilterAndRank_SubstringMatchesWithDifferentLengths_SortsNewerEntriesFirst()
+    {
+        // Arrange
+        var service = new FuzzySearchService();
+        var baseTime = DateTime.UtcNow;
+        var items = new List<(string Directory, DateTime LastUsed)>
+        {
+            (@"C:\projekte\old", baseTime.AddDays(-5)),
+            (@"C:\projekte\csharp\multishell\very\long\nested\path", baseTime.AddMinutes(-1))
+        };
+
+        // Act: Both contain "projekte" at path boundary
+        var results = service.FilterAndRank(
+            items,
+            "projekte",
+            x => x.Directory,
+            x => x.LastUsed,
+            secondaryDescending: true).ToList();
+
+        // Assert: Newer path must be ranked above older shorter path
+        Assert.Equal(2, results.Count);
+        Assert.Equal(@"C:\projekte\csharp\multishell\very\long\nested\path", results[0].Directory);
+        Assert.Equal(@"C:\projekte\old", results[1].Directory);
+    }
 }
+

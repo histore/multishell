@@ -35,17 +35,23 @@ public class FuzzySearchService : IFuzzySearchService
         // Prefix match gets very high score
         if (target.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
         {
-            var lengthPenalty = Math.Min(150, target.Length - pattern.Length);
-            score = 800 - lengthPenalty;
+            score = 800;
             return true;
         }
 
-        // Substring match gets high score
+        // Substring match
         var substringIndex = target.IndexOf(pattern, StringComparison.OrdinalIgnoreCase);
         if (substringIndex >= 0)
         {
-            var lengthPenalty = Math.Min(150, substringIndex + (target.Length - pattern.Length));
-            score = 600 - lengthPenalty;
+            // Word boundary bonus if the match starts at a word or path boundary
+            var isWordBoundary = substringIndex == 0 ||
+                                 target[substringIndex - 1] == ' ' ||
+                                 target[substringIndex - 1] == '/' ||
+                                 target[substringIndex - 1] == '\\' ||
+                                 target[substringIndex - 1] == '-' ||
+                                 target[substringIndex - 1] == '_' ||
+                                 target[substringIndex - 1] == '.';
+            score = isWordBoundary ? 650 : 600;
             return true;
         }
 
@@ -105,9 +111,7 @@ public class FuzzySearchService : IFuzzySearchService
         if (patternIdx == pattern.Length)
         {
             // Matched all characters of pattern
-            // Length penalty so shorter exact matches rank higher than bloated strings
-            var lengthPenalty = Math.Min(50, (target.Length - pattern.Length) * 2);
-            score = Math.Clamp(currentScore - lengthPenalty, 1, 440);
+            score = Math.Clamp(currentScore, 1, 440);
             return true;
         }
 
@@ -126,14 +130,16 @@ public class FuzzySearchService : IFuzzySearchService
         }
 
         return items
-            .Select(item =>
+            .Select((item, index) =>
             {
                 var text = textSelector(item) ?? string.Empty;
                 var isMatch = IsMatch(trimmedPattern, text, out var score);
-                return new { Item = item, IsMatch = isMatch, Score = score };
+                return new { Item = item, Index = index, IsMatch = isMatch, Score = score, Length = text.Length };
             })
             .Where(x => x.IsMatch)
             .OrderByDescending(x => x.Score)
+            .ThenBy(x => x.Length)
+            .ThenBy(x => x.Index)
             .Select(x => x.Item);
     }
 
@@ -155,16 +161,26 @@ public class FuzzySearchService : IFuzzySearchService
         }
 
         var query = items
-            .Select(item =>
+            .Select((item, index) =>
             {
                 var text = textSelector(item) ?? string.Empty;
                 var isMatch = IsMatch(trimmedPattern, text, out var score);
-                return new { Item = item, IsMatch = isMatch, Score = score };
+                return new { Item = item, Index = index, IsMatch = isMatch, Score = score, Length = text.Length };
             })
             .Where(x => x.IsMatch);
 
         return secondaryDescending
-            ? query.OrderByDescending(x => x.Score).ThenByDescending(x => secondaryKeySelector(x.Item)).Select(x => x.Item)
-            : query.OrderByDescending(x => x.Score).ThenBy(x => secondaryKeySelector(x.Item)).Select(x => x.Item);
+            ? query
+                .OrderByDescending(x => x.Score)
+                .ThenByDescending(x => secondaryKeySelector(x.Item))
+                .ThenBy(x => x.Length)
+                .ThenBy(x => x.Index)
+                .Select(x => x.Item)
+            : query
+                .OrderByDescending(x => x.Score)
+                .ThenBy(x => secondaryKeySelector(x.Item))
+                .ThenBy(x => x.Length)
+                .ThenBy(x => x.Index)
+                .Select(x => x.Item);
     }
 }
