@@ -112,11 +112,7 @@ public partial class TerminalTabViewModel
                     x => timestampMap.TryGetValue(x, out var t) ? t : DateTime.MinValue,
                     secondaryDescending: true).ToArray();
 
-            FilteredCommandHistory.Clear();
-            foreach (var item in results)
-            {
-                FilteredCommandHistory.Add(item);
-            }
+            SyncCollection(FilteredCommandHistory, results);
         }
     }
 
@@ -141,11 +137,7 @@ public partial class TerminalTabViewModel
                     x => timestampMap.TryGetValue(x, out var t) ? t : DateTime.MinValue,
                     secondaryDescending: true).ToArray();
 
-            FilteredDirectoryHistory.Clear();
-            foreach (var item in results)
-            {
-                FilteredDirectoryHistory.Add(item);
-            }
+            SyncCollection(FilteredDirectoryHistory, results);
         }
     }
 
@@ -163,11 +155,7 @@ public partial class TerminalTabViewModel
                     x => x.LastUsedAt,
                     secondaryDescending: true).ToArray();
 
-            FilteredGlobalHistory.Clear();
-            foreach (var item in results)
-            {
-                FilteredGlobalHistory.Add(item);
-            }
+            SyncCollection(FilteredGlobalHistory, results);
         }
     }
 
@@ -190,11 +178,7 @@ public partial class TerminalTabViewModel
 
             var sorted = combined.OrderByDescending(x => x.LastUsedAt).ToList();
 
-            GlobalHistory.Clear();
-            foreach (var item in sorted)
-            {
-                GlobalHistory.Add(item);
-            }
+            SyncCollection(GlobalHistory, sorted);
             RefreshFilteredGlobalHistory();
         }
     }
@@ -537,6 +521,51 @@ public partial class TerminalTabViewModel
         {
             GlobalHistory.Clear();
             FilteredGlobalHistory.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Synchronizes an ObservableCollection with a target list in-place to minimize UI CollectionChanged events.
+    /// Emits zero events if both collections are already identical.
+    /// </summary>
+    internal static void SyncCollection<T>(ObservableCollection<T> target, IList<T> source, IEqualityComparer<T>? comparer = null)
+    {
+        comparer ??= EqualityComparer<T>.Default;
+
+        // Fast-path: if count and elements are already identical, do nothing (0 events fired)
+        if (target.Count == source.Count)
+        {
+            var allMatch = true;
+            for (var i = 0; i < source.Count; i++)
+            {
+                if (!comparer.Equals(target[i], source[i]))
+                {
+                    allMatch = false;
+                    break;
+                }
+            }
+            if (allMatch) return;
+        }
+
+        // 1. Trim excess items from the end
+        while (target.Count > source.Count)
+        {
+            target.RemoveAt(target.Count - 1);
+        }
+
+        // 2. Replace mismatched items in-place
+        for (var i = 0; i < target.Count; i++)
+        {
+            if (!comparer.Equals(target[i], source[i]))
+            {
+                target[i] = source[i];
+            }
+        }
+
+        // 3. Append newly added items
+        for (var i = target.Count; i < source.Count; i++)
+        {
+            target.Add(source[i]);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.VisualTree;
@@ -241,22 +242,39 @@ public partial class HistoryDrawerView
         }
     }
 
+    private static T? ResolveCandidate<T>(
+        T? explicitItem,
+        Avalonia.Controls.ListBox? listBox,
+        string? filterQuery,
+        IList<T> filteredItems,
+        IList<T> allItems) where T : class
+    {
+        var item = explicitItem ?? listBox?.SelectedItem as T;
+        if (item is string s && string.IsNullOrWhiteSpace(s))
+        {
+            item = null;
+        }
+
+        if (item == null)
+        {
+            if (!string.IsNullOrWhiteSpace(filterQuery) && filteredItems.Count > 0)
+            {
+                item = filteredItems[0];
+            }
+            else if (allItems.Count > 0)
+            {
+                item = allItems[0];
+            }
+        }
+
+        return item;
+    }
+
     private void PasteSelectedCommand(string? explicitCommand = null)
     {
         if (DataContext is not MainViewModel vm || vm.SelectedTab is null) return;
 
-        var cmd = explicitCommand ?? CommandHistoryListBox?.SelectedItem as string;
-        if (string.IsNullOrWhiteSpace(cmd))
-        {
-            if (!string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery) && vm.SelectedTab.FilteredCommandHistory.Count > 0)
-            {
-                cmd = vm.SelectedTab.FilteredCommandHistory[0];
-            }
-            else if (vm.SelectedTab.CommandHistory.Count > 0)
-            {
-                cmd = vm.SelectedTab.CommandHistory[0];
-            }
-        }
+        var cmd = ResolveCandidate(explicitCommand, CommandHistoryListBox, vm.SelectedTab.CommandFilterQuery, vm.SelectedTab.FilteredCommandHistory, vm.SelectedTab.CommandHistory);
         if (!string.IsNullOrWhiteSpace(cmd))
         {
             vm.SelectedTab.PasteHistoryCommand(cmd);
@@ -268,18 +286,7 @@ public partial class HistoryDrawerView
     {
         if (DataContext is not MainViewModel vm || vm.SelectedTab is null) return;
 
-        var dir = explicitDirectory ?? DirectoryHistoryListBox?.SelectedItem as string;
-        if (string.IsNullOrWhiteSpace(dir))
-        {
-            if (!string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery) && vm.SelectedTab.FilteredDirectoryHistory.Count > 0)
-            {
-                dir = vm.SelectedTab.FilteredDirectoryHistory[0];
-            }
-            else if (vm.SelectedTab.DirectoryHistory.Count > 0)
-            {
-                dir = vm.SelectedTab.DirectoryHistory[0];
-            }
-        }
+        var dir = ResolveCandidate(explicitDirectory, DirectoryHistoryListBox, vm.SelectedTab.DirectoryFilterQuery, vm.SelectedTab.FilteredDirectoryHistory, vm.SelectedTab.DirectoryHistory);
         if (!string.IsNullOrWhiteSpace(dir))
         {
             vm.SelectedTab.PasteHistoryDirectory(dir);
@@ -291,18 +298,7 @@ public partial class HistoryDrawerView
     {
         if (DataContext is not MainViewModel vm || vm.SelectedTab is null) return;
 
-        var cmd = explicitCommand ?? CommandHistoryListBox?.SelectedItem as string;
-        if (string.IsNullOrWhiteSpace(cmd))
-        {
-            if (!string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery) && vm.SelectedTab.FilteredCommandHistory.Count > 0)
-            {
-                cmd = vm.SelectedTab.FilteredCommandHistory[0];
-            }
-            else if (vm.SelectedTab.CommandHistory.Count > 0)
-            {
-                cmd = vm.SelectedTab.CommandHistory[0];
-            }
-        }
+        var cmd = ResolveCandidate(explicitCommand, CommandHistoryListBox, vm.SelectedTab.CommandFilterQuery, vm.SelectedTab.FilteredCommandHistory, vm.SelectedTab.CommandHistory);
         if (!string.IsNullOrWhiteSpace(cmd))
         {
             vm.SelectedTab.ExecuteHistoryCommand(cmd);
@@ -314,18 +310,7 @@ public partial class HistoryDrawerView
     {
         if (DataContext is not MainViewModel vm || vm.SelectedTab is null) return;
 
-        var dir = explicitDirectory ?? DirectoryHistoryListBox?.SelectedItem as string;
-        if (string.IsNullOrWhiteSpace(dir))
-        {
-            if (!string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery) && vm.SelectedTab.FilteredDirectoryHistory.Count > 0)
-            {
-                dir = vm.SelectedTab.FilteredDirectoryHistory[0];
-            }
-            else if (vm.SelectedTab.DirectoryHistory.Count > 0)
-            {
-                dir = vm.SelectedTab.DirectoryHistory[0];
-            }
-        }
+        var dir = ResolveCandidate(explicitDirectory, DirectoryHistoryListBox, vm.SelectedTab.DirectoryFilterQuery, vm.SelectedTab.FilteredDirectoryHistory, vm.SelectedTab.DirectoryHistory);
         if (!string.IsNullOrWhiteSpace(dir))
         {
             vm.SelectedTab.NavigateToHistoryDirectory(dir);
@@ -337,18 +322,7 @@ public partial class HistoryDrawerView
     {
         if (DataContext is not MainViewModel vm || vm.SelectedTab is null) return;
 
-        var item = explicitItem ?? GlobalHistoryListBox?.SelectedItem as GlobalHistoryItem;
-        if (item == null)
-        {
-            if (!string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery) && vm.SelectedTab.FilteredGlobalHistory.Count > 0)
-            {
-                item = vm.SelectedTab.FilteredGlobalHistory[0];
-            }
-            else if (vm.SelectedTab.GlobalHistory.Count > 0)
-            {
-                item = vm.SelectedTab.GlobalHistory[0];
-            }
-        }
+        var item = ResolveCandidate(explicitItem, GlobalHistoryListBox, vm.SelectedTab.GlobalFilterQuery, vm.SelectedTab.FilteredGlobalHistory, vm.SelectedTab.GlobalHistory);
         if (item != null)
         {
             vm.SelectedTab.ExecuteGlobalItem(item);
@@ -360,18 +334,7 @@ public partial class HistoryDrawerView
     {
         if (DataContext is not MainViewModel vm || vm.SelectedTab is null) return;
 
-        var item = explicitItem ?? GlobalHistoryListBox?.SelectedItem as GlobalHistoryItem;
-        if (item == null)
-        {
-            if (!string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery) && vm.SelectedTab.FilteredGlobalHistory.Count > 0)
-            {
-                item = vm.SelectedTab.FilteredGlobalHistory[0];
-            }
-            else if (vm.SelectedTab.GlobalHistory.Count > 0)
-            {
-                item = vm.SelectedTab.GlobalHistory[0];
-            }
-        }
+        var item = ResolveCandidate(explicitItem, GlobalHistoryListBox, vm.SelectedTab.GlobalFilterQuery, vm.SelectedTab.FilteredGlobalHistory, vm.SelectedTab.GlobalHistory);
         if (item != null)
         {
             vm.SelectedTab.PasteGlobalItem(item);

@@ -119,45 +119,48 @@ public partial class MainViewModel
         TriggerSaveState();
     }
 
-    private TerminalTabViewModel CreateNewTab(string? workingDirectory = null, ShellType shellType = ShellType.PowerShell)
+    private (string? WorkingDirectory, string? ExecutablePath, string? Arguments) ResolveProfileLaunchParameters(ShellType shellType, string? requestedDirectory)
     {
-        int nextId = Tabs.Count + 1;
-        var title = GetDefaultTitle(shellType, nextId);
-
-        string? targetDir = workingDirectory;
+        string? targetDir = requestedDirectory;
         string? customExe = null;
         string? customArgs = null;
+
+        void ApplyProfile(string? profileWorkingDir, bool isBuiltIn, string? exe, string? args)
+        {
+            if (string.IsNullOrWhiteSpace(targetDir) && !string.IsNullOrWhiteSpace(profileWorkingDir))
+            {
+                targetDir = profileWorkingDir;
+            }
+            if (!isBuiltIn)
+            {
+                customExe = exe;
+                customArgs = args;
+            }
+        }
 
         var profileVm = Profiles.FirstOrDefault(p => p.ShellType == shellType);
         if (profileVm != null)
         {
-            if (string.IsNullOrWhiteSpace(targetDir) && !string.IsNullOrWhiteSpace(profileVm.WorkingDirectory))
-            {
-                targetDir = profileVm.WorkingDirectory;
-            }
-            if (!profileVm.IsBuiltIn)
-            {
-                customExe = profileVm.ExecutablePath;
-                customArgs = profileVm.Arguments;
-            }
+            ApplyProfile(profileVm.WorkingDirectory, profileVm.IsBuiltIn, profileVm.ExecutablePath, profileVm.Arguments);
         }
         else
         {
             var profileModel = _terminalProfileService.GetProfiles().FirstOrDefault(p => p.ShellType == shellType);
             if (profileModel != null)
             {
-                if (string.IsNullOrWhiteSpace(targetDir) && !string.IsNullOrWhiteSpace(profileModel.WorkingDirectory))
-                {
-                    targetDir = profileModel.WorkingDirectory;
-                }
-                if (!profileModel.IsBuiltIn)
-                {
-                    customExe = profileModel.ExecutablePath;
-                    customArgs = profileModel.Arguments;
-                }
+                ApplyProfile(profileModel.WorkingDirectory, profileModel.IsBuiltIn, profileModel.ExecutablePath, profileModel.Arguments);
             }
         }
 
+        return (targetDir, customExe, customArgs);
+    }
+
+    private TerminalTabViewModel CreateNewTab(string? workingDirectory = null, ShellType shellType = ShellType.PowerShell)
+    {
+        int nextId = Tabs.Count + 1;
+        var title = GetDefaultTitle(shellType, nextId);
+
+        var (targetDir, customExe, customArgs) = ResolveProfileLaunchParameters(shellType, workingDirectory);
         var session = _shellProcessService.CreateSession(title, targetDir, shellType, customExe, customArgs);
 
         var tab = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
