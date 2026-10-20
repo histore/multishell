@@ -176,6 +176,102 @@ public class HistoryDrawerUiHeadlessTests
         Assert.True(eventRaised);
     }
 
+    [Fact]
+    public async Task HistoryDrawerView_WhenOpeningDirectoryTab_PrunesNonExistentDirectories()
+    {
+        await HeadlessTestSession.DispatchAsync(async () =>
+        {
+            // Arrange
+            var dirService = new DirectoryHistoryService();
+            var existingDir = System.AppContext.BaseDirectory;
+            var fakeDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.Guid.NewGuid().ToString("N"));
+
+            dirService.RecordDirectory(existingDir);
+            dirService.RecordDirectory(fakeDir);
+
+            var processService = new MockShellProcessService();
+            var persistenceService = new MockTabStatePersistenceService();
+            using var mainVm = new MainViewModel(
+                processService,
+                persistenceService,
+                new ThemeService(),
+                new LocalizationService(),
+                new FontSizeService(),
+                directoryHistoryService: dirService);
+
+            await mainVm.InitializeWorkspaceAsync();
+
+            var tab = mainVm.SelectedTab;
+            Assert.NotNull(tab);
+
+            var view = new HistoryDrawerView
+            {
+                DataContext = mainVm
+            };
+
+            // Before opening directory tab, fake directory exists in service and tab
+            Assert.Contains(fakeDir, dirService.GetHistory());
+            Assert.Contains(fakeDir, tab.DirectoryHistory);
+
+            // Act: Open directory drawer (index 1 = Pfade)
+            view.OpenOrToggleHistoryDrawer(1);
+            Dispatcher.UIThread.RunJobs();
+
+            // Assert: fakeDir was pruned on opening, existingDir remains
+            Assert.DoesNotContain(fakeDir, dirService.GetHistory());
+            Assert.DoesNotContain(fakeDir, tab.DirectoryHistory);
+            Assert.Contains(DirectoryHistoryService.NormalizePath(existingDir), tab.DirectoryHistory);
+        });
+    }
+
+    [Fact]
+    public async Task HistoryDrawerView_WhenSwitchingToGlobalTab_PrunesNonExistentDirectories()
+    {
+        await HeadlessTestSession.DispatchAsync(async () =>
+        {
+            // Arrange
+            var dirService = new DirectoryHistoryService();
+            var existingDir = System.AppContext.BaseDirectory;
+            var fakeDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.Guid.NewGuid().ToString("N"));
+
+            dirService.RecordDirectory(existingDir);
+            dirService.RecordDirectory(fakeDir);
+
+            var processService = new MockShellProcessService();
+            var persistenceService = new MockTabStatePersistenceService();
+            using var mainVm = new MainViewModel(
+                processService,
+                persistenceService,
+                new ThemeService(),
+                new LocalizationService(),
+                new FontSizeService(),
+                directoryHistoryService: dirService);
+
+            await mainVm.InitializeWorkspaceAsync();
+
+            var tab = mainVm.SelectedTab;
+            Assert.NotNull(tab);
+
+            var view = new HistoryDrawerView
+            {
+                DataContext = mainVm
+            };
+
+            // Open Command tab first (index 0)
+            view.OpenOrToggleHistoryDrawer(0);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Contains(fakeDir, dirService.GetHistory());
+
+            // Act: Switch to Global tab (index 2)
+            view.OpenOrToggleHistoryDrawer(2);
+            Dispatcher.UIThread.RunJobs();
+
+            // Assert: fakeDir was pruned when switching to global tab
+            Assert.DoesNotContain(fakeDir, dirService.GetHistory());
+            Assert.DoesNotContain(fakeDir, tab.DirectoryHistory);
+        });
+    }
+
     private class MockShellProcessService : IShellProcessService
     {
         public IShellSession CreateSession(string title, string? workingDirectory = null, ShellType shellType = ShellType.PowerShell, string? customExecutable = null, string? customArguments = null)

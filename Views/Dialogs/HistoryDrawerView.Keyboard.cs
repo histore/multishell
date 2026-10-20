@@ -42,6 +42,21 @@ public partial class HistoryDrawerView
             return HandleTabCycleKey(e);
         }
 
+        if (e.Key == Key.Delete)
+        {
+            if (e.Source is TextBox tb)
+            {
+                if (tb.SelectionStart != tb.SelectionEnd || tb.CaretIndex < (tb.Text?.Length ?? 0))
+                {
+                    return false;
+                }
+            }
+
+            DeleteSelectedHistoryItem();
+            e.Handled = true;
+            return true;
+        }
+
         return false;
     }
 
@@ -171,6 +186,11 @@ public partial class HistoryDrawerView
         else if (e.Key == Key.Escape)
         {
             HideHistoryDrawer();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Delete)
+        {
+            DeleteSelectedHistoryItem();
             e.Handled = true;
         }
     }

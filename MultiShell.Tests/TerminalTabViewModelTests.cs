@@ -1898,6 +1898,31 @@ public class TerminalTabViewModelTests
         var line = vm.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
         Assert.Equal("PS C:\\test>", line);
     }
+
+    [Fact]
+    public void PruneDirectoryHistory_PrunesNonExistentDirectoriesFromSharedService()
+    {
+        // Arrange
+        var dirService = new DirectoryHistoryService();
+        var existingDir = AppContext.BaseDirectory;
+        var fakeDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.Guid.NewGuid().ToString("N"));
+
+        dirService.RecordDirectory(existingDir);
+        dirService.RecordDirectory(fakeDir);
+
+        var session = new MockPowerShellSession("PowerShell", existingDir);
+        using var vm = new TerminalTabViewModel(session, directoryHistoryService: dirService);
+
+        Assert.Contains(DirectoryHistoryService.NormalizePath(existingDir), vm.DirectoryHistory);
+        Assert.Contains(fakeDir, vm.DirectoryHistory);
+
+        // Act
+        vm.PruneDirectoryHistory();
+
+        // Assert
+        Assert.Contains(DirectoryHistoryService.NormalizePath(existingDir), vm.DirectoryHistory);
+        Assert.DoesNotContain(fakeDir, vm.DirectoryHistory);
+    }
 }
 
 

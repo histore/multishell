@@ -437,6 +437,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _ = _persistenceService.SaveStateAsync(workspaceState);
     }
 
+    /// <summary>
+    /// Prunes directories that no longer exist on the local filesystem from the shared directory history.
+    /// </summary>
+    [RelayCommand]
+    public void PruneDirectoryHistory()
+    {
+        _directoryHistoryService.PruneNonExistentDirectories();
+    }
+
     public void SaveCurrentStateSynchronously()
     {
         if (_isDisposed || !_isInitialized) return;

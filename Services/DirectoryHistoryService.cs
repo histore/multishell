@@ -183,6 +183,41 @@ public class DirectoryHistoryService : IDirectoryHistoryService
     }
 
     /// <inheritdoc />
+    public bool RemoveDirectory(string? directory)
+    {
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            return false;
+        }
+
+        var normalized = NormalizePath(directory);
+        var rawTrimmed = directory.Trim();
+
+        bool changed = false;
+        lock (_lock)
+        {
+            var countBefore = _directories.Count;
+            _directories.RemoveAll(d =>
+                string.Equals(d, normalized, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(d, rawTrimmed, StringComparison.OrdinalIgnoreCase));
+            changed = _directories.Count != countBefore;
+
+            if (changed)
+            {
+                _directoryTimestamps.Remove(normalized);
+                _directoryTimestamps.Remove(rawTrimmed);
+            }
+        }
+
+        if (changed)
+        {
+            HistoryChanged?.Invoke();
+        }
+
+        return changed;
+    }
+
+    /// <inheritdoc />
     public void Clear()
     {
         bool changed;

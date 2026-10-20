@@ -75,7 +75,8 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "No commands executed in this tab yet.",
         ["Drawer_Empty_Directories"] = "No directories recorded in this tab yet.",
         ["Drawer_Empty_Global"] = "No commands or directories recorded yet.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navigate  |  Click/Enter Insert  |  Right-Click Execute  |  Esc Close ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navigate  |  Click/Enter Insert  |  Right-Click Execute  |  Del Delete  |  Esc Close ]",
+        ["Drawer_Item_Delete_Tooltip"] = "Delete entry (Del)",
 
         // Help Modal
         ["Help_Modal_Title"] = "Keyboard Shortcuts & Usage",

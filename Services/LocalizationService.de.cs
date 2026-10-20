@@ -75,7 +75,8 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "In diesem Tab wurden noch keine Befehle ausgeführt.",
         ["Drawer_Empty_Directories"] = "In diesem Tab wurden noch keine Verzeichnisse erfasst.",
         ["Drawer_Empty_Global"] = "Es wurden noch keine Befehle oder Pfade erfasst.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navigieren  |  Klick/Enter Übernehmen  |  Rechtsklick Ausführen  |  Esc Schließen ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navigieren  |  Klick/Enter Übernehmen  |  Rechtsklick Ausführen  |  Entf Löschen  |  Esc Schließen ]",
+        ["Drawer_Item_Delete_Tooltip"] = "Eintrag löschen (Entf)",
 
         // Help Modal
         ["Help_Modal_Title"] = "Tastaturkürzel & Bedienung",

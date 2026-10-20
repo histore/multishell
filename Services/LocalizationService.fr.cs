@@ -75,7 +75,8 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "Aucune commande exécutée dans cet onglet.",
         ["Drawer_Empty_Directories"] = "Aucun répertoire enregistré dans cet onglet.",
         ["Drawer_Empty_Global"] = "Aucune commande ou aucun répertoire enregistré.",
-        ["Drawer_Hint"] = "[ ▲/▼ Naviguer  |  Clic/Entrée Insérer  |  Clic droit Exécuter  |  Échap Fermer ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Naviguer  |  Clic/Entrée Insérer  |  Clic droit Exécuter  |  Suppr Supprimer  |  Échap Fermer ]",
+        ["Drawer_Item_Delete_Tooltip"] = "Supprimer l'entrée (Suppr)",
 
         // Help Modal
         ["Help_Modal_Title"] = "Raccourcis clavier & Utilisation",

@@ -50,6 +50,13 @@ public interface IDirectoryHistoryService
     void ImportAll(IEnumerable<string>? directories);
 
     /// <summary>
+    /// Removes a directory from the shared history.
+    /// </summary>
+    /// <param name="directory">The directory path to remove.</param>
+    /// <returns><c>true</c> if the directory was found and removed; otherwise, <c>false</c>.</returns>
+    bool RemoveDirectory(string? directory);
+
+    /// <summary>
     /// Clears all recorded directories from the shared history.
     /// </summary>
     void Clear();

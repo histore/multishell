@@ -187,6 +187,97 @@ public class PathCommandHistoryService : IPathCommandHistoryService
     }
 
     /// <inheritdoc />
+    public bool RemoveCommand(string? path, string command)
+    {
+        if (string.IsNullOrWhiteSpace(command)) return false;
+
+        var normalizedPath = NormalizePath(path);
+        if (string.IsNullOrEmpty(normalizedPath)) return false;
+
+        bool removed = false;
+        lock (_lock)
+        {
+            if (_pathHistories.TryGetValue(normalizedPath, out var list))
+            {
+                removed = list.Remove(command);
+                if (list.Count == 0)
+                {
+                    _pathHistories.Remove(normalizedPath);
+                }
+            }
+
+            if (removed)
+            {
+                bool stillInUse = _pathHistories.Values.Any(l => l.Contains(command));
+                if (!stillInUse)
+                {
+                    _globalCommands.Remove(command);
+                    _commandTimestamps.Remove(command);
+                }
+            }
+        }
+
+        if (removed)
+        {
+            HistoryChangedForPath?.Invoke(normalizedPath);
+        }
+
+        return removed;
+    }
+
+    /// <inheritdoc />
+    public bool RemoveFromAllPaths(string command)
+    {
+        if (string.IsNullOrWhiteSpace(command)) return false;
+
+        var affectedPaths = new List<string>();
+        bool removedAny = false;
+
+        lock (_lock)
+        {
+            foreach (var (path, list) in _pathHistories)
+            {
+                if (list.Remove(command))
+                {
+                    affectedPaths.Add(path);
+                    removedAny = true;
+                }
+            }
+
+            foreach (var path in affectedPaths)
+            {
+                if (_pathHistories.TryGetValue(path, out var list) && list.Count == 0)
+                {
+                    _pathHistories.Remove(path);
+                }
+            }
+
+            if (_globalCommands.Remove(command))
+            {
+                removedAny = true;
+            }
+            _commandTimestamps.Remove(command);
+        }
+
+        if (removedAny)
+        {
+            if (affectedPaths.Count > 0)
+            {
+                foreach (var path in affectedPaths)
+                {
+                    HistoryChangedForPath?.Invoke(path);
+                }
+            }
+            else
+            {
+                HistoryChangedForPath?.Invoke(string.Empty);
+            }
+        }
+
+        return removedAny;
+    }
+
+    /// <inheritdoc />
     public Dictionary<string, List<string>> ExportAll()
     {
         lock (_lock)

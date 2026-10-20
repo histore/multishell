@@ -299,7 +299,7 @@ public partial class TerminalTabViewModel
         void Update()
         {
             var currentNormalized = PathCommandHistoryService.NormalizePath(WorkingDirectory);
-            if (string.Equals(currentNormalized, changedNormalizedPath, StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrEmpty(changedNormalizedPath) || string.Equals(currentNormalized, changedNormalizedPath, StringComparison.OrdinalIgnoreCase))
             {
                 SyncCommandHistoryFromPath();
             }
@@ -468,6 +468,52 @@ public partial class TerminalTabViewModel
         TrackInputBuffer(bytes);
         _session.Send(bytes);
         FocusTerminalRequested?.Invoke();
+    }
+
+    /// <summary>
+    /// Deletes a recorded command from the current working directory's command history.
+    /// </summary>
+    [RelayCommand]
+    public void DeleteCommand(string? command)
+    {
+        if (string.IsNullOrWhiteSpace(command)) return;
+        _pathCommandHistoryService.RemoveCommand(WorkingDirectory, command);
+    }
+
+    /// <summary>
+    /// Deletes a recorded directory from the shared visited directory history.
+    /// </summary>
+    [RelayCommand]
+    public void DeleteDirectory(string? directory)
+    {
+        if (string.IsNullOrWhiteSpace(directory)) return;
+        _directoryHistoryService.RemoveDirectory(directory);
+    }
+
+    /// <summary>
+    /// Prunes directories that no longer exist on the local filesystem from the shared directory history.
+    /// </summary>
+    [RelayCommand]
+    public void PruneDirectoryHistory()
+    {
+        _directoryHistoryService.PruneNonExistentDirectories();
+    }
+
+    /// <summary>
+    /// Deletes a global history item (command across all paths, or directory from visited directories).
+    /// </summary>
+    [RelayCommand]
+    public void DeleteGlobalItem(GlobalHistoryItem? item)
+    {
+        if (item == null) return;
+        if (item.IsCommand)
+        {
+            _pathCommandHistoryService.RemoveFromAllPaths(item.Text);
+        }
+        else
+        {
+            _directoryHistoryService.RemoveDirectory(item.Text);
+        }
     }
 
     /// <summary>

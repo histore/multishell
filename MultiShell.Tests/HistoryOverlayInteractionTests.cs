@@ -155,4 +155,103 @@ public class HistoryOverlayInteractionTests
         var sentText = Encoding.UTF8.GetString(session.SentInputs[0]);
         Assert.Equal("git status", sentText);
     }
+
+    [Fact]
+    public void DeleteCommand_RemovesFromCommandHistoryAndFilteredCollection()
+    {
+        // Arrange
+        var pathHistory = new PathCommandHistoryService();
+        var dirHistory = new DirectoryHistoryService();
+        var session = new MockShellSession { WorkingDirectory = @"C:\TestRepo" };
+        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: pathHistory, directoryHistoryService: dirHistory);
+
+        pathHistory.RecordCommand(@"C:\TestRepo", "git status");
+        pathHistory.RecordCommand(@"C:\TestRepo", "dotnet test");
+
+        Assert.Equal(2, tab.FilteredCommandHistory.Count);
+
+        // Act
+        tab.DeleteCommand("git status");
+
+        // Assert
+        Assert.Single(tab.FilteredCommandHistory);
+        Assert.Equal("dotnet test", tab.FilteredCommandHistory[0]);
+        Assert.Single(tab.CommandHistory);
+        Assert.Equal("dotnet test", tab.CommandHistory[0]);
+        Assert.DoesNotContain(tab.GlobalHistory, g => g.Text == "git status");
+    }
+
+    [Fact]
+    public void DeleteDirectory_RemovesFromDirectoryHistoryAndFilteredCollection()
+    {
+        // Arrange
+        var pathHistory = new PathCommandHistoryService();
+        var dirHistory = new DirectoryHistoryService();
+        var session = new MockShellSession { WorkingDirectory = null };
+        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: pathHistory, directoryHistoryService: dirHistory);
+
+        dirHistory.RecordDirectory(@"C:\Projects\Repo1");
+        dirHistory.RecordDirectory(@"C:\Projects\Repo2");
+
+        Assert.Equal(2, tab.FilteredDirectoryHistory.Count);
+
+        // Act
+        tab.DeleteDirectory(@"C:\Projects\Repo1");
+
+        // Assert
+        Assert.Single(tab.FilteredDirectoryHistory);
+        Assert.Equal(DirectoryHistoryService.NormalizePath(@"C:\Projects\Repo2"), tab.FilteredDirectoryHistory[0]);
+        Assert.DoesNotContain(tab.GlobalHistory, g => g.Text == DirectoryHistoryService.NormalizePath(@"C:\Projects\Repo1"));
+    }
+
+    [Fact]
+    public void DeleteGlobalItem_Command_RemovesFromAllPathsAndGlobalHistory()
+    {
+        // Arrange
+        var pathHistory = new PathCommandHistoryService();
+        var dirHistory = new DirectoryHistoryService();
+        var session = new MockShellSession { WorkingDirectory = null };
+        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: pathHistory, directoryHistoryService: dirHistory);
+
+        pathHistory.RecordCommand(@"C:\TestRepo", "npm run lint");
+        tab.SyncGlobalHistory();
+
+        var globalItem = tab.GlobalHistory.FirstOrDefault(g => g.Text == "npm run lint");
+        Assert.NotNull(globalItem);
+        Assert.True(globalItem.IsCommand);
+
+        // Act
+        tab.DeleteGlobalItem(globalItem);
+
+        // Assert
+        Assert.Empty(tab.FilteredCommandHistory);
+        Assert.Empty(tab.FilteredGlobalHistory);
+        Assert.DoesNotContain(tab.GlobalHistory, g => g.Text == "npm run lint");
+    }
+
+    [Fact]
+    public void DeleteGlobalItem_Directory_RemovesFromDirectoryHistoryAndGlobalHistory()
+    {
+        // Arrange
+        var pathHistory = new PathCommandHistoryService();
+        var dirHistory = new DirectoryHistoryService();
+        var session = new MockShellSession { WorkingDirectory = null };
+        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: pathHistory, directoryHistoryService: dirHistory);
+
+        dirHistory.RecordDirectory(@"C:\Projects\UniqueDir");
+        tab.SyncGlobalHistory();
+
+        var normalized = DirectoryHistoryService.NormalizePath(@"C:\Projects\UniqueDir");
+        var globalItem = tab.GlobalHistory.FirstOrDefault(g => g.Text == normalized);
+        Assert.NotNull(globalItem);
+        Assert.False(globalItem.IsCommand);
+
+        // Act
+        tab.DeleteGlobalItem(globalItem);
+
+        // Assert
+        Assert.Empty(tab.FilteredDirectoryHistory);
+        Assert.Empty(tab.FilteredGlobalHistory);
+        Assert.DoesNotContain(tab.GlobalHistory, g => g.Text == normalized);
+    }
 }

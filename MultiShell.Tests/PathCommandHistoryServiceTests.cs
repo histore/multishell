@@ -259,4 +259,93 @@ public class PathCommandHistoryServiceTests : IDisposable
         Assert.True(result[0].LastUsedAt >= result[1].LastUsedAt);
         Assert.True(result[1].LastUsedAt >= result[2].LastUsedAt);
     }
+
+    [Fact]
+    public void RemoveCommand_RemovesFromSpecificPath_AndEvictsFromGlobalWhenNotUsedElsewhere()
+    {
+        // Arrange
+        var service = new PathCommandHistoryService();
+        var dirA = Path.Combine(_testTempDir, "dirA");
+        var dirB = Path.Combine(_testTempDir, "dirB");
+        Directory.CreateDirectory(dirA);
+        Directory.CreateDirectory(dirB);
+
+        service.RecordCommand(dirA, "dotnet test");
+        service.RecordCommand(dirA, "git status");
+        service.RecordCommand(dirB, "git status");
+
+        string? notifiedPath = null;
+        service.HistoryChangedForPath += p => notifiedPath = p;
+
+        // Act 1: Remove "dotnet test" from dirA (only dirA has it)
+        var removed = service.RemoveCommand(dirA, "dotnet test");
+
+        // Assert 1
+        Assert.True(removed);
+        Assert.Equal(PathCommandHistoryService.NormalizePath(dirA), notifiedPath);
+        var dirAHistory = service.GetHistory(dirA);
+        Assert.Single(dirAHistory);
+        Assert.Equal("git status", dirAHistory[0]);
+        Assert.DoesNotContain("dotnet test", service.GetAllCommands());
+
+        // Act 2: Remove "git status" from dirA (dirB still has it)
+        notifiedPath = null;
+        removed = service.RemoveCommand(dirA, "git status");
+
+        // Assert 2
+        Assert.True(removed);
+        Assert.Empty(service.GetHistory(dirA));
+        Assert.Single(service.GetHistory(dirB));
+        Assert.Contains("git status", service.GetAllCommands());
+
+        // Act 3: Remove "git status" from dirB (now nowhere)
+        removed = service.RemoveCommand(dirB, "git status");
+        Assert.True(removed);
+        Assert.Empty(service.GetHistory(dirB));
+        Assert.Empty(service.GetAllCommands());
+    }
+
+    [Fact]
+    public void RemoveCommand_NonExistentOrInvalid_ReturnsFalse()
+    {
+        // Arrange
+        var service = new PathCommandHistoryService();
+
+        // Act & Assert
+        Assert.False(service.RemoveCommand(null, "git status"));
+        Assert.False(service.RemoveCommand("  ", "git status"));
+        Assert.False(service.RemoveCommand(_testTempDir, ""));
+        Assert.False(service.RemoveCommand(_testTempDir, "non_existent_command"));
+    }
+
+    [Fact]
+    public void RemoveFromAllPaths_RemovesCommandAcrossAllPathsAndGlobal()
+    {
+        // Arrange
+        var service = new PathCommandHistoryService();
+        var dirA = Path.Combine(_testTempDir, "dirA");
+        var dirB = Path.Combine(_testTempDir, "dirB");
+        Directory.CreateDirectory(dirA);
+        Directory.CreateDirectory(dirB);
+
+        service.RecordCommand(dirA, "shared_cmd");
+        service.RecordCommand(dirA, "cmdA");
+        service.RecordCommand(dirB, "shared_cmd");
+        service.RecordCommand(dirB, "cmdB");
+
+        var notifiedPaths = new List<string>();
+        service.HistoryChangedForPath += p => notifiedPaths.Add(p);
+
+        // Act
+        var removed = service.RemoveFromAllPaths("shared_cmd");
+
+        // Assert
+        Assert.True(removed);
+        Assert.Equal(2, notifiedPaths.Count);
+        Assert.DoesNotContain("shared_cmd", service.GetHistory(dirA));
+        Assert.DoesNotContain("shared_cmd", service.GetHistory(dirB));
+        Assert.DoesNotContain("shared_cmd", service.GetAllCommands());
+        Assert.Contains("cmdA", service.GetHistory(dirA));
+        Assert.Contains("cmdB", service.GetHistory(dirB));
+    }
 }

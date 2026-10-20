@@ -47,6 +47,11 @@ public partial class HistoryDrawerView : UserControl
             {
                 if (e.Source != HistoryTabControl) return;
 
+                if (HistoryTabControl.SelectedIndex is 1 or 2)
+                {
+                    OnDirectoryListOpened();
+                }
+
                 var hasFilter = false;
                 if (DataContext is MainViewModel vm && vm.SelectedTab != null)
                 {
@@ -189,6 +194,10 @@ public partial class HistoryDrawerView : UserControl
                 {
                     HistoryTabControl.SelectedIndex = targetTabIndex;
                 }
+                if (targetTabIndex is 1 or 2)
+                {
+                    OnDirectoryListOpened();
+                }
                 FocusActiveHistoryList();
             }
         }
@@ -202,10 +211,26 @@ public partial class HistoryDrawerView : UserControl
         }
     }
 
+    private void OnDirectoryListOpened()
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.PruneDirectoryHistory();
+        }
+        else if (DataContext is TerminalTabViewModel tab)
+        {
+            tab.PruneDirectoryHistory();
+        }
+    }
+
     public void ShowHistoryDrawer()
     {
         if (HistoryDrawerGrid == null) return;
         HistoryDrawerGrid.IsVisible = true;
+        if (HistoryTabControl?.SelectedIndex is 1 or 2)
+        {
+            OnDirectoryListOpened();
+        }
         if (DataContext is MainViewModel vm && vm.SelectedTab != null)
         {
             vm.SelectedTab.RequestFocusAndSelectHistorySearch();

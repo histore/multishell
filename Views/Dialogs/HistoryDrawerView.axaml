@@ -29,7 +29,7 @@
                     <Grid ColumnDefinitions="*, Auto">
                         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="{Binding Loc[Drawer_Title]}" FontFamily="Consolas, Cascadia Code, monospace" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
-                            <TextBlock Text="[ ▲/▼ Navigate  |  Enter Execute  |  Esc Close ]" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[Drawer_Hint]}" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
                         </StackPanel>
                         <Button Grid.Column="1"
                                 Content="✕"
@@ -85,19 +85,28 @@
                                              ItemsSource="{Binding SelectedTab.FilteredCommandHistory}">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate x:DataType="x:String">
-                                                <Grid ColumnDefinitions="Auto, *">
+                                                <Grid ColumnDefinitions="Auto, *, Auto">
                                                     <TextBlock Grid.Column="0"
                                                                Text="> "
                                                                FontFamily="Consolas, Cascadia Code, monospace"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppSuccess}"
-                                                               Margin="0,0,4,0" />
+                                                               Margin="0,0,4,0"
+                                                               VerticalAlignment="Center" />
                                                     <TextBlock Grid.Column="1"
                                                                Text="{Binding}"
                                                                FontFamily="Consolas, Cascadia Code, monospace"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppTextSecondary}"
-                                                               TextWrapping="Wrap" />
+                                                               TextWrapping="Wrap"
+                                                               VerticalAlignment="Center" />
+                                                    <Button Grid.Column="2"
+                                                            Classes="deleteHistoryItemBtn"
+                                                            Content="✕"
+                                                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).SelectedTab.DeleteCommandCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).Loc[Drawer_Item_Delete_Tooltip]}"
+                                                            VerticalAlignment="Center" />
                                                 </Grid>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
@@ -155,19 +164,28 @@
                                              ItemsSource="{Binding SelectedTab.FilteredDirectoryHistory}">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate x:DataType="x:String">
-                                                <Grid ColumnDefinitions="Auto, *">
+                                                <Grid ColumnDefinitions="Auto, *, Auto">
                                                     <TextBlock Grid.Column="0"
                                                                Text="/ "
                                                                FontFamily="Consolas, Cascadia Code, monospace"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppAccent}"
-                                                               Margin="0,0,4,0" />
+                                                               Margin="0,0,4,0"
+                                                               VerticalAlignment="Center" />
                                                     <TextBlock Grid.Column="1"
                                                                Text="{Binding}"
                                                                FontFamily="Consolas, Cascadia Code, monospace"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppTextSecondary}"
-                                                               TextWrapping="Wrap" />
+                                                               TextWrapping="Wrap"
+                                                               VerticalAlignment="Center" />
+                                                    <Button Grid.Column="2"
+                                                            Classes="deleteHistoryItemBtn"
+                                                            Content="✕"
+                                                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).SelectedTab.DeleteDirectoryCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).Loc[Drawer_Item_Delete_Tooltip]}"
+                                                            VerticalAlignment="Center" />
                                                 </Grid>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
@@ -225,7 +243,7 @@
                                              ItemsSource="{Binding SelectedTab.FilteredGlobalHistory}">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate x:DataType="vm:GlobalHistoryItem">
-                                                <Grid ColumnDefinitions="Auto, Auto, *">
+                                                <Grid ColumnDefinitions="Auto, Auto, *, Auto">
                                                     <Border Grid.Column="0"
                                                             CornerRadius="3"
                                                             Padding="3,1"
@@ -245,13 +263,22 @@
                                                                FontFamily="Consolas, Cascadia Code, monospace"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppAccent}"
-                                                               Margin="0,0,4,0" />
+                                                               Margin="0,0,4,0"
+                                                               VerticalAlignment="Center" />
                                                     <TextBlock Grid.Column="2"
                                                                Text="{Binding Text}"
                                                                FontFamily="Consolas, Cascadia Code, monospace"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppTextSecondary}"
-                                                               TextWrapping="Wrap" />
+                                                               TextWrapping="Wrap"
+                                                               VerticalAlignment="Center" />
+                                                    <Button Grid.Column="3"
+                                                            Classes="deleteHistoryItemBtn"
+                                                            Content="✕"
+                                                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).SelectedTab.DeleteGlobalItemCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).Loc[Drawer_Item_Delete_Tooltip]}"
+                                                            VerticalAlignment="Center" />
                                                 </Grid>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>

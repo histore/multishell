@@ -75,7 +75,8 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "Nessun comando eseguito in questa scheda.",
         ["Drawer_Empty_Directories"] = "Nessuna directory registrata in questa scheda.",
         ["Drawer_Empty_Global"] = "Nessun comando o percorso registrato.",
-        ["Drawer_Hint"] = "[ ▲/▼ Naviga  |  Clic/Invio Inserisci  |  Clic destro Esegui  |  Esc Chiudi ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Naviga  |  Clic/Invio Inserisci  |  Clic destro Esegui  |  Canc Elimina  |  Esc Chiudi ]",
+        ["Drawer_Item_Delete_Tooltip"] = "Elimina voce (Canc)",
 
         // Help Modal
         ["Help_Modal_Title"] = "Scorciatoie da tastiera & Utilizzo",

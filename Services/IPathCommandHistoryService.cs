@@ -52,6 +52,24 @@ public interface IPathCommandHistoryService
     void PruneNonExistentPaths();
 
     /// <summary>
+    /// Removes a recorded command from the history of the specified directory path.
+    /// If the command is no longer recorded in any directory path, it is also evicted from the global history.
+    /// Triggers <see cref="HistoryChangedForPath"/> if the entry was removed.
+    /// </summary>
+    /// <param name="path">The directory path from which to remove the command.</param>
+    /// <param name="command">The command string to remove.</param>
+    /// <returns><c>true</c> if the command was found and removed; otherwise, <c>false</c>.</returns>
+    bool RemoveCommand(string? path, string command);
+
+    /// <summary>
+    /// Removes a recorded command from all directory paths as well as the global history.
+    /// Triggers <see cref="HistoryChangedForPath"/> for each affected path.
+    /// </summary>
+    /// <param name="command">The command string to remove globally.</param>
+    /// <returns><c>true</c> if the command was removed from at least one path or global history; otherwise, <c>false</c>.</returns>
+    bool RemoveFromAllPaths(string command);
+
+    /// <summary>
     /// Exports all path histories for workspace persistence.
     /// </summary>
     Dictionary<string, List<string>> ExportAll();

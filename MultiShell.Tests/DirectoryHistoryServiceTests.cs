@@ -219,4 +219,62 @@ public class DirectoryHistoryServiceTests
         Assert.Equal(DirectoryHistoryService.NormalizePath(@"C:\dir2"), result[1].Directory);
         Assert.True(result[1].LastUsedAt >= result[0].LastUsedAt);
     }
+
+    [Fact]
+    public void RemoveDirectory_ExistingDirectory_RemovesAndFiresEvent()
+    {
+        // Arrange
+        var service = new DirectoryHistoryService();
+        service.RecordDirectory(@"C:\Projects\Repo1");
+        service.RecordDirectory(@"C:\Projects\Repo2");
+
+        bool eventFired = false;
+        service.HistoryChanged += () => eventFired = true;
+
+        // Act
+        var removed = service.RemoveDirectory(@"C:\Projects\Repo1");
+
+        // Assert
+        Assert.True(removed);
+        Assert.True(eventFired);
+        var history = service.GetHistory();
+        Assert.Single(history);
+        Assert.Equal(DirectoryHistoryService.NormalizePath(@"C:\Projects\Repo2"), history[0]);
+    }
+
+    [Fact]
+    public void RemoveDirectory_NonExistentOrInvalid_ReturnsFalse()
+    {
+        // Arrange
+        var service = new DirectoryHistoryService();
+        service.RecordDirectory(@"C:\Projects\Repo1");
+
+        bool eventFired = false;
+        service.HistoryChanged += () => eventFired = true;
+
+        // Act & Assert
+        Assert.False(service.RemoveDirectory(null));
+        Assert.False(service.RemoveDirectory("  "));
+        Assert.False(service.RemoveDirectory(@"C:\NonExistent\Dir"));
+        Assert.False(eventFired);
+        Assert.Single(service.GetHistory());
+    }
+
+    [Fact]
+    public void RemoveDirectory_WithTrailingSlashOrDifferentCase_RemovesSuccessfully()
+    {
+        // Arrange
+        var service = new DirectoryHistoryService();
+        service.RecordDirectory(@"C:\Projects\Repo1");
+        service.RecordDirectory(@"C:\Projects\Repo2");
+
+        // Act - remove using trailing slash and lowercase
+        var removed = service.RemoveDirectory(@"c:\projects\repo1\");
+
+        // Assert
+        Assert.True(removed);
+        var history = service.GetHistory();
+        Assert.Single(history);
+        Assert.Equal(DirectoryHistoryService.NormalizePath(@"C:\Projects\Repo2"), history[0]);
+    }
 }

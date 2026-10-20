@@ -75,7 +75,8 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "Nenhum comando executado neste separador.",
         ["Drawer_Empty_Directories"] = "Nenhum diretório registado neste separador.",
         ["Drawer_Empty_Global"] = "Nenhum comando ou caminho registado.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navegar  |  Clique/Enter Inserir  |  Clique direito Executar  |  Esc Fechar ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navegar  |  Clique/Enter Inserir  |  Clique direito Executar  |  Del Excluir  |  Esc Fechar ]",
+        ["Drawer_Item_Delete_Tooltip"] = "Excluir entrada (Del)",
 
         // Help Modal
         ["Help_Modal_Title"] = "Atalhos de teclado & Utilização",
