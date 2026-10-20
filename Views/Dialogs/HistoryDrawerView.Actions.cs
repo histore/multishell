@@ -110,14 +110,14 @@ public partial class HistoryDrawerView
     private static string? GetHistoryItemFromPointerSource(Visual? visual)
     {
         var lbi = GetParentListBoxItem(visual);
-        if (lbi?.DataContext is string lbiStr && !string.IsNullOrWhiteSpace(lbiStr) && lbiStr != "✕")
+        if (lbi?.DataContext is string lbiStr && !string.IsNullOrWhiteSpace(lbiStr))
         {
             return lbiStr;
         }
 
         while (visual != null)
         {
-            if (visual is not Avalonia.Controls.Button && visual.DataContext is string str && !string.IsNullOrWhiteSpace(str) && str != "✕")
+            if (visual is not Avalonia.Controls.Button && visual.DataContext is string str && !string.IsNullOrWhiteSpace(str))
             {
                 return str;
             }

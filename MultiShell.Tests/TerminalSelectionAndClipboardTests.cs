@@ -231,4 +231,149 @@ public class TerminalSelectionAndClipboardTests
             Assert.False(string.IsNullOrEmpty(ctrl.SelectedText));
         });
     }
+
+    [Fact]
+    public async Task TryGetTerminalWordOrLine_WithBufferContent_ResolvesLineAndColCoordinates()
+    {
+        await HeadlessTestSession.DispatchAsync(() =>
+        {
+            var session = new TestSession();
+            var tabVm = new TerminalTabViewModel(session);
+            var paneVm = tabVm.ActivePane!;
+
+            paneVm.TerminalModel.Resize(800, 600, 8, 16);
+            paneVm.TerminalModel.Feed("Visit https://github.com/histore/multishell for code\r\n");
+
+            var ctrl = new TerminalControl { Model = paneVm.TerminalModel };
+            ctrl.FontSize = 14;
+
+            // Coordinates on the first line (e.g. x = 80, y = 8)
+            var success = TerminalPaneView.TryGetTerminalWordOrLine(
+                ctrl,
+                paneVm,
+                new Point(80, 8),
+                out var lineText,
+                out var colIndex,
+                out var row,
+                out var charWidth,
+                out var charHeight);
+
+            Assert.True(success);
+            Assert.Contains("https://github.com/histore/multishell", lineText);
+            Assert.Equal(0, row);
+            Assert.True(colIndex > 0);
+            Assert.True(charWidth > 0);
+            Assert.True(charHeight > 0);
+        });
+    }
+
+    [Fact]
+    public async Task TryGetTerminalWordOrLine_WithScrolledBuffer_RespectsYDispOffset()
+    {
+        await HeadlessTestSession.DispatchAsync(() =>
+        {
+            var session = new TestSession();
+            var tabVm = new TerminalTabViewModel(session);
+            var paneVm = tabVm.ActivePane!;
+
+            paneVm.TerminalModel.Terminal.Resize(80, 10);
+            for (int i = 0; i < 30; i++)
+            {
+                paneVm.TerminalModel.Terminal.Feed($"Line {i:D2}: output text\r\n");
+            }
+
+            var ctrl = new TerminalControl { Model = paneVm.TerminalModel };
+            ctrl.FontSize = 14;
+
+            var buffer = paneVm.TerminalModel.Terminal.Buffer;
+            // Scroll to top
+            buffer.ScrollToTop();
+            Assert.Equal(0, buffer.YDisp);
+
+            var successTop = TerminalPaneView.TryGetTerminalWordOrLine(
+                ctrl,
+                paneVm,
+                new Point(40, 8),
+                out var lineTextTop,
+                out _,
+                out var rowTop,
+                out _,
+                out _);
+
+            Assert.True(successTop);
+            Assert.Equal(0, rowTop);
+            Assert.StartsWith("Line 00:", lineTextTop);
+
+            // Scroll down to bottom
+            buffer.ScrollToBottom();
+            var successBottom = TerminalPaneView.TryGetTerminalWordOrLine(
+                ctrl,
+                paneVm,
+                new Point(40, 8),
+                out var lineTextBottom,
+                out _,
+                out var rowBottom,
+                out _,
+                out _);
+
+            Assert.True(successBottom);
+            Assert.Equal(0, rowBottom);
+            // After scrolling to bottom, row 0 in viewport points to scrolled content, not Line 00
+            Assert.NotEqual(lineTextTop, lineTextBottom);
+        });
+    }
+
+    [Fact]
+    public async Task TryCopySelectionAsync_WhenClipboardThrowsCOMException_HandlesGracefullyAndClearsSelection()
+    {
+        await HeadlessTestSession.DispatchAsync(async () =>
+        {
+            var session = new TestSession();
+            var tabVm = new TerminalTabViewModel(session);
+            var paneVm = tabVm.ActivePane!;
+
+            paneVm.TerminalModel.Resize(800, 600, 8, 16);
+            paneVm.TerminalModel.Feed("Selected text to copy\r\n");
+
+            // Select text in model
+            paneVm.TerminalModel.SelectAll();
+            Assert.True(paneVm.TerminalModel.HasSelection);
+
+            var paneView = new TerminalPaneView
+            {
+                DataContext = paneVm,
+                SetClipboardTextOverride = _ => throw new System.Runtime.InteropServices.COMException("CLIPBRD_E_CANT_OPEN: OpenClipboard Failed", unchecked((int)0x800401D0))
+            };
+
+            // Act - must not throw COMException
+            var copied = await paneView.TryCopySelectionAsync(paneVm);
+
+            // Assert
+            Assert.True(copied);
+            Assert.False(paneVm.TerminalModel.HasSelection, "Selection should be cleared even if clipboard locked.");
+        });
+    }
+
+    [Fact]
+    public async Task PasteFromClipboardAsync_WhenClipboardThrows_DoesNotCrash()
+    {
+        await HeadlessTestSession.DispatchAsync(async () =>
+        {
+            var session = new TestSession();
+            var tabVm = new TerminalTabViewModel(session);
+            var paneVm = tabVm.ActivePane!;
+
+            var paneView = new TerminalPaneView
+            {
+                DataContext = paneVm,
+                GetClipboardTextOverride = () => throw new System.Runtime.InteropServices.COMException("CLIPBRD_E_CANT_OPEN: OpenClipboard Failed", unchecked((int)0x800401D0))
+            };
+
+            // Act - must not throw
+            await paneView.PasteFromClipboardAsync(paneVm);
+
+            // Assert: No payload sent since clipboard failed
+            Assert.Empty(session.SentPayloads);
+        });
+    }
 }

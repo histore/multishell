@@ -37,11 +37,42 @@ public partial class TerminalPaneView
         }
     }
 
+    internal Func<string, Task>? SetClipboardTextOverride { get; set; }
+    internal Func<Task<string?>>? GetClipboardTextOverride { get; set; }
+
     private IClipboard? GetClipboard()
     {
         return TopLevel.GetTopLevel(Terminal)?.Clipboard
             ?? TopLevel.GetTopLevel(this)?.Clipboard
             ?? (Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow?.Clipboard;
+    }
+
+    private async Task SetClipboardTextAsync(string text)
+    {
+        if (SetClipboardTextOverride != null)
+        {
+            await SetClipboardTextOverride(text);
+            return;
+        }
+
+        var clipboard = GetClipboard();
+        if (clipboard != null)
+        {
+            await clipboard.SetTextAsync(text);
+        }
+    }
+
+    private async Task<string?> GetClipboardTextAsync()
+    {
+        if (GetClipboardTextOverride != null)
+        {
+            return await GetClipboardTextOverride();
+        }
+
+        var clipboard = GetClipboard();
+        if (clipboard == null) return null;
+
+        return await clipboard.TryGetTextAsync();
     }
 
     private void OnTerminalPointerMoved(object? sender, PointerEventArgs e)
@@ -94,65 +125,60 @@ public partial class TerminalPaneView
 
     private async void OnTerminalPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        var point = e.GetCurrentPoint(Terminal);
-        if (DataContext is not TerminalPaneViewModel vm) return;
-
-        // When interacting with the terminal via pointer, suppress VT mouse tracking mode so that
-        // TerminalControl performs its native text selection, word selection, and highlighting smoothly
-        // without sending raw mouse tracking escape sequences to interactive CLIs like Copilot CLI.
-        vm.SuppressMouseTrackingMode();
-
-        var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
-
-        // 1. Ctrl + Left-Click: Open Clickable Hyperlink or Local File Path (REQ-TERM-005)
-        if (point.Properties.IsLeftButtonPressed && isCtrl)
+        try
         {
-            if (TryGetTerminalWordOrLine(Terminal, vm, point.Position, out var lineText, out var colIndex, out _, out _, out _))
+            var point = e.GetCurrentPoint(Terminal);
+            if (DataContext is not TerminalPaneViewModel vm) return;
+
+            // When interacting with the terminal via pointer, suppress VT mouse tracking mode so that
+            // TerminalControl performs its native text selection, word selection, and highlighting smoothly
+            // without sending raw mouse tracking escape sequences to interactive CLIs like Copilot CLI.
+            vm.SuppressMouseTrackingMode();
+
+            var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+
+            // 1. Ctrl + Left-Click: Open Clickable Hyperlink or Local File Path (REQ-TERM-005)
+            if (point.Properties.IsLeftButtonPressed && isCtrl)
             {
-                var link = LinkDetectionHelper.ExtractLinkAtColumn(lineText, colIndex, vm.WorkingDirectory);
-                if (link != null)
+                if (TryGetTerminalWordOrLine(Terminal, vm, point.Position, out var lineText, out var colIndex, out _, out _, out _))
                 {
-                    if (LinkDetectionHelper.OpenTarget(link.ResolvedTarget, vm.WorkingDirectory))
+                    var link = LinkDetectionHelper.ExtractLinkAtColumn(lineText, colIndex, vm.WorkingDirectory);
+                    if (link != null)
                     {
-                        e.Handled = true;
-                        return;
+                        if (LinkDetectionHelper.OpenTarget(link.ResolvedTarget, vm.WorkingDirectory))
+                        {
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+                    else if (vm.TerminalModel.HasSelection || Terminal.HasSelection)
+                    {
+                        var selected = (!string.IsNullOrEmpty(Terminal.SelectedText) ? Terminal.SelectedText : vm.TerminalModel.SelectedText).Trim();
+                        if (LinkDetectionHelper.OpenTarget(selected, vm.WorkingDirectory))
+                        {
+                            e.Handled = true;
+                            return;
+                        }
                     }
                 }
-                else if (vm.TerminalModel.HasSelection || Terminal.HasSelection)
+            }
+
+            // 2. Right-Click: Instant Copy if text is selected, or Paste if no selection (REQ-TERM-004 / REQ-TAB-017)
+            if (point.Properties.IsRightButtonPressed)
+            {
+                e.Handled = true;
+                if (await TryCopySelectionAsync(vm))
                 {
-                    var selected = (!string.IsNullOrEmpty(Terminal.SelectedText) ? Terminal.SelectedText : vm.TerminalModel.SelectedText).Trim();
-                    if (LinkDetectionHelper.OpenTarget(selected, vm.WorkingDirectory))
-                    {
-                        e.Handled = true;
-                        return;
-                    }
+                    return;
                 }
+
+                // If no text is selected: paste from clipboard directly into the terminal
+                await PasteFromClipboardAsync(vm);
             }
         }
-
-        // 2. Right-Click: Instant Copy if text is selected, or Paste if no selection (REQ-TERM-004 / REQ-TAB-017)
-        if (point.Properties.IsRightButtonPressed)
+        catch (Exception ex)
         {
-            e.Handled = true;
-            var hasSelection = vm.TerminalModel.HasSelection || Terminal.HasSelection;
-            if (hasSelection)
-            {
-                var rawText = !string.IsNullOrEmpty(Terminal.SelectedText) ? Terminal.SelectedText : vm.TerminalModel.SelectedText;
-                var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
-                if (!string.IsNullOrEmpty(text))
-                {
-                    var clipboard = GetClipboard();
-                    if (clipboard != null)
-                    {
-                        await clipboard.SetTextAsync(text);
-                    }
-                    vm.TerminalModel.ClearSelection();
-                }
-                return;
-            }
-
-            // If no text is selected: paste from clipboard directly into the terminal
-            await PasteFromClipboardAsync(vm);
+            System.Diagnostics.Debug.WriteLine($"[TerminalPaneView] Pointer pressed handling failed: {ex.Message}");
         }
     }
 
@@ -160,7 +186,7 @@ public partial class TerminalPaneView
     /// Copies the current terminal selection to the clipboard and clears it.
     /// Returns false when nothing is selected, so Ctrl+C can fall through as an interrupt.
     /// </summary>
-    private async Task<bool> TryCopySelectionAsync(TerminalPaneViewModel vm)
+    internal async Task<bool> TryCopySelectionAsync(TerminalPaneViewModel vm)
     {
         var hasSelection = vm.TerminalModel.HasSelection || Terminal.HasSelection;
         if (!hasSelection) return false;
@@ -169,10 +195,13 @@ public partial class TerminalPaneView
         var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
         if (string.IsNullOrEmpty(text)) return false;
 
-        var clipboard = GetClipboard();
-        if (clipboard != null)
+        try
         {
-            await clipboard.SetTextAsync(text);
+            await SetClipboardTextAsync(text);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TerminalPaneView] Clipboard copy failed (locked by another process): {ex.Message}");
         }
         vm.TerminalModel.ClearSelection();
         return true;
@@ -181,15 +210,21 @@ public partial class TerminalPaneView
     /// <summary>
     /// Pastes clipboard text into the running shell session, respecting bracketed paste mode.
     /// </summary>
-    private async Task PasteFromClipboardAsync(TerminalPaneViewModel vm)
+    internal async Task PasteFromClipboardAsync(TerminalPaneViewModel vm)
     {
-        var clipboard = GetClipboard();
-        if (clipboard == null || !vm.IsRunning) return;
+        if (!vm.IsRunning) return;
 
-        var text = await clipboard.TryGetTextAsync();
-        if (!string.IsNullOrEmpty(text))
+        try
         {
-            vm.PasteText(text);
+            var text = await GetClipboardTextAsync();
+            if (!string.IsNullOrEmpty(text))
+            {
+                vm.PasteText(text);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TerminalPaneView] Clipboard paste failed: {ex.Message}");
         }
     }
 
@@ -210,39 +245,42 @@ public partial class TerminalPaneView
         charWidth = 0;
         charHeight = 0;
 
+        if (terminal == null || vm?.TerminalModel?.Terminal?.Buffer == null)
+        {
+            return false;
+        }
+
         try
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-            var terminalField = terminal.GetType().GetField("_terminal", bindingFlags);
-            var termObj = terminalField?.GetValue(terminal);
-            if (termObj == null) return false;
-
-            var charWidthProp = termObj.GetType().GetProperty("CharWidth", bindingFlags);
-            var charHeightProp = termObj.GetType().GetProperty("CharHeight", bindingFlags);
-
-            charWidth = charWidthProp != null ? Convert.ToDouble(charWidthProp.GetValue(termObj)) : 0;
-            charHeight = charHeightProp != null ? Convert.ToDouble(charHeightProp.GetValue(termObj)) : 0;
+            var sizeField = terminal.GetType().GetField("_consoleTextSize", bindingFlags);
+            if (sizeField?.GetValue(terminal) is Avalonia.Size size && size.Width > 0 && size.Height > 0)
+            {
+                charWidth = size.Width;
+                charHeight = size.Height;
+            }
+            else
+            {
+                var fontSize = terminal.FontSize > 0 ? terminal.FontSize : 12.0;
+                charWidth = fontSize * 0.6;
+                charHeight = fontSize * 1.2;
+            }
 
             if (charWidth <= 0 || charHeight <= 0) return false;
 
             colIndex = (int)(pos.X / charWidth);
             row = (int)(pos.Y / charHeight);
 
-            var linesProp = termObj.GetType().GetProperty("Screen", bindingFlags);
-            var screenObj = linesProp?.GetValue(termObj);
+            if (colIndex < 0 || row < 0) return false;
 
-            if (screenObj is System.Collections.IEnumerable enumerable)
+            var buffer = vm.TerminalModel.Terminal.Buffer;
+            var targetRow = buffer.YDisp + row;
+
+            if (targetRow >= 0 && targetRow < buffer.Lines.Length)
             {
-                int currentRow = 0;
-                foreach (var line in enumerable)
-                {
-                    if (currentRow == row)
-                    {
-                        lineText = line?.ToString() ?? string.Empty;
-                        return true;
-                    }
-                    currentRow++;
-                }
+                var bufferLine = buffer.GetLine(targetRow);
+                lineText = bufferLine?.TranslateToString(true) ?? string.Empty;
+                return !string.IsNullOrEmpty(lineText);
             }
         }
         catch { }
