@@ -25,7 +25,8 @@ MultiShell integrates quick-access developer utilities directly into the termina
   * Fires `HistoryChangedForPath(normalizedPath)` whenever a command is recorded.
   * All active tabs currently in that directory immediately synchronize their `CommandHistory` and `FilteredCommandHistory`.
   * Switching working directories in a tab (`cd ...`) dynamically switches the tab's command history to the new path.
-* **Exit Pruning & Persistence**:
+* **Exit Pruning, Manual Deletion & Persistence**:
+  * Users can remove individual commands directly from the History Drawer via the delete action button (`DeleteCommandItemCommand`), invoking `_pathCommandHistoryService.RemoveCommand(path, command)`.
   * Upon application shutdown, `PruneNonExistentPaths()` validates all tracked paths with `Directory.Exists(path)` and purges entries for paths that no longer exist on disk.
   * Surviving path histories are persisted into `WorkspaceState.PathCommandHistory` in `tabs_state.json`.
 
@@ -35,8 +36,10 @@ MultiShell integrates quick-access developer utilities directly into the termina
   * Normalized filesystem directory paths are stored in chronological MRU order.
   * Automatically bounds directory history to a maximum of 100 entries using FIFO eviction for older items.
   * Preserves Most Recently Used (MRU) ordering without duplicates: visiting an existing path removes its previous occurrence and places it at the newest position.
+  * Users can remove individual directories directly from the History Drawer via `DeleteDirectoryItemCommand`, invoking `_directoryHistoryService.RemoveDirectory(path)`.
+  * On drawer open, non-existent directories are automatically pruned to keep the list clean.
 * **Live Multi-Tab Dynamic Synchronization**:
-  * Fires `HistoryChanged` whenever a directory is visited or changed.
+  * Fires `HistoryChanged` whenever a directory is visited, removed, or changed.
   * All active tabs immediately synchronize their `DirectoryHistory` and `FilteredDirectoryHistory`.
 * **Persistence**:
   * Persisted into `WorkspaceState.SharedDirectoryHistory` in `tabs_state.json`.
@@ -45,14 +48,14 @@ MultiShell integrates quick-access developer utilities directly into the termina
 * **Modular Implementation**:
   * `HistoryDrawerView.axaml.cs`: Lifecycle, toggle visibility, filter selection synchronization (`WireFilterSelectionSync`), and auto-select on open (`FocusActiveHistoryList`).
   * `HistoryDrawerView.Keyboard.cs`: Keyboard navigation (`Up`/`Down` item navigation, `Tab`/`Left`/`Right` tab cycling, `Escape` filter clearing/closing).
-  * `HistoryDrawerView.Actions.cs`: Item execution (`Enter` / Click) and paste operations (`Shift+Enter` / Right-click) for Commands, Directories, and Global entries.
+  * `HistoryDrawerView.Actions.cs`: Item execution (`Enter` / Click), paste operations (`Shift+Enter` / Right-click), and item deletion (`DeleteCommandItemCommand`, `DeleteDirectoryItemCommand`) for Commands, Directories, and Global entries.
 * **Overlay Interaction**:
   * Centered modal floating overlay with dark backdrop over the terminal workspace (`Margin="32"`, `MaxWidth="780"`, `MaxHeight="520"`).
   * Toggled via `Ctrl+Shift` + middle mouse click (scroll wheel click) anywhere on the terminal surface or workspace, toolbar button, or dedicated keyboard shortcuts (`Ctrl+Shift+H` for Command History, `Ctrl+Shift+L` for Directory History).
   * Dismissed by pressing `Escape`, clicking the header close button ("✕"), or clicking anywhere on the outer semi-transparent backdrop outside the dialog.
   * Displays three searchable tabs/sections (all sorted from newest to oldest, with default selection on the newest entry upon opening, and equal search score ties resolved by recency):
-    * **Command History**: Commands executed in the current tab's active directory path, ordered from newest to oldest with recency tie-breaking on equal search scores.
-    * **Directory History**: Unified list of directories visited across all tabs in the session (capped at 100 MRU entries), ordered from newest to oldest with recency tie-breaking on equal search scores.
+    * **Command History**: Commands executed in the current tab's active directory path, ordered from newest to oldest with recency tie-breaking on equal search scores. Includes inline delete button.
+    * **Directory History**: Unified list of directories visited across all tabs in the session (capped at 100 MRU entries), ordered from newest to oldest with recency tie-breaking on equal search scores. Automatically prunes dead paths on open and includes inline delete button.
     * **Global History**: Unified feed across all commands and visited directories, ordered from newest to oldest with recency tie-breaking on equal search scores.
   * Selecting a command sends it to the active shell; selecting a directory executes `cd "<dir>"`.
 

@@ -7,8 +7,8 @@ The Terminal Session module encapsulates low-level operating system process mana
 
 ### 2.1 Contracts (`Services/`)
 * **[`IShellSession`](../../../Services/IShellSession.cs)**:
-  * Public abstraction exposing stream events (`DataReceived`, `ProcessExited`, `WorkingDirectoryChanged`, `CommandExecuted`).
-  * Provides control APIs: `Write(byte[] data)`, `Resize(int columns, int rows)`, and `Terminate()`.
+  * Public abstraction exposing stream events (`DataReceived`, `Exited`, `WorkingDirectoryChanged`, `CommandExecuted`, `CommandCompleted`).
+  * Provides control APIs: `Send(byte[] data)`, `Resize(int columns, int rows)`, and `Dispose()`.
 * **[`IShellProcessService`](../../../Services/IShellProcessService.cs)**:
   * Factory interface for instantiating concrete `IShellSession` sessions based on requested profiles and working directories.
 * **[`IShellDiscoveryService`](../../../Services/IShellDiscoveryService.cs)**:
@@ -19,7 +19,7 @@ The Terminal Session module encapsulates low-level operating system process mana
   * Structured into 4 modular partial files:
     * `ShellSession.cs`: Core session lifecycle, start, input sending, resizing, and clean teardown.
     * `ShellSession.Process.cs`: Process initialization, ConPTY attribute attachments, and shell command-line resolution.
-    * `ShellSession.Streams.cs`: Background output pump loop, stateful UTF-8 decoding, and OSC sequence parsing (OSC 7, 9;9, 133;E).
+    * `ShellSession.Streams.cs`: Background output pump loop with `ArrayPool<byte>.Shared` buffer pooling, stateful UTF-8 decoding, and OSC sequence parsing (OSC 7, 9;9, 133;E, 133;D).
     * `ShellSession.Native.cs`: Win32 P/Invoke interop (`kernel32.dll`) and safe handle wrappers (`WindowsPseudoConsoleSafeHandle`).
 * **[`ShellProcessService`](../../../Services/ShellProcessService.cs)**:
   * Concrete factory constructing `ShellSession` instances with initial buffer dimensions and environment configurations.
@@ -61,6 +61,7 @@ ConPTY streaming delivers arbitrary byte buffers over anonymous pipes. Multi-byt
 * **OSC 9;9 (`\x1b]9;9;"<path>"\x07`)**: Working directory notification emitted by PowerShell profile hooks.
 * **OSC 7 (`\x1b]7;file://<host>/<path>\x07`)**: Standard POSIX/WSL working directory escape sequence.
 * **OSC 133;E (`\x1b]133;E;<base64-command>\x07`)**: Execution notification capturing the exact command line executed by the shell.
+* **OSC 133;D (`\x1b]133;D;<exit-code>\x07`)**: Execution completion notification capturing the process exit status code. Dispatches `CommandCompleted` event to update status glyphs, badges, and trigger toast notifications for long-running operations.
 * **Evaluation Order & Origin Directory Attribution**: In `ShellSession.CheckForOscSequences`, `OSC 133;E` is evaluated before `OSC 9;9` / `OSC 7`. This ensures that directory navigation commands (`cd <path>`) trigger `CommandExecuted` while the pending origin directory is preserved, preventing commands from being misattributed to their destination directory.
 
 ### 4.3 Safe Disposal & Leak-Free Teardown
@@ -69,3 +70,6 @@ On tab closure or application exit:
 2. Asynchronous pipe cancellation tokens are triggered.
 3. Pipe stream handles (`SafeFileHandle`) are explicitly disposed.
 4. The underlying process and any child processes are terminated cleanly to avoid orphan background processes.
+
+### 4.4 Zero-Allocation Stream Buffer Pooling
+In `ShellSession.Streams.cs`, ConPTY standard output reading rents temporary byte buffers via `ArrayPool<byte>.Shared.Rent(4096)` and guarantees their return via a `finally` block upon read completion. This prevents continuous Gen0/Gen1 garbage collection thrashing during sustained high-throughput console streaming (e.g., large test runs or build outputs).

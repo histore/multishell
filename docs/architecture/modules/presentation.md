@@ -7,13 +7,20 @@ The Presentation layer is built on **Avalonia UI 12.1** and **CommunityToolkit.M
 
 ```
 Models/
-├── PaneSplitDirection.cs              # Vertical and Horizontal split orientation (REQ-UI-006)
+├── CommandExecutionResult.cs          # Execution exit code and duration model (REQ-TERM-012)
 ├── PaneNavigationDirection.cs         # Left, Right, Up, Down directional focus (REQ-UI-006)
-└── PathColorStripe.cs                 # Deterministic folder path color stripe model (REQ-TAB-025)
+├── PaneSplitDirection.cs              # Vertical and Horizontal split orientation (REQ-UI-006)
+├── PathBreadcrumbSegment.cs           # Interactive status bar breadcrumb segment (REQ-TERM-013)
+├── PathColorStripe.cs                 # Deterministic folder path color stripe model (REQ-TAB-025)
+└── ProcessExecutionState.cs           # Idle, Running, Succeeded, Failed state enum (REQ-TERM-012)
 
 Services/
 ├── IPathColorCodingService.cs         # Path color stripe computation contract (REQ-TAB-025)
 ├── PathColorCodingService.cs          # Deterministic folder color coding with Padovan scaling
+├── IToastNotificationService.cs       # Platform toast notification contract (REQ-TERM-012)
+├── WindowsToastNotificationService.cs # Native Windows toast notification dispatcher
+├── PathBreadcrumbParser.cs            # Breadcrumb segment extraction from directory paths (REQ-TERM-013)
+├── KeyboardStateHelper.cs             # Native Windows keyboard state reader (CapsLock, etc.)
 └── FileBrowserHelper.cs               # Platform-native file manager launcher (Windows Explorer, Finder, xdg-open)
 
 ViewModels/
@@ -31,6 +38,8 @@ ViewModels/
 │   └── TerminalPaneViewModel.cs       # Independent pane session, ANSI processing, search & execution
 ├── TerminalTabViewModel.cs            # Tab state, title coordination & delegation to active pane
 ├── TerminalTabViewModel.Panes.cs      # Binary tree split operations, directional navigation, focus & zoom
+├── TerminalTabViewModel.ExecutionState.cs # Process status, activity timers, badges & toast notifications
+├── TerminalTabViewModel.Streaming.cs  # Output batching & ANSI buffer streaming
 ├── TerminalTabViewModel.History.cs    # Path & directory history synchronization
 ├── TerminalTabViewModel.Renaming.cs   # Custom renaming & color palette tagging
 ├── ClosedTabItemViewModel.cs          # Reopenable closed tab history item
@@ -38,7 +47,7 @@ ViewModels/
 
 Views/
 ├── MainWindow.axaml                   # Root window XAML layout
-├── MainWindow.axaml.cs                # Window lifecycle & backdrop setup
+├── MainWindow.axaml.cs                # Window lifecycle, breadcrumb folder picker & backdrop setup
 ├── MainWindow.Tabs.cs                 # Tab drag-and-drop & header interaction
 ├── MainWindow.TabDropAndRename.cs     # Drag-and-drop navigation & inline tab renaming
 ├── MainWindow.Keyboard.cs             # Global keyboard shortcut routing
@@ -83,46 +92,43 @@ To avoid monolithic classes, `MainViewModel` is divided across functional partia
   * Quick switcher model backing `Ctrl+Tab` navigation with MRU (Most Recently Used) ordering.
 
 ### 3.2 `TerminalTabViewModel`
-Backs an individual terminal tab instance and is structured into 4 clean partial classes:
+Backs an individual terminal tab instance and coordinates multiple split panes via modular partial classes:
 * **`TerminalTabViewModel.cs`**:
-  * Encapsulates an `IShellSession` and binds to `TerminalControlModel`.
-  * Tracks shell lifecycle: process exit, working directory updates, active title updates.
+  * Tab lifecycle orchestrator, window title coordination, and delegator to the active `TerminalPaneViewModel`.
+  * Manages active pane reference (`ActivePane`), tab-level focus requests, and pane hierarchy root node (`DisplayRootNode`).
+  * `OpenInFileBrowserCommand`: Launches the platform-native file browser (`FileBrowserHelper`) for the active pane's current `WorkingDirectory` with user profile fallback.
+* **`TerminalTabViewModel.Panes.cs`**:
+  * Binary tree split operations (`SplitVerticalCommand`, `SplitHorizontalCommand`, `CloseActivePaneCommand`, `ToggleZoomCommand`).
+  * Directional pane focus navigation (`NavigatePane`) and tree traversal.
+  * Handles auto-collapse on pane shell exit.
+* **`TerminalTabViewModel.ExecutionState.cs` (`REQ-TERM-012`, `REQ-TERM-013`)**:
+  * Tracks shell process execution states (`ProcessExecutionState`: `Idle`, `Running`, `Succeeded`, `Failed`).
+  * Dynamic status indicator glyphs, activity timer, and tooltips displaying last exit code and command execution duration.
+  * Native desktop toast notifications (`IToastNotificationService` / `WindowsToastNotificationService`) for long-running commands (>= 10s) completing while the tab or window is in the background.
+  * Parses interactive status bar breadcrumbs (`PathBreadcrumbs`) via `PathBreadcrumbParser`, disabling ancestor segments during active running commands to prevent illegal concurrent directory changes.
+* **`TerminalTabViewModel.Streaming.cs`**:
   * Zero-allocation ANSI stream processing via `AnsiStreamProcessor` and batched UI thread flushing (`FlushPendingUiFeed`).
-  * Scrolling commands (`PageUp`, `PageDown`, `SendPageUp`, `SendPageDown`, `ClearBuffer`) and keyboard state (`IsAltGrActive`).
-  * `OpenInFileBrowserCommand`: Launches the platform-native file browser (`FileBrowserHelper`) for the tab's current `WorkingDirectory` with user profile fallback.
 * **`TerminalTabViewModel.History.cs`**:
   * Injected with `IPathCommandHistoryService` and `IDirectoryHistoryService`.
-  * Binds `CommandHistory` dynamically to the tab's current `WorkingDirectory`.
+  * Binds `CommandHistory` dynamically to the active pane's current `WorkingDirectory`.
   * Synchronizes path history changes in real time across tabs sharing the directory.
   * Records commands under their originating directory (tracking pending directory changes before OSC updates).
   * Exposes filtered collections (`FilteredCommandHistory`, `FilteredDirectoryHistory`, `FilteredGlobalHistory`).
   * Commands for executing, pasting, and navigating history entries (`ExecuteHistoryCommand`, `PasteHistoryCommand`, `NavigateToHistoryDirectory`, `PasteHistoryDirectory`, `InsertPath`).
-* **`TerminalTabViewModel.Search.cs`**:
-  * Exposes in-terminal search state: `IsSearchOpen`, `SearchQuery`, `SearchResultCount`, `CurrentSearchResultIndex`, and `SearchMatchSummary`.
-  * Commands: `OpenSearchCommand`, `CloseSearchCommand`, `ToggleSearchCommand`, `SearchNextCommand`, `SearchPreviousCommand`.
-  * Events: `FocusSearchBoxRequested`, `FocusTerminalRequested` ensuring crisp focus transitions between the input overlay and terminal canvas.
-* **`TerminalTabViewModel.Renaming.cs`**:
-  * Custom Tab Renaming & Tab Color Palette Tagging (REQ-TAB-020).
+* **`TerminalTabViewModel.Renaming.cs` (`REQ-TAB-020`)**:
+  * Custom Tab Renaming & Tab Color Palette Tagging.
   * Exposes `CustomTitle`, `TabColor`, `IsRenaming`, `RenameBuffer`, `HasCustomTitle`, `HasTabColor`, `TabColorBrush`.
   * `DisplayTitle` returns user-assigned custom title when set, falling back to dynamic middle-ellipsis formatted path/title.
   * Commands: `StartRenamingCommand`, `CommitRenamingCommand`, `CancelRenamingCommand`, `ResetCustomTitleCommand`, `SetTabColorCommand`.
   * Event: `FocusRenameBoxRequested` dispatched to view to select and focus the inline `TextBox`.
-* **Deterministic Folder Path Color Stripes (REQ-TAB-025)**:
+* **Deterministic Folder Path Color Stripes (`REQ-TAB-025`)**:
   * Exposes `PathColorStripes` collection (`IReadOnlyList<PathColorStripe>`) and `HasPathColorStripes` boolean indicator.
   * Populated with deterministic color stripes representing each directory depth level from left to right (up to 16 visible stripes).
   * Color stripes use Padovan sequence width multipliers (1, 2, 3, 4, 5, 7, 9, 12, 16, 21, 28, 37) and golden-ratio hue distribution for distinct, aesthetically harmonious identification.
-* Concurrency-Hardened Fuzzy Search:
-  * `RefreshFilteredCommands()` and `RefreshFilteredDirectories()` take `.ToArray()` snapshots of history collections before invoking `_fuzzySearchService.FilterAndRank` to eliminate concurrent collection modification exceptions during background streaming.
-* In-Terminal Search State & Navigation (REQ-TERM-006):
-  * Exposes `IsSearchOpen`, `SearchQuery`, `SearchResultCount`, `CurrentSearchResultIndex`, and `SearchMatchSummary` (`"m/n"` or `"No results"`).
+* **`TerminalPaneViewModel`**:
+  * Encapsulates an independent `IShellSession`, `TerminalControlModel`, `AnsiStreamProcessor`, in-terminal search, and active focus border state.
+  * Exposes in-terminal search state (`REQ-TERM-006`): `IsSearchOpen`, `SearchQuery`, `SearchResultCount`, `CurrentSearchResultIndex`, and `SearchMatchSummary` (`"m/n"` or `"No results"`).
   * Commands: `OpenSearchCommand`, `CloseSearchCommand`, `ToggleSearchCommand`, `SearchNextCommand`, `SearchPreviousCommand`.
-  * Events: `FocusSearchBoxRequested`, `FocusTerminalRequested` ensuring crisp focus transitions between the input overlay and terminal canvas.
-* Custom Tab Renaming & Tab Color Palette Tagging (REQ-TAB-020):
-  * Exposes `CustomTitle`, `TabColor`, `IsRenaming`, `RenameBuffer`, `HasCustomTitle`, `HasTabColor`, `TabColorBrush`.
-  * `DisplayTitle` returns user-assigned custom title when set, falling back to dynamic middle-ellipsis formatted path/title.
-  * Commands: `StartRenamingCommand`, `CommitRenamingCommand`, `CancelRenamingCommand`, `ResetCustomTitleCommand`, `SetTabColorCommand`.
-  * Event: `FocusRenameBoxRequested` dispatched to view to select and focus the inline `TextBox`.
-* Handles special keyboard input state (e.g. `IsAltGrActive` for international layouts).
 
 ### 3.3 Split Pane Tree Architecture (`REQ-UI-006`)
 * **Binary Tree Representation (`ViewModels/Panes/`)**:
@@ -143,7 +149,7 @@ Backs an individual terminal tab instance and is structured into 4 clean partial
 ### 4.1 `MainWindow.axaml` Layout
 * **Top Header / Draggable Tab Bar**:
   * Custom 30px draggable title bar integrating window controls (minimize, maximize, close).
-  * `ItemsControl` bound to `Tabs` with custom tab items supporting double-click or `Ctrl+Shift+F2` inline renaming (`TextBox.tabRenameBox`), top deterministic folder path color stripes (`ItemsControl` bound to `PathStripes`, REQ-TAB-025), bottom accent indicator bar (`TabColorBrush`), right-click `ContextMenu` (Rename `Ctrl+Shift+F2`, Reset Name, 9-color Palette submenu, Duplicate `Ctrl+Shift+D`, Close `Ctrl+Shift+W` / `Ctrl+Shift+F4`, Close Other Tabs, Close Tabs to Right), and active selection indication.
+  * `ItemsControl` bound to `Tabs` with custom tab items supporting double-click or `Ctrl+Shift+F2` inline renaming (`TextBox.tabRenameBox`), top deterministic folder path color stripes (`ItemsControl` bound to `PathStripes`, REQ-TAB-025), bottom accent indicator bar (`TabColorBrush`), process status badge (`REQ-TERM-012`), right-click `ContextMenu` (Rename `Ctrl+Shift+F2`, Reset Name, 9-color Palette submenu, Duplicate `Ctrl+Shift+D`, Close `Ctrl+Shift+W` / `Ctrl+Shift+F4`, Close Other Tabs, Close Tabs to Right), and active selection indication.
   * Drag-and-drop support (`DragDrop.AllowDrop="True"`): dragging over tab items dynamically activates the hovered tab, and dropping files navigates or opens a new tab.
   * Drag hover auto-scrolling: hovering over overflow scroll arrow buttons (`‹` / `›`) during any active drag operation (external files or tab drag) automatically scrolls the tab bar sequentially (250ms dwell, then 320ms per tab step) to reveal hidden tabs.
 * **Window KeyBindings & Keyboard Routing (`MainWindow.Keyboard.cs` & `FunctionKeyRouting.cs`)**:
@@ -153,16 +159,20 @@ Backs an individual terminal tab instance and is structured into 4 clean partial
 * **Main Terminal Host Panel**:
   * Persistent tab hosting via `Panel` with `IsVisible="{Binding IsSelected}"` binding. This retains ConPTY streams, terminal ANSI buffers, and scrollback without unmounting controls upon tab switching.
   * Drag-and-drop surface (`TerminalContentArea`): dropping folders or files navigates the active terminal (or containing folder for files), and holding `Shift` opens a new tab.
+* **Bottom Status Bar**:
+  * Left: Process execution status glyph and live activity text (`SelectedTab.ExecutionStatusGlyph`, `SelectedTab.ProcessActivityText`).
+  * Center: Interactive Path Breadcrumbs (`REQ-TERM-013`, `SelectedTab.PathBreadcrumbs`). Clicking any ancestor breadcrumb navigates the active shell (`cd <path>`). Clicking the current folder segment or dropdown opens a native folder picker dialog (`ShowFolderPickerForBreadcrumbAsync`).
+  * Right: Maximized Pane restore button (`SelectedTab.ToggleZoomCommand`), Caps Lock amber badge (`KeyboardStateHelper`), Insert/Overwrite mode indicator, UTF-8 codepage badge, and active Shell Type badge.
 * **Left Slide-out History Drawer**:
   * Animated panel displaying searchable command and directory history.
 * **Quick Tab Switcher Overlay**:
   * Modal HUD overlay displayed during `Ctrl+Tab` navigation.
 
-### 4.2 `TerminalTabView.axaml`
-* Hosts `SvcSystems.UI.Terminal.TerminalControl`.
+### 4.2 `TerminalTabView.axaml` & `TerminalPaneView.axaml`
+* **`TerminalTabView.axaml`**: Hosts `SplitPaneContainerControl`, dynamically rendering the tab's recursive pane hierarchy (`DisplayRootNode`).
+* **`TerminalPaneView.axaml`**: Hosts `SvcSystems.UI.Terminal.TerminalControl`, active pane border (`BorderBrush`/`BorderThickness`), floating top-right hover mini toolbar (split vertical/horizontal, zoom toggle, close pane), floating `SearchOverlay` border (search input box, match count summary, navigation and close buttons), and link hover adorner (`HoverLinkBorder`).
 * Maps application themes (Xterm 16 colors and 24-bit TrueColor) to terminal color palettes.
 * Intercepts pointer events for link opening, right-click paste/copy, and focus transfer.
-* Houses the floating `SearchOverlay` border with search input box, match count indicator, and previous/next/close buttons bound to `TerminalTabViewModel`.
 
 ### 4.3 Terminal Focus Management & Restoration (`TerminalFocusHelper`)
 * Solves focus loss when dismissing overlays (History Drawer, Settings modal, Profile dialog) or switching tabs.
