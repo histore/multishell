@@ -246,8 +246,16 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     /// Suppresses VT mouse tracking mode so that terminal pointer interactions (click, double-click, drag)
     /// always perform native text selection instead of sending raw mouse reporting escape sequences.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Safe reflection on terminal engine internal mouse tracker with null-safety.")]
     public void SuppressMouseTrackingMode()
     {
+        try
+        {
+            // Reset DEC private modes for mouse tracking via standard VT sequences (1000, 1002, 1003, 1006)
+            TerminalModel.Terminal.Feed("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l");
+        }
+        catch { }
+
         try
         {
             var engine = TerminalModel.Terminal.Engine;
