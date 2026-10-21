@@ -442,6 +442,54 @@ public partial class TerminalPaneView : UserControl
             return;
         }
 
+        // Shift+Enter / Ctrl+Enter: Insert a newline (0x0A / LF) for multiline prompts (e.g. in GitHub Copilot CLI, REPLs, editors).
+        // By default, terminals send 0x0D (CR / Enter) which triggers immediate command submission.
+        // Sending 0x0A (Line Feed) instructs CLI text areas to insert a line break without submitting the prompt.
+        if (e.Key is Key.Enter or Key.Return && (isShift || isCtrl) && !isAlt)
+        {
+            e.Handled = true;
+            if (vm.IsRunning)
+            {
+                vm.SendInput([0x0A]);
+            }
+            return;
+        }
+
+        // PageUp / PageDown routing (REQ-TERM-003):
+        // Note: Ctrl+PageUp/PageDown and Ctrl+Shift+PageUp/PageDown are handled by MainWindow for tab switching/reordering.
+        // When not modified by Ctrl:
+        // - Shift+PageUp / Shift+PageDown or Plain PageUp / PageDown in normal buffer: scroll the scrollback buffer.
+        // - In Alternate Buffer (e.g. less, vim, nano, htop, mc) or with Alt: transmit VT PageUp/PageDown sequences to the shell.
+        if (e.Key is Key.PageUp or Key.PageDown && !isCtrl)
+        {
+            var isAltBuffer = vm.TerminalModel.Terminal.IsAlternateBufferActive;
+
+            if (isAltBuffer || isAlt)
+            {
+                if (e.Key == Key.PageUp)
+                {
+                    vm.SendPageUp(alt: isAlt);
+                }
+                else
+                {
+                    vm.SendPageDown(alt: isAlt);
+                }
+            }
+            else
+            {
+                if (e.Key == Key.PageUp)
+                {
+                    vm.PageUp();
+                }
+                else
+                {
+                    vm.PageDown();
+                }
+            }
+            e.Handled = true;
+            return;
+        }
+
         // Copy (Ctrl+C with selection, or Ctrl+Shift+C) and paste (Ctrl+V / Ctrl+Shift+V) via the system clipboard.
         if (isCtrl && !isAlt)
         {

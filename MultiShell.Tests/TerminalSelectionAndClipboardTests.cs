@@ -115,6 +115,152 @@ public class TerminalSelectionAndClipboardTests
         });
     }
 
+    [Fact]
+    public async Task PageUp_And_PageDown_InNormalBuffer_ScrollBuffer()
+    {
+        await HeadlessTestSession.DispatchAsync(() =>
+        {
+            var session = new TestSession();
+            var tabVm = new TerminalTabViewModel(session);
+            var paneVm = tabVm.ActivePane!;
+            var view = new TerminalPaneView { DataContext = paneVm };
+
+            // Fill with scrollback lines
+            paneVm.TerminalModel.Resize(800, 300, 8, 16);
+            for (int i = 0; i < 50; i++)
+            {
+                paneVm.TerminalModel.Feed($"Line {i}\r\n");
+            }
+
+            var initialYDisp = paneVm.TerminalModel.Terminal.Buffer.YDisp;
+            Assert.True(initialYDisp > 0, "Buffer should have scrolled down initially");
+
+            var onKeyDownMethod = typeof(TerminalPaneView).GetMethod("OnTerminalKeyDown", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+            // PageUp KeyDown
+            var upArgs = new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = Key.PageUp,
+                KeyModifiers = KeyModifiers.None
+            };
+            onKeyDownMethod.Invoke(view, new object[] { view, upArgs });
+
+            Assert.True(upArgs.Handled);
+            Assert.True(paneVm.TerminalModel.Terminal.Buffer.YDisp < initialYDisp, "PageUp should scroll buffer up");
+
+            // PageDown KeyDown
+            var downArgs = new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = Key.PageDown,
+                KeyModifiers = KeyModifiers.None
+            };
+            onKeyDownMethod.Invoke(view, new object[] { view, downArgs });
+
+            Assert.True(downArgs.Handled);
+            Assert.Equal(initialYDisp, paneVm.TerminalModel.Terminal.Buffer.YDisp);
+        });
+    }
+
+    [Fact]
+    public async Task PageUp_And_PageDown_InAltBuffer_SendVtSequences()
+    {
+        await HeadlessTestSession.DispatchAsync(() =>
+        {
+            var session = new TestSession();
+            var tabVm = new TerminalTabViewModel(session);
+            var paneVm = tabVm.ActivePane!;
+            var view = new TerminalPaneView { DataContext = paneVm };
+
+            // Switch to Alternate Buffer (as used by htop, nano, vim, less)
+            paneVm.TerminalModel.Terminal.SwitchToAltBuffer();
+            Assert.True(paneVm.TerminalModel.Terminal.IsAlternateBufferActive);
+
+            var onKeyDownMethod = typeof(TerminalPaneView).GetMethod("OnTerminalKeyDown", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+            // PageUp in Alt Buffer -> Send ESC [ 5 ~
+            var upArgs = new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = Key.PageUp,
+                KeyModifiers = KeyModifiers.None
+            };
+            onKeyDownMethod.Invoke(view, new object[] { view, upArgs });
+
+            Assert.True(upArgs.Handled);
+            Assert.Single(session.SentPayloads);
+            Assert.Equal("\u001b[5~", System.Text.Encoding.UTF8.GetString(session.SentPayloads[0]));
+
+            // PageDown in Alt Buffer -> Send ESC [ 6 ~
+            var downArgs = new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = Key.PageDown,
+                KeyModifiers = KeyModifiers.None
+            };
+            onKeyDownMethod.Invoke(view, new object[] { view, downArgs });
+
+            Assert.True(downArgs.Handled);
+            Assert.Equal(2, session.SentPayloads.Count);
+            Assert.Equal("\u001b[6~", System.Text.Encoding.UTF8.GetString(session.SentPayloads[1]));
+        });
+    }
+
+    [Fact]
+    public async Task PageUp_WithAltModifier_SendsAltVtSequence()
+    {
+        await HeadlessTestSession.DispatchAsync(() =>
+        {
+            var session = new TestSession();
+            var tabVm = new TerminalTabViewModel(session);
+            var paneVm = tabVm.ActivePane!;
+            var view = new TerminalPaneView { DataContext = paneVm };
+
+            var onKeyDownMethod = typeof(TerminalPaneView).GetMethod("OnTerminalKeyDown", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+            var upAltArgs = new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = Key.PageUp,
+                KeyModifiers = KeyModifiers.Alt
+            };
+            onKeyDownMethod.Invoke(view, new object[] { view, upAltArgs });
+
+            Assert.True(upAltArgs.Handled);
+            Assert.Single(session.SentPayloads);
+            Assert.Equal("\u001b[5;3~", System.Text.Encoding.UTF8.GetString(session.SentPayloads[0]));
+        });
+    }
+
+    [Theory]
+    [InlineData(Key.Enter, KeyModifiers.Shift)]
+    [InlineData(Key.Enter, KeyModifiers.Control)]
+    public async Task ShiftEnter_And_CtrlEnter_SendLineFeed(Key key, KeyModifiers modifiers)
+    {
+        await HeadlessTestSession.DispatchAsync(() =>
+        {
+            var session = new TestSession();
+            var tabVm = new TerminalTabViewModel(session);
+            var paneVm = tabVm.ActivePane!;
+            var view = new TerminalPaneView { DataContext = paneVm };
+
+            var onKeyDownMethod = typeof(TerminalPaneView).GetMethod("OnTerminalKeyDown", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+            var enterArgs = new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = key,
+                KeyModifiers = modifiers
+            };
+            onKeyDownMethod.Invoke(view, new object[] { view, enterArgs });
+
+            Assert.True(enterArgs.Handled);
+            Assert.Single(session.SentPayloads);
+            Assert.Equal(new byte[] { 0x0A }, session.SentPayloads[0]);
+        });
+    }
+
     private sealed class TestSession : IShellSession
     {
         public Guid SessionId => Guid.NewGuid();
