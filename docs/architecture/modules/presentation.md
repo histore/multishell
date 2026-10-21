@@ -87,7 +87,7 @@ To avoid monolithic classes, `MainViewModel` is divided across functional partia
   * Profile selection dropdown list and default launch profile selection.
   * Commands for creating, editing, and deleting custom terminal profiles.
 * **`MainViewModel.Settings.cs`**:
-  * Manages settings drawer/overlay visibility, language selection (`SelectedLanguage` two-way bound to `ComboBox`, `AvailableLanguages`, language flags `IsGerman`, `IsEnglish`, `IsFrench`, `IsSpanish`, `IsItalian`, `IsPortuguese`), theme variant toggling, and global font sizing.
+  * Manages settings drawer/overlay visibility, language selection (`SelectedLanguage` two-way bound to `ComboBox`, `AvailableLanguages`, language flags `IsGerman`, `IsEnglish`, `IsFrench`, `IsSpanish`, `IsItalian`, `IsPortuguese`), independent application and terminal theme toggling (`ToggleAppTheme`, `ToggleTerminalTheme`, `SetAppTheme`, `SetTerminalTheme` with automatic debounced `TriggerSaveState()` persistence), and global font sizing.
 * **`MainViewModel.TabSwitcher.cs`**:
   * Quick switcher model backing `Ctrl+Tab` navigation with MRU (Most Recently Used) ordering.
 
@@ -171,7 +171,7 @@ Backs an individual terminal tab instance and coordinates multiple split panes v
 ### 4.2 `TerminalTabView.axaml` & `TerminalPaneView.axaml`
 * **`TerminalTabView.axaml`**: Hosts `SplitPaneContainerControl`, dynamically rendering the tab's recursive pane hierarchy (`DisplayRootNode`).
 * **`TerminalPaneView.axaml`**: Hosts `SvcSystems.UI.Terminal.TerminalControl`, active pane border (`BorderBrush`/`BorderThickness`), floating top-right hover mini toolbar (split vertical/horizontal, zoom toggle, close pane), floating `SearchOverlay` border (search input box, match count summary, navigation and close buttons), and link hover adorner (`HoverLinkBorder`).
-* Maps application themes (Xterm 16 colors and 24-bit TrueColor) to terminal color palettes.
+* Maps application themes (Xterm 16 colors and 24-bit TrueColor) to terminal color palettes. `ApplyTerminalTheme` updates `TerminalScope.Resources`, flushes `Terminal.ClearFormattedTextCache()`, and invalidates visual tree elements (`Terminal`, visual children, and `TerminalSurface`) to guarantee immediate redraw.
 * Intercepts pointer events for link opening, right-click paste/copy, and focus transfer.
 
 ### 4.3 Terminal Focus Management & Restoration (`TerminalFocusHelper`)

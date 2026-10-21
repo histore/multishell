@@ -20,7 +20,8 @@ The Workspace State Persistence module provides reliable, atomic serialization a
     * `Tabs`: List of `TabState` entries.
     * `SelectedIndex`: Index of the currently focused tab.
     * `SavedLanguage`: Persisted language code (`en`, `de`, `fr`, `es`, `it`, `pt`).
-    * `AppFontSizeLevel` / `TerminalFontSizeLevel`: Configured 5-level font size scale indices.
+    * `AppFontSizeLevel` / `TerminalFontSizeLevel`: Configured 7-level font size scale indices (Default: 4).
+    * `IsDarkAppTheme` / `IsDarkTerminalTheme`: Independent persisted theme preferences (`bool?`) for application UI and terminal emulator shells.
     * `DefaultShellType`: Selected default launch shell type.
     * `ClosedTabs`: List of recently closed tabs available for restoration.
     * `PathCommandHistory`: Dictionary mapping normalized filesystem paths to lists of recent commands (`Dictionary<string, List<string>>`).
@@ -44,3 +45,12 @@ To prevent data corruption caused by application crash or power interruption dur
 3. Flushed to disk with `FileStream.Flush(flushToDisk: true)`.
 4. Atomically moved or replaced over `tabs_state.json` via `File.Move(..., overwrite: true)` or `File.Replace(...)`.
 5. If deserialization fails (e.g. invalid JSON from an external edit), the service logs a warning, backs up the corrupt file as `.corrupt`, and safely returns an empty workspace.
+
+## 5. Theme & Settings Lifecycle
+* **Hydration on Startup**:
+  * `MainViewModel.InitializeWorkspaceAsync` checks `WorkspaceState.IsDarkAppTheme` and `WorkspaceState.IsDarkTerminalTheme`.
+  * If non-null, applies values via `IThemeService.SetAppTheme(isDark)` and `IThemeService.SetTerminalTheme(isDark)`.
+  * Open tabs synchronize their terminal shell theme during initialization (`tabVm.UpdateTheme(IsDarkTerminalTheme)`).
+* **Dehydration on Change & Shutdown**:
+  * Any user-driven theme toggle (`ToggleAppTheme`, `ToggleTerminalTheme`, `SetAppTheme`, `SetTerminalTheme`) immediately triggers debounced state persistence via `TriggerSaveState()`.
+  * Synchronous save (`SaveCurrentStateSynchronously()`) executes on window closing to guarantee zero-loss state capture.

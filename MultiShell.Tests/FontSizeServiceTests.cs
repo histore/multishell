@@ -6,22 +6,24 @@ namespace MultiShell.Tests;
 public class FontSizeServiceTests
 {
     [Fact]
-    public void Constructor_DefaultLevels_AreLevel3()
+    public void Constructor_DefaultLevels_AreLevel4()
     {
         var service = new FontSizeService();
 
-        Assert.Equal(3, service.AppFontSizeLevel);
-        Assert.Equal(3, service.TerminalFontSizeLevel);
+        Assert.Equal(4, service.AppFontSizeLevel);
+        Assert.Equal(4, service.TerminalFontSizeLevel);
         Assert.Equal(1.0, service.AppFontScale);
-        Assert.Equal(12.0, service.TerminalFontSize);
+        Assert.Equal(14.0, service.TerminalFontSize);
     }
 
     [Theory]
-    [InlineData(1, 0.85, 9.5)]
-    [InlineData(2, 0.92, 10.5)]
-    [InlineData(3, 1.00, 12.0)]
-    [InlineData(4, 1.12, 14.0)]
-    [InlineData(5, 1.25, 16.5)]
+    [InlineData(1, 0.80, 10.0)]
+    [InlineData(2, 0.88, 11.0)]
+    [InlineData(3, 0.94, 12.5)]
+    [InlineData(4, 1.00, 14.0)]
+    [InlineData(5, 1.08, 16.0)]
+    [InlineData(6, 1.18, 18.5)]
+    [InlineData(7, 1.30, 21.0)]
     public void GetScaleAndFontSize_ReturnsExpectedValues(int level, double expectedScale, double expectedPt)
     {
         var service = new FontSizeService();
@@ -33,8 +35,9 @@ public class FontSizeServiceTests
     [Theory]
     [InlineData(0, 1)]
     [InlineData(-5, 1)]
-    [InlineData(6, 5)]
-    [InlineData(10, 5)]
+    [InlineData(7, 7)]
+    [InlineData(8, 7)]
+    [InlineData(12, 7)]
     public void SetAppFontSizeLevel_ClampsToValidRange(int inputLevel, int expectedClamped)
     {
         var service = new FontSizeService();
@@ -46,8 +49,9 @@ public class FontSizeServiceTests
     [Theory]
     [InlineData(0, 1)]
     [InlineData(-5, 1)]
-    [InlineData(6, 5)]
-    [InlineData(10, 5)]
+    [InlineData(7, 7)]
+    [InlineData(8, 7)]
+    [InlineData(12, 7)]
     public void SetTerminalFontSizeLevel_ClampsToValidRange(int inputLevel, int expectedClamped)
     {
         var service = new FontSizeService();
@@ -69,12 +73,12 @@ public class FontSizeServiceTests
             lastLevel = lvl;
         };
 
-        service.SetAppFontSizeLevel(4);
+        service.SetAppFontSizeLevel(5);
         Assert.Equal(1, eventCallCount);
-        Assert.Equal(4, lastLevel);
+        Assert.Equal(5, lastLevel);
 
         // Setting same level again should not fire
-        service.SetAppFontSizeLevel(4);
+        service.SetAppFontSizeLevel(5);
         Assert.Equal(1, eventCallCount);
     }
 
@@ -101,10 +105,10 @@ public class FontSizeServiceTests
     }
 
     [Fact]
-    public void ResetLevels_ResetsBothLevelsToDefaultLevel3()
+    public void ResetLevels_ResetsBothLevelsToDefaultLevel4()
     {
-        var service = new FontSizeService(initialAppLevel: 5, initialTerminalLevel: 1);
-        Assert.Equal(5, service.AppFontSizeLevel);
+        var service = new FontSizeService(initialAppLevel: 7, initialTerminalLevel: 1);
+        Assert.Equal(7, service.AppFontSizeLevel);
         Assert.Equal(1, service.TerminalFontSizeLevel);
 
         service.ResetLevels();
@@ -116,18 +120,18 @@ public class FontSizeServiceTests
     [Fact]
     public void ResetTerminalFontSizeLevel_ResetsOnlyTerminalLevel()
     {
-        var service = new FontSizeService(initialAppLevel: 5, initialTerminalLevel: 1);
+        var service = new FontSizeService(initialAppLevel: 7, initialTerminalLevel: 1);
 
         service.ResetTerminalFontSizeLevel();
 
-        Assert.Equal(5, service.AppFontSizeLevel);
+        Assert.Equal(7, service.AppFontSizeLevel);
         Assert.Equal(IFontSizeService.DefaultLevel, service.TerminalFontSizeLevel);
     }
 
     [Fact]
     public void ResetAppFontSizeLevel_ResetsOnlyAppLevel()
     {
-        var service = new FontSizeService(initialAppLevel: 5, initialTerminalLevel: 1);
+        var service = new FontSizeService(initialAppLevel: 7, initialTerminalLevel: 1);
 
         service.ResetAppFontSizeLevel();
 

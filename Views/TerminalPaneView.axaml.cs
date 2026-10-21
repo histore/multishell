@@ -284,6 +284,10 @@ public partial class TerminalPaneView : UserControl
         {
             var key = $"SvcSystems.UI.TerminalColor{i}";
             Terminal.Resources[key] = palette[i];
+            if (TerminalScope != null)
+            {
+                TerminalScope.Resources[key] = palette[i];
+            }
         }
 
         try
@@ -314,7 +318,22 @@ public partial class TerminalPaneView : UserControl
         catch { }
 
         Terminal.InvalidateVisual();
+        foreach (var child in Terminal.Children)
+        {
+            child.InvalidateVisual();
+        }
+
+        try
+        {
+            var surfaceField = typeof(TerminalControl).GetField("_surface", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (surfaceField?.GetValue(Terminal) is Control surface)
+            {
+                surface.InvalidateVisual();
+            }
+        }
+        catch { }
     }
+
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {

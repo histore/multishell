@@ -151,6 +151,29 @@ This document defines the functional and non-functional requirements specific to
 
 ---
 
+### `[REQ-HIST-005]` Global Panel Actions, Commands & Snippets Integration
+
+- **Status**: `BACKLOG`
+- **Type**: `Functional`
+- **Target Release**: `v1.2.0`
+
+#### User Story
+> **As a** keyboard-centric developer,  
+> **I want** the centered Global Overlay Panel (`Ctrl+Shift+H` / `Ctrl+Shift+L` / `Ctrl+Shift+MiddleClick`) to integrate executable application actions (new tab, close tab, switch themes, open settings, split panes, profile launches) and tagged command snippets alongside command and directory history,  
+> **so that** I have a single unified overlay for history, quick commands, snippets, and app actions without needing a separate command palette or separate snippet drawer.
+
+#### Acceptance Criteria (Given-When-Then)
+- [ ] **AC-1**: **Given** the Global Overlay Panel is opened, **When** switching to the Actions / Snippets tab or searching in the unified Global feed, **Then** registered app actions (settings, profiles, tab management, zoom, split actions) and user snippets appear with clear type badges (`CMD`, `DIR`, `ACT`, `SNIP`).
+- [ ] **AC-2**: **When** typing in the search box with fuzzy matching, **Then** actions and snippets are ranked and highlighted alongside history items, displaying associated shortcut key hints on the right.
+- [ ] **AC-3**: **When** selecting an action and pressing `Enter`, **Then** the application action executes immediately and the panel closes.
+- [ ] **AC-4**: **When** selecting a snippet and pressing `Enter`, **Then** the snippet text is dispatched or inserted into the active terminal session and the panel closes.
+- [ ] **AC-5**: Snippets can be categorized and managed via configuration, with single-click or Enter execution into the active terminal.
+
+#### Traceability & Verification
+- **Architecture Contract**: `docs/architecture/modules/search-and-drawer.md`
+
+---
+
 ## Requirements Index
 
 | ID | Title | Type | Status | Target Release |
@@ -160,4 +183,5 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-HIST-002` | Live Fuzzy Search & Type-to-Filter in History Drawer | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-HIST-003` | Path-Based Dynamic Command History, Sync & Pruning | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-HIST-004` | Shared Global Directory History with MRU Cap 100 | Functional | IMPLEMENTED | `v0.1.0` |
+| `REQ-HIST-005` | Global Panel Actions, Commands & Snippets Integration | Functional | BACKLOG | `v1.2.0` |
 | `REQ-TERM-006` | In-Terminal Text & Scrollback Search (`Ctrl+Shift+F`) | Functional | IMPLEMENTED | `v0.1.0` |

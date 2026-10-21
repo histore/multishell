@@ -415,19 +415,20 @@ This document defines the functional and non-functional requirements specific to
 
 ### `[REQ-SNIP-001]` Customizable Snippet & Quick Command Launcher
 
-- **Status**: `BACKLOG`
+- **Status**: `DEPRECATED`
 - **Type**: `Functional`
 - **Target Release**: `v1.2.0`
+- **Superseded By**: [`REQ-HIST-005`](search-and-drawer.md#req-hist-005-global-panel-actions-commands--snippets-integration) (Global Panel Actions, Commands & Snippets Integration)
 
 #### User Story
 > **As a** developer,  
 > **I want** a quick snippet drawer or overlay with tagged PowerShell scripts and Docker/Git commands that can be inserted or executed with a single click.
 
-#### Acceptance Criteria (Given-When-Then)
-- [ ] **AC-1**: Snippets are categorized, searchable, and insertable into the active terminal with a single click.
+#### Deprecation Note
+> Deprecated by user instruction: There will be no separate snippet drawer or separate command palette. Snippets and quick scripts are integrated directly as a tab/feed in the unified Global Overlay Panel (`REQ-HIST-005` in `search-and-drawer.md`).
 
-#### Traceability & Verification
-- **Architecture Contract**: `docs/architecture/modules/presentation.md`
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: Superseded and integrated into the unified Global Overlay Panel (`REQ-HIST-005`).
 
 ---
 
@@ -452,39 +453,40 @@ This document defines the functional and non-functional requirements specific to
 
 ### `[REQ-LNC-001]` Launcher Search & Item Filtering
 
-- **Status**: `BACKLOG`
+- **Status**: `DEPRECATED`
 - **Type**: `Functional`
 - **Target Release**: `v1.3.0`
+- **Superseded By**: [`REQ-TAB-012`](search-and-drawer.md) (Centered History & Directory Overlay) and [`REQ-UI-009`](#req-ui-009-modal-command-palette-ctrlshiftp) (Modal Command Palette)
 
 #### User Story
 > **As a** user,  
 > **I want** a quick launcher search box to filter across all available commands, profiles, and history items.
 
+#### Deprecation Note
+> Deprecated by user instruction: Replaced and superseded by the Centered History & Directory Overlay (`Ctrl+Shift+H` / `Ctrl+Shift+L` / `Ctrl+Shift+MiddleClick`, `REQ-TAB-012`) and the upcoming Modal Command Palette (`Ctrl+Shift+P`, `REQ-UI-009`).
+
 #### Acceptance Criteria (Given-When-Then)
-- [ ] **AC-1**: Fast fuzzy search across commands and configurations with instant preview.
+- [x] **AC-1**: Superseded and covered by `REQ-TAB-012` and `REQ-UI-009`.
 
 ---
 
 ### `[REQ-UI-009]` Modal Command Palette (`Ctrl+Shift+P`)
 
-- **Status**: `BACKLOG`
+- **Status**: `DEPRECATED`
 - **Type**: `Functional`
 - **Target Release**: `v1.2.0`
+- **Superseded By**: [`REQ-HIST-005`](search-and-drawer.md#req-hist-005-global-panel-actions-commands--snippets-integration) (Global Panel Actions, Commands & Snippets Integration)
 
 #### User Story
 > **As a** keyboard-centric developer,  
 > **I want** a quick command palette overlay invoked via `Ctrl+Shift+P`,  
 > **so that** I can trigger any MultiShell action, setting, profile launch, or view toggle purely via fuzzy-typed keyboard input without touching the mouse.
 
-#### Acceptance Criteria (Given-When-Then)
-- [ ] **AC-1**: **Given** the application is focused, **When** pressing `Ctrl+Shift+P`, **Then** a centered modal command palette overlay opens with an active fuzzy-search input.
-- [ ] **AC-2**: **When** typing in the search box, **Then** all registered actions (new tab, close tab, switch themes, open settings, font size changes, split pane actions, profiles) are filtered with highlighted matching characters.
-- [ ] **AC-3**: **When** pressing `Down`/`Up` arrow keys, **Then** selection moves through the filtered action list, displaying associated shortcut key hints on the right.
-- [ ] **AC-4**: **When** pressing `Enter`, **Then** the selected action executes immediately and the palette closes.
-- [ ] **AC-5**: **When** pressing `Escape` or clicking outside, **Then** the palette dismisses without executing actions, restoring focus to the previously active terminal.
+#### Deprecation Note
+> Deprecated by user instruction: There will be no separate modal command palette. Application actions, settings toggles, profile launches, and commands are integrated directly into the unified Global Overlay Panel (`REQ-HIST-005` in `search-and-drawer.md`).
 
-#### Traceability & Verification
-- **Architecture Contract**: `docs/architecture/modules/presentation.md`
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: Superseded and integrated into the unified Global Overlay Panel (`REQ-HIST-005`).
 
 ---
 
@@ -532,8 +534,8 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Wheel Shortcuts | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-008` | Empty State Welcome & Profile Selector Dashboard | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits) | Functional | IMPLEMENTED | `v1.1.0` |
-| `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | Functional | BACKLOG | `v1.2.0` |
+| `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | Functional | DEPRECATED | `v1.2.0` |
 | `REQ-AI-001` | Context-Aware AI Command Generator & Auto-Suggest | Functional | BACKLOG | `v1.3.0` |
-| `REQ-LNC-001` | Launcher Search & Item Filtering | Functional | BACKLOG | `v1.3.0` |
-| `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | Functional | BACKLOG | `v1.2.0` |
+| `REQ-LNC-001` | Launcher Search & Item Filtering | Functional | DEPRECATED | `v1.3.0` |
+| `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | Functional | DEPRECATED | `v1.2.0` |
 | `REQ-TAB-026` | Detachable Window Undocking & Redocking for Multi-Monitor Workflows | Functional | BACKLOG | `v1.3.0` |

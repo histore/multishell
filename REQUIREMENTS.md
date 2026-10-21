@@ -226,10 +226,11 @@ docs/requirements/modules/
 | `REQ-SET-001` | Unified Settings Menu & Dynamic Theme Switching | [`docs/requirements/modules/profiles-and-configuration.md`](docs/requirements/modules/profiles-and-configuration.md) | `IMPLEMENTED` |
 | `REQ-LOC-001` | Dynamic Multi-Language UI (DE, EN, FR, ES, IT, PT) | [`docs/requirements/modules/localization.md`](docs/requirements/modules/localization.md) | `IMPLEMENTED` |
 | `REQ-PROF-001` | Configurable Startup Working Directory per Profile | [`docs/requirements/modules/profiles-and-configuration.md`](docs/requirements/modules/profiles-and-configuration.md) | `IMPLEMENTED` |
-| `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
+| `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `DEPRECATED` |
 | `REQ-AI-001` | Context-Aware AI Command Generator & Auto-Suggest | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
-| `REQ-LNC-001` | Launcher Search & Item Filtering | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
-| `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
+| `REQ-LNC-001` | Launcher Search & Item Filtering | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `DEPRECATED` |
+| `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `DEPRECATED` |
+| `REQ-HIST-005` | Global Panel Actions, Commands & Snippets Integration | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `BACKLOG` |
 | `REQ-TAB-026` | Detachable Window Undocking & Redocking for Multi-Monitor Workflows | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
 | `REQ-TERM-012` | Long-Running Process Completion Desktop & Tab Notifications | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
 | `REQ-TERM-013` | Terminal Scrollback Buffer Export & Continuous Session Logging | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `BACKLOG` |

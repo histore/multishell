@@ -284,6 +284,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         if (state != null)
         {
+            if (state.IsDarkAppTheme.HasValue)
+            {
+                SetAppTheme(state.IsDarkAppTheme.Value);
+            }
+            if (state.IsDarkTerminalTheme.HasValue)
+            {
+                SetTerminalTheme(state.IsDarkTerminalTheme.Value);
+            }
+
             _fontSizeService.SetAppFontSizeLevel(state.AppFontSizeLevel);
             _fontSizeService.SetTerminalFontSizeLevel(state.TerminalFontSizeLevel);
             DefaultShellType = state.DefaultShellType;
@@ -352,6 +361,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                         tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
                         tabVm.CustomTitle = tabState.CustomTitle;
                         tabVm.TabColor = tabState.TabColor;
+                        tabVm.UpdateTheme(IsDarkTerminalTheme);
                         RegisterTabEvents(tabVm);
                         Tabs.Add(tabVm);
                     }
@@ -432,7 +442,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DefaultShellType,
             closedTabStates,
             pathHistories,
-            sharedDirectories);
+            sharedDirectories,
+            IsDarkAppTheme,
+            IsDarkTerminalTheme);
 
         _ = _persistenceService.SaveStateAsync(workspaceState);
     }
@@ -475,7 +487,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DefaultShellType,
             closedTabStates,
             pathHistories,
-            sharedDirectories);
+            sharedDirectories,
+            IsDarkAppTheme,
+            IsDarkTerminalTheme);
 
         try
         {

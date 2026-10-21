@@ -76,7 +76,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private IBrush _terminalCaretBrush = DarkTerminalCaret;
 
     [ObservableProperty]
-    private double _terminalFontSize = 12.0;
+    private double _terminalFontSize = 14.0;
 
     [ObservableProperty]
     private FontFamily _terminalFontFamily = new("avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace");

@@ -460,4 +460,34 @@ public partial class MainViewModelTabTests
         Assert.False(mainVm.IsCreatingNewProfile);
         Assert.Equal(profileItem.WorkingDirectory, mainVm.EditingWorkingDirectory);
     }
+
+    [Fact]
+    public async Task InitializeWorkspaceAsync_RestoresThemes_FromSavedState()
+    {
+        // Arrange
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService
+        {
+            StateToReturn = new WorkspaceState(
+                new List<TabState>
+                {
+                    new("Tab 1", @"C:\test")
+                },
+                0,
+                IsDarkAppTheme: false,
+                IsDarkTerminalTheme: false)
+        };
+
+        // Act
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Assert: Both App and Terminal themes are restored to Light
+        Assert.False(mainVm.IsDarkAppTheme);
+        Assert.False(mainVm.IsDarkTerminalTheme);
+        Assert.Single(mainVm.Tabs);
+        Assert.False(mainVm.Tabs[0].IsDarkTerminalTheme);
+        Assert.False(mainVm.Tabs[0].Panes[0].IsDarkTerminalTheme);
+    }
 }
+

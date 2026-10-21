@@ -21,9 +21,11 @@ public record WorkspaceState(
     List<TabState> Tabs,
     int SelectedIndex,
     string? SavedLanguage = null,
-    int AppFontSizeLevel = 3,
-    int TerminalFontSizeLevel = 3,
+    int AppFontSizeLevel = 4,
+    int TerminalFontSizeLevel = 4,
     ShellType DefaultShellType = ShellType.PowerShell,
     List<TabState>? ClosedTabs = null,
     Dictionary<string, List<string>>? PathCommandHistory = null,
-    List<string>? SharedDirectoryHistory = null);
+    List<string>? SharedDirectoryHistory = null,
+    bool? IsDarkAppTheme = null,
+    bool? IsDarkTerminalTheme = null);

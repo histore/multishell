@@ -226,4 +226,26 @@ public class TabStatePersistenceServiceTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.LoadStateAsync(cts.Token));
     }
+
+    [Fact]
+    public async Task SaveStateAsync_And_LoadStateAsync_PreservesThemeSettings()
+    {
+        // Arrange
+        var service = new TabStatePersistenceService(_tempFile);
+        var state = new WorkspaceState(
+            new List<TabState>(),
+            0,
+            IsDarkAppTheme: false,
+            IsDarkTerminalTheme: false);
+
+        // Act
+        await service.SaveStateAsync(state);
+        var loaded = await service.LoadStateAsync();
+
+        // Assert
+        Assert.NotNull(loaded);
+        Assert.False(loaded.IsDarkAppTheme);
+        Assert.False(loaded.IsDarkTerminalTheme);
+    }
 }
+

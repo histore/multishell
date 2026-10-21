@@ -144,8 +144,10 @@ public class MainViewModelTests
 
     [Fact]
     public void SetThemes_UpdatesStatesExplicitly()
+
     {
         // Arrange
+
         var mockTheme = new MockThemeService();
         using var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
 
@@ -181,20 +183,20 @@ public class MainViewModelTests
                 new LocalizationService(),
                 fontSizeService);
 
-            Assert.Equal(3, vm.AppFontSizeLevel);
-            Assert.Equal(3, vm.TerminalFontSizeLevel);
+            Assert.Equal(4, vm.AppFontSizeLevel);
+            Assert.Equal(4, vm.TerminalFontSizeLevel);
             Assert.Equal(1.0, vm.AppFontScale);
-            Assert.Equal(12.0, vm.TerminalFontSize);
+            Assert.Equal(14.0, vm.TerminalFontSize);
 
             // Act - Set via command
-            vm.SetAppFontSizeLevelCommand.Execute(5);
+            vm.SetAppFontSizeLevelCommand.Execute(7);
             vm.SetTerminalFontSizeLevelCommand.Execute(1);
 
             // Assert
-            Assert.Equal(5, vm.AppFontSizeLevel);
-            Assert.Equal(1.25, vm.AppFontScale);
+            Assert.Equal(7, vm.AppFontSizeLevel);
+            Assert.Equal(1.30, vm.AppFontScale);
             Assert.Equal(1, vm.TerminalFontSizeLevel);
-            Assert.Equal(9.5, vm.TerminalFontSize);
+            Assert.Equal(10.0, vm.TerminalFontSize);
         }
         finally
         {
@@ -225,15 +227,15 @@ public class MainViewModelTests
             vm.IncreaseTerminalFontSizeCommand.Execute(null);
 
             // Assert
-            Assert.Equal(4, vm.AppFontSizeLevel);
-            Assert.Equal(4, vm.TerminalFontSizeLevel);
+            Assert.Equal(5, vm.AppFontSizeLevel);
+            Assert.Equal(5, vm.TerminalFontSizeLevel);
 
             // Act: Decrease
             vm.DecreaseAppFontSizeCommand.Execute(null);
             vm.DecreaseAppFontSizeCommand.Execute(null);
 
             // Assert
-            Assert.Equal(2, vm.AppFontSizeLevel);
+            Assert.Equal(3, vm.AppFontSizeLevel);
         }
         finally
         {
@@ -251,7 +253,7 @@ public class MainViewModelTests
         var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
         try
         {
-            var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 5);
+            var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 7);
             using var vm = new MainViewModel(
                 new ShellProcessService(),
                 new TabStatePersistenceService(tempFile),
@@ -260,15 +262,15 @@ public class MainViewModelTests
                 fontSizeService);
 
             Assert.Equal(1, vm.AppFontSizeLevel);
-            Assert.Equal(5, vm.TerminalFontSizeLevel);
+            Assert.Equal(7, vm.TerminalFontSizeLevel);
 
             // Act
             vm.ResetFontSizeLevels();
 
             // Assert
-            Assert.Equal(3, vm.AppFontSizeLevel);
-            Assert.Equal(3, vm.TerminalFontSizeLevel);
-            Assert.Equal(12.0, vm.TerminalFontSize);
+            Assert.Equal(4, vm.AppFontSizeLevel);
+            Assert.Equal(4, vm.TerminalFontSizeLevel);
+            Assert.Equal(14.0, vm.TerminalFontSize);
             Assert.Equal(1.0, vm.AppFontScale);
         }
         finally
@@ -287,7 +289,7 @@ public class MainViewModelTests
         var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
         try
         {
-            var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 5);
+            var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 7);
             using var vm = new MainViewModel(
                 new ShellProcessService(),
                 new TabStatePersistenceService(tempFile),
@@ -300,8 +302,8 @@ public class MainViewModelTests
 
             // Assert
             Assert.Equal(1, vm.AppFontSizeLevel);
-            Assert.Equal(3, vm.TerminalFontSizeLevel);
-            Assert.Equal(12.0, vm.TerminalFontSize);
+            Assert.Equal(4, vm.TerminalFontSizeLevel);
+            Assert.Equal(14.0, vm.TerminalFontSize);
         }
         finally
         {

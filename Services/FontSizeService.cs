@@ -3,13 +3,13 @@ using System;
 namespace MultiShell.Services;
 
 /// <summary>
-/// Implementation of <see cref="IFontSizeService"/> providing 5-level font size management for App UI and Terminal.
-/// Level 3 is the system default baseline (App: 1.0x, Terminal: 12.0 pt).
+/// Implementation of <see cref="IFontSizeService"/> providing 7-level font size management for App UI and Terminal.
+/// Level 4 is the system default baseline (App: 1.0x, Terminal: 14.0 pt).
 /// </summary>
 public class FontSizeService : IFontSizeService
 {
-    private static readonly double[] AppScaleLevels = [0.85, 0.92, 1.00, 1.12, 1.25];
-    private static readonly double[] TerminalFontSizes = [9.5, 10.5, 12.0, 14.0, 16.5];
+    private static readonly double[] AppScaleLevels = [0.80, 0.88, 0.94, 1.00, 1.08, 1.18, 1.30];
+    private static readonly double[] TerminalFontSizes = [10.0, 11.0, 12.5, 14.0, 16.0, 18.5, 21.0];
 
     private int _appFontSizeLevel = IFontSizeService.DefaultLevel;
     private int _terminalFontSizeLevel = IFontSizeService.DefaultLevel;

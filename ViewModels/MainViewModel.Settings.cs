@@ -19,16 +19,16 @@ public partial class MainViewModel
     private string _currentLanguage = "de";
 
     [ObservableProperty]
-    private int _appFontSizeLevel = 3;
+    private int _appFontSizeLevel = 4;
 
     [ObservableProperty]
-    private int _terminalFontSizeLevel = 3;
+    private int _terminalFontSizeLevel = 4;
 
     [ObservableProperty]
     private double _appFontScale = 1.0;
 
     [ObservableProperty]
-    private double _terminalFontSize = 12.0;
+    private double _terminalFontSize = 14.0;
 
     public LanguageOption SelectedLanguage
     {
@@ -56,12 +56,16 @@ public partial class MainViewModel
     public bool IsAppFontSizeLevel3 => AppFontSizeLevel == 3;
     public bool IsAppFontSizeLevel4 => AppFontSizeLevel == 4;
     public bool IsAppFontSizeLevel5 => AppFontSizeLevel == 5;
+    public bool IsAppFontSizeLevel6 => AppFontSizeLevel == 6;
+    public bool IsAppFontSizeLevel7 => AppFontSizeLevel == 7;
 
     public bool IsTerminalFontSizeLevel1 => TerminalFontSizeLevel == 1;
     public bool IsTerminalFontSizeLevel2 => TerminalFontSizeLevel == 2;
     public bool IsTerminalFontSizeLevel3 => TerminalFontSizeLevel == 3;
     public bool IsTerminalFontSizeLevel4 => TerminalFontSizeLevel == 4;
     public bool IsTerminalFontSizeLevel5 => TerminalFontSizeLevel == 5;
+    public bool IsTerminalFontSizeLevel6 => TerminalFontSizeLevel == 6;
+    public bool IsTerminalFontSizeLevel7 => TerminalFontSizeLevel == 7;
 
     public string CurrentLanguageUpper => CurrentLanguage.ToUpperInvariant();
 
@@ -86,6 +90,8 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(IsAppFontSizeLevel3));
         OnPropertyChanged(nameof(IsAppFontSizeLevel4));
         OnPropertyChanged(nameof(IsAppFontSizeLevel5));
+        OnPropertyChanged(nameof(IsAppFontSizeLevel6));
+        OnPropertyChanged(nameof(IsAppFontSizeLevel7));
     }
 
     partial void OnTerminalFontSizeLevelChanged(int value)
@@ -95,6 +101,8 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(IsTerminalFontSizeLevel3));
         OnPropertyChanged(nameof(IsTerminalFontSizeLevel4));
         OnPropertyChanged(nameof(IsTerminalFontSizeLevel5));
+        OnPropertyChanged(nameof(IsTerminalFontSizeLevel6));
+        OnPropertyChanged(nameof(IsTerminalFontSizeLevel7));
     }
 
     [RelayCommand]
@@ -102,6 +110,7 @@ public partial class MainViewModel
     {
         IsDarkAppTheme = !IsDarkAppTheme;
         _themeService.SetAppTheme(IsDarkAppTheme);
+        TriggerSaveState();
     }
 
     [RelayCommand]
@@ -113,6 +122,7 @@ public partial class MainViewModel
         {
             tab.UpdateTheme(IsDarkTerminalTheme);
         }
+        TriggerSaveState();
     }
 
     [RelayCommand]
@@ -120,6 +130,7 @@ public partial class MainViewModel
     {
         IsDarkAppTheme = isDark;
         _themeService.SetAppTheme(isDark);
+        TriggerSaveState();
     }
 
     [RelayCommand]
@@ -131,7 +142,9 @@ public partial class MainViewModel
         {
             tab.UpdateTheme(isDark);
         }
+        TriggerSaveState();
     }
+
 
     [RelayCommand]
     public void ToggleLanguage()

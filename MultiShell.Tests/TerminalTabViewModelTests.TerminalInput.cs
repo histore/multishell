@@ -147,6 +147,37 @@ public partial class TerminalTabViewModelTests
         Assert.Equal(Avalonia.Media.Colors.LightYellow, ((Avalonia.Media.ISolidColorBrush)brushAccepted!).Color);
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     [Fact]
     public void ControlCharacters_PassedThroughWhenAltGrInactive_FilteredWhenActive()
     {

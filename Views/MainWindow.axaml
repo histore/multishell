@@ -590,7 +590,7 @@
                                                     </StackPanel>
                                                 </Grid>
                                                 <Border Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="4" Padding="2">
-                                                    <Grid ColumnDefinitions="*,*,*,*,*">
+                                                    <Grid ColumnDefinitions="*,*,*,*,*,*,*">
                                                         <Button Grid.Column="0" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel1}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="1" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_1]}">
                                                             <TextBlock Text="1" />
                                                         </Button>
@@ -605,6 +605,12 @@
                                                         </Button>
                                                         <Button Grid.Column="4" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel5}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="5" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_5]}">
                                                             <TextBlock Text="5" />
+                                                        </Button>
+                                                        <Button Grid.Column="5" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel6}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="6" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_6]}">
+                                                            <TextBlock Text="6" />
+                                                        </Button>
+                                                        <Button Grid.Column="6" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel7}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="7" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_7]}">
+                                                            <TextBlock Text="7" />
                                                         </Button>
                                                     </Grid>
                                                 </Border>
@@ -621,7 +627,7 @@
                                                     </StackPanel>
                                                 </Grid>
                                                 <Border Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="4" Padding="2">
-                                                    <Grid ColumnDefinitions="*,*,*,*,*">
+                                                    <Grid ColumnDefinitions="*,*,*,*,*,*,*">
                                                         <Button Grid.Column="0" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel1}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="1" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_1]}">
                                                             <TextBlock Text="1" />
                                                         </Button>
@@ -636,6 +642,12 @@
                                                         </Button>
                                                         <Button Grid.Column="4" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel5}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="5" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_5]}">
                                                             <TextBlock Text="5" />
+                                                        </Button>
+                                                        <Button Grid.Column="5" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel6}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="6" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_6]}">
+                                                            <TextBlock Text="6" />
+                                                        </Button>
+                                                        <Button Grid.Column="6" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel7}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="7" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_7]}">
+                                                            <TextBlock Text="7" />
                                                         </Button>
                                                     </Grid>
                                                 </Border>

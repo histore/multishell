@@ -58,6 +58,12 @@ MultiShell integrates quick-access developer utilities directly into the termina
     * **Directory History**: Unified list of directories visited across all tabs in the session (capped at 100 MRU entries), ordered from newest to oldest with recency tie-breaking on equal search scores. Automatically prunes dead paths on open and includes inline delete button.
     * **Global History**: Unified feed across all commands and visited directories, ordered from newest to oldest with recency tie-breaking on equal search scores.
   * Selecting a command sends it to the active shell; selecting a directory executes `cd "<dir>"`.
+* **Unified Global Overlay Panel Architecture (`REQ-HIST-005`)**:
+  * As specified in `REQ-HIST-005`, the History Drawer serves as the architectural foundation for the Unified Global Overlay Panel, consolidating:
+    * Searchable Command, Directory, and Global History.
+    * Integrated Command Palette actions (eliminating a separate command palette dialog).
+    * Integrated Snippet storage and insertion (eliminating a separate snippet palette).
+  * Navigation modes and quick filters allow instant switching between history, actions, and snippets within a single coherent modal overlay.
 
 ### 2.5 Link Detection (`Services/LinkDetectionHelper.cs`)
 * Identifies URLs (`http://`, `https://`, `git@`, `file://`) and file paths within terminal text.
