@@ -60,11 +60,11 @@ docs/requirements/modules/
 
 #### User Story
 > **As a** development orchestrator,  
-> **I want** specialized subagents operating with minimal isolated contexts adhering to Clean Code, Clean Architecture, and full Internationalization, maintained declaratively in a Single Source of Truth (`_agents/rules/model-tiers.json`).
+> **I want** specialized subagents operating with minimal isolated contexts adhering to Clean Code, Clean Architecture, and full Internationalization, maintained declaratively in a Single Source of Truth (`model-tiers.json`).
 
 #### Acceptance Criteria (Given-When-Then)
 - [x] **AC-1**: **Given** a new task, optimization, or bug report, **When** subagents are dispatched, **Then** each role receives only the minimal necessary context package without bloated history.
-- [x] **AC-2**: All 22 subagent roles are defined declaratively in `_agents/rules/model-tiers.json`.
+- [x] **AC-2**: All 22 subagent roles are defined declaratively in `model-tiers.json`.
 
 ---
 
@@ -76,7 +76,7 @@ docs/requirements/modules/
 
 #### User Story
 > **As the** Control agent,  
-> **I want** to assign appropriate models and reasoning levels (Tiers 1 to 4 with High, Medium, Low/Fast thinking budgets) defined dynamically via the Single Source of Truth (`_agents/rules/model-tiers.json`).
+> **I want** to assign appropriate models and reasoning levels (Tiers 1 to 4 with High, Medium, Low/Fast thinking budgets) defined dynamically via the Single Source of Truth (`model-tiers.json`).
 
 #### Acceptance Criteria (Given-When-Then)
 - [x] **AC-1**: Subagent roles are matched to cognitive tiers and thinking budgets based on task complexity.

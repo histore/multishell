@@ -21,23 +21,11 @@ All changes must be developed in dedicated feature, fix, or maintenance branches
 | `docs/` | Documentation | `docs/update-architecture-guide` | XML doc comments, markdown guides, architecture specs. |
 | `chore/` | Tooling & CI | `chore/dotnet-10-package-bump` | Build script updates, GitHub Actions, dependencies. |
 
-### 1.2 Repository Setup & Git Submodules
-
-This repository uses [histore/agent-skills](https://github.com/histore/agent-skills) as a Git submodule at `_agents`.
-
+### 1.2 Repository Setup
+ 
 When cloning for the first time:
 ```powershell
-git clone --recurse-submodules https://github.com/histore/multishell.git
-```
-
-If already cloned without submodules:
-```powershell
-git submodule update --init --recursive
-```
-
-To update agent skills to their latest version:
-```powershell
-git submodule update --remote _agents
+git clone https://github.com/histore/multishell.git
 ```
 
 ---

@@ -120,6 +120,8 @@ dotnet test MultiShell.Tests/MultiShell.Tests.csproj
 
 MultiShell employs a quality-gated Branching and Pull Request model adhering to Clean Architecture, Conventional Commits, and automated CI tests. For branching conventions, subagent workflows, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+The agent-assisted development workflows and role specifications are based on [histore/agent-skills](https://github.com/histore/agent-skills). See [AGENTS.md](AGENTS.md) for project-specific governance guidelines.
+
 ---
 
 ## 📄 License
