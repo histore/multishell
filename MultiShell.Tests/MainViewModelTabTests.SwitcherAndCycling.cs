@@ -429,4 +429,55 @@ public partial class MainViewModelTabTests
         Assert.Equal(1, mainVm.TabSwitcherSelectedIndex); // Clamped within bounds
         Assert.True(mainVm.IsTabSwitcherOpen);
     }
+
+    [Fact]
+    public async Task TabSwitcher_ExposesTabStatusAndVisualParityProperties_ForOverlayBinding()
+    {
+        // Arrange (REQ-TAB-027)
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        mainVm.AddNewTabCommand.Execute(null);
+        Assert.Equal(2, mainVm.Tabs.Count);
+
+        var runningTab = mainVm.Tabs[0];
+        var failedTab = mainVm.Tabs[1];
+
+        // Simulate execution states matching tab header representation
+        runningTab.ExecutionState = ProcessExecutionState.Running;
+        runningTab.IsOutputActive = true;
+
+        failedTab.ExecutionState = ProcessExecutionState.Failed;
+        failedTab.LastExitCode = 127;
+        failedTab.SetTabColor("#F7768E");
+
+        // Act
+        mainVm.ShowTabSwitcher(isKeyboardTriggered: false);
+
+        // Assert
+        Assert.True(mainVm.IsTabSwitcherOpen);
+        Assert.Equal(2, mainVm.Tabs.Count);
+
+        // Tab 0: Running & Active Output
+        var tab0 = mainVm.Tabs[0];
+        Assert.True(tab0.HasProcessStatus);
+        Assert.Equal("●", tab0.ExecutionStatusGlyph);
+        Assert.False(tab0.HasProcessError);
+        Assert.NotEmpty(tab0.ShellIconTag);
+        Assert.NotNull(tab0.ExecutionStatusForeground);
+        Assert.NotEmpty(tab0.ExecutionStatusTooltip);
+
+        // Tab 1: Failed with non-zero exit code and custom accent color
+        var tab1 = mainVm.Tabs[1];
+        Assert.True(tab1.HasProcessStatus);
+        Assert.True(tab1.HasProcessError);
+        Assert.Equal("✕", tab1.ExecutionStatusGlyph);
+        Assert.Equal(127, tab1.LastExitCode);
+        Assert.True(tab1.HasTabColor);
+        Assert.NotNull(tab1.TabColorBrush);
+        Assert.NotNull(tab1.ExecutionStatusForeground);
+    }
 }
+

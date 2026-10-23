@@ -506,8 +506,29 @@ This document defines the functional and non-functional requirements specific to
 - [ ] **AC-2**: **When** dragging a detached tab back onto the tab bar of the primary window, **Then** it seamlessly re-integrates into the primary tab strip.
 - [ ] **AC-3**: **When** closing a detached secondary window containing its last tab, **Then** the underlying shell process terminates cleanly without leaving orphaned PTY handles.
 
+### `[REQ-TAB-027]` Tab Switcher Overlay Real-Time Process & Tab Status Visual Parity
+
+- **Status**: `IMPLEMENTED`
+- **Type**: `Functional`
+- **Target Release**: `v1.2.0`
+
+#### User Story
+> **As a** developer navigating between multiple parallel shell sessions using the Tab Switcher overlay (`Ctrl+Tab` or the tab menu button `≡ ▾`),  
+> **I want** the Tab Switcher overlay items to reflect the exact current execution status and visual indicators as shown on the tab headers,  
+> **so that** I can instantly recognize which background tasks are actively running, waiting for input, completed successfully, or failed without having to cycle through all tabs or inspect the top tab strip.
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: **Given** an open tab running a specific shell profile, **When** opening the Tab Switcher overlay, **Then** the badge icon in each row displays the dynamic profile tag (`ShellIconTag`) instead of a hardcoded generic symbol.
+- [x] **AC-2**: **Given** a command running or recently executed in a tab (`HasProcessStatus == true`), **When** the Tab Switcher overlay is displayed, **Then** each tab row renders the process status badge with matching glyph (`ExecutionStatusGlyph`) and theme-aware foreground brush (`ExecutionStatusForeground`): `●` (Streaming active output, Cyan/Blue), `○` (Waiting for input / silent after 1.5s, Striking Orange), `✓` (Process completed with exit code 0, Green), `✕` (Process failed with non-zero exit code, Red).
+- [x] **AC-3**: **Given** a tab whose last process failed with an error exit code, **When** inspecting that tab in the Tab Switcher overlay, **Then** the numeric exit code (`LastExitCode`) is displayed beside the error glyph `✕`, matching the tab header badge.
+- [x] **AC-4**: **Given** terminal output actively streaming in a background tab, **When** viewing the Tab Switcher overlay, **Then** the status badge reflects output activity transitions (`OutputActivityOpacity`) in real time without lag.
+- [x] **AC-5**: **Given** a tab row in the Tab Switcher, **When** hovering over the process status badge, **Then** the detailed execution tooltip (`ExecutionStatusTooltip`) displays the duration and localized state description.
+- [x] **AC-6**: **Given** a tab assigned a custom color (`HasTabColor == true`), **When** viewed in the Tab Switcher, **Then** an accent border or color stripe indicator (`TabColorBrush`) is visible on the row.
+- [x] **AC-7**: **Given** multiple tabs in the Tab Switcher, **Then** the currently active tab retains its distinct selected indicator badge (`IsSelected`).
+
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/presentation.md`
+- **Test Suite**: `MultiShell.Tests/MainViewModelTabTests.SwitcherAndCycling.cs`
 
 ---
 
@@ -527,6 +548,7 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-TAB-023` | Tab Switcher Direct Tab Closure via Hover Button | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-TAB-024` | File & Folder Drag-Drop, Shift-Tab & Tab Drag-Over | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-TAB-025` | Tab Path Color Stripes Coding (All Folders & Deterministic Padovan Width) | UI/UX | IMPLEMENTED | `v0.1.0` |
+| `REQ-TAB-027` | Tab Switcher Overlay Real-Time Process & Tab Status Visual Parity | Functional | IMPLEMENTED | `v1.2.0` |
 | `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide (`F1`) | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-003` | About Dialog & Technology Information | UI/UX | IMPLEMENTED | `v0.1.0` |
