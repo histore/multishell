@@ -64,7 +64,8 @@ Views/
     ├── HistoryDrawerView.axaml.cs     # Drawer open/toggle & filter selection sync
     ├── HistoryDrawerView.Keyboard.cs  # Drawer arrow navigation & tab cycling
     ├── HistoryDrawerView.Actions.cs   # Drawer command/directory execute & paste
-    └── TabSwitcherOverlayView.axaml.cs # Quick tab switcher HUD overlay
+    ├── TabSwitcherOverlayView.axaml   # Quick tab switcher HUD overlay layout (REQ-TAB-019, REQ-TAB-027)
+    └── TabSwitcherOverlayView.axaml.cs # Quick tab switcher HUD overlay code-behind
 ```
 
 ## 3. Core ViewModels
@@ -88,8 +89,10 @@ To avoid monolithic classes, `MainViewModel` is divided across functional partia
   * Commands for creating, editing, and deleting custom terminal profiles.
 * **`MainViewModel.Settings.cs`**:
   * Manages settings drawer/overlay visibility, language selection (`SelectedLanguage` two-way bound to `ComboBox`, `AvailableLanguages`, language flags `IsGerman`, `IsEnglish`, `IsFrench`, `IsSpanish`, `IsItalian`, `IsPortuguese`), independent application and terminal theme toggling (`ToggleAppTheme`, `ToggleTerminalTheme`, `SetAppTheme`, `SetTerminalTheme` with automatic debounced `TriggerSaveState()` persistence), and global font sizing.
-* **`MainViewModel.TabSwitcher.cs`**:
-  * Quick switcher model backing `Ctrl+Tab` navigation with MRU (Most Recently Used) ordering.
+* **`MainViewModel.TabSwitcher.cs` (`REQ-TAB-019`, `REQ-TAB-027`)**:
+  * Quick switcher model backing `Ctrl+Tab` navigation with MRU (Most Recently Used) and index ordering.
+  * Visual parity with tab headers: binds real-time process execution states (`IsRunning`, `ExecutionState`, `StatusGlyph`, `StatusColor`, `LastExitCode`), output activity pulse, Padovan path color stripes, and tab accent colors to switcher rows.
+  * Direct tab closure via row hover close button (`CloseTabCommand`).
 
 ### 3.2 `TerminalTabViewModel`
 Backs an individual terminal tab instance and coordinates multiple split panes via modular partial classes:

@@ -14,51 +14,70 @@
 
 | Feature | Description |
 | :--- | :--- |
-| ⚡ **ConPTY Terminal Multiplexing** | Native Windows Pseudo Console (ConPTY) terminal engine with ANSI/VT color palette support. |
+| ⚡ **ConPTY Terminal Multiplexing** | Native Windows Pseudo Console (ConPTY) terminal engine with ANSI/VT color palette, stateful UTF-8 decoding, and OSC 7/9/133 shell integration. |
+| 🪟 **Terminal Split Panes (Horizontal & Vertical)** | Split any tab into horizontal or vertical sub-panes with draggable splitters and independent, persistent PTY sessions. |
+| 🔀 **Tab Switcher Overlay with Process Status** | Centered visual tab switcher (`Ctrl+Tab`) with real-time process execution badges (Running `●`, Waiting for Input `○`, Exit Codes, Output Activity Pulse) and hover close buttons. |
 | 🎨 **Independent Dual-Theme Engine** | Switch **App UI** (Dark / Light) and **Terminal Shell** (Dark / Light) completely independently in the Settings menu (`⚙ ▾`). |
-| 🌍 **Multi-Language Support (DE / EN / FR / ES)** | Dynamic UI runtime localization supporting **Deutsch**, **English** *(Default Fallback)*, **Français**, and **Español**, with automatic OS language detection and user preference persistence. |
-| 🔍 **Live Fuzzy Search & Type-to-Filter** | Start typing anywhere in the History Drawer (`Ctrl+Shift+H` / `Ctrl+Shift+L`) to fuzzy-search commands and directories in real time with subsequence matching and scoring. |
-| 📜 **Command & Directory History Drawer** | Slide-out drawer on left-edge hover or dedicated shortcuts (`Ctrl+Shift+H` for Commands, `Ctrl+Shift+L` for Directories) with instant real-time filtering, arrow navigation, and `Enter` execution. |
-| 🗂️ **Ergonomic 30px Tab Bar** | Pixel-perfect 30px tab bar with drag & drop reordering, overflow scrolling buttons (`‹ ›`), and quick dropdown list (`≡ ▾`). |
-| 💾 **Robust Workspace Persistence** | Automatically saves open tabs, working directories, active selection, and custom language preferences across restarts. |
-| ⌨️ **Comprehensive Keyboard Navigation** | First-class keyboard shortcuts for tabs (`Ctrl+Shift+T`, `Ctrl+Shift+D`, `Ctrl+W`, `Ctrl+Tab`), help (`F1`), history (`Ctrl+Shift+H`, `Ctrl+Shift+L`), and modals (`Esc`). |
+| 🔤 **7-Level Font Scaling & Zoom** | 7 granular font sizes (10pt to 22pt, 14pt default) configurable via settings or keyboard shortcuts (`Ctrl++` / `Ctrl+-` / `Ctrl+0`). |
+| 🔍 **In-Terminal Buffer Search** | Search through terminal output and scrollback history (`Ctrl+Shift+F`) with match highlighting, case sensitivity, regex support, and `Ctrl+Shift+F3` navigation. |
+| 📜 **Fuzzy History & Directory Drawer** | Centered / slide-out drawer (`Ctrl+Shift+H` for Commands, `Ctrl+Shift+L` for Directories) with subsequence fuzzy matching, MRU recency, and instant execution. |
+| 🌈 **Padovan Path Color Stripes** | Deterministic folder-depth color coding along tab headers with Padovan-sequence widths for immediate visual workspace orientation. |
+| 🔔 **Background Process Notifications** | Native Windows desktop toast alerts when long-running background tasks (>10s) complete while the tab or application is in the background. |
+| 🌍 **Multi-Language Support (6 Languages)** | Dynamic runtime localization supporting **English** *(Default Fallback)*, **Deutsch**, **Français**, **Español**, **Italiano**, and **Português**, with automatic OS detection and persistence. |
+| 🗂️ **Ergonomic 30px Tab Bar** | Pixel-perfect 30px tab bar with drag & drop reordering, overflow scrolling buttons (`‹ ›`), double-click to open new tab, and tab color tagging. |
+| 💾 **Robust Workspace Persistence** | Automatically saves open tabs, working directories, active pane arrangements, and custom preferences across restarts in `%LOCALAPPDATA%/MultiShell/tabs_state.json`. |
 
 ---
 
 ## 🏗️ Architecture
 
-MultiShell adheres strictly to **Clean Architecture** (for detailed design specifications, see [ARCHITECTURE.md](ARCHITECTURE.md)):
+MultiShell adheres strictly to **Clean Architecture** and **MVVM** principles (for detailed design specifications, see [ARCHITECTURE.md](ARCHITECTURE.md)):
 
 ```
 MultiShell
 ├── Assets/                     # Application Icons and Visual Assets
 │   ├── multishell.ico          # Multi-resolution Windows application icon
 │   └── multishell.png          # High-resolution branding image
-├── Models/                     # Core Domain Models
+├── Models/                     # Core Domain Models & Records (Zero UI Dependencies)
 │   ├── TabState.cs             # Workspace & Tab persistence records
-│   └── LanguageOption.cs       # Localization language definition
-├── Services/                   # Business Logic & Infrastructure Contracts
-│   ├── IPowerShellSession.cs   # ConPTY / Windows PseudoConsole session
-│   ├── PowerShellSession.cs    # P/Invoke kernel32 & process management
-│   ├── IPowerShellProcessService.cs # PowerShell session factory contract
-│   ├── PowerShellProcessService.cs  # Process service implementation
-│   ├── IThemeService.cs        # Independent App & Terminal theme manager
-│   ├── ThemeService.cs         # Theme implementation & dynamic styling
-│   ├── ILocalizationService.cs # Dynamic multi-language service contract
-│   ├── LocalizationService.cs  # Dictionaries for DE, EN, FR, ES & OS detection
-│   ├── IFuzzySearchService.cs  # Subsequence fuzzy search contract
-│   ├── FuzzySearchService.cs   # Score-ranked fuzzy matching engine
-│   ├── ITabStatePersistenceService.cs # Workspace JSON persistence contract
-│   └── TabStatePersistenceService.cs  # Thread-safe atomic JSON file store
+│   ├── TerminalProfile.cs      # Shell launch profile configurations
+│   ├── PathColorStripe.cs      # Folder depth color stripe metadata
+│   ├── ProcessExecutionState.cs# Real-time process execution status enum & records
+│   ├── LanguageOption.cs       # Localization language definition
+│   └── PaneSplitDirection.cs   # Split pane binary tree direction models
+├── Services/                   # Application Services & Safe Win32 Interop
+│   ├── IShellSession.cs / ShellSession.cs  # ConPTY / Win32 PTY interop & streams
+│   ├── IShellProcessService.cs # Shell process execution factory
+│   ├── ITerminalProfileService.cs # Terminal profile discovery & JSON store
+│   ├── IThemeService.cs        # Independent App & Terminal theme styling
+│   ├── IFontSizeService.cs     # 7-level font scaling engine
+│   ├── ILocalizationService.cs # Dynamic 6-language localization & OS detection
+│   ├── IFuzzySearchService.cs  # Subsequence fuzzy matching engine
+│   ├── IPathCommandHistoryService.cs # Dynamic path-bound command history
+│   ├── IDirectoryHistoryService.cs   # Global MRU directory history store
+│   ├── IPathColorCodingService.cs    # Deterministic Padovan color stripe coder
+│   ├── IToastNotificationService.cs  # Native Windows toast notification bridge
+│   └── ITabStatePersistenceService.cs # Atomic temp-swap JSON persistence
 ├── ViewModels/                 # MVVM Presentation Logic (CommunityToolkit.Mvvm)
-│   ├── ViewModelBase.cs        # Base ObservableObject
-│   ├── MainViewModel.cs        # Orchestrates tabs, settings, and persistence
-│   └── TerminalTabViewModel.cs # Tab state, history, and ConPTY bridge
-└── Views/                      # Avalonia UI XAML Views & Controls
-    ├── MainWindow.axaml        # Main window layout, toolbar, drawer, & modals
-    ├── MainWindow.axaml.cs     # Drag-and-drop & keyboard dispatch
-    ├── TerminalTabView.axaml   # Terminal tab control hosting ConPTY surface
-    └── TerminalTabView.axaml.cs# Color palette synchronization & cache flushing
+│   ├── ViewModelBase.cs        # ObservableObject base
+│   ├── MainViewModel.cs        # Orchestrator (Tabs, Profiles, Settings, Switcher)
+│   ├── TerminalTabViewModel.cs # Tab state, history, renaming, and search bridge
+│   └── Panes/                  # Binary Tree Split Pane ViewModels
+│       ├── IPaneNodeViewModel.cs
+│       ├── LeafPaneNodeViewModel.cs
+│       ├── SplitPaneNodeViewModel.cs
+│       └── TerminalPaneViewModel.cs
+└── Views/                      # Avalonia UI XAML Views & Controls (Compiled Bindings)
+    ├── MainWindow.axaml        # Main window layout, toolbar, and tab strip
+    ├── SplitPaneContainerControl.cs # Recursive binary tree split pane host
+    ├── TerminalTabView.axaml   # Tab host view
+    ├── TerminalPaneView.axaml  # Concrete terminal pane surface
+    └── Dialogs/                # Modular overlay dialogs & drawers
+        ├── TabSwitcherOverlayView.axaml  # Process status Tab Switcher HUD
+        ├── HistoryDrawerView.axaml       # Fuzzy command & directory overlay
+        ├── ProfilesModalView.axaml       # Shell profile launcher dialog
+        ├── HelpModalView.axaml           # Keyboard shortcuts modal
+        └── AboutModalView.axaml          # Technology & system info dialog
 ```
 
 ---
@@ -91,24 +110,32 @@ dotnet run
 
 | Shortcut | Action |
 | :--- | :--- |
-| `Ctrl + Shift + T` | Open new PowerShell terminal tab |
+| `Ctrl + Shift + T` | Open new terminal tab (default profile) |
 | `Ctrl + Shift + D` | Duplicate current tab (same working directory) |
-| `Ctrl + Tab` / `Ctrl + Shift + Tab` | Cycle to next / previous tab (wrap-around) |
+| `Ctrl + Tab` / `Ctrl + Shift + Tab` | Open Unified Tab Switcher HUD / cycle tabs with real-time status |
 | `Ctrl + PageDown` / `Ctrl + PageUp` | Switch to next / previous tab |
 | `Ctrl + 1` .. `Ctrl + 8` | Jump directly to tab index 1 through 8 |
 | `Ctrl + 9` | Jump directly to the last tab |
-| `Ctrl + Shift + W` | Close active terminal tab |
+| `Ctrl + Shift + W` | Close active pane (or active tab when last pane) |
 | `Ctrl + Shift + PageUp` / `PageDown` | Reorder / move active tab left or right |
+| `Ctrl + Shift + F` | Toggle in-terminal scrollback search overlay |
+| `Ctrl + Shift + F2` | Inline rename active tab |
+| `Ctrl + Shift + F3` | Navigate to next search match in terminal |
+| `Ctrl + Shift + H` | Toggle Command History drawer (`Ctrl+Shift+MiddleClick`) |
+| `Ctrl + Shift + L` | Toggle Directory History drawer |
+| `Ctrl + Shift + E` | Open active working directory in Windows File Explorer |
+| `Ctrl + Shift + O` | Open file picker to paste file path into terminal |
+| `Ctrl + Shift + B` | Open folder picker to paste directory path into terminal |
+| `Ctrl + +` / `Ctrl + -` / `Ctrl + 0` | Increase, decrease, or reset terminal font size |
 | `Ctrl + Enter` / `Shift + Enter` | Insert newline (`\n`) without executing command (multi-line scripts) |
-| `Ctrl + Shift + H` | Toggle live Command & Directory History drawer |
 | `F1` | Open Help & Keyboard Shortcuts guide |
-| `Escape` | Clear search filter / close active overlay / dialog and focus terminal |
+| `Escape` | Close active dialog / drawer / search overlay and focus terminal |
 
 ---
 
 ## 🧪 Testing
 
-MultiShell includes a comprehensive xUnit test suite covering MVVM ViewModels, Process services, Localization, Dual-Theming, Fuzzy Search, and Workspace persistence:
+MultiShell includes a comprehensive xUnit test suite (680+ automated tests) covering MVVM ViewModels, Process services, Split-Pane binary trees, Localization, Dual-Theming, Fuzzy Search, and Workspace persistence:
 
 ```powershell
 dotnet test MultiShell.Tests/MultiShell.Tests.csproj
