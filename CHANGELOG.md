@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.25.3] - 2026-10-28
+
+### Fixed
+- Prevent rapid clicks on overflow scroll buttons from triggering empty-space tab creation (`REQ-TAB-022`, `REQ-TAB-014`).
+
 ## [v0.25.2] - 2026-10-23
 
 ### Added

@@ -357,6 +357,37 @@ public partial class MainWindow
         var visual = e.Source as Visual;
         if (IsInteractiveTabControl(visual)) return;
 
+        // Ensure double-click is strictly within the scrollable tabs viewport area
+        // and not on overflow scroll buttons or docked toolbar action areas (REQ-TAB-022, REQ-TAB-014)
+        if (TabsScrollViewer != null && TabsScrollViewer.Bounds.Width > 0 && TabsScrollViewer.Bounds.Height > 0)
+        {
+            var posInViewer = e.GetPosition(TabsScrollViewer);
+            if (posInViewer.X < 0 || posInViewer.Y < 0 ||
+                posInViewer.X > TabsScrollViewer.Bounds.Width ||
+                posInViewer.Y > TabsScrollViewer.Bounds.Height)
+            {
+                return;
+            }
+        }
+
+        if (TabBarContainer != null)
+        {
+            var posInContainer = e.GetPosition(TabBarContainer);
+            if (TabScrollLeftBtn?.IsVisible == true && TabScrollLeftBtn.Bounds.Contains(posInContainer))
+            {
+                return;
+            }
+            if (TabScrollRightBtn?.IsVisible == true && TabScrollRightBtn.Bounds.Contains(posInContainer))
+            {
+                return;
+            }
+        }
+
+        if (IsVisualOrChildOf(visual, TabScrollLeftBtn) || IsVisualOrChildOf(visual, TabScrollRightBtn))
+        {
+            return;
+        }
+
         if (DataContext is MainViewModel vm)
         {
             e.Handled = true;

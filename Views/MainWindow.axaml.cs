@@ -85,11 +85,13 @@ public partial class MainWindow : Window
         if (TabScrollLeftBtn != null)
         {
             TabScrollLeftBtn.Click += (_, _) => ScrollTabsBy(-160);
+            TabScrollLeftBtn.AddHandler(InputElement.DoubleTappedEvent, (_, e) => e.Handled = true);
         }
 
         if (TabScrollRightBtn != null)
         {
             TabScrollRightBtn.Click += (_, _) => ScrollTabsBy(160);
+            TabScrollRightBtn.AddHandler(InputElement.DoubleTappedEvent, (_, e) => e.Handled = true);
         }
 
         if (TabListMenuButton != null)
