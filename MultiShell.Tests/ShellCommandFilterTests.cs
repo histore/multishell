@@ -41,4 +41,24 @@ public class ShellCommandFilterTests
     {
         Assert.False(ShellCommandFilter.IsInternalConfigurationCommand(command));
     }
+
+    [Theory]
+    [InlineData("docker login --password mySecretPassword123", "docker login --password ******")]
+    [InlineData("docker login --password=secretPass", "docker login --password=******")]
+    [InlineData("curl -H 'Authorization: Bearer myTokenVal123' https://api.com", "curl -H 'Authorization: Bearer ******' https://api.com")]
+    [InlineData("git clone https://john:superSecretToken@github.com/org/repo.git", "git clone https://john:******@github.com/org/repo.git")]
+    [InlineData("app --token s3cr3tT0k3n --api-key 987654321", "app --token ****** --api-key ******")]
+    public void SanitizeCommandForHistory_MasksSensitiveCredentials(string input, string expected)
+    {
+        var sanitized = ShellCommandFilter.SanitizeCommandForHistory(input);
+        Assert.Equal(expected, sanitized);
+    }
+
+    [Fact]
+    public void SanitizeCommandForHistory_LeavesSafeCommandsUntouched()
+    {
+        var safe = "git commit -m 'feat: add user authentication'";
+        var sanitized = ShellCommandFilter.SanitizeCommandForHistory(safe);
+        Assert.Equal(safe, sanitized);
+    }
 }
