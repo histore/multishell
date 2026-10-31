@@ -189,8 +189,8 @@ Backs an individual terminal tab instance and coordinates multiple split panes v
 
 ## 6. Startup, Single-Instance & CLI Integration
 * **`Program.cs` & `SingleInstanceService`**:
-  * On launch, verifies `SingleInstanceService.IsFirstInstance` using `Local\MultiShell_SingleInstance_Mutex`.
-  * If a secondary instance is detected, it resolves CLI arguments via `StartupPathResolver` (converting folders or file paths into target working directories) and transmits the path through `MultiShell_IPC_Pipe` via `SendArgsToFirstInstanceAsync`, exiting immediately (ExitCode 0).
+  * On launch, verifies `SingleInstanceService.IsFirstInstance` using `Local\MultiShell_SingleInstance_Mutex` unless `--multi-instance`, `--new-instance`, or `-m` is passed.
+  * If a secondary instance is detected, it resolves CLI arguments via `StartupPathResolver` (converting folders or file paths into target working directories) and transmits the path through the user-isolated pipe (`MultiShell_IPC_Pipe_<UserName>`) with backward-compatibility fallback to `MultiShell_IPC_Pipe` via `SendArgsToFirstInstanceAsync`, exiting immediately (ExitCode 0).
   * If the first instance, it starts the background Named Pipe server (`StartServer()`) and passes any initial directory into `App` / `MainViewModel`.
 * **`App.axaml.cs`**:
   * Subscribes to `SingleInstanceService.DirectoryOpenRequested`.

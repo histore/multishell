@@ -1,5 +1,6 @@
 using Avalonia;
 using System;
+using System.Linq;
 using MultiShell.Services;
 
 namespace MultiShell;
@@ -12,8 +13,12 @@ sealed partial class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        using var singleInstanceService = new SingleInstanceService();
-        if (!singleInstanceService.IsFirstInstance)
+        bool isMultiInstance = args.Any(a => string.Equals(a, "--multi-instance", StringComparison.OrdinalIgnoreCase) ||
+                                             string.Equals(a, "--new-instance", StringComparison.OrdinalIgnoreCase) ||
+                                             string.Equals(a, "-m", StringComparison.OrdinalIgnoreCase));
+
+        using var singleInstanceService = isMultiInstance ? null : new SingleInstanceService();
+        if (singleInstanceService != null && !singleInstanceService.IsFirstInstance)
         {
             // Allow the primary running instance to bring its window to the foreground on Windows
             if (OperatingSystem.IsWindows())
@@ -36,8 +41,11 @@ sealed partial class Program
 
         try
         {
-            singleInstanceService.StartServer();
-            App.SingleInstance = singleInstanceService;
+            if (singleInstanceService != null)
+            {
+                singleInstanceService.StartServer();
+                App.SingleInstance = singleInstanceService;
+            }
 
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
