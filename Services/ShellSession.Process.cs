@@ -97,14 +97,18 @@ public sealed partial class ShellSession
             var args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments}";
             if (_shellType == ShellType.WSL && !string.IsNullOrWhiteSpace(workingDir) && !args.Contains("--cd"))
             {
-                return $"\"{_customExecutable}\" --cd \"{workingDir}\"{args}";
+                var cleanDir = Path.TrimEndingDirectorySeparator(workingDir);
+                return $"\"{_customExecutable}\" --cd \"{cleanDir}\"{args}";
             }
             return $"\"{_customExecutable}\"{args}";
         }
 
         if (_shellType == ShellType.PowerShell)
         {
-            string exePath = ResolveExecutable("pwsh.exe") ?? "powershell.exe";
+            string exePath = ShellDiscoveryService.ResolveExecutable("pwsh.exe") ??
+                             ShellDiscoveryService.ResolveExecutable("powershell.exe") ??
+                             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+            if (!File.Exists(exePath)) exePath = "powershell.exe";
 
             // Build the prompt hook script as a plain string (no escaping needed here).
             // Explicitly set Win32 console code page (65001), UTF-8 console output/input,
@@ -155,42 +159,28 @@ public sealed partial class ShellSession
 
         if (_shellType == ShellType.NuShell)
         {
-            string exePath = ResolveExecutable("nu.exe") ?? "nu.exe";
+            string exePath = ShellDiscoveryService.ResolveExecutable("nu.exe") ?? "nu.exe";
             return $"\"{exePath}\"";
         }
 
         if (_shellType == ShellType.WSL)
         {
-            string exePath = ResolveExecutable("wsl.exe") ?? "wsl.exe";
+            string exePath = ShellDiscoveryService.ResolveExecutable("wsl.exe") ??
+                             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
+            if (!File.Exists(exePath)) exePath = "wsl.exe";
+
             if (!string.IsNullOrWhiteSpace(workingDir))
             {
-                return $"\"{exePath}\" --cd \"{workingDir}\"";
+                var cleanDir = Path.TrimEndingDirectorySeparator(workingDir);
+                return $"\"{exePath}\" --cd \"{cleanDir}\"";
             }
             return $"\"{exePath}\"";
         }
 
-        return "cmd.exe /K \"chcp 65001 >nul\"";
-    }
-
-    private static string? ResolveExecutable(string name)
-    {
-        var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-        foreach (var dir in pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-        {
-            try
-            {
-                var candidate = Path.Combine(dir, name);
-                if (File.Exists(candidate)) return candidate;
-            }
-            catch { }
-        }
-        if (name == "pwsh.exe")
-        {
-            var windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-            var winPowerShell = Path.Combine(windir, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
-            if (File.Exists(winPowerShell)) return winPowerShell;
-        }
-        return null;
+        var cmdPath = ShellDiscoveryService.ResolveExecutable("cmd.exe") ??
+                      Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
+        if (!File.Exists(cmdPath)) cmdPath = "cmd.exe";
+        return $"\"{cmdPath}\" /K \"chcp 65001 >nul\"";
     }
 
     private static string BuildEnvironmentBlock(IReadOnlyDictionary<string, string> environmentVariables)
