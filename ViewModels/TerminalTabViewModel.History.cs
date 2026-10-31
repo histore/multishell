@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -364,13 +365,13 @@ public partial class TerminalTabViewModel
     {
         if (string.IsNullOrWhiteSpace(directory)) return;
 
-        var escapedPath = $"\"{directory}\"";
+        var cleanDir = Path.TrimEndingDirectorySeparator(directory.Trim());
         string command = ShellType switch
         {
-            ShellType.CMD => $"cd /d {escapedPath}\r",
-            ShellType.WSL => $"cd {escapedPath}\n",
-            ShellType.NuShell => $"cd {escapedPath}\r",
-            _ => $"Set-Location -LiteralPath {escapedPath}\r"
+            ShellType.CMD => $"cd /d \"{cleanDir}\"\r",
+            ShellType.WSL => $"cd \"{cleanDir.Replace("\"", "\\\"")}\"\n",
+            ShellType.NuShell => $"cd \"{cleanDir.Replace("\"", "\\\"")}\"\r",
+            _ => $"Set-Location -LiteralPath \"{cleanDir}\"\r"
         };
 
         if (ShellType != ShellType.PowerShell)
@@ -390,13 +391,13 @@ public partial class TerminalTabViewModel
     {
         if (string.IsNullOrWhiteSpace(directory)) return;
 
-        var escapedPath = $"\"{directory}\"";
+        var cleanDir = Path.TrimEndingDirectorySeparator(directory.Trim());
         string command = ShellType switch
         {
-            ShellType.CMD => $"cd /d {escapedPath}",
-            ShellType.WSL => $"cd {escapedPath}",
-            ShellType.NuShell => $"cd {escapedPath}",
-            _ => $"Set-Location -LiteralPath {escapedPath}"
+            ShellType.CMD => $"cd /d \"{cleanDir}\"",
+            ShellType.WSL => $"cd \"{cleanDir.Replace("\"", "\\\"")}\"",
+            ShellType.NuShell => $"cd \"{cleanDir.Replace("\"", "\\\"")}\"",
+            _ => $"Set-Location -LiteralPath \"{cleanDir}\""
         };
         var bytes = Encoding.UTF8.GetBytes(command);
         TrackInputBuffer(bytes);

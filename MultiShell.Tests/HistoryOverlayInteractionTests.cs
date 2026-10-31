@@ -16,7 +16,7 @@ public class HistoryOverlayInteractionTests
         public Guid SessionId { get; } = Guid.NewGuid();
         public string Title { get; } = "Test";
         public string? WorkingDirectory { get; set; } = @"C:\TestDir";
-        public ShellType ShellType => ShellType.PowerShell;
+        public ShellType ShellType { get; set; } = ShellType.PowerShell;
         public bool IsRunning { get; set; } = true;
         public List<byte[]> SentInputs { get; } = new();
 
@@ -106,6 +106,38 @@ public class HistoryOverlayInteractionTests
         var sentText = Encoding.UTF8.GetString(session.SentInputs[0]);
         Assert.Contains(@"Set-Location", sentText);
         Assert.Contains(@"C:\Target\Folder", sentText);
+    }
+
+    [Fact]
+    public void NavigateToHistoryDirectory_TrimsTrailingSeparators_ForPowerShell()
+    {
+        // Arrange
+        var session = new MockShellSession();
+        var tab = new TerminalTabViewModel(session);
+
+        // Act: Navigate to folder with trailing backslash
+        tab.NavigateToHistoryDirectory(@"C:\My Project's Dir\Subfolder\");
+
+        // Assert: Sent input has trimmed trailing slash so \" is not escaped
+        Assert.NotEmpty(session.SentInputs);
+        var sentText = Encoding.UTF8.GetString(session.SentInputs[0]);
+        Assert.Equal("Set-Location -LiteralPath \"C:\\My Project's Dir\\Subfolder\"\r", sentText);
+    }
+
+    [Fact]
+    public void NavigateToHistoryDirectory_WSL_UsesLfAndEscapedQuotes()
+    {
+        // Arrange
+        var session = new MockShellSession { ShellType = Models.ShellType.WSL };
+        var tab = new TerminalTabViewModel(session);
+
+        // Act: Navigate in WSL
+        tab.NavigateToHistoryDirectory("/mnt/c/Users/test folder/");
+
+        // Assert: Ends with \n and has trimmed trailing slash
+        Assert.NotEmpty(session.SentInputs);
+        var sentText = Encoding.UTF8.GetString(session.SentInputs[0]);
+        Assert.Equal("cd \"/mnt/c/Users/test folder\"\n", sentText);
     }
 
     [Fact]
