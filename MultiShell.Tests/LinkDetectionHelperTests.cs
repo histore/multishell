@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using MultiShell.Services;
 using Xunit;
@@ -125,5 +126,62 @@ public class LinkDetectionHelperTests
     {
         Assert.False(LinkDetectionHelper.OpenTarget(""));
         Assert.False(LinkDetectionHelper.OpenTarget("   "));
+    }
+
+    [Theory]
+    [InlineData("script.ps1")]
+    [InlineData("app.hta")]
+    [InlineData("config.reg")]
+    [InlineData("shortcut.lnk")]
+    [InlineData("batch.cmd")]
+    [InlineData("payload.vbs")]
+    public void OpenTarget_DangerousScriptOrExecutable_OpensInNotepad(string fileName)
+    {
+        // Arrange
+        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var testFile = Path.Combine(tempDir, fileName);
+        File.WriteAllText(testFile, "content");
+
+        ProcessStartInfo? capturedPsi = null;
+        LinkDetectionHelper.ProcessLauncher = psi =>
+        {
+            capturedPsi = psi;
+            return true;
+        };
+
+        try
+        {
+            // Act
+            var success = LinkDetectionHelper.OpenTarget(fileName, tempDir);
+
+            // Assert
+            Assert.True(success);
+            Assert.NotNull(capturedPsi);
+            Assert.EndsWith("notepad.exe", capturedPsi.FileName, StringComparison.OrdinalIgnoreCase);
+            Assert.False(capturedPsi.UseShellExecute);
+            Assert.Contains(fileName, capturedPsi.Arguments);
+        }
+        finally
+        {
+            LinkDetectionHelper.ProcessLauncher = null;
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData(@"\\evil-server\share\file.txt", false)]
+    [InlineData(@"\\192.168.1.100\payload.ps1", false)]
+    [InlineData(@"\\wsl$\Ubuntu\etc\hosts", true)]
+    [InlineData(@"\\wsl.localhost\Debian\home", true)]
+    [InlineData(@"C:\Projects\app\main.cs", true)]
+    [InlineData(@"./relative/path.txt", true)]
+    public void IsSafeLocalPath_DistinguishesBetweenLocalAndRemoteUnc(string path, bool expectedSafe)
+    {
+        // Act
+        var isSafe = LinkDetectionHelper.IsSafeLocalPath(path);
+
+        // Assert
+        Assert.Equal(expectedSafe, isSafe);
     }
 }
