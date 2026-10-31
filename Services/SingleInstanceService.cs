@@ -142,14 +142,32 @@ public class SingleInstanceService : ISingleInstanceService
     public async Task<bool> SendArgsToFirstInstanceAsync(string[] args, string clientCurrentDirectory, int timeoutMs = 2000)
     {
         var resolvedPath = _pathResolver.ResolveFromArgs(args, clientCurrentDirectory);
+        int primaryTimeout = _pipeName != DefaultPipeNamePrefix ? Math.Max(250, timeoutMs / 2) : timeoutMs;
 
+        if (await TrySendToPipeAsync(_pipeName, resolvedPath, primaryTimeout).ConfigureAwait(false))
+        {
+            return true;
+        }
+
+        // Backward compatibility fallback: if user-isolated pipe connection fails, try legacy pipe
+        if (_pipeName != DefaultPipeNamePrefix)
+        {
+            int fallbackTimeout = Math.Max(250, timeoutMs - primaryTimeout);
+            return await TrySendToPipeAsync(DefaultPipeNamePrefix, resolvedPath, fallbackTimeout).ConfigureAwait(false);
+        }
+
+        return false;
+    }
+
+    private static async Task<bool> TrySendToPipeAsync(string pipeName, string? message, int timeoutMs)
+    {
         try
         {
-            using var client = new NamedPipeClientStream(".", _pipeName, PipeDirection.Out);
+            using var client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
             await client.ConnectAsync(timeoutMs).ConfigureAwait(false);
 
             using var writer = new StreamWriter(client, Encoding.UTF8);
-            await writer.WriteAsync(resolvedPath ?? string.Empty).ConfigureAwait(false);
+            await writer.WriteAsync(message ?? string.Empty).ConfigureAwait(false);
             await writer.FlushAsync().ConfigureAwait(false);
             return true;
         }

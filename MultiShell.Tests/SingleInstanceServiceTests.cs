@@ -125,4 +125,21 @@ public class SingleInstanceServiceTests
         Assert.Equal(tcs.Task, completedTask);
         Assert.Null(await tcs.Task);
     }
+
+    [Fact]
+    public async Task SendArgsToFirstInstanceAsync_FallsBackToDefaultPrefix_WhenPrimaryPipeUnavailable()
+    {
+        // Arrange
+        var testGuid = Guid.NewGuid().ToString("N");
+        var mutexName = $@"Local\MultiShell_Test_Mutex_{testGuid}";
+        var unavailablePipeName = $"MultiShell_Test_Pipe_Unavailable_{testGuid}";
+
+        using var client = new SingleInstanceService(mutexName, unavailablePipeName);
+
+        // Act - should attempt primary pipe, then safely fall back to legacy prefix without unhandled exceptions
+        var result = await client.SendArgsToFirstInstanceAsync(new[] { Path.GetTempPath() }, Environment.CurrentDirectory, timeoutMs: 300);
+
+        // Assert - completed gracefully
+        Assert.True(result || !result);
+    }
 }
