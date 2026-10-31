@@ -31,8 +31,13 @@ public static class LinkDetectionHelper
 
     private static readonly HashSet<string> ExecutableExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".exe", ".bat", ".cmd", ".vbs", ".js", ".msi", ".com", ".scr", ".pif"
+        ".exe", ".bat", ".cmd", ".vbs", ".js", ".msi", ".com", ".scr", ".pif",
+        ".ps1", ".psm1", ".psd1", ".hta", ".wsf", ".wsh", ".vbe", ".jse",
+        ".reg", ".lnk", ".jar", ".cpl", ".msc", ".inf", ".application", ".appref-ms",
+        ".scrobj", ".sct"
     };
+
+    internal static Func<ProcessStartInfo, bool>? ProcessLauncher { get; set; }
 
     /// <summary>
     /// Represents a detected link or file path candidate within a line of text.
@@ -141,6 +146,26 @@ public static class LinkDetectionHelper
     }
 
     /// <summary>
+    /// Checks whether the candidate path is safe to query locally without initiating an outbound remote SMB connection
+    /// that could leak NetNTLM credentials or query untrusted remote file shares.
+    /// </summary>
+    public static bool IsSafeLocalPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        if (path.StartsWith(@"\\", StringComparison.Ordinal))
+        {
+            // Allow local WSL UNC network paths: \\wsl$\ or \\wsl.localhost\
+            if (path.StartsWith(@"\\wsl$\", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith(@"\\wsl.localhost\", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
     /// Checks if a path candidate exists on disk (absolute or relative to working directory).
     /// Strips line-number suffixes such as :42 or :10:5 before checking file existence.
     /// </summary>
@@ -150,7 +175,7 @@ public static class LinkDetectionHelper
         if (string.IsNullOrWhiteSpace(pathCandidate)) return false;
 
         var cleanPath = StripLineNumberSuffix(pathCandidate);
-        if (string.IsNullOrWhiteSpace(cleanPath)) return false;
+        if (string.IsNullOrWhiteSpace(cleanPath) || !IsSafeLocalPath(cleanPath)) return false;
 
         var cacheKey = $"{workingDirectory}|{cleanPath}";
         var now = Environment.TickCount64;
@@ -216,6 +241,17 @@ public static class LinkDetectionHelper
         return path;
     }
 
+    private static bool StartProcess(ProcessStartInfo psi)
+    {
+        if (ProcessLauncher != null)
+        {
+            return ProcessLauncher(psi);
+        }
+
+        using var proc = Process.Start(psi);
+        return proc != null;
+    }
+
     /// <summary>
     /// Launches the given URL in the default browser or opens the resolved file path in the system default application.
     /// </summary>
@@ -229,12 +265,11 @@ public static class LinkDetectionHelper
             if (Uri.TryCreate(target, UriKind.Absolute, out var uri) &&
                 (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeFtp))
             {
-                Process.Start(new ProcessStartInfo
+                return StartProcess(new ProcessStartInfo
                 {
                     FileName = target,
                     UseShellExecute = true
                 });
-                return true;
             }
 
             // 2. Local File / Directory Path
@@ -242,33 +277,34 @@ public static class LinkDetectionHelper
             {
                 if (File.Exists(resolvedPath) && ExecutableExtensions.Contains(Path.GetExtension(resolvedPath)))
                 {
-                    Process.Start(new ProcessStartInfo
+                    var sysDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+                    var notepadPath = Path.Combine(sysDir, "notepad.exe");
+                    if (!File.Exists(notepadPath)) notepadPath = "notepad.exe";
+
+                    return StartProcess(new ProcessStartInfo
                     {
-                        FileName = "notepad.exe",
+                        FileName = notepadPath,
                         Arguments = $"\"{resolvedPath}\"",
                         UseShellExecute = false
                     });
-                    return true;
                 }
 
-                Process.Start(new ProcessStartInfo
+                return StartProcess(new ProcessStartInfo
                 {
                     FileName = resolvedPath,
                     UseShellExecute = true
                 });
-                return true;
             }
 
             // 3. Fallback for safe known schemes (e.g. mailto: or tel:)
             if (Uri.TryCreate(target, UriKind.Absolute, out var customUri) &&
                 (customUri.Scheme == "mailto" || customUri.Scheme == "tel"))
             {
-                Process.Start(new ProcessStartInfo
+                return StartProcess(new ProcessStartInfo
                 {
                     FileName = target,
                     UseShellExecute = true
                 });
-                return true;
             }
 
             return false;
