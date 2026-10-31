@@ -85,4 +85,44 @@ public class SingleInstanceServiceTests
         Assert.Equal(tcs.Task, completedTask);
         Assert.Null(await tcs.Task);
     }
+
+    [Fact]
+    public void DefaultPipeName_ContainsCurrentUserName_ForUserIsolation()
+    {
+        // Act
+        var pipeName = SingleInstanceService.DefaultPipeName;
+
+        // Assert
+        Assert.StartsWith(SingleInstanceService.DefaultPipeNamePrefix, pipeName);
+        Assert.Contains(Environment.UserName.Replace('\\', '_'), pipeName);
+    }
+
+    [Fact]
+    public async Task SendArgsToFirstInstanceAsync_RejectsNonExistentDirectory_OnServerValidation()
+    {
+        // Arrange
+        var testGuid = Guid.NewGuid().ToString("N");
+        var mutexName = $@"Local\MultiShell_Test_Mutex_{testGuid}";
+        var pipeName = $"MultiShell_Test_Pipe_{testGuid}";
+
+        using var server = new SingleInstanceService(mutexName, pipeName);
+
+        var tcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        server.DirectoryOpenRequested += path => tcs.TrySetResult(path);
+        server.StartServer();
+
+        // Act - send malicious or non-existent path directly through a raw pipe client
+        using (var rawClient = new System.IO.Pipes.NamedPipeClientStream(".", pipeName, System.IO.Pipes.PipeDirection.Out))
+        {
+            await rawClient.ConnectAsync(2000);
+            using var writer = new System.IO.StreamWriter(rawClient, System.Text.Encoding.UTF8);
+            await writer.WriteAsync(@"C:\NonExistent_Directory_404_Invalid\");
+            await writer.FlushAsync();
+        }
+
+        // Assert - server validates with _pathResolver and returns null
+        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(3000));
+        Assert.Equal(tcs.Task, completedTask);
+        Assert.Null(await tcs.Task);
+    }
 }
