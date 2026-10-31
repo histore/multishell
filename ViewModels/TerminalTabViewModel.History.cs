@@ -309,7 +309,8 @@ public partial class TerminalTabViewModel
         var targetDir = _pendingCommandDirectory ?? WorkingDirectory;
         _pendingCommandDirectory = null;
 
-        _pathCommandHistoryService.RecordCommand(targetDir, command);
+        var sanitizedCommand = ShellCommandFilter.SanitizeCommandForHistory(command);
+        _pathCommandHistoryService.RecordCommand(targetDir, sanitizedCommand);
     }
 
     private void CheckForDirectoryChangeCommand(string command)
