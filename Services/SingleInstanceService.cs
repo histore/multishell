@@ -14,7 +14,9 @@ namespace MultiShell.Services;
 public class SingleInstanceService : ISingleInstanceService
 {
     public const string DefaultMutexName = @"Local\MultiShell_SingleInstance_Mutex";
-    public const string DefaultPipeName = "MultiShell_IPC_Pipe";
+    public const string DefaultPipeNamePrefix = "MultiShell_IPC_Pipe";
+
+    public static string DefaultPipeName => $"{DefaultPipeNamePrefix}_{Environment.UserName.Replace('\\', '_')}";
 
     private readonly string _mutexName;
     private readonly string _pipeName;
@@ -31,12 +33,12 @@ public class SingleInstanceService : ISingleInstanceService
     public event Action<string?>? DirectoryOpenRequested;
 
     public SingleInstanceService(
-        string mutexName = DefaultMutexName,
-        string pipeName = DefaultPipeName,
+        string? mutexName = null,
+        string? pipeName = null,
         IStartupPathResolver? pathResolver = null)
     {
-        _mutexName = mutexName;
-        _pipeName = pipeName;
+        _mutexName = !string.IsNullOrWhiteSpace(mutexName) ? mutexName : DefaultMutexName;
+        _pipeName = !string.IsNullOrWhiteSpace(pipeName) ? pipeName : DefaultPipeName;
         _pathResolver = pathResolver ?? new StartupPathResolver();
 
         try
@@ -70,7 +72,7 @@ public class SingleInstanceService : ISingleInstanceService
                         PipeDirection.In,
                         NamedPipeServerStream.MaxAllowedServerInstances,
                         PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous);
+                        PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
                     lock (_pipeLock)
                     {
@@ -92,7 +94,13 @@ public class SingleInstanceService : ISingleInstanceService
                     int charsRead = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), readCts.Token).ConfigureAwait(false);
                     var message = new string(buffer, 0, charsRead);
 
-                    var targetDirectory = string.IsNullOrWhiteSpace(message) ? null : message.Trim();
+                    string? targetDirectory = null;
+                    if (!string.IsNullOrWhiteSpace(message))
+                    {
+                        var trimmed = message.Trim();
+                        targetDirectory = _pathResolver.ResolveWorkingDirectory(trimmed);
+                    }
+
                     DirectoryOpenRequested?.Invoke(targetDirectory);
                 }
                 catch (OperationCanceledException)
