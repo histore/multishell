@@ -93,7 +93,18 @@ public partial class TerminalPaneView
             var link = LinkDetectionHelper.ExtractLinkAtColumn(lineText, colIndex, vm.WorkingDirectory);
             if (link != null)
             {
-                ShowLinkHighlight(link.StartIndex * charWidth, row * charHeight, link.Length * charWidth, charHeight);
+                // Align the link highlight adorner precisely to the glyph text metrics:
+                // Monospace fonts have internal line ascent/padding (which would cause raw row * charHeight
+                // to sit noticeably above the text glyphs) and character side bearings (which would cause
+                // StartIndex * charWidth to protrude to the left into preceding whitespace).
+                var xOff = Math.Max(1.0, Math.Round(charWidth * 0.16, 1));
+                var yOff = Math.Max(1.5, Math.Round(charHeight * 0.12, 1));
+                var x = link.StartIndex * charWidth + xOff;
+                var y = row * charHeight + yOff;
+                var width = link.Length * charWidth - (xOff * 1.5);
+                var height = charHeight - yOff;
+
+                ShowLinkHighlight(x, y, width, height);
                 Terminal.Cursor = new Cursor(StandardCursorType.Hand);
                 return;
             }
@@ -103,7 +114,7 @@ public partial class TerminalPaneView
         Terminal.Cursor = Cursor.Default;
     }
 
-    private void ShowLinkHighlight(double x, double y, double width, double height)
+    internal void ShowLinkHighlight(double x, double y, double width, double height)
     {
         _hoverLinkBorder ??= this.FindControl<Border>("HoverLinkBorder");
         if (_hoverLinkBorder == null) return;
@@ -262,8 +273,8 @@ public partial class TerminalPaneView
             else
             {
                 var fontSize = terminal.FontSize > 0 ? terminal.FontSize : 12.0;
-                charWidth = fontSize * 0.6;
-                charHeight = fontSize * 1.2;
+                charWidth = fontSize * (8.0 / 13.0);
+                charHeight = fontSize * (16.0 / 13.0);
             }
 
             if (charWidth <= 0 || charHeight <= 0) return false;

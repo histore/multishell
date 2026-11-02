@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.26.1] - 2026-11-02
+
+### Fixed
+- Align terminal link and file path hover highlight precisely to text glyph metrics, correcting upward vertical drift and leftward side-bearing offset (`REQ-TERM-005`).
+
+## [v0.26.0] - 2026-10-31
+
+### Added
+- Multi-instance CLI support (`--multi-instance`, `-m`) and legacy named pipe fallback for single-instance IPC.
+
+### Security
+- Mask sensitive credentials in shell command history before storage (`QLT-02`).
+- Prevent binary planting and handle trailing backslash quote escaping in shell launches (`SEC-04`, `SEC-05`).
+- Harden single-instance IPC with user isolation and server-side path validation (`SEC-03`).
+- Harden link detection against dangerous script execution and UNC abuse (`SEC-02`).
+- Prevent PowerShell code injection in toast notifications (`SEC-01`).
+
 ## [v0.25.3] - 2026-10-28
 
 ### Fixed
