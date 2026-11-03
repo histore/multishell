@@ -247,5 +247,58 @@ public class TabStatePersistenceServiceTests : IDisposable
         Assert.False(loaded.IsDarkAppTheme);
         Assert.False(loaded.IsDarkTerminalTheme);
     }
+
+    [Fact]
+    public async Task SaveStateAsync_And_LoadStateAsync_PreservesVersion2MultiWindowState()
+    {
+        // Arrange
+        var service = new TabStatePersistenceService(_tempFile);
+        var primaryWindow = new WindowWorkspaceState(
+            1,
+            new List<TabState>
+            {
+                new("MainTab", @"C:\main")
+            },
+            0,
+            new WindowBoundsState(100, 100, 1280, 800, false));
+
+        var secondaryWindows = new List<WindowWorkspaceState>
+        {
+            new(
+                2,
+                new List<TabState>
+                {
+                    new("SatelliteTab", @"C:\satellite")
+                },
+                0,
+                new WindowBoundsState(1920, 100, 1024, 768, false))
+        };
+
+        var state = new WorkspaceState(
+            new List<TabState> { new("MainTab", @"C:\main") },
+            0,
+            Version: 2,
+            PrimaryWindow: primaryWindow,
+            SecondaryWindows: secondaryWindows);
+
+        // Act
+        await service.SaveStateAsync(state);
+        var loaded = await service.LoadStateAsync();
+
+        // Assert
+        Assert.NotNull(loaded);
+        Assert.Equal(2, loaded.Version);
+        Assert.NotNull(loaded.PrimaryWindow);
+        Assert.Equal(1, loaded.PrimaryWindow.WindowNumber);
+        Assert.Single(loaded.PrimaryWindow.Tabs);
+        Assert.Equal("MainTab", loaded.PrimaryWindow.Tabs[0].Title);
+
+        Assert.NotNull(loaded.SecondaryWindows);
+        Assert.Single(loaded.SecondaryWindows);
+        Assert.Equal(2, loaded.SecondaryWindows[0].WindowNumber);
+        Assert.Single(loaded.SecondaryWindows[0].Tabs);
+        Assert.Equal("SatelliteTab", loaded.SecondaryWindows[0].Tabs[0].Title);
+        Assert.Equal(@"C:\satellite", loaded.SecondaryWindows[0].Tabs[0].WorkingDirectory);
+    }
 }
 

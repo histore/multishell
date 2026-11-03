@@ -219,7 +219,11 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainViewModel vm)
             {
-                vm.SaveCurrentStateSynchronously();
+                if (vm.IsPrimary)
+                {
+                    vm.SaveCurrentStateSynchronously();
+                }
+                _ = vm.WindowCoordinator.CloseWindowAsync(vm);
             }
         };
 
@@ -227,6 +231,7 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainViewModel vm)
             {
+                vm.WindowCoordinator.UnregisterWindow(vm);
                 vm.Dispose();
             }
         };

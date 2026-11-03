@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -18,6 +19,7 @@ public partial class MainWindow
     private readonly IStartupPathResolver _startupPathResolver = new StartupPathResolver();
     private TerminalTabViewModel? _draggedTab;
     private Point _dragStartPos;
+    private PointerPressedEventArgs? _lastPointerPressedEvent;
     private bool _isDragging;
     private double _tabWheelAccumulator;
     private DispatcherTimer? _dragScrollTimer;
@@ -215,15 +217,17 @@ public partial class MainWindow
 
             _draggedTab = tabVm;
             _dragStartPos = e.GetPosition(this);
+            _lastPointerPressedEvent = e;
             _isDragging = false;
         }
     }
 
-    private void OnTabsPointerMoved(object? sender, PointerEventArgs e)
+    private async void OnTabsPointerMoved(object? sender, PointerEventArgs e)
     {
         if (_draggedTab == null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             _draggedTab = null;
+            _lastPointerPressedEvent = null;
             _isDragging = false;
             return;
         }
@@ -234,35 +238,32 @@ public partial class MainWindow
         if (!_isDragging && (Math.Abs(delta.X) > 6 || Math.Abs(delta.Y) > 6))
         {
             _isDragging = true;
-        }
-
-        if (_isDragging && DataContext is MainViewModel mainVm)
-        {
-            var hitVisual = this.InputHitTest(currentPos) as Visual;
-
-            if (IsVisualOrChildOf(hitVisual, TabScrollLeftBtn))
+            var tabToDrag = _draggedTab;
+            var pressedEvent = _lastPointerPressedEvent;
+            if (tabToDrag != null && pressedEvent != null && DataContext is MainViewModel currentVm)
             {
-                if (TabScrollLeftBtn?.IsEnabled == true)
+                _draggedTab = null;
+                WindowCoordinatorService.CurrentTabDrag = new TabDragTransfer(currentVm, tabToDrag);
+                try
                 {
-                    StartDragScrollTimer(-160);
-                }
-            }
-            else if (IsVisualOrChildOf(hitVisual, TabScrollRightBtn))
-            {
-                if (TabScrollRightBtn?.IsEnabled == true)
-                {
-                    StartDragScrollTimer(160);
-                }
-            }
-            else
-            {
-                StopDragScrollTimer();
+                    var data = new DataTransfer();
+                    data.Add(DataTransferItem.CreateText(tabToDrag.Title));
+                    var result = await DragDrop.DoDragDropAsync(pressedEvent, data, DragDropEffects.Move);
 
-                var hoverTab = FindTabViewModel(hitVisual);
-                if (hoverTab != null && hoverTab != _draggedTab)
-                {
-                    mainVm.MoveTab(_draggedTab, hoverTab);
+                    // If released outside any window and this window has multiple tabs, tear off into a new window
+                    if (result == DragDropEffects.None && currentVm.Tabs.Contains(tabToDrag) && currentVm.Tabs.Count > 1)
+                    {
+                        await currentVm.WindowCoordinator.UndockTabAsync(currentVm, tabToDrag);
+                    }
                 }
+                finally
+                {
+                    WindowCoordinatorService.CurrentTabDrag = null;
+                    _isDragging = false;
+                    _lastPointerPressedEvent = null;
+                    StopDragScrollTimer();
+                }
+                return;
             }
         }
     }

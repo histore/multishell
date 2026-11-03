@@ -492,19 +492,29 @@ This document defines the functional and non-functional requirements specific to
 
 ### `[REQ-TAB-026]` Detachable Window Undocking & Redocking for Multi-Monitor Workflows
 
-- **Status**: `BACKLOG`
+- **Status**: `IMPLEMENTED`
 - **Type**: `Functional`
 - **Target Release**: `v1.3.0`
+- **Feature Specification**: [`docs/features/FEAT-TAB-026-multi-window-undocking.md`](../../features/FEAT-TAB-026-multi-window-undocking.md)
 
 #### User Story
 > **As a** multi-monitor user,  
-> **I want** to drag a tab outside the main application window or select "Detach Tab" from the tab context menu,  
-> **so that** the terminal session continues running uninterrupted in a standalone secondary window and can be docked back into the primary window.
+> **I want** to drag a tab outside the main application window or select "Detach Tab" (`Ctrl+Shift+U`) from the tab context menu,  
+> **so that** the terminal session continues running uninterrupted in a standalone secondary window and can be docked back into the primary window,  
+> **and I want** a clear distinction between the Primary (Anchor) window and Secondary windows so that closing the Primary window cleanly saves and closes the entire workspace, while closing a Secondary window only closes that specific window.
 
 #### Acceptance Criteria (Given-When-Then)
-- [ ] **AC-1**: **Given** an open tab, **When** dragging the tab header beyond the MultiShell window boundary, **Then** a new independent MultiShell window spawns hosting that tab session without PTY restart.
-- [ ] **AC-2**: **When** dragging a detached tab back onto the tab bar of the primary window, **Then** it seamlessly re-integrates into the primary tab strip.
-- [ ] **AC-3**: **When** closing a detached secondary window containing its last tab, **Then** the underlying shell process terminates cleanly without leaving orphaned PTY handles.
+- [ ] **AC-1**: **Given** an open tab, **When** dragging the tab header beyond the MultiShell window boundary or selecting `Detach Tab` (`Ctrl+Shift+U`), **Then** a new independent MultiShell window spawns hosting that tab session without PTY restart.
+- [ ] **AC-2**: **When** dragging a detached tab back onto the tab bar of the primary window, **Then** it seamlessly re-integrates into the primary tab strip and closes the secondary window if it was its last tab.
+- [ ] **AC-3**: **When** clicking `[ ⇲ Zurück ins Hauptfenster ]` in a secondary window header, **Then** all its tabs merge back into the primary window and the secondary window closes.
+- [ ] **AC-4**: **When** closing a secondary window via `✕`, **Then** only that secondary window closes, its tabs are archived into `ClosedTabs`, and the primary window and other windows remain active.
+- [ ] **AC-5**: **When** closing the primary window via `✕` or `Alt+F4`, **Then** the entire multi-window workspace (positions, bounds, tabs of all windows) is atomar persisted to `tabs_state.json` and all windows close cleanly without leaving orphaned PTY handles.
+- [ ] **AC-6**: **When** launching MultiShell after closing the primary window, **Then** the full multi-window layout is restored across all monitors with original tab configurations.
+- [ ] **AC-7**: **Given** multi-window mode, **Then** secondary windows are visually distinguished via a header badge (`[Fenster 2 ⧉]`), quick dock-back button, and context-sensitive close button tooltips.
+
+#### Traceability & Verification
+- **Architecture Contract**: `docs/architecture/modules/presentation.md`
+- **Feature Specification**: `docs/features/FEAT-TAB-026-multi-window-undocking.md`
 
 ### `[REQ-TAB-027]` Tab Switcher Overlay Real-Time Process & Tab Status Visual Parity
 
@@ -548,6 +558,7 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-TAB-023` | Tab Switcher Direct Tab Closure via Hover Button | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-TAB-024` | File & Folder Drag-Drop, Shift-Tab & Tab Drag-Over | Functional | IMPLEMENTED | `v0.1.0` |
 | `REQ-TAB-025` | Tab Path Color Stripes Coding (All Folders & Deterministic Padovan Width) | UI/UX | IMPLEMENTED | `v0.1.0` |
+| `REQ-TAB-026` | Detachable Window Undocking & Redocking for Multi-Monitor Workflows | Functional | IMPLEMENTED | `v1.3.0` |
 | `REQ-TAB-027` | Tab Switcher Overlay Real-Time Process & Tab Status Visual Parity | Functional | IMPLEMENTED | `v1.2.0` |
 | `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide (`F1`) | UI/UX | IMPLEMENTED | `v0.1.0` |
@@ -560,4 +571,3 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-AI-001` | Context-Aware AI Command Generator & Auto-Suggest | Functional | BACKLOG | `v1.3.0` |
 | `REQ-LNC-001` | Launcher Search & Item Filtering | Functional | DEPRECATED | `v1.3.0` |
 | `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | Functional | DEPRECATED | `v1.2.0` |
-| `REQ-TAB-026` | Detachable Window Undocking & Redocking for Multi-Monitor Workflows | Functional | BACKLOG | `v1.3.0` |

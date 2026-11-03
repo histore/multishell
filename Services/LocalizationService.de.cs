@@ -177,12 +177,14 @@ public partial class LocalizationService
         ["Search_Terminal_NoResults"] = "Keine Treffer",
         ["Search_Terminal_Matches"] = "{0} von {1}",
 
-        // Tab Context Menu & Renaming (REQ-TAB-020)
+        // Tab Context Menu & Renaming (REQ-TAB-020, REQ-TAB-026)
         ["Menu_Tab_Rename"] = "Tab umbenennen",
         ["Menu_Tab_ResetName"] = "Tab-Namen zurücksetzen",
         ["Menu_Tab_Color"] = "Tab-Farbe",
         ["Menu_Tab_Duplicate"] = "Tab duplizieren",
         ["Menu_Tab_OpenInExplorer"] = "Im Dateibrowser öffnen",
+        ["Menu_Tab_Undock"] = "In neues Fenster ausdocken",
+        ["Menu_Tab_DockBack"] = "Wieder andocken",
         ["Menu_Tab_Close"] = "Tab schließen",
         ["Menu_Tab_CloseOthers"] = "Andere Tabs schließen",
         ["Menu_Tab_CloseRight"] = "Tabs rechts schließen",

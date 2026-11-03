@@ -24,12 +24,56 @@ public partial class App : Application
             var resolver = new StartupPathResolver();
             var initialDir = resolver.ResolveFromArgs(desktop.Args);
 
-            var vm = new MainViewModel(initialDirectory: initialDir);
+            var coordinator = WindowCoordinatorService.Instance;
+            var vm = new MainViewModel(windowCoordinator: coordinator, initialDirectory: initialDir);
+            coordinator.RegisterWindow(vm, isPrimary: true);
+
             var window = new MainWindow
             {
                 DataContext = vm,
             };
             desktop.MainWindow = window;
+            desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnLastWindowClose;
+
+            coordinator.WindowOpenRequested += (_, args) =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var satelliteWindow = new MainWindow
+                    {
+                        DataContext = args.ViewModel,
+                    };
+                    if (args.ScreenX.HasValue && args.ScreenY.HasValue)
+                    {
+                        satelliteWindow.Position = new PixelPoint((int)args.ScreenX.Value, (int)args.ScreenY.Value);
+                    }
+                    satelliteWindow.Show();
+                });
+            };
+
+            coordinator.WindowCloseRequested += (_, args) =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    foreach (var openWindow in desktop.Windows)
+                    {
+                        if (openWindow.DataContext == args.ViewModel)
+                        {
+                            openWindow.Close();
+                            break;
+                        }
+                    }
+                });
+            };
+
+            coordinator.ApplicationShutdownRequested += (_, _) =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    desktop.Shutdown();
+                });
+            };
+
             desktop.Exit += (_, _) => vm.Dispose();
             window.Closed += (_, _) => vm.Dispose();
 

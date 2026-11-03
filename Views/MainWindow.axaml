@@ -23,6 +23,7 @@
     <Window.KeyBindings>
         <KeyBinding Command="{Binding AddNewTabCommand}" Gesture="Ctrl+Shift+T" />
         <KeyBinding Command="{Binding DuplicateTabCommand}" Gesture="Ctrl+Shift+D" />
+        <KeyBinding Command="{Binding UndockTabCommand}" Gesture="Ctrl+Shift+U" />
         <KeyBinding Command="{Binding CloseActivePaneOrTabCommand}" Gesture="Ctrl+Shift+W" />
         <KeyBinding Command="{Binding CloseActivePaneOrTabCommand}" Gesture="Ctrl+Shift+F4" />
         <!-- Split Panes Keybindings (REQ-UI-006) -->
@@ -156,6 +157,15 @@
                                                     <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_OpenInExplorer]}"
                                                               InputGesture="Ctrl+Shift+E"
                                                               Command="{Binding OpenInFileBrowserCommand}" />
+                                                    <Separator />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_Undock]}"
+                                                              InputGesture="Ctrl+Shift+U"
+                                                              Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).UndockTabCommand}"
+                                                              CommandParameter="{Binding}" />
+                                                    <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Tab_DockBack]}"
+                                                              Command="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).DockBackTabCommand}"
+                                                              CommandParameter="{Binding}"
+                                                              IsVisible="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).CanDockBack}" />
                                                     <Separator />
                                                     <MenuItem Header="{Binding $parent[views:MainWindow].((vm:MainViewModel)DataContext).Loc[Menu_Pane_SplitRight]}"
                                                               InputGesture="Alt+Shift+Right"
@@ -486,6 +496,18 @@
 
                 <!-- Right Action Buttons: History, Settings (Gear ⚙) -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="3" VerticalAlignment="Bottom" Margin="4,0,0,0">
+                    <Button Classes="toolbarActionBtn"
+                            ToolTip.Tip="{Binding Loc[Menu_Tab_DockBack]}"
+                            Command="{Binding DockBackTabCommand}"
+                            CommandParameter="{Binding SelectedTab}"
+                            IsVisible="{Binding CanDockBack}"
+                            Margin="0,0,2,0">
+                        <StackPanel Orientation="Horizontal" Spacing="3">
+                            <TextBlock Text="⇲" FontSize="12" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[Menu_Tab_DockBack]}" FontSize="11" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
                     <Button x:Name="ToggleHistoryToolbarBtn"
                             Classes="toolbarActionBtn"
                             Content="{Binding Loc[Btn_Tab_History_Text]}"

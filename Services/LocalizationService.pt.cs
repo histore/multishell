@@ -177,12 +177,14 @@ public partial class LocalizationService
         ["Search_Terminal_NoResults"] = "Nenhum resultado",
         ["Search_Terminal_Matches"] = "{0} de {1}",
 
-        // Tab Context Menu & Renaming (REQ-TAB-020)
+        // Tab Context Menu & Renaming (REQ-TAB-020, REQ-TAB-026)
         ["Menu_Tab_Rename"] = "Mudar o nome do separador",
         ["Menu_Tab_ResetName"] = "Repor nome do separador",
         ["Menu_Tab_Color"] = "Cor do separador",
         ["Menu_Tab_Duplicate"] = "Duplicar separador",
         ["Menu_Tab_OpenInExplorer"] = "Abrir no explorador de ficheiros",
+        ["Menu_Tab_Undock"] = "Destacar para nova janela",
+        ["Menu_Tab_DockBack"] = "Reencaixar",
         ["Menu_Tab_Close"] = "Fechar separador",
         ["Menu_Tab_CloseOthers"] = "Fechar outros separadores",
         ["Menu_Tab_CloseRight"] = "Fechar separadores à direita",

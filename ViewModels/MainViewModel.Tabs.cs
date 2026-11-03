@@ -36,7 +36,8 @@ public partial class MainViewModel
     {
         get
         {
-            if (SelectedTab == null) return "MultiShell";
+            var prefix = IsPrimary ? "" : $"[Fenster {WindowNumber} ⧉] ";
+            if (SelectedTab == null) return $"{prefix}MultiShell";
 
             var rawTitle = SelectedTab.HasCustomTitle
                 ? SelectedTab.CustomTitle!
@@ -44,10 +45,10 @@ public partial class MainViewModel
                     ? SelectedTab.WorkingDirectory
                     : SelectedTab.Title);
 
-            if (string.IsNullOrWhiteSpace(rawTitle)) return "MultiShell";
+            if (string.IsNullOrWhiteSpace(rawTitle)) return $"{prefix}MultiShell";
 
             var formatted = TerminalTabViewModel.FormatMiddleEllipsis(rawTitle, maxLength: 65);
-            return $"MultiShell - {formatted}";
+            return $"{prefix}MultiShell - {formatted}";
         }
     }
 
@@ -240,6 +241,121 @@ public partial class MainViewModel
         }
 
         TriggerSaveState();
+
+        if (!IsPrimary && Tabs.Count == 0)
+        {
+            _ = _windowCoordinator.CloseWindowAsync(this);
+        }
+    }
+
+    /// <summary>
+    /// Detaches a tab from this window's collection without disposing its process/session (Zero PTY Restart).
+    /// </summary>
+    public void DetachTab(TerminalTabViewModel tab)
+    {
+        if (tab == null) return;
+
+        if (tab.IsRenaming)
+        {
+            tab.CommitRenaming();
+        }
+
+        var index = Tabs.IndexOf(tab);
+        UnregisterTabEvents(tab);
+        Tabs.Remove(tab);
+
+        if (SelectedTab == tab)
+        {
+            SelectedTab = Tabs.Count > 0
+                ? Tabs[Math.Min(index, Tabs.Count - 1)]
+                : null;
+        }
+
+        TriggerSaveState();
+
+        if (!IsPrimary && Tabs.Count == 0)
+        {
+            _ = _windowCoordinator.CloseWindowAsync(this);
+        }
+    }
+
+    /// <summary>
+    /// Attaches an existing tab (e.g. from an undock, dock-back, or drag-and-drop transfer) to this window.
+    /// </summary>
+    public void AttachTab(TerminalTabViewModel tab, int? insertIndex = null)
+    {
+        if (tab == null) return;
+
+        RegisterTabEvents(tab);
+        tab.UpdateFontSize(_fontSizeService.TerminalFontSize);
+        tab.UpdateTheme(_themeService.IsDarkTerminalTheme);
+        if (insertIndex.HasValue && insertIndex.Value >= 0 && insertIndex.Value <= Tabs.Count)
+        {
+            Tabs.Insert(insertIndex.Value, tab);
+        }
+        else
+        {
+            Tabs.Add(tab);
+        }
+        SelectedTab = tab;
+
+        TriggerSaveState();
+    }
+
+    /// <summary>
+    /// Creates a secondary satellite ViewModel sharing all application services and the coordinator.
+    /// </summary>
+    public MainViewModel CreateSatelliteViewModel()
+    {
+        var satellite = new MainViewModel(
+            _shellProcessService,
+            _persistenceService,
+            _themeService,
+            _localizationService,
+            _fontSizeService,
+            _shellDiscoveryService,
+            _terminalProfileService,
+            _pathCommandHistoryService,
+            _directoryHistoryService,
+            _pathColorCodingService,
+            _toastNotificationService,
+            windowCoordinator: _windowCoordinator,
+            isSatellite: true);
+
+        return satellite;
+    }
+
+    /// <summary>
+    /// Undocks the specified tab (or the currently selected tab) into a new secondary satellite window.
+    /// </summary>
+    [RelayCommand]
+    public async Task UndockTabAsync(TerminalTabViewModel? tab = null)
+    {
+        var targetTab = tab ?? SelectedTab;
+        if (targetTab == null) return;
+
+        await _windowCoordinator.UndockTabAsync(this, targetTab);
+    }
+
+    /// <summary>
+    /// Docks a tab back from a secondary satellite window into the primary window.
+    /// </summary>
+    [RelayCommand]
+    public async Task DockBackTabAsync(TerminalTabViewModel? tab = null)
+    {
+        var targetTab = tab ?? SelectedTab;
+        if (targetTab == null) return;
+
+        await _windowCoordinator.DockBackTabAsync(this, targetTab);
+    }
+
+    /// <summary>
+    /// Requests closing this window through the window coordinator.
+    /// </summary>
+    [RelayCommand]
+    public async Task CloseWindowAsync()
+    {
+        await _windowCoordinator.CloseWindowAsync(this);
     }
 
     /// <summary>
@@ -409,6 +525,7 @@ public partial class MainViewModel
     private void RegisterTabEvents(TerminalTabViewModel tab)
     {
         tab.CloseRequested += CloseTab;
+        tab.UndockRequested += OnTabUndockRequested;
         tab.DirectoryChanged += OnTabDirectoryChanged;
         tab.HistoryChanged += OnTabHistoryChanged;
         tab.PropertyChanged += OnTabPropertyChanged;
@@ -422,12 +539,18 @@ public partial class MainViewModel
     internal void UnregisterTabEvents(TerminalTabViewModel tab)
     {
         tab.CloseRequested -= CloseTab;
+        tab.UndockRequested -= OnTabUndockRequested;
         tab.DirectoryChanged -= OnTabDirectoryChanged;
         tab.HistoryChanged -= OnTabHistoryChanged;
         tab.PropertyChanged -= OnTabPropertyChanged;
         tab.CommandExecutionCompleted -= OnTabCommandExecutionCompleted;
         tab.RequestFolderPickerAsync = null;
         tab.SessionFactory = null;
+    }
+
+    private void OnTabUndockRequested(TerminalTabViewModel tab)
+    {
+        _ = UndockTabAsync(tab);
     }
 
     /// <summary>

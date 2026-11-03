@@ -126,6 +126,16 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     public bool IsRunning => _session.IsRunning;
 
     /// <summary>
+    /// Gets the underlying shell session running in this tab.
+    /// </summary>
+    public IShellSession Session => _session;
+
+    /// <summary>
+    /// Gets whether this tab has been disposed.
+    /// </summary>
+    public bool IsDisposed => _isDisposed;
+
+    /// <summary>
     /// The type of shell (PowerShell, NuShell, WSL, CMD) running in this tab.
     /// </summary>
     public ShellType ShellType => _session.ShellType;
@@ -203,6 +213,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
     /// Event triggered when tab requests closure.
     /// </summary>
     public event Action<TerminalTabViewModel>? CloseRequested;
+    public event Action<TerminalTabViewModel>? UndockRequested;
 
     /// <summary>
     /// Event triggered when the active working directory changes.
@@ -369,6 +380,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
 
     [RelayCommand]
     public void RequestClose() => CloseRequested?.Invoke(this);
+
+    [RelayCommand]
+    public void RequestUndock() => UndockRequested?.Invoke(this);
 
     /// <summary>
     /// Opens the platform-specific native file browser in this tab's current working directory.

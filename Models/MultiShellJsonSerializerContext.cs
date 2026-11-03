@@ -8,6 +8,9 @@ namespace MultiShell.Models;
 /// </summary>
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(WorkspaceState))]
+[JsonSerializable(typeof(WindowBoundsState))]
+[JsonSerializable(typeof(WindowWorkspaceState))]
+[JsonSerializable(typeof(List<WindowWorkspaceState>))]
 [JsonSerializable(typeof(TabState))]
 [JsonSerializable(typeof(List<TabState>))]
 [JsonSerializable(typeof(TerminalProfile))]

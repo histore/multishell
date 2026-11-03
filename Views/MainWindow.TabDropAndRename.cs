@@ -7,6 +7,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using MultiShell.Services;
 using MultiShell.ViewModels;
 
 namespace MultiShell.Views;
@@ -53,6 +54,13 @@ public partial class MainWindow
     internal void OnTerminalDragOver(object? sender, DragEventArgs e)
     {
         StopDragScrollTimer();
+        if (WindowCoordinatorService.CurrentTabDrag != null)
+        {
+            e.DragEffects = DragDropEffects.Move;
+            e.Handled = true;
+            return;
+        }
+
         if (HasFiles(e))
         {
             e.DragEffects = DragDropEffects.Copy;
@@ -67,6 +75,23 @@ public partial class MainWindow
     internal void OnTerminalDrop(object? sender, DragEventArgs e)
     {
         StopDragScrollTimer();
+
+        if (WindowCoordinatorService.CurrentTabDrag is { } tabDrag)
+        {
+            e.DragEffects = DragDropEffects.Move;
+            e.Handled = true;
+
+            var sourceVm = tabDrag.SourceWindow;
+            var targetVm = DataContext as MainViewModel;
+            var tab = tabDrag.Tab;
+
+            if (targetVm != null && sourceVm != targetVm)
+            {
+                targetVm.WindowCoordinator.TransferTab(sourceVm, targetVm, tab);
+            }
+            return;
+        }
+
         var resolvedDir = ExtractFirstResolvedDirectory(e);
         if (resolvedDir != null && DataContext is MainViewModel mainVm)
         {
@@ -78,6 +103,35 @@ public partial class MainWindow
 
     internal void OnTabBarDragOver(object? sender, DragEventArgs e)
     {
+        if (WindowCoordinatorService.CurrentTabDrag != null)
+        {
+            e.DragEffects = DragDropEffects.Move;
+            e.Handled = true;
+
+            var currentPos = e.GetPosition(this);
+            var hitVisual = this.InputHitTest(currentPos) as Visual;
+
+            if (IsVisualOrChildOf(hitVisual, TabScrollLeftBtn))
+            {
+                if (TabScrollLeftBtn?.IsEnabled == true)
+                {
+                    StartDragScrollTimer(-160);
+                }
+            }
+            else if (IsVisualOrChildOf(hitVisual, TabScrollRightBtn))
+            {
+                if (TabScrollRightBtn?.IsEnabled == true)
+                {
+                    StartDragScrollTimer(160);
+                }
+            }
+            else
+            {
+                StopDragScrollTimer();
+            }
+            return;
+        }
+
         if (HasFiles(e))
         {
             e.DragEffects = DragDropEffects.Copy;
@@ -129,6 +183,38 @@ public partial class MainWindow
     internal void OnTabBarDrop(object? sender, DragEventArgs e)
     {
         StopDragScrollTimer();
+
+        if (WindowCoordinatorService.CurrentTabDrag is { } tabDrag)
+        {
+            e.DragEffects = DragDropEffects.Move;
+            e.Handled = true;
+
+            var sourceVm = tabDrag.SourceWindow;
+            var targetVm = DataContext as MainViewModel;
+            var tab = tabDrag.Tab;
+
+            if (targetVm != null)
+            {
+                var currentPos = e.GetPosition(this);
+                var hitVisual = this.InputHitTest(currentPos) as Visual;
+                var hoverTab = FindTabViewModel(hitVisual);
+                int? targetIndex = hoverTab != null ? targetVm.Tabs.IndexOf(hoverTab) : (int?)null;
+
+                if (sourceVm == targetVm)
+                {
+                    if (hoverTab != null && hoverTab != tab)
+                    {
+                        targetVm.MoveTab(tab, hoverTab);
+                    }
+                }
+                else
+                {
+                    targetVm.WindowCoordinator.TransferTab(sourceVm, targetVm, tab, targetIndex);
+                }
+            }
+            return;
+        }
+
         var resolvedDir = ExtractFirstResolvedDirectory(e);
         if (resolvedDir != null && DataContext is MainViewModel mainVm)
         {

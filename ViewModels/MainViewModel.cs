@@ -24,6 +24,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly IDirectoryHistoryService _directoryHistoryService;
     private readonly IPathColorCodingService _pathColorCodingService;
     private readonly IToastNotificationService _toastNotificationService;
+    private readonly IWindowCoordinatorService _windowCoordinator;
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
@@ -37,6 +38,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private bool _isCapsLockActive;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(WindowTitle))]
+    [NotifyPropertyChangedFor(nameof(CanDockBack))]
+    private bool _isPrimary = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(WindowTitle))]
+    private int _windowNumber = 1;
+
+    /// <summary>
+    /// Gets whether this window is a secondary satellite window that can dock back into the primary window.
+    /// </summary>
+    public bool CanDockBack => !IsPrimary;
+
+    /// <summary>
+    /// Gets the window coordinator service managing multi-window lifecycle.
+    /// </summary>
+    public IWindowCoordinatorService WindowCoordinator => _windowCoordinator;
 
     /// <summary>
     /// Queries the native operating system keyboard state and updates the Caps Lock indicator.
@@ -169,8 +189,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return $"Avalonia UI {versionStr} / ConPTY";
     }
 
-    public MainViewModel(string? initialDirectory = null)
-        : this(new ShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), initialDirectory: initialDirectory)
+    public MainViewModel(string? initialDirectory = null, IWindowCoordinatorService? windowCoordinator = null)
+        : this(new ShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), windowCoordinator: windowCoordinator, initialDirectory: initialDirectory)
     {
     }
 
@@ -196,7 +216,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IDirectoryHistoryService? directoryHistoryService = null,
         IPathColorCodingService? pathColorCodingService = null,
         IToastNotificationService? toastNotificationService = null,
-        string? initialDirectory = null)
+        IWindowCoordinatorService? windowCoordinator = null,
+        string? initialDirectory = null,
+        bool isSatellite = false)
     {
         _initialDirectory = initialDirectory;
         _shellProcessService = shellProcessService ?? throw new ArgumentNullException(nameof(shellProcessService));
@@ -211,6 +233,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
         _pathColorCodingService = pathColorCodingService ?? new PathColorCodingService();
         _toastNotificationService = toastNotificationService ?? new WindowsToastNotificationService(_localizationService);
+        _windowCoordinator = windowCoordinator ?? WindowCoordinatorService.Instance;
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;
@@ -270,10 +293,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         };
 
         ReloadProfiles();
-        _ = InitializeWorkspaceAsync();
+        if (!isSatellite)
+        {
+            _initTask = DoInitializeWorkspaceAsync();
+        }
+        else
+        {
+            _isInitialized = true;
+            _initTask = Task.CompletedTask;
+        }
     }
 
-    public async Task InitializeWorkspaceAsync()
+    private Task? _initTask;
+
+    public Task InitializeWorkspaceAsync()
+    {
+        if (_initTask != null) return _initTask;
+        _initTask = DoInitializeWorkspaceAsync();
+        return _initTask;
+    }
+
+    private async Task DoInitializeWorkspaceAsync()
     {
         var state = await _persistenceService.LoadStateAsync();
 
@@ -411,12 +451,54 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(ApplyLoadedTabs);
         }
+
+        if (state?.SecondaryWindows != null && state.SecondaryWindows.Count > 0 && _windowCoordinator != null)
+        {
+            void RestoreSecondaryWindows()
+            {
+                foreach (var secState in state.SecondaryWindows)
+                {
+                    if (secState.Tabs == null || secState.Tabs.Count == 0) continue;
+
+                    var satelliteVm = CreateSatelliteViewModel();
+                    satelliteVm.WindowNumber = secState.WindowNumber;
+                    _windowCoordinator.RegisterWindow(satelliteVm, isPrimary: false);
+
+                    foreach (var tabState in secState.Tabs.Take(MaxRestoreTabsLimit))
+                    {
+                        var title = string.IsNullOrWhiteSpace(tabState.Title) ? GetDefaultTitle(tabState.ShellType, satelliteVm.Tabs.Count + 1) : tabState.Title;
+                        var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType);
+                        var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
+                        tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
+                        tabVm.CustomTitle = tabState.CustomTitle;
+                        tabVm.TabColor = tabState.TabColor;
+                        tabVm.UpdateTheme(IsDarkTerminalTheme);
+                        satelliteVm.AttachTab(tabVm);
+                    }
+
+                    if (satelliteVm.Tabs.Count > 0)
+                    {
+                        int secSelect = Math.Clamp(secState.SelectedIndex, 0, satelliteVm.Tabs.Count - 1);
+                        satelliteVm.SelectedTab = satelliteVm.Tabs[secSelect];
+                    }
+
+                    _windowCoordinator.TriggerWindowOpenRequested(satelliteVm);
+                }
+            }
+
+            if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+            {
+                RestoreSecondaryWindows();
+            }
+            else
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(RestoreSecondaryWindows);
+            }
+        }
     }
 
-    public void TriggerSaveState()
+    private WorkspaceState BuildWorkspaceState()
     {
-        if (_isDisposed || !_isInitialized || _isApplyingLoadedTabs) return;
-
         var tabStates = Tabs
             .Where(t => t != null)
             .Select(t => new TabState(
@@ -429,11 +511,40 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 t.TabColor))
             .ToList();
         var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
-        var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
+        var selectedIndex = SelectedTab != null ? Math.Max(0, Tabs.IndexOf(SelectedTab)) : 0;
         var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
         var pathHistories = _pathCommandHistoryService.ExportAll();
         var sharedDirectories = _directoryHistoryService.ExportAll();
-        var workspaceState = new WorkspaceState(
+
+        WindowWorkspaceState primaryWindowState = new(
+            1,
+            tabStates,
+            selectedIndex);
+
+        List<WindowWorkspaceState> secondaryStates = new();
+        if (_windowCoordinator != null)
+        {
+            var secondaryWindows = _windowCoordinator.Windows.Where(w => !w.IsPrimary).ToList();
+            foreach (var sec in secondaryWindows)
+            {
+                var secTabs = sec.Tabs
+                    .Where(t => t != null)
+                    .Select(t => new TabState(
+                        t.Title,
+                        t.WorkingDirectory,
+                        t.CommandHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
+                        t.DirectoryHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
+                        t.ShellType,
+                        t.CustomTitle,
+                        t.TabColor))
+                    .ToList();
+
+                int secIndex = sec.SelectedTab != null ? Math.Max(0, sec.Tabs.IndexOf(sec.SelectedTab)) : 0;
+                secondaryStates.Add(new WindowWorkspaceState(sec.WindowNumber, secTabs, secIndex));
+            }
+        }
+
+        return new WorkspaceState(
             tabStates,
             selectedIndex,
             savedLanguage,
@@ -444,8 +555,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             pathHistories,
             sharedDirectories,
             IsDarkAppTheme,
-            IsDarkTerminalTheme);
+            IsDarkTerminalTheme,
+            Version: 2,
+            PrimaryWindow: primaryWindowState,
+            SecondaryWindows: secondaryStates.Count > 0 ? secondaryStates : null);
+    }
 
+    public void TriggerSaveState()
+    {
+        if (_isDisposed || !_isInitialized || _isApplyingLoadedTabs) return;
+
+        // If this is a secondary window, delegate save to primary window coordinator
+        if (!IsPrimary)
+        {
+            _windowCoordinator?.PrimaryWindow?.TriggerSaveState();
+            return;
+        }
+
+        var workspaceState = BuildWorkspaceState();
         _ = _persistenceService.SaveStateAsync(workspaceState);
     }
 
@@ -460,36 +587,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void SaveCurrentStateSynchronously()
     {
-        if (_isDisposed || !_isInitialized) return;
+        if (_isDisposed || !_isInitialized || !IsPrimary) return;
 
         // Prune non-existent paths for command history on application exit per REQ-HIST-003
         _pathCommandHistoryService.PruneNonExistentPaths();
 
-        var tabStates = Tabs.Select(t => new TabState(
-            t.Title,
-            t.WorkingDirectory,
-            t.CommandHistory.AsEnumerable().Reverse().ToList(),
-            t.DirectoryHistory.AsEnumerable().Reverse().ToList(),
-            t.ShellType,
-            t.CustomTitle,
-            t.TabColor)).ToList();
-        var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
-        var selectedIndex = SelectedTab != null ? Tabs.IndexOf(SelectedTab) : 0;
-        var savedLanguage = _localizationService.IsCustomLanguageSelected ? _localizationService.CurrentLanguage : null;
-        var pathHistories = _pathCommandHistoryService.ExportAll();
-        var sharedDirectories = _directoryHistoryService.ExportAll();
-        var workspaceState = new WorkspaceState(
-            tabStates,
-            selectedIndex,
-            savedLanguage,
-            AppFontSizeLevel,
-            TerminalFontSizeLevel,
-            DefaultShellType,
-            closedTabStates,
-            pathHistories,
-            sharedDirectories,
-            IsDarkAppTheme,
-            IsDarkTerminalTheme);
+        var workspaceState = BuildWorkspaceState();
 
         try
         {
