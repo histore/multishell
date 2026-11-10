@@ -19,7 +19,7 @@ namespace MultiShell.ViewModels;
 /// ViewModel representing a terminal tab backed by a real shell session and native Avalonia TerminalControl.
 /// Core partial class managing session lifecycle, PTY I/O streaming, terminal buffer formatting, and theme coordination.
 /// </summary>
-public partial class TerminalTabViewModel : ViewModelBase, IDisposable
+public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordinatedTab
 {
     private readonly IShellSession _session;
     private readonly IFuzzySearchService _fuzzySearchService;
@@ -618,4 +618,16 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable
             _isUiFeedScheduled = false;
         }
     }
+
+    /// <summary>
+    /// Exports the current tab state as an immutable <see cref="TabState"/> snapshot for workspace persistence.
+    /// </summary>
+    public TabState ToTabState() => new(
+        Title,
+        WorkingDirectory,
+        CommandHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
+        DirectoryHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
+        ShellType,
+        CustomTitle,
+        TabColor);
 }

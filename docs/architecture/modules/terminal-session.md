@@ -64,7 +64,8 @@ ConPTY streaming delivers arbitrary byte buffers over anonymous pipes. Multi-byt
 * **OSC 133;D (`\x1b]133;D;<exit-code>\x07`)**: Execution completion notification capturing the process exit status code. Dispatches `CommandCompleted` event to update status glyphs, badges, and trigger toast notifications for long-running operations.
 * **Evaluation Order & Origin Directory Attribution**: In `ShellSession.CheckForOscSequences`, `OSC 133;E` is evaluated before `OSC 9;9` / `OSC 7`. This ensures that directory navigation commands (`cd <path>`) trigger `CommandExecuted` while the pending origin directory is preserved, preventing commands from being misattributed to their destination directory.
 
-### 4.3 Safe Disposal & Leak-Free Teardown
+### 4.3 Safe Disposal, Launch Hardening & Leak-Free Teardown
+* **Process Launch Hardening**: Resolves absolute shell executable paths to prevent binary planting and escapes trailing backslashes safely before quoting command-line arguments (`SEC-04`, `SEC-05`). Toast notifications (`WindowsToastNotificationService`) sanitize payloads to prevent PowerShell code injection (`SEC-01`).
 On tab closure or application exit:
 1. ConPTY pseudo console is released via `ClosePseudoConsole`.
 2. Asynchronous pipe cancellation tokens are triggered.

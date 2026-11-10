@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using MultiShell.ViewModels;
 
 namespace MultiShell.Services;
 
 /// <summary>
 /// Data payload for active in-process tab drag operations across windows.
 /// </summary>
-public record TabDragTransfer(MainViewModel SourceWindow, TerminalTabViewModel Tab);
+public record TabDragTransfer(ICoordinatedWindow SourceWindow, ICoordinatedTab Tab);
 
 /// <summary>
 /// Default implementation of <see cref="IWindowCoordinatorService"/> coordinating multi-window lifecycles,
@@ -25,10 +25,10 @@ public class WindowCoordinatorService : IWindowCoordinatorService
     /// </summary>
     public static TabDragTransfer? CurrentTabDrag { get; set; }
 
-    private readonly List<MainViewModel> _windows = new();
-    private readonly object _lock = new();
+    private readonly List<ICoordinatedWindow> _windows = new();
+    private readonly Lock _lock = new();
 
-    public IReadOnlyList<MainViewModel> Windows
+    public IReadOnlyList<ICoordinatedWindow> Windows
     {
         get
         {
@@ -39,7 +39,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         }
     }
 
-    public MainViewModel? PrimaryWindow
+    public ICoordinatedWindow? PrimaryWindow
     {
         get
         {
@@ -54,7 +54,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
     public event EventHandler<WindowCloseRequestedEventArgs>? WindowCloseRequested;
     public event EventHandler? ApplicationShutdownRequested;
 
-    public void RegisterWindow(MainViewModel viewModel, bool? isPrimary = null)
+    public void RegisterWindow(ICoordinatedWindow viewModel, bool? isPrimary = null)
     {
         lock (_lock)
         {
@@ -82,7 +82,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         }
     }
 
-    public void UnregisterWindow(MainViewModel viewModel)
+    public void UnregisterWindow(ICoordinatedWindow viewModel)
     {
         lock (_lock)
         {
@@ -90,13 +90,13 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         }
     }
 
-    public Task<MainViewModel> UndockTabAsync(MainViewModel sourceWindow, TerminalTabViewModel tab, double? screenX = null, double? screenY = null)
+    public Task<ICoordinatedWindow> UndockTabAsync(ICoordinatedWindow sourceWindow, ICoordinatedTab tab, double? screenX = null, double? screenY = null)
     {
         // 1. Detach tab from source window without disposing its running session (Zero PTY Restart)
         sourceWindow.DetachTab(tab);
 
         // 2. Create secondary satellite ViewModel
-        var newVm = sourceWindow.CreateSatelliteViewModel();
+        var newVm = sourceWindow.CreateSatelliteWindow();
         RegisterWindow(newVm, isPrimary: false);
 
         // 3. Attach tab to the new secondary window
@@ -108,7 +108,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         return Task.FromResult(newVm);
     }
 
-    public Task DockBackTabAsync(MainViewModel sourceWindow, TerminalTabViewModel tab)
+    public Task DockBackTabAsync(ICoordinatedWindow sourceWindow, ICoordinatedTab tab)
     {
         var primary = PrimaryWindow;
         if (primary == null || primary == sourceWindow) return Task.CompletedTask;
@@ -120,7 +120,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         primary.AttachTab(tab);
 
         // 3. If source secondary window has no remaining tabs, request closing it
-        if (sourceWindow.Tabs.Count == 0)
+        if (sourceWindow.TabCount == 0)
         {
             WindowCloseRequested?.Invoke(this, new WindowCloseRequestedEventArgs(sourceWindow));
         }
@@ -128,7 +128,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         return Task.CompletedTask;
     }
 
-    public Task CloseWindowAsync(MainViewModel viewModel)
+    public Task CloseWindowAsync(ICoordinatedWindow viewModel)
     {
         if (viewModel.IsPrimary)
         {
@@ -146,19 +146,9 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         {
             // Secondary window closing: archive tabs into ClosedTabs of the primary window
             var primary = PrimaryWindow;
-            foreach (var tab in viewModel.Tabs.ToList())
+            if (primary != null)
             {
-                var closedItem = new ClosedTabItemViewModel(
-                    tab.Title,
-                    tab.WorkingDirectory,
-                    tab.ShellType,
-                    tab.CommandHistory,
-                    tab.DirectoryHistory,
-                    DateTime.Now,
-                    customTitle: tab.CustomTitle,
-                    tabColor: tab.TabColor);
-
-                primary?.PushClosedTab(closedItem);
+                viewModel.ArchiveTabsTo(primary);
             }
 
             // Request closing only this secondary window
@@ -168,12 +158,12 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         return Task.CompletedTask;
     }
 
-    public void TriggerWindowOpenRequested(MainViewModel viewModel, double? screenX = null, double? screenY = null)
+    public void TriggerWindowOpenRequested(ICoordinatedWindow viewModel, double? screenX = null, double? screenY = null)
     {
         WindowOpenRequested?.Invoke(this, new WindowOpenRequestedEventArgs(viewModel, screenX, screenY));
     }
 
-    public void TransferTab(MainViewModel sourceWindow, MainViewModel targetWindow, TerminalTabViewModel tab, int? insertIndex = null)
+    public void TransferTab(ICoordinatedWindow sourceWindow, ICoordinatedWindow targetWindow, ICoordinatedTab tab, int? insertIndex = null)
     {
         if (sourceWindow == targetWindow || tab == null)
         {
@@ -187,7 +177,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         targetWindow.AttachTab(tab, insertIndex);
 
         // 3. If source was a secondary satellite window with no remaining tabs, request closing it
-        if (!sourceWindow.IsPrimary && sourceWindow.Tabs.Count == 0)
+        if (!sourceWindow.IsPrimary && sourceWindow.TabCount == 0)
         {
             WindowCloseRequested?.Invoke(this, new WindowCloseRequestedEventArgs(sourceWindow));
         }

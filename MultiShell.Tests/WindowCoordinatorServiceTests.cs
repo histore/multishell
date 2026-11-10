@@ -133,13 +133,13 @@ public class WindowCoordinatorServiceTests
         var tabToUndock = primary.Tabs[1];
         var session = (MockShellSession)tabToUndock.Session;
 
-        MainViewModel? openedViewModel = null;
+        ICoordinatedWindow? openedViewModel = null;
         coordinator.WindowOpenRequested += (_, args) =>
         {
             openedViewModel = args.ViewModel;
         };
 
-        var newVm = await coordinator.UndockTabAsync(primary, tabToUndock);
+        var newVm = (MainViewModel)await coordinator.UndockTabAsync(primary, tabToUndock);
 
         Assert.Single(primary.Tabs);
         Assert.DoesNotContain(tabToUndock, primary.Tabs);
@@ -167,7 +167,7 @@ public class WindowCoordinatorServiceTests
 
         var tabToDockBack = secondary.Tabs[0];
 
-        MainViewModel? closedVm = null;
+        ICoordinatedWindow? closedVm = null;
         coordinator.WindowCloseRequested += (_, args) =>
         {
             closedVm = args.ViewModel;
@@ -196,7 +196,7 @@ public class WindowCoordinatorServiceTests
         bool shutdownRequested = false;
         coordinator.ApplicationShutdownRequested += (_, _) => shutdownRequested = true;
 
-        MainViewModel? closedVm = null;
+        ICoordinatedWindow? closedVm = null;
         coordinator.WindowCloseRequested += (_, args) => closedVm = args.ViewModel;
 
         await coordinator.CloseWindowAsync(secondary);
@@ -221,7 +221,7 @@ public class WindowCoordinatorServiceTests
         bool shutdownRequested = false;
         coordinator.ApplicationShutdownRequested += (_, _) => shutdownRequested = true;
 
-        MainViewModel? closedSecondary = null;
+        ICoordinatedWindow? closedSecondary = null;
         coordinator.WindowCloseRequested += (_, args) => closedSecondary = args.ViewModel;
 
         await coordinator.CloseWindowAsync(primary);
@@ -266,7 +266,7 @@ public class WindowCoordinatorServiceTests
         MainViewModel? openedSecondary = null;
         coordinator.WindowOpenRequested += (_, args) =>
         {
-            openedSecondary = args.ViewModel;
+            openedSecondary = args.ViewModel as MainViewModel;
         };
 
         using var primary = new MainViewModel(
@@ -328,7 +328,7 @@ public class WindowCoordinatorServiceTests
 
         var tabToTransfer = secondary.Tabs[0];
 
-        MainViewModel? closedVm = null;
+        ICoordinatedWindow? closedVm = null;
         coordinator.WindowCloseRequested += (_, args) => closedVm = args.ViewModel;
 
         coordinator.TransferTab(secondary, primary, tabToTransfer);

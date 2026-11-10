@@ -13,7 +13,7 @@ namespace MultiShell.ViewModels;
 /// <summary>
 /// Main application ViewModel managing terminal tabs, dual-theme switching, and workspace persistence.
 /// </summary>
-public partial class MainViewModel : ViewModelBase, IDisposable
+public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWindow
 {
     private readonly IShellProcessService _shellProcessService;
     private readonly ITabStatePersistenceService _persistenceService;
@@ -501,14 +501,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         var tabStates = Tabs
             .Where(t => t != null)
-            .Select(t => new TabState(
-                t.Title,
-                t.WorkingDirectory,
-                t.CommandHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
-                t.DirectoryHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
-                t.ShellType,
-                t.CustomTitle,
-                t.TabColor))
+            .Select(t => t.ToTabState())
             .ToList();
         var closedTabStates = ClosedTabs.Select(c => c.ToTabState()).ToList();
         var selectedIndex = SelectedTab != null ? Math.Max(0, Tabs.IndexOf(SelectedTab)) : 0;
@@ -524,24 +517,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         List<WindowWorkspaceState> secondaryStates = new();
         if (_windowCoordinator != null)
         {
-            var secondaryWindows = _windowCoordinator.Windows.Where(w => !w.IsPrimary).ToList();
-            foreach (var sec in secondaryWindows)
-            {
-                var secTabs = sec.Tabs
-                    .Where(t => t != null)
-                    .Select(t => new TabState(
-                        t.Title,
-                        t.WorkingDirectory,
-                        t.CommandHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
-                        t.DirectoryHistory?.AsEnumerable().Reverse().ToList() ?? new List<string>(),
-                        t.ShellType,
-                        t.CustomTitle,
-                        t.TabColor))
-                    .ToList();
-
-                int secIndex = sec.SelectedTab != null ? Math.Max(0, sec.Tabs.IndexOf(sec.SelectedTab)) : 0;
-                secondaryStates.Add(new WindowWorkspaceState(sec.WindowNumber, secTabs, secIndex));
-            }
+            secondaryStates = _windowCoordinator.Windows
+                .Where(w => !w.IsPrimary)
+                .Select(sec => sec.ExportWorkspaceState())
+                .ToList();
         }
 
         return new WorkspaceState(

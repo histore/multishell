@@ -302,6 +302,55 @@ public partial class MainViewModel
         TriggerSaveState();
     }
 
+    public int TabCount => Tabs.Count;
+
+    void ICoordinatedWindow.DetachTab(ICoordinatedTab tab)
+    {
+        if (tab is TerminalTabViewModel tabVm)
+        {
+            DetachTab(tabVm);
+        }
+    }
+
+    void ICoordinatedWindow.AttachTab(ICoordinatedTab tab, int? insertIndex)
+    {
+        if (tab is TerminalTabViewModel tabVm)
+        {
+            AttachTab(tabVm, insertIndex);
+        }
+    }
+
+    ICoordinatedWindow ICoordinatedWindow.CreateSatelliteWindow() => CreateSatelliteViewModel();
+
+    public void ArchiveTabsTo(ICoordinatedWindow targetWindow)
+    {
+        if (targetWindow == null) return;
+
+        foreach (var tab in Tabs.ToList())
+        {
+            if (tab != null)
+            {
+                targetWindow.PushClosedTabState(tab.ToTabState());
+            }
+        }
+    }
+
+    public void PushClosedTabState(TabState closedTabState)
+    {
+        PushClosedTab(ClosedTabItemViewModel.FromTabState(closedTabState));
+    }
+
+    public WindowWorkspaceState ExportWorkspaceState()
+    {
+        var tabStates = Tabs
+            .Where(t => t != null)
+            .Select(t => t.ToTabState())
+            .ToList();
+
+        int selectedIndex = SelectedTab != null ? Math.Max(0, Tabs.IndexOf(SelectedTab)) : 0;
+        return new WindowWorkspaceState(WindowNumber, tabStates, selectedIndex);
+    }
+
     /// <summary>
     /// Creates a secondary satellite ViewModel sharing all application services and the coordinator.
     /// </summary>

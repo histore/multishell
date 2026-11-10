@@ -3,7 +3,7 @@
 > **Requirement ID**: [`[REQ-TAB-026]`](../requirements/modules/presentation.md#req-tab-026-detachable-window-undocking--redocking-for-multi-monitor-workflows)  
 > **Module**: `Presentation & Window Management` (`TAB` / `UI`)  
 > **Target Release**: `v1.3.0`  
-> **Status**: `APPROVED`  
+> **Status**: `IMPLEMENTED`  
 > **Architecture Reference**: [`docs/architecture/modules/presentation.md`](../architecture/modules/presentation.md)  
 > **Governance Standard**: [`AGENTS.md`](../../AGENTS.md)
 
@@ -134,18 +134,18 @@ Um Verwechslungen auszuschließen, unterscheiden sich Primär- und Sekundärfens
 
 ```
 Services/
-├── IWindowCoordinatorService.cs       # Zentrale Koordination aller Anwendungsfenster
-└── WindowCoordinatorService.cs        # Multi-Window Lifecycle, Cross-Window Transfers & Persistenz
+├── IWindowCoordinatorService.cs       # Zentrale Koordination (IWindowCoordinatorService, ICoordinatedWindow, ICoordinatedTab)
+└── WindowCoordinatorService.cs        # Multi-Window Lifecycle, Cross-Window Transfers & Primary-Anchor Governance
 
 ViewModels/
-├── MainViewModel.cs                   # Erhält WindowRole (Primary vs. Secondary)
-├── MainViewModel.MultiWindow.cs       # Detach-, Redock- und Promotion-Commands
-└── TerminalTabViewModel.cs            # Bleibt fensteragnostisch (PTY-Continuity)
+├── MainViewModel.cs                   # WindowRole (IsPrimary, WindowNumber), Multi-Window Persistenz (WorkspaceState v2)
+├── MainViewModel.Tabs.cs              # UndockTabAsync, DockBackTabAsync, CloseWindowAsync, DetachTab/AttachTab
+└── TerminalTabViewModel.cs            # Bleibt fensteragnostisch (ICoordinatedTab, PTY-Continuity)
 
 Views/
 ├── MainWindow.axaml                   # Header-Badge [Fenster N], Dock-Back-Button, Close-Tooltips
 ├── MainWindow.Tabs.cs                 # Drag-out Threshold-Erkennung
-└── MainWindow.CrossWindowDrop.cs      # Avalonia DragDrop Cross-Window Empfangslogik
+└── MainWindow.TabDropAndRename.cs     # Avalonia DragDrop Cross-Window Empfangslogik
 ```
 
 ### 5.1 Service-Vertrag: `IWindowCoordinatorService`
@@ -155,19 +155,21 @@ namespace MultiShell.Services;
 
 public interface IWindowCoordinatorService
 {
-    MainWindow PrimaryWindow { get; }
-    IReadOnlyList<MainWindow> ActiveWindows { get; }
-    
-    void RegisterWindow(MainWindow window, MainViewModel viewModel, bool isPrimary = false);
-    void UnregisterWindow(MainWindow window);
-    
-    MainWindow DetachTabToNewWindow(TerminalTabViewModel tab, PixelPoint screenPosition, Size initialSize);
-    void TransferTab(TerminalTabViewModel tab, MainViewModel sourceVm, MainViewModel targetVm, int targetIndex = -1);
-    void MergeSecondaryWindowIntoPrimary(MainWindow secondaryWindow);
-    void SetPrimaryWindow(MainWindow window);
-    
-    Task SaveAllWindowStatesAsync(CancellationToken cancellationToken = default);
-    Task RestoreAllWindowsAsync(CancellationToken cancellationToken = default);
+    IReadOnlyList<ICoordinatedWindow> Windows { get; }
+    ICoordinatedWindow? PrimaryWindow { get; }
+
+    event EventHandler<WindowOpenRequestedEventArgs>? WindowOpenRequested;
+    event EventHandler<WindowCloseRequestedEventArgs>? WindowCloseRequested;
+    event EventHandler? ApplicationShutdownRequested;
+
+    void RegisterWindow(ICoordinatedWindow viewModel, bool? isPrimary = null);
+    void UnregisterWindow(ICoordinatedWindow viewModel);
+
+    Task<ICoordinatedWindow> UndockTabAsync(ICoordinatedWindow sourceWindow, ICoordinatedTab tab, double? screenX = null, double? screenY = null);
+    Task DockBackTabAsync(ICoordinatedWindow sourceWindow, ICoordinatedTab tab);
+    Task CloseWindowAsync(ICoordinatedWindow viewModel);
+    void TriggerWindowOpenRequested(ICoordinatedWindow viewModel, double? screenX = null, double? screenY = null);
+    void TransferTab(ICoordinatedWindow sourceWindow, ICoordinatedWindow targetWindow, ICoordinatedTab tab, int? insertIndex = null);
 }
 ```
 

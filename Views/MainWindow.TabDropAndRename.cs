@@ -202,9 +202,9 @@ public partial class MainWindow
 
                 if (sourceVm == targetVm)
                 {
-                    if (hoverTab != null && hoverTab != tab)
+                    if (tab is TerminalTabViewModel localTab && hoverTab != null && hoverTab != localTab)
                     {
-                        targetVm.MoveTab(tab, hoverTab);
+                        targetVm.MoveTab(localTab, hoverTab);
                     }
                 }
                 else

@@ -15,6 +15,8 @@ Models/
 └── ProcessExecutionState.cs           # Idle, Running, Succeeded, Failed state enum (REQ-TERM-012)
 
 Services/
+├── IWindowCoordinatorService.cs       # Multi-window coordination contracts (ICoordinatedWindow, ICoordinatedTab, REQ-TAB-026)
+├── WindowCoordinatorService.cs        # Thread-safe window registry, tab undocking/redocking & cross-window transfers
 ├── IPathColorCodingService.cs         # Path color stripe computation contract (REQ-TAB-025)
 ├── PathColorCodingService.cs          # Deterministic folder color coding with Padovan scaling
 ├── IToastNotificationService.cs       # Platform toast notification contract (REQ-TERM-012)
@@ -77,8 +79,9 @@ To avoid monolithic classes, `MainViewModel` is divided across functional partia
   * Dependency injection constructor accepting services (`IPowerShellProcessService`, `ITerminalProfileService`, `IThemeService`, `ILocalizationService`, `ITabStatePersistenceService`, `IFontSizeService`, `IPathCommandHistoryService`, `IDirectoryHistoryService`, `IPathColorCodingService`).
   * Manages path command history lifecycle: migrates legacy tab command histories on load and invokes `_pathCommandHistoryService.PruneNonExistentPaths()` prior to saving state on application shutdown.
 * **`MainViewModel.Tabs.cs`**:
-  * Manages `ObservableCollection<TerminalTabViewModel> Tabs`.
-  * Commands: `NewTabCommand`, `CloseTabCommand`, `CloseSelectedTabCommand` (`Ctrl+Shift+W` / `Ctrl+F4`), `CloseOtherTabsCommand`, `CloseTabsToRightCommand`, `ReopenClosedTabCommand`, `DuplicateTabCommand`, `MoveTabCommand`.
+  * Manages `ObservableCollection<TerminalTabViewModel> Tabs` and implements `ICoordinatedWindow` for multi-window orchestration (`REQ-TAB-026`).
+  * Commands: `NewTabCommand`, `CloseTabCommand`, `CloseSelectedTabCommand` (`Ctrl+Shift+W` / `Ctrl+F4`), `CloseOtherTabsCommand`, `CloseTabsToRightCommand`, `ReopenClosedTabCommand`, `DuplicateTabCommand`, `MoveTabCommand`, `UndockTabCommand` (`Ctrl+Shift+U`), `DockBackTabCommand`, `CloseWindowCommand`.
+  * Supports Zero-PTY-Restart `DetachTab` / `AttachTab` and `CreateSatelliteViewModel()` for transferring running `TerminalTabViewModel` instances across primary and secondary windows via `IWindowCoordinatorService`.
   * `AddNewTabWithDirectory` supports explicit index placement via an optional `insertIndex` parameter.
   * `DuplicateTabCommand` calculates `insertIndex = targetIndex + 1`, placing newly duplicated tabs directly to the right of the active tab.
   * `OpenDirectoryFromDrop` handles file/folder drop navigation into the active or target tab, or creates a new tab when `openInNewTab` (Shift key) is active or when 0 tabs exist.

@@ -118,7 +118,7 @@ public class TerminalLinkHighlightPositionTests
     }
 
     [Fact]
-    public async Task ShowLinkHighlight_DirectCall_SetsCanvasPositionAndSize()
+    public async Task ShowLinkHighlight_DirectCall_SetsPositionAndSize()
     {
         await HeadlessTestSession.DispatchAsync(async () =>
         {

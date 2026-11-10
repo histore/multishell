@@ -20,7 +20,7 @@ MultiShell integrates quick-access developer utilities directly into the termina
   * Normalizes Windows paths (case-insensitive, strips non-root trailing directory separators, resolves relative paths).
   * Automatically bounds command history to a maximum of 100 entries per path using FIFO pruning for older items.
   * Preserves Most Recently Used (MRU) order without duplicates: re-executing an existing command pushes it to the newest position.
-  * Ignores internal shell setup / hook commands via `TerminalTabViewModel.IsInternalConfigurationCommand`.
+  * Ignores internal shell setup / hook commands via `TerminalTabViewModel.IsInternalConfigurationCommand` and masks sensitive credentials (API tokens, bearer headers, passwords) via `ShellCommandFilter` prior to persistence (`QLT-02`).
 * **Live Multi-Tab Dynamic Synchronization**:
   * Fires `HistoryChangedForPath(normalizedPath)` whenever a command is recorded.
   * All active tabs currently in that directory immediately synchronize their `CommandHistory` and `FilteredCommandHistory`.
@@ -67,5 +67,6 @@ MultiShell integrates quick-access developer utilities directly into the termina
 
 ### 2.5 Link Detection (`Services/LinkDetectionHelper.cs`)
 * Identifies URLs (`http://`, `https://`, `git@`, `file://`) and file paths within terminal text.
-* Supports hover highlight and `Ctrl+Click` (or single-click depending on settings) to launch the link in the user's default browser or file manager.
+* Validates targets against dangerous script/executable launches and UNC share abuse before invoking `UseShellExecute` (`SEC-02`).
+* Supports hover highlight aligned to text glyph metrics and `Ctrl+Click` to launch the link in the user's default browser or file manager.
 
