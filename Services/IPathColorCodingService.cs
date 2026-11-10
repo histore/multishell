@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Avalonia.Media;
 using MultiShell.Models;
 
 namespace MultiShell.Services;
@@ -34,9 +33,9 @@ public interface IPathColorCodingService
     int GetCommonPrefixLength(IReadOnlyList<IReadOnlyList<string>> allSegments);
 
     /// <summary>
-    /// Generates a deterministic, aesthetically pleasing color for a given folder name.
+    /// Generates a deterministic, aesthetically pleasing hex color (#RRGGBB) for a given folder name.
     /// </summary>
     /// <param name="folderName">The folder name.</param>
-    /// <returns>The calculated Avalonia Color.</returns>
-    Color GetColorForFolderName(string folderName);
+    /// <returns>The calculated hex color string (#RRGGBB).</returns>
+    string GetColorForFolderName(string folderName);
 }

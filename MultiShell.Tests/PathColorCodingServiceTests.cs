@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Avalonia.Media;
 using MultiShell.Services;
 using Xunit;
 
@@ -198,7 +197,7 @@ public class PathColorCodingServiceTests
     public void GetColorForFolderName_EmptyOrWhitespace_ReturnsNeutralColor()
     {
         var color = _service.GetColorForFolderName("   ");
-        Assert.Equal(Color.FromRgb(128, 128, 128), color);
+        Assert.Equal("#808080", color);
     }
 
     [Fact]

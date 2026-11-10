@@ -18,7 +18,7 @@ namespace MultiShell.Tests;
 /// Unit tests for terminal text selection, model synchronization, and clipboard interactions.
 /// </summary>
 [Collection("HeadlessUI")]
-public class TerminalSelectionAndClipboardTests
+public partial class TerminalSelectionAndClipboardTests
 {
     [Fact]
     public async Task HandleSelection_SyncsBothControlAndModel()
@@ -466,60 +466,6 @@ public class TerminalSelectionAndClipboardTests
             Assert.Equal(0, rowBottom);
             // After scrolling to bottom, row 0 in viewport points to scrolled content, not Line 00
             Assert.NotEqual(lineTextTop, lineTextBottom);
-        });
-    }
-
-    [Fact]
-    public async Task TryCopySelectionAsync_WhenClipboardThrowsCOMException_HandlesGracefullyAndClearsSelection()
-    {
-        await HeadlessTestSession.DispatchAsync(async () =>
-        {
-            var session = new TestSession();
-            var tabVm = new TerminalTabViewModel(session);
-            var paneVm = tabVm.ActivePane!;
-
-            paneVm.TerminalModel.Resize(800, 600, 8, 16);
-            paneVm.TerminalModel.Feed("Selected text to copy\r\n");
-
-            // Select text in model
-            paneVm.TerminalModel.SelectAll();
-            Assert.True(paneVm.TerminalModel.HasSelection);
-
-            var paneView = new TerminalPaneView
-            {
-                DataContext = paneVm,
-                SetClipboardTextOverride = _ => throw new System.Runtime.InteropServices.COMException("CLIPBRD_E_CANT_OPEN: OpenClipboard Failed", unchecked((int)0x800401D0))
-            };
-
-            // Act - must not throw COMException
-            var copied = await paneView.TryCopySelectionAsync(paneVm);
-
-            // Assert
-            Assert.True(copied);
-            Assert.False(paneVm.TerminalModel.HasSelection, "Selection should be cleared even if clipboard locked.");
-        });
-    }
-
-    [Fact]
-    public async Task PasteFromClipboardAsync_WhenClipboardThrows_DoesNotCrash()
-    {
-        await HeadlessTestSession.DispatchAsync(async () =>
-        {
-            var session = new TestSession();
-            var tabVm = new TerminalTabViewModel(session);
-            var paneVm = tabVm.ActivePane!;
-
-            var paneView = new TerminalPaneView
-            {
-                DataContext = paneVm,
-                GetClipboardTextOverride = () => throw new System.Runtime.InteropServices.COMException("CLIPBRD_E_CANT_OPEN: OpenClipboard Failed", unchecked((int)0x800401D0))
-            };
-
-            // Act - must not throw
-            await paneView.PasteFromClipboardAsync(paneVm);
-
-            // Assert: No payload sent since clipboard failed
-            Assert.Empty(session.SentPayloads);
         });
     }
 }

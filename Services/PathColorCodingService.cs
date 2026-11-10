@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Avalonia.Media;
-using Avalonia.Media.Immutable;
 using MultiShell.Models;
 
 namespace MultiShell.Services;
@@ -68,8 +66,7 @@ public sealed class PathColorCodingService : IPathColorCodingService
         for (int i = 0; i < folders.Count; i++)
         {
             var folder = folders[i];
-            var color = GetColorForFolderName(folder);
-            string hexColor = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+            string hexColor = GetColorForFolderName(folder);
             double width = BaseStripeWidth * GetPadovanMultiplier(i);
             stripes.Add(new PathColorStripe(folder, hexColor, width, BaseStripeHeight));
         }
@@ -108,35 +105,22 @@ public sealed class PathColorCodingService : IPathColorCodingService
         for (int i = 0; i < minLen; i++)
         {
             string first = allSegments[0][i];
-            bool allMatch = true;
-            for (int j = 1; j < allSegments.Count; j++)
-            {
-                if (!string.Equals(first, allSegments[j][i], StringComparison.OrdinalIgnoreCase))
-                {
-                    allMatch = false;
-                    break;
-                }
-            }
-
-            if (allMatch)
-            {
-                common++;
-            }
-            else
+            if (!allSegments.All(seg => string.Equals(first, seg[i], StringComparison.OrdinalIgnoreCase)))
             {
                 break;
             }
+            common++;
         }
 
         return common;
     }
 
     /// <inheritdoc />
-    public Color GetColorForFolderName(string folderName)
+    public string GetColorForFolderName(string folderName)
     {
         if (string.IsNullOrWhiteSpace(folderName))
         {
-            return Color.FromRgb(128, 128, 128);
+            return "#808080";
         }
 
         uint hash = ComputeFnv1aHash(folderName.Trim());
@@ -149,7 +133,8 @@ public sealed class PathColorCodingService : IPathColorCodingService
         }
 
         // Saturation 68%, Lightness 58% for high readability and vibrant aesthetics
-        return HslToRgb(hue, 0.68f, 0.58f);
+        var (r, g, b) = HslToRgb(hue, 0.68f, 0.58f);
+        return $"#{r:X2}{g:X2}{b:X2}";
     }
 
     /// <summary>
@@ -167,9 +152,9 @@ public sealed class PathColorCodingService : IPathColorCodingService
     }
 
     /// <summary>
-    /// Converts HSL (Hue 0-360, Saturation 0-1, Lightness 0-1) to an Avalonia RGB Color.
+    /// Converts HSL (Hue 0-360, Saturation 0-1, Lightness 0-1) to RGB byte components.
     /// </summary>
-    public static Color HslToRgb(float h, float s, float l)
+    public static (byte R, byte G, byte B) HslToRgb(float h, float s, float l)
     {
         float c = (1f - Math.Abs(2f * l - 1f)) * s;
         float x = c * (1f - Math.Abs((h / 60f) % 2f - 1f));
@@ -187,6 +172,6 @@ public sealed class PathColorCodingService : IPathColorCodingService
         byte green = (byte)Math.Clamp((int)Math.Round((g + m) * 255f), 0, 255);
         byte blue = (byte)Math.Clamp((int)Math.Round((b + m) * 255f), 0, 255);
 
-        return Color.FromRgb(red, green, blue);
+        return (red, green, blue);
     }
 }
