@@ -27,28 +27,19 @@ public partial class MainWindow
             foreach (var item in files)
             {
                 var localPath = item.TryGetLocalPath() ?? (item.Path.IsFile ? item.Path.LocalPath : null);
-                if (!string.IsNullOrWhiteSpace(localPath))
-                {
-                    var resolved = _startupPathResolver.ResolveWorkingDirectory(localPath);
-                    if (!string.IsNullOrWhiteSpace(resolved))
-                    {
-                        return resolved;
-                    }
-                }
+                var resolved = TryResolveDirectory(localPath);
+                if (resolved != null) return resolved;
             }
         }
 
-        var text = e.DataTransfer.TryGetText();
-        if (!string.IsNullOrWhiteSpace(text))
-        {
-            var resolved = _startupPathResolver.ResolveWorkingDirectory(text);
-            if (!string.IsNullOrWhiteSpace(resolved))
-            {
-                return resolved;
-            }
-        }
+        return TryResolveDirectory(e.DataTransfer.TryGetText());
+    }
 
-        return null;
+    private string? TryResolveDirectory(string? candidatePath)
+    {
+        if (string.IsNullOrWhiteSpace(candidatePath)) return null;
+        var resolved = _startupPathResolver.ResolveWorkingDirectory(candidatePath);
+        return string.IsNullOrWhiteSpace(resolved) ? null : resolved;
     }
 
     internal void OnTerminalDragOver(object? sender, DragEventArgs e)
@@ -103,76 +94,49 @@ public partial class MainWindow
 
     internal void OnTabBarDragOver(object? sender, DragEventArgs e)
     {
-        if (WindowCoordinatorService.CurrentTabDrag != null)
-        {
-            e.DragEffects = DragDropEffects.Move;
-            e.Handled = true;
-
-            var currentPos = e.GetPosition(this);
-            var hitVisual = this.InputHitTest(currentPos) as Visual;
-
-            if (IsVisualOrChildOf(hitVisual, TabScrollLeftBtn))
-            {
-                if (TabScrollLeftBtn?.IsEnabled == true)
-                {
-                    StartDragScrollTimer(-160);
-                }
-            }
-            else if (IsVisualOrChildOf(hitVisual, TabScrollRightBtn))
-            {
-                if (TabScrollRightBtn?.IsEnabled == true)
-                {
-                    StartDragScrollTimer(160);
-                }
-            }
-            else
-            {
-                StopDragScrollTimer();
-            }
-            return;
-        }
-
-        if (HasFiles(e))
-        {
-            e.DragEffects = DragDropEffects.Copy;
-            e.Handled = true;
-
-            var currentPos = e.GetPosition(this);
-            var hitVisual = this.InputHitTest(currentPos) as Visual;
-
-            if (IsVisualOrChildOf(hitVisual, TabScrollLeftBtn))
-            {
-                if (TabScrollLeftBtn?.IsEnabled == true)
-                {
-                    StartDragScrollTimer(-160);
-                }
-            }
-            else if (IsVisualOrChildOf(hitVisual, TabScrollRightBtn))
-            {
-                if (TabScrollRightBtn?.IsEnabled == true)
-                {
-                    StartDragScrollTimer(160);
-                }
-            }
-            else
-            {
-                StopDragScrollTimer();
-
-                if (DataContext is MainViewModel mainVm)
-                {
-                    var hoverTab = FindTabViewModel(hitVisual);
-                    if (hoverTab != null && hoverTab != mainVm.SelectedTab)
-                    {
-                        mainVm.SelectedTab = hoverTab;
-                    }
-                }
-            }
-        }
-        else
+        bool isTabDrag = WindowCoordinatorService.CurrentTabDrag != null;
+        if (!isTabDrag && !HasFiles(e))
         {
             StopDragScrollTimer();
             e.DragEffects = DragDropEffects.None;
+            return;
         }
+
+        e.DragEffects = isTabDrag ? DragDropEffects.Move : DragDropEffects.Copy;
+        e.Handled = true;
+
+        var hitVisual = this.InputHitTest(e.GetPosition(this)) as Visual;
+        if (TryHandleDragScrollButtonHover(hitVisual))
+        {
+            return;
+        }
+
+        StopDragScrollTimer();
+        if (!isTabDrag && DataContext is MainViewModel mainVm)
+        {
+            var hoverTab = FindTabViewModel(hitVisual);
+            if (hoverTab != null && hoverTab != mainVm.SelectedTab)
+            {
+                mainVm.SelectedTab = hoverTab;
+            }
+        }
+    }
+
+    private bool TryHandleDragScrollButtonHover(Visual? hitVisual)
+    {
+        if (IsVisualOrChildOf(hitVisual, TabScrollLeftBtn))
+        {
+            if (TabScrollLeftBtn?.IsEnabled == true) StartDragScrollTimer(-160);
+            return true;
+        }
+
+        if (IsVisualOrChildOf(hitVisual, TabScrollRightBtn))
+        {
+            if (TabScrollRightBtn?.IsEnabled == true) StartDragScrollTimer(160);
+            return true;
+        }
+
+        return false;
     }
 
     internal void OnTabBarDragLeave(object? sender, DragEventArgs e)
@@ -186,53 +150,49 @@ public partial class MainWindow
 
         if (WindowCoordinatorService.CurrentTabDrag is { } tabDrag)
         {
-            e.DragEffects = DragDropEffects.Move;
-            e.Handled = true;
-
-            var sourceVm = tabDrag.SourceWindow;
-            var targetVm = DataContext as MainViewModel;
-            var tab = tabDrag.Tab;
-
-            if (targetVm != null)
-            {
-                var currentPos = e.GetPosition(this);
-                var hitVisual = this.InputHitTest(currentPos) as Visual;
-                var hoverTab = FindTabViewModel(hitVisual);
-                int? targetIndex = hoverTab != null ? targetVm.Tabs.IndexOf(hoverTab) : (int?)null;
-
-                if (sourceVm == targetVm)
-                {
-                    if (tab is TerminalTabViewModel localTab && hoverTab != null && hoverTab != localTab)
-                    {
-                        targetVm.MoveTab(localTab, hoverTab);
-                    }
-                }
-                else
-                {
-                    targetVm.WindowCoordinator.TransferTab(sourceVm, targetVm, tab, targetIndex);
-                }
-            }
+            HandleTabBarTabDrop(tabDrag, e);
             return;
         }
 
         var resolvedDir = ExtractFirstResolvedDirectory(e);
-        if (resolvedDir != null && DataContext is MainViewModel mainVm)
-        {
-            var currentPos = e.GetPosition(this);
-            var hitVisual = this.InputHitTest(currentPos) as Visual;
-            var hoverTab = FindTabViewModel(hitVisual);
-            bool isShiftPressed = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+        if (resolvedDir == null || DataContext is not MainViewModel mainVm) return;
 
-            if (hoverTab != null)
-            {
-                mainVm.OpenDirectoryFromDrop(resolvedDir, openInNewTab: isShiftPressed, targetTab: hoverTab);
-            }
-            else
-            {
-                mainVm.OpenDirectoryFromDrop(resolvedDir, openInNewTab: true);
-            }
-            e.Handled = true;
+        var hitVisual = this.InputHitTest(e.GetPosition(this)) as Visual;
+        var hoverTab = FindTabViewModel(hitVisual);
+        bool isShiftPressed = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+
+        if (hoverTab != null)
+        {
+            mainVm.OpenDirectoryFromDrop(resolvedDir, openInNewTab: isShiftPressed, targetTab: hoverTab);
         }
+        else
+        {
+            mainVm.OpenDirectoryFromDrop(resolvedDir, openInNewTab: true);
+        }
+        e.Handled = true;
+    }
+
+    private void HandleTabBarTabDrop(TabDragTransfer tabDrag, DragEventArgs e)
+    {
+        e.DragEffects = DragDropEffects.Move;
+        e.Handled = true;
+
+        if (DataContext is not MainViewModel targetVm) return;
+
+        var hitVisual = this.InputHitTest(e.GetPosition(this)) as Visual;
+        var hoverTab = FindTabViewModel(hitVisual);
+        int? targetIndex = hoverTab != null ? targetVm.Tabs.IndexOf(hoverTab) : null;
+
+        if (tabDrag.SourceWindow == targetVm)
+        {
+            if (tabDrag.Tab is TerminalTabViewModel localTab && hoverTab != null && hoverTab != localTab)
+            {
+                targetVm.MoveTab(localTab, hoverTab);
+            }
+            return;
+        }
+
+        targetVm.WindowCoordinator.TransferTab(tabDrag.SourceWindow, targetVm, tabDrag.Tab, targetIndex);
     }
 
     /// <summary>

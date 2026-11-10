@@ -14,338 +14,220 @@ public partial class MainWindow
 {
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
-        // Tab Switcher Active Keyboard Handling (REQ-TAB-019)
-        if (DataContext is MainViewModel switcherVm && switcherVm.IsTabSwitcherOpen)
+        if (TryHandleTabSwitcherKeyDown(e)) return;
+        if (TryHandleCtrlShiftActionKeyDown(e)) return;
+        if (HistoryDrawer?.IsDrawerOpen == true && HistoryDrawer.HandleKeyDown(e)) return;
+        if (TryHandleActiveTabRenameKeyDown(e)) return;
+        if (TryHandleFunctionKeyDown(e)) return;
+        if (e.Key == Key.Escape && TryHandleEscapeKeyDown())
         {
-            var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
-
-            if (e.Key == Key.Tab || e.Key == Key.PageDown || e.Key == Key.Down)
-            {
-                switcherVm.AdvanceTabSwitcher(forward: !isShift);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.PageUp || e.Key == Key.Up)
-            {
-                switcherVm.AdvanceTabSwitcher(forward: false);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.Enter)
-            {
-                switcherVm.CommitTabSwitcher();
-                FocusActiveTerminal();
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.Escape)
-            {
-                switcherVm.CancelTabSwitcher();
-                FocusActiveTerminal();
-                e.Handled = true;
-                return;
-            }
+            e.Handled = true;
+            return;
         }
 
-        // Ctrl+Shift+H: Open Command History / Ctrl+Shift+L: Open Directory History (REQ-TAB-015)
+        TryHandleTabManagementKeyDown(e);
+    }
+
+    private bool TryHandleTabSwitcherKeyDown(KeyEventArgs e)
+    {
+        if (DataContext is not MainViewModel switcherVm || !switcherVm.IsTabSwitcherOpen) return false;
+        var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+        switch (e.Key)
+        {
+            case Key.Tab or Key.PageDown or Key.Down:
+                switcherVm.AdvanceTabSwitcher(forward: !isShift);
+                break;
+            case Key.PageUp or Key.Up:
+                switcherVm.AdvanceTabSwitcher(forward: false);
+                break;
+            case Key.Enter:
+                switcherVm.CommitTabSwitcher();
+                FocusActiveTerminal();
+                break;
+            case Key.Escape:
+                switcherVm.CancelTabSwitcher();
+                FocusActiveTerminal();
+                break;
+            default:
+                return false;
+        }
+
+        e.Handled = true;
+        return true;
+    }
+
+    private bool TryHandleCtrlShiftActionKeyDown(KeyEventArgs e)
+    {
         var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
         var isCtrlShift = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift);
-        if (!isAlt && isCtrlShift)
+        if (isAlt || !isCtrlShift) return false;
+
+        switch (e.Key)
         {
-            if (e.Key == Key.H)
-            {
-                OpenOrToggleHistoryDrawer(0);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.L)
-            {
-                OpenOrToggleHistoryDrawer(1);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.P)
-            {
-                OpenOrToggleHistoryDrawer(2);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.F)
-            {
+            case Key.H: OpenOrToggleHistoryDrawer(0); e.Handled = true; return true;
+            case Key.L: OpenOrToggleHistoryDrawer(1); e.Handled = true; return true;
+            case Key.P: OpenOrToggleHistoryDrawer(2); e.Handled = true; return true;
+            case Key.O: _ = PickAndInsertFileAsync(); e.Handled = true; return true;
+            case Key.B: _ = PickAndInsertFolderAsync(); e.Handled = true; return true;
+            case Key.E: OpenActiveTabInFileBrowser(); e.Handled = true; return true;
+            case Key.F:
                 if (DataContext is MainViewModel searchVm && searchVm.SelectedTab != null)
                 {
                     searchVm.SelectedTab.OpenSearch();
                     e.Handled = true;
-                    return;
+                    return true;
                 }
-            }
-            if (e.Key == Key.O)
-            {
-                _ = PickAndInsertFileAsync();
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.B)
-            {
-                _ = PickAndInsertFolderAsync();
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.E)
-            {
-                OpenActiveTabInFileBrowser();
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.C)
-            {
-                var term = GetActiveTerminalControl();
-                if (DataContext is MainViewModel cVm && cVm.SelectedTab?.ActivePane != null)
-                {
-                    var pane = cVm.SelectedTab.ActivePane;
-                    var hasSelection = (term?.HasSelection == true) || pane.TerminalModel.HasSelection;
-                    if (hasSelection)
-                    {
-                        var rawText = (term != null && !string.IsNullOrEmpty(term.SelectedText)) ? term.SelectedText : pane.TerminalModel.SelectedText;
-                        var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
-                        if (!string.IsNullOrEmpty(text) && Clipboard != null)
-                        {
-                            _ = Clipboard.SetTextAsync(text);
-                            pane.TerminalModel.ClearSelection();
-                        }
-                        e.Handled = true;
-                        return;
-                    }
-                }
-            }
-            if (e.Key == Key.V)
-            {
-                if (DataContext is MainViewModel pVm && pVm.SelectedTab?.ActivePane != null)
-                {
-                    var pane = pVm.SelectedTab.ActivePane;
-                    if (Clipboard != null && pane.IsRunning)
-                    {
-                        _ = PasteToPaneAsync(pane);
-                        e.Handled = true;
-                        return;
-                    }
-                }
-            }
+                return false;
+            case Key.C: return TryHandleCtrlShiftCopyKeyDown(e);
+            case Key.V: return TryHandleCtrlShiftPasteKeyDown(e);
+            default: return false;
+        }
+    }
+
+    private bool TryHandleCtrlShiftCopyKeyDown(KeyEventArgs e)
+    {
+        if (DataContext is not MainViewModel cVm || cVm.SelectedTab?.ActivePane == null) return false;
+        var pane = cVm.SelectedTab.ActivePane;
+        var term = GetActiveTerminalControl();
+        var hasSelection = (term?.HasSelection == true) || pane.TerminalModel.HasSelection;
+        if (!hasSelection) return false;
+
+        var rawText = (term != null && !string.IsNullOrEmpty(term.SelectedText)) ? term.SelectedText : pane.TerminalModel.SelectedText;
+        var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
+        if (!string.IsNullOrEmpty(text) && Clipboard != null)
+        {
+            _ = Clipboard.SetTextAsync(text);
+            pane.TerminalModel.ClearSelection();
+        }
+        e.Handled = true;
+        return true;
+    }
+
+    private bool TryHandleCtrlShiftPasteKeyDown(KeyEventArgs e)
+    {
+        if (DataContext is not MainViewModel pVm || pVm.SelectedTab?.ActivePane == null) return false;
+        var pane = pVm.SelectedTab.ActivePane;
+        if (Clipboard == null || !pane.IsRunning) return false;
+
+        _ = PasteToPaneAsync(pane);
+        e.Handled = true;
+        return true;
+    }
+
+    private bool TryHandleActiveTabRenameKeyDown(KeyEventArgs e)
+    {
+        if (DataContext is not MainViewModel rVm || rVm.SelectedTab?.IsRenaming != true) return false;
+        if (e.Key == Key.Enter)
+        {
+            rVm.SelectedTab.CommitRenaming();
+            FocusActiveTerminal();
+            e.Handled = true;
+            return true;
+        }
+        if (e.Key == Key.Escape)
+        {
+            rVm.SelectedTab.CancelRenaming();
+            FocusActiveTerminal();
+            e.Handled = true;
+            return true;
+        }
+        return false;
+    }
+
+    private bool TryHandleFunctionKeyDown(KeyEventArgs e)
+    {
+        if (!FunctionKeyRouting.IsFunctionKey(e.Key)) return false;
+        if (!FunctionKeyRouting.ShouldInterceptFunctionKey(e.Key, e.KeyModifiers)) return true;
+
+        if (e.Key == Key.F1)
+        {
+            ShowHelpModal();
+            e.Handled = true;
+            return true;
+        }
+        if (e.Key == Key.F2 && DataContext is MainViewModel f2Vm && f2Vm.SelectedTab != null)
+        {
+            f2Vm.SelectedTab.StartRenaming();
+            e.Handled = true;
+            return true;
+        }
+        if (e.Key == Key.F3 && DataContext is MainViewModel f3Vm && f3Vm.SelectedTab?.IsSearchOpen == true)
+        {
+            f3Vm.SelectedTab.SearchNext();
+            e.Handled = true;
+            return true;
+        }
+        if (e.Key == Key.F4 && DataContext is MainViewModel f4Vm)
+        {
+            f4Vm.CloseSelectedTab();
+            e.Handled = true;
+            return true;
         }
 
-        // When History Drawer is open, capture all navigation keys globally
-        if (HistoryDrawer?.IsDrawerOpen == true)
+        return true;
+    }
+
+    private bool TryHandleEscapeKeyDown()
+    {
+        if (DataContext is MainViewModel dvm && dvm.IsTabSwitcherOpen)
         {
-            if (HistoryDrawer.HandleKeyDown(e))
-            {
-                return;
-            }
+            dvm.CancelTabSwitcher();
+            FocusActiveTerminal();
+            return true;
         }
-
-        // Active Tab Inline Renaming Keyboard Handling (REQ-TAB-020)
-        if (DataContext is MainViewModel rVm && rVm.SelectedTab?.IsRenaming == true)
+        if (HelpModal?.IsVisible == true) { HideHelpModal(); return true; }
+        if (AboutModal?.IsVisible == true) { HideAboutModal(); return true; }
+        if (ProfilesModal?.IsVisible == true && DataContext is MainViewModel pvm) { pvm.CloseProfilesModal(); return true; }
+        if (HistoryDrawer?.IsDrawerOpen == true) { HideHistoryDrawerAndFocusTerminal(); return true; }
+        if (DataContext is MainViewModel tvm && tvm.SelectedTab?.IsSearchOpen == true)
         {
-            if (e.Key == Key.Enter)
-            {
-                rVm.SelectedTab.CommitRenaming();
-                FocusActiveTerminal();
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.Escape)
-            {
-                rVm.SelectedTab.CancelRenaming();
-                FocusActiveTerminal();
-                e.Handled = true;
-                return;
-            }
+            tvm.SelectedTab.CloseSearch();
+            FocusActiveTerminal();
+            return true;
         }
+        return false;
+    }
 
-        // Function keys (F1..F24) are fundamentally passed through to the terminal.
-        // They are intercepted by MultiShell strictly when pressed with Ctrl+Shift.
-        if (FunctionKeyRouting.IsFunctionKey(e.Key))
+    private void TryHandleTabManagementKeyDown(KeyEventArgs e)
+    {
+        if (HelpModal?.IsVisible == true || AboutModal?.IsVisible == true || ProfilesModal?.IsVisible == true) return;
+        if (DataContext is not MainViewModel vm) return;
+
+        var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+        var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0 && !isAlt;
+        var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+        if (!isCtrl) return;
+
+        if (isShift)
         {
-            if (!FunctionKeyRouting.ShouldInterceptFunctionKey(e.Key, e.KeyModifiers))
-            {
-                return;
-            }
-
-            // Ctrl+Shift+F1: Help Modal
-            if (e.Key == Key.F1)
-            {
-                ShowHelpModal();
-                e.Handled = true;
-                return;
-            }
-
-            // Ctrl+Shift+F2: Rename active tab (REQ-TAB-020)
-            if (e.Key == Key.F2 && DataContext is MainViewModel f2Vm && f2Vm.SelectedTab != null)
-            {
-                f2Vm.SelectedTab.StartRenaming();
-                e.Handled = true;
-                return;
-            }
-
-            // Ctrl+Shift+F3: In-Terminal Search Match Navigation (REQ-TERM-006)
-            if (e.Key == Key.F3 && DataContext is MainViewModel f3Vm && f3Vm.SelectedTab?.IsSearchOpen == true)
-            {
-                f3Vm.SelectedTab.SearchNext();
-                e.Handled = true;
-                return;
-            }
-
-            // Ctrl+Shift+F4: Close active tab
-            if (e.Key == Key.F4 && DataContext is MainViewModel f4Vm)
-            {
-                f4Vm.CloseSelectedTab();
-                e.Handled = true;
-                return;
-            }
-
-            // Other Ctrl+Shift+Fn combinations pass through to terminal
+            if (e.Key == Key.PageUp) { vm.MoveSelectedTab(-1); e.Handled = true; return; }
+            if (e.Key == Key.PageDown) { vm.MoveSelectedTab(1); e.Handled = true; return; }
+            if (e.Key is Key.W or Key.F4) { vm.CloseSelectedTab(); e.Handled = true; return; }
+            if (e.Key == Key.Tab) { vm.ShowTabSwitcher(forward: false, isKeyboardTriggered: true); e.Handled = true; }
             return;
         }
 
-        // Escape: Close active dialog or drawer
-        if (e.Key == Key.Escape)
+        if (TryHandleCtrlTabShortcut(vm, e.Key))
         {
-            if (DataContext is MainViewModel dvm && dvm.IsTabSwitcherOpen)
-            {
-                dvm.CancelTabSwitcher();
-                FocusActiveTerminal();
-                e.Handled = true;
-                return;
-            }
-            if (HelpModal?.IsVisible == true)
-            {
-                HideHelpModal();
-                e.Handled = true;
-                return;
-            }
-            if (AboutModal?.IsVisible == true)
-            {
-                HideAboutModal();
-                e.Handled = true;
-                return;
-            }
-            if (ProfilesModal?.IsVisible == true && DataContext is MainViewModel pvm)
-            {
-                pvm.CloseProfilesModal();
-                e.Handled = true;
-                return;
-            }
-            if (HistoryDrawer?.IsDrawerOpen == true)
-            {
-                HideHistoryDrawerAndFocusTerminal();
-                e.Handled = true;
-                return;
-            }
-            if (DataContext is MainViewModel tvm && tvm.SelectedTab?.IsSearchOpen == true)
-            {
-                tvm.SelectedTab.CloseSearch();
-                FocusActiveTerminal();
-                e.Handled = true;
-                return;
-            }
+            e.Handled = true;
         }
+    }
 
-        // Only process Tab management shortcuts if modal dialogs are not capturing input
-        if (HelpModal?.IsVisible != true && AboutModal?.IsVisible != true && ProfilesModal?.IsVisible != true)
+    private static bool TryHandleCtrlTabShortcut(MainViewModel vm, Key key)
+    {
+        switch (key)
         {
-            if (DataContext is MainViewModel vm)
-            {
-                var isAltGrOrAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
-                var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0 && !isAltGrOrAlt;
-                var isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
-
-                // 1. Ctrl+Shift+PageUp / Ctrl+Shift+PageDown: Move Tab Left/Right
-                if (isCtrl && isShift && e.Key == Key.PageUp)
-                {
-                    vm.MoveSelectedTab(-1);
-                    e.Handled = true;
-                    return;
-                }
-                if (isCtrl && isShift && e.Key == Key.PageDown)
-                {
-                    vm.MoveSelectedTab(1);
-                    e.Handled = true;
-                    return;
-                }
-
-                // 2. Ctrl+Shift+W / Ctrl+Shift+F4: Close active tab
-                if (isCtrl && isShift && (e.Key == Key.W || e.Key == Key.F4))
-                {
-                    vm.CloseSelectedTab();
-                    e.Handled = true;
-                    return;
-                }
-
-                // 3. Ctrl+Tab / Ctrl+Shift+Tab: Unified Tab Switcher HUD (REQ-TAB-019)
-                if (isCtrl && e.Key == Key.Tab)
-                {
-                    vm.ShowTabSwitcher(forward: !isShift, isKeyboardTriggered: true);
-                    e.Handled = true;
-                    return;
-                }
-
-                // 4. Ctrl+PageUp / Ctrl+PageDown: Previous / Next Tab
-                if (isCtrl && !isShift && e.Key == Key.PageUp)
-                {
-                    vm.CyclePreviousTab();
-                    e.Handled = true;
-                    return;
-                }
-                if (isCtrl && !isShift && e.Key == Key.PageDown)
-                {
-                    vm.CycleNextTab();
-                    e.Handled = true;
-                    return;
-                }
-
-                // 5. Ctrl+1 .. Ctrl+8: Jump to specific tab index (0..7)
-                if (isCtrl && !isShift)
-                {
-                    if (e.Key >= Key.D1 && e.Key <= Key.D8)
-                    {
-                        vm.SelectTabByIndex(e.Key - Key.D1);
-                        e.Handled = true;
-                        return;
-                    }
-                    if (e.Key >= Key.NumPad1 && e.Key <= Key.NumPad8)
-                    {
-                        vm.SelectTabByIndex(e.Key - Key.NumPad1);
-                        e.Handled = true;
-                        return;
-                    }
-                    // 6. Ctrl+9: Jump to last tab
-                    if (e.Key is Key.D9 or Key.NumPad9)
-                    {
-                        vm.SelectTabByIndex(-1);
-                        e.Handled = true;
-                        return;
-                    }
-
-                    // 7. Zoom & Font-Size Shortcuts (REQ-UI-005)
-                    if (e.Key is Key.OemPlus or Key.Add)
-                    {
-                        vm.IncreaseTerminalFontSize();
-                        e.Handled = true;
-                        return;
-                    }
-                    if (e.Key is Key.OemMinus or Key.Subtract)
-                    {
-                        vm.DecreaseTerminalFontSize();
-                        e.Handled = true;
-                        return;
-                    }
-                    if (e.Key is Key.D0 or Key.NumPad0)
-                    {
-                        vm.ResetTerminalFontSize();
-                        e.Handled = true;
-                        return;
-                    }
-                }
-            }
+            case Key.Tab: vm.ShowTabSwitcher(forward: true, isKeyboardTriggered: true); return true;
+            case Key.PageUp: vm.CyclePreviousTab(); return true;
+            case Key.PageDown: vm.CycleNextTab(); return true;
+            case >= Key.D1 and <= Key.D8: vm.SelectTabByIndex(key - Key.D1); return true;
+            case >= Key.NumPad1 and <= Key.NumPad8: vm.SelectTabByIndex(key - Key.NumPad1); return true;
+            case Key.D9 or Key.NumPad9: vm.SelectTabByIndex(-1); return true;
+            case Key.OemPlus or Key.Add: vm.IncreaseTerminalFontSize(); return true;
+            case Key.OemMinus or Key.Subtract: vm.DecreaseTerminalFontSize(); return true;
+            case Key.D0 or Key.NumPad0: vm.ResetTerminalFontSize(); return true;
+            default: return false;
         }
     }
 

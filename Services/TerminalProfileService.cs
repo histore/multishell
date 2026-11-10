@@ -17,6 +17,7 @@ public class TerminalProfileService : ITerminalProfileService
     private readonly string _filePath;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly List<TerminalProfile> _profiles = new();
+    private readonly Lock _profilesLock = new();
     private readonly ILocalizationService? _localizationService;
 
     public event Action? ProfilesChanged;
@@ -45,34 +46,41 @@ public class TerminalProfileService : ITerminalProfileService
             if (File.Exists(_filePath))
             {
                 var json = File.ReadAllText(_filePath);
-                if (!string.IsNullOrWhiteSpace(json))
+                if (TryApplyLoadedProfiles(json))
                 {
-                    var loaded = JsonSerializer.Deserialize(json, MultiShellJsonSerializerContext.Default.ListTerminalProfile);
-                    if (loaded != null && loaded.Count > 0)
-                    {
-                        lock (_profiles)
-                        {
-                            _profiles.Clear();
-                            _profiles.AddRange(loaded.Select(NormalizeProfile));
-                        }
-                        return;
-                    }
+                    return;
                 }
             }
         }
         catch { }
 
         var defaults = CreateDefaultProfiles();
-        lock (_profiles)
+        ReplaceProfiles(defaults);
+    }
+
+    private bool TryApplyLoadedProfiles(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return false;
+
+        var loaded = JsonSerializer.Deserialize(json, MultiShellJsonSerializerContext.Default.ListTerminalProfile);
+        if (loaded == null || loaded.Count == 0) return false;
+
+        ReplaceProfiles(loaded.Select(NormalizeProfile));
+        return true;
+    }
+
+    private void ReplaceProfiles(IEnumerable<TerminalProfile> profiles)
+    {
+        lock (_profilesLock)
         {
             _profiles.Clear();
-            _profiles.AddRange(defaults);
+            _profiles.AddRange(profiles);
         }
     }
 
     public IReadOnlyList<TerminalProfile> GetProfiles()
     {
-        lock (_profiles)
+        lock (_profilesLock)
         {
             return _profiles.ToList();
         }
@@ -80,7 +88,7 @@ public class TerminalProfileService : ITerminalProfileService
 
     public TerminalProfile? GetProfile(Guid id)
     {
-        lock (_profiles)
+        lock (_profilesLock)
         {
             return _profiles.FirstOrDefault(p => p.Id == id);
         }
@@ -92,7 +100,7 @@ public class TerminalProfileService : ITerminalProfileService
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            lock (_profiles)
+            lock (_profilesLock)
             {
                 _profiles.Add(normalized);
             }
@@ -111,7 +119,7 @@ public class TerminalProfileService : ITerminalProfileService
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            lock (_profiles)
+            lock (_profilesLock)
             {
                 var index = _profiles.FindIndex(p => p.Id == normalized.Id);
                 if (index >= 0)
@@ -134,7 +142,7 @@ public class TerminalProfileService : ITerminalProfileService
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            lock (_profiles)
+            lock (_profilesLock)
             {
                 var index = _profiles.FindIndex(p => p.Id == id);
                 if (index >= 0)
@@ -164,12 +172,7 @@ public class TerminalProfileService : ITerminalProfileService
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var defaults = CreateDefaultProfiles();
-            lock (_profiles)
-            {
-                _profiles.Clear();
-                _profiles.AddRange(defaults);
-            }
+            ReplaceProfiles(CreateDefaultProfiles());
             await SaveInternalAsync(cancellationToken).ConfigureAwait(false);
         }
         finally
@@ -190,18 +193,7 @@ public class TerminalProfileService : ITerminalProfileService
         try
         {
             var json = await File.ReadAllTextAsync(_filePath, cancellationToken).ConfigureAwait(false);
-            if (!string.IsNullOrWhiteSpace(json))
-            {
-                var loaded = JsonSerializer.Deserialize(json, MultiShellJsonSerializerContext.Default.ListTerminalProfile);
-                if (loaded != null && loaded.Count > 0)
-                {
-                    lock (_profiles)
-                    {
-                        _profiles.Clear();
-                        _profiles.AddRange(loaded.Select(NormalizeProfile));
-                    }
-                }
-            }
+            TryApplyLoadedProfiles(json);
         }
         finally
         {
@@ -227,67 +219,59 @@ public class TerminalProfileService : ITerminalProfileService
 
     private List<TerminalProfile> CreateDefaultProfiles()
     {
-        var list = new List<TerminalProfile>();
         var defaultDir = GetDefaultWorkingDirectory();
-
-        // 1. PowerShell 7 / Windows PowerShell
         var pwshPath = ShellDiscoveryService.ResolveExecutable("pwsh.exe");
         var winPsPath = ShellDiscoveryService.ResolveExecutable("powershell.exe");
-        var psPath = pwshPath ?? winPsPath ?? "powershell.exe";
-        var psName = pwshPath != null ? "PowerShell 7" : "Windows PowerShell";
-        list.Add(new TerminalProfile(
-            Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            psName,
-            psPath,
-            Arguments: "-NoLogo",
-            WorkingDirectory: defaultDir,
-            IconTag: "PS",
-            ShellType: ShellType.PowerShell,
-            IsBuiltIn: true));
 
-        // 2. Command Prompt
-        var cmdPath = ShellDiscoveryService.ResolveExecutable("cmd.exe") ?? "cmd.exe";
-        list.Add(new TerminalProfile(
-            Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            _localizationService?["Shell_CMD"] ?? "Command Prompt",
-            cmdPath,
-            Arguments: null,
-            WorkingDirectory: defaultDir,
-            IconTag: "CMD",
-            ShellType: ShellType.CMD,
-            IsBuiltIn: true));
-
-        // 3. WSL
-        var wslPath = ShellDiscoveryService.ResolveExecutable("wsl.exe");
-        if (wslPath != null)
+        var list = new List<TerminalProfile>
         {
-            list.Add(new TerminalProfile(
-                Guid.Parse("33333333-3333-3333-3333-333333333333"),
-                "WSL (Linux)",
-                wslPath,
+            new(
+                Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                pwshPath != null ? "PowerShell 7" : "Windows PowerShell",
+                pwshPath ?? winPsPath ?? "powershell.exe",
+                Arguments: "-NoLogo",
+                WorkingDirectory: defaultDir,
+                IconTag: "PS",
+                ShellType: ShellType.PowerShell,
+                IsBuiltIn: true),
+            new(
+                Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                _localizationService?["Shell_CMD"] ?? "Command Prompt",
+                ShellDiscoveryService.ResolveExecutable("cmd.exe") ?? "cmd.exe",
                 Arguments: null,
                 WorkingDirectory: defaultDir,
-                IconTag: "WSL",
-                ShellType: ShellType.WSL,
-                IsBuiltIn: true));
-        }
+                IconTag: "CMD",
+                ShellType: ShellType.CMD,
+                IsBuiltIn: true)
+        };
 
-        // 4. NuShell (if found)
-        var nuPath = ShellDiscoveryService.ResolveExecutable("nu.exe");
-        if (nuPath != null)
-        {
-            list.Add(new TerminalProfile(
-                Guid.Parse("44444444-4444-4444-4444-444444444444"),
-                "NuShell",
-                nuPath,
-                Arguments: null,
-                WorkingDirectory: defaultDir,
-                IconTag: "NU",
-                ShellType: ShellType.NuShell,
-                IsBuiltIn: true));
-        }
+        TryAddOptionalProfile(list, "33333333-3333-3333-3333-333333333333", "WSL (Linux)", "wsl.exe", "WSL", ShellType.WSL, defaultDir);
+        TryAddOptionalProfile(list, "44444444-4444-4444-4444-444444444444", "NuShell", "nu.exe", "NU", ShellType.NuShell, defaultDir);
 
         return list;
+    }
+
+    private static void TryAddOptionalProfile(
+        List<TerminalProfile> profiles,
+        string id,
+        string name,
+        string executableName,
+        string iconTag,
+        ShellType shellType,
+        string defaultDir)
+    {
+        var resolvedPath = ShellDiscoveryService.ResolveExecutable(executableName);
+        if (resolvedPath == null) return;
+
+        profiles.Add(new TerminalProfile(
+            Guid.Parse(id),
+            name,
+            resolvedPath,
+            Arguments: null,
+            WorkingDirectory: defaultDir,
+            IconTag: iconTag,
+            ShellType: shellType,
+            IsBuiltIn: true));
     }
 
     private async Task SaveInternalAsync(CancellationToken cancellationToken = default)
@@ -301,7 +285,7 @@ public class TerminalProfileService : ITerminalProfileService
             }
 
             List<TerminalProfile> copy;
-            lock (_profiles)
+            lock (_profilesLock)
             {
                 copy = _profiles.ToList();
             }

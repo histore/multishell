@@ -275,25 +275,7 @@ public static class LinkDetectionHelper
             // 2. Local File / Directory Path
             if (TryResolveFilePath(target, workingDirectory, out var resolvedPath))
             {
-                if (File.Exists(resolvedPath) && ExecutableExtensions.Contains(Path.GetExtension(resolvedPath)))
-                {
-                    var sysDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
-                    var notepadPath = Path.Combine(sysDir, "notepad.exe");
-                    if (!File.Exists(notepadPath)) notepadPath = "notepad.exe";
-
-                    return StartProcess(new ProcessStartInfo
-                    {
-                        FileName = notepadPath,
-                        Arguments = $"\"{resolvedPath}\"",
-                        UseShellExecute = false
-                    });
-                }
-
-                return StartProcess(new ProcessStartInfo
-                {
-                    FileName = resolvedPath,
-                    UseShellExecute = true
-                });
+                return OpenResolvedLocalPath(resolvedPath);
             }
 
             // 3. Fallback for safe known schemes (e.g. mailto: or tel:)
@@ -313,5 +295,28 @@ public static class LinkDetectionHelper
         {
             return false;
         }
+    }
+
+    private static bool OpenResolvedLocalPath(string resolvedPath)
+    {
+        if (File.Exists(resolvedPath) && ExecutableExtensions.Contains(Path.GetExtension(resolvedPath)))
+        {
+            var sysDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            var notepadPath = Path.Combine(sysDir, "notepad.exe");
+            if (!File.Exists(notepadPath)) notepadPath = "notepad.exe";
+
+            return StartProcess(new ProcessStartInfo
+            {
+                FileName = notepadPath,
+                Arguments = $"\"{resolvedPath}\"",
+                UseShellExecute = false
+            });
+        }
+
+        return StartProcess(new ProcessStartInfo
+        {
+            FileName = resolvedPath,
+            UseShellExecute = true
+        });
     }
 }

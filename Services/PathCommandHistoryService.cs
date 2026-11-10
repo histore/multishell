@@ -303,37 +303,42 @@ public class PathCommandHistoryService : IPathCommandHistoryService
         {
             foreach (var (path, commands) in data)
             {
-                var normalizedPath = NormalizePath(path);
-                if (string.IsNullOrEmpty(normalizedPath) || commands == null)
-                {
-                    continue;
-                }
+                ImportCommandsForPath(path, commands);
+            }
+        }
+    }
 
-                if (!_pathHistories.TryGetValue(normalizedPath, out var list))
-                {
-                    list = new List<string>();
-                    _pathHistories[normalizedPath] = list;
-                }
+    private void ImportCommandsForPath(string path, List<string>? commands)
+    {
+        var normalizedPath = NormalizePath(path);
+        if (string.IsNullOrEmpty(normalizedPath) || commands == null)
+        {
+            return;
+        }
 
-                foreach (var cmd in commands)
-                {
-                    if (string.IsNullOrWhiteSpace(cmd) || ShellCommandFilter.IsInternalConfigurationCommand(cmd))
-                    {
-                        continue;
-                    }
+        if (!_pathHistories.TryGetValue(normalizedPath, out var list))
+        {
+            list = new List<string>();
+            _pathHistories[normalizedPath] = list;
+        }
 
-                    list.Remove(cmd);
-                    list.Add(cmd);
+        foreach (var cmd in commands)
+        {
+            if (string.IsNullOrWhiteSpace(cmd) || ShellCommandFilter.IsInternalConfigurationCommand(cmd))
+            {
+                continue;
+            }
 
-                    _globalCommands.Remove(cmd);
-                    _globalCommands.Add(cmd);
-                    _commandTimestamps[cmd] = GetMonotonicTimestamp();
+            list.Remove(cmd);
+            list.Add(cmd);
 
-                    while (list.Count > MaxHistoryPerPath)
-                    {
-                        list.RemoveAt(0);
-                    }
-                }
+            _globalCommands.Remove(cmd);
+            _globalCommands.Add(cmd);
+            _commandTimestamps[cmd] = GetMonotonicTimestamp();
+
+            while (list.Count > MaxHistoryPerPath)
+            {
+                list.RemoveAt(0);
             }
         }
     }

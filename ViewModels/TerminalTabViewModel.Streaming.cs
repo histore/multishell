@@ -13,6 +13,7 @@ public partial class TerminalTabViewModel
     private readonly StringBuilder _pendingUiFeedBuffer = new();
     private readonly Lock _pendingUiFeedLock = new();
     private readonly StringBuilder _inputLineBuffer = new();
+    private readonly Lock _inputLineBufferLock = new();
     private bool _isUiFeedScheduled;
     private bool _previousWasCr;
 
@@ -159,69 +160,77 @@ public partial class TerminalTabViewModel
             return;
         }
 
-        lock (_inputLineBuffer)
+        lock (_inputLineBufferLock)
         {
             foreach (var ch in chars)
             {
-                if (ch == '\x03') // Ctrl+C -> cancel line
-                {
-                    _previousWasCr = false;
-                    _inputLineBuffer.Clear();
-                    continue;
-                }
-
-                if (ch == '\r') // Enter / Return: command execution
-                {
-                    _previousWasCr = true;
-                    string executedCommand = _inputLineBuffer.ToString().Trim();
-                    _inputLineBuffer.Clear();
-
-                    if (!string.IsNullOrWhiteSpace(executedCommand))
-                    {
-                        MarkCommandStarted(executedCommand);
-                        _pendingCommandDirectory = WorkingDirectory;
-                        if (ShellType != ShellType.PowerShell)
-                        {
-                            OnSessionCommandExecuted(executedCommand);
-                            CheckForDirectoryChangeCommand(executedCommand);
-                        }
-                    }
-                    continue;
-                }
-
-                if (ch == '\n')
-                {
-                    if (_previousWasCr)
-                    {
-                        // CRLF sequence - already executed on '\r'
-                        _previousWasCr = false;
-                        continue;
-                    }
-
-                    // Standalone linefeed (e.g. Shift+Enter / Ctrl+Enter multi-line script continuation)
-                    _inputLineBuffer.Append('\n');
-                    continue;
-                }
-
-                _previousWasCr = false;
-
-                if (ch == '\b' || ch == '\x7F') // Backspace
-                {
-                    if (_inputLineBuffer.Length > 0)
-                    {
-                        _inputLineBuffer.Length--;
-                    }
-                    continue;
-                }
-
-                if (!char.IsControl(ch))
-                {
-                    _inputLineBuffer.Append(ch);
-                }
+                ProcessInputBufferChar(ch);
             }
         }
 
         UpdateDraftCommandState();
+    }
+
+    private void ProcessInputBufferChar(char ch)
+    {
+        if (ch == '\x03') // Ctrl+C -> cancel line
+        {
+            _previousWasCr = false;
+            _inputLineBuffer.Clear();
+            return;
+        }
+
+        if (ch == '\r') // Enter / Return: command execution
+        {
+            _previousWasCr = true;
+            string executedCommand = _inputLineBuffer.ToString().Trim();
+            _inputLineBuffer.Clear();
+            RecordExecutedInputCommand(executedCommand);
+            return;
+        }
+
+        if (ch == '\n')
+        {
+            if (_previousWasCr)
+            {
+                // CRLF sequence - already executed on '\r'
+                _previousWasCr = false;
+                return;
+            }
+
+            // Standalone linefeed (e.g. Shift+Enter / Ctrl+Enter multi-line script continuation)
+            _inputLineBuffer.Append('\n');
+            return;
+        }
+
+        _previousWasCr = false;
+
+        if (ch == '\b' || ch == '\x7F') // Backspace
+        {
+            if (_inputLineBuffer.Length > 0)
+            {
+                _inputLineBuffer.Length--;
+            }
+            return;
+        }
+
+        if (!char.IsControl(ch))
+        {
+            _inputLineBuffer.Append(ch);
+        }
+    }
+
+    private void RecordExecutedInputCommand(string executedCommand)
+    {
+        if (string.IsNullOrWhiteSpace(executedCommand)) return;
+
+        MarkCommandStarted(executedCommand);
+        _pendingCommandDirectory = WorkingDirectory;
+        if (ShellType != ShellType.PowerShell)
+        {
+            OnSessionCommandExecuted(executedCommand);
+            CheckForDirectoryChangeCommand(executedCommand);
+        }
     }
 
     /// <summary>
@@ -230,7 +239,7 @@ public partial class TerminalTabViewModel
     internal void UpdateDraftCommandState()
     {
         bool hasDraft;
-        lock (_inputLineBuffer)
+        lock (_inputLineBufferLock)
         {
             hasDraft = _inputLineBuffer.Length > 0;
         }
@@ -253,7 +262,7 @@ public partial class TerminalTabViewModel
     /// </summary>
     internal void ClearInputLineBuffer()
     {
-        lock (_inputLineBuffer)
+        lock (_inputLineBufferLock)
         {
             _inputLineBuffer.Clear();
         }

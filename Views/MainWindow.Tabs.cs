@@ -148,35 +148,37 @@ public partial class MainWindow
 
         Dispatcher.UIThread.Post(() =>
         {
-            var containers = TabsItemsControl.GetRealizedContainers();
-            foreach (var container in containers)
+            foreach (var container in TabsItemsControl.GetRealizedContainers())
             {
-                if (container.DataContext == vm.SelectedTab)
-                {
-                    var transform = container.TransformToVisual(TabsScrollViewer);
-                    if (transform.HasValue)
-                    {
-                        var rect = new Rect(0, 0, container.Bounds.Width, container.Bounds.Height);
-                        var boundsInViewer = rect.TransformToAABB(transform.Value);
-
-                        if (boundsInViewer.Left < 0)
-                        {
-                            var newX = Math.Max(0, TabsScrollViewer.Offset.X + boundsInViewer.Left - 10);
-                            TabsScrollViewer.Offset = new Vector(newX, TabsScrollViewer.Offset.Y);
-                        }
-                        else if (boundsInViewer.Right > TabsScrollViewer.Viewport.Width)
-                        {
-                            var maxOffset = Math.Max(0, TabsScrollViewer.Extent.Width - TabsScrollViewer.Viewport.Width);
-                            var delta = boundsInViewer.Right - TabsScrollViewer.Viewport.Width + 10;
-                            var newX = Math.Min(maxOffset, TabsScrollViewer.Offset.X + delta);
-                            TabsScrollViewer.Offset = new Vector(newX, TabsScrollViewer.Offset.Y);
-                        }
-                    }
-                    break;
-                }
+                if (container.DataContext != vm.SelectedTab) continue;
+                ScrollTabContainerIntoView(container);
+                break;
             }
             UpdateTabOverflowIndicators();
         }, DispatcherPriority.Loaded);
+    }
+
+    private void ScrollTabContainerIntoView(Control container)
+    {
+        if (TabsScrollViewer == null) return;
+        var transform = container.TransformToVisual(TabsScrollViewer);
+        if (!transform.HasValue) return;
+
+        var rect = new Rect(0, 0, container.Bounds.Width, container.Bounds.Height);
+        var boundsInViewer = rect.TransformToAABB(transform.Value);
+
+        if (boundsInViewer.Left < 0)
+        {
+            var newX = Math.Max(0, TabsScrollViewer.Offset.X + boundsInViewer.Left - 10);
+            TabsScrollViewer.Offset = new Vector(newX, TabsScrollViewer.Offset.Y);
+        }
+        else if (boundsInViewer.Right > TabsScrollViewer.Viewport.Width)
+        {
+            var maxOffset = Math.Max(0, TabsScrollViewer.Extent.Width - TabsScrollViewer.Viewport.Width);
+            var delta = boundsInViewer.Right - TabsScrollViewer.Viewport.Width + 10;
+            var newX = Math.Min(maxOffset, TabsScrollViewer.Offset.X + delta);
+            TabsScrollViewer.Offset = new Vector(newX, TabsScrollViewer.Offset.Y);
+        }
     }
 
     private void OnTabsPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -242,29 +244,33 @@ public partial class MainWindow
             var pressedEvent = _lastPointerPressedEvent;
             if (tabToDrag != null && pressedEvent != null && DataContext is MainViewModel currentVm)
             {
-                _draggedTab = null;
-                WindowCoordinatorService.CurrentTabDrag = new TabDragTransfer(currentVm, tabToDrag);
-                try
-                {
-                    var data = new DataTransfer();
-                    data.Add(DataTransferItem.CreateText(tabToDrag.Title));
-                    var result = await DragDrop.DoDragDropAsync(pressedEvent, data, DragDropEffects.Move);
-
-                    // If released outside any window and this window has multiple tabs, tear off into a new window
-                    if (result == DragDropEffects.None && currentVm.Tabs.Contains(tabToDrag) && currentVm.Tabs.Count > 1)
-                    {
-                        await currentVm.WindowCoordinator.UndockTabAsync(currentVm, tabToDrag);
-                    }
-                }
-                finally
-                {
-                    WindowCoordinatorService.CurrentTabDrag = null;
-                    _isDragging = false;
-                    _lastPointerPressedEvent = null;
-                    StopDragScrollTimer();
-                }
-                return;
+                await ExecuteTabDragAsync(tabToDrag, pressedEvent, currentVm);
             }
+        }
+    }
+
+    private async Task ExecuteTabDragAsync(TerminalTabViewModel tabToDrag, PointerPressedEventArgs pressedEvent, MainViewModel currentVm)
+    {
+        _draggedTab = null;
+        WindowCoordinatorService.CurrentTabDrag = new TabDragTransfer(currentVm, tabToDrag);
+        try
+        {
+            var data = new DataTransfer();
+            data.Add(DataTransferItem.CreateText(tabToDrag.Title));
+            var result = await DragDrop.DoDragDropAsync(pressedEvent, data, DragDropEffects.Move);
+
+            // If released outside any window and this window has multiple tabs, tear off into a new window
+            if (result == DragDropEffects.None && currentVm.Tabs.Contains(tabToDrag) && currentVm.Tabs.Count > 1)
+            {
+                await currentVm.WindowCoordinator.UndockTabAsync(currentVm, tabToDrag);
+            }
+        }
+        finally
+        {
+            WindowCoordinatorService.CurrentTabDrag = null;
+            _isDragging = false;
+            _lastPointerPressedEvent = null;
+            StopDragScrollTimer();
         }
     }
 

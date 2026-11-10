@@ -149,29 +149,10 @@ public partial class TerminalPaneView
             var isCtrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
 
             // 1. Ctrl + Left-Click: Open Clickable Hyperlink or Local File Path (REQ-TERM-005)
-            if (point.Properties.IsLeftButtonPressed && isCtrl)
+            if (point.Properties.IsLeftButtonPressed && isCtrl && TryOpenCtrlClickedLink(vm, point.Position))
             {
-                if (TryGetTerminalWordOrLine(Terminal, vm, point.Position, out var lineText, out var colIndex, out _, out _, out _))
-                {
-                    var link = LinkDetectionHelper.ExtractLinkAtColumn(lineText, colIndex, vm.WorkingDirectory);
-                    if (link != null)
-                    {
-                        if (LinkDetectionHelper.OpenTarget(link.ResolvedTarget, vm.WorkingDirectory))
-                        {
-                            e.Handled = true;
-                            return;
-                        }
-                    }
-                    else if (vm.TerminalModel.HasSelection || Terminal.HasSelection)
-                    {
-                        var selected = (!string.IsNullOrEmpty(Terminal.SelectedText) ? Terminal.SelectedText : vm.TerminalModel.SelectedText).Trim();
-                        if (LinkDetectionHelper.OpenTarget(selected, vm.WorkingDirectory))
-                        {
-                            e.Handled = true;
-                            return;
-                        }
-                    }
-                }
+                e.Handled = true;
+                return;
             }
 
             // 2. Right-Click: Instant Copy if text is selected, or Paste if no selection (REQ-TERM-004 / REQ-TAB-017)
@@ -191,6 +172,28 @@ public partial class TerminalPaneView
         {
             System.Diagnostics.Debug.WriteLine($"[TerminalPaneView] Pointer pressed handling failed: {ex.Message}");
         }
+    }
+
+    private bool TryOpenCtrlClickedLink(TerminalPaneViewModel vm, Point position)
+    {
+        if (!TryGetTerminalWordOrLine(Terminal, vm, position, out var lineText, out var colIndex, out _, out _, out _))
+        {
+            return false;
+        }
+
+        var link = LinkDetectionHelper.ExtractLinkAtColumn(lineText, colIndex, vm.WorkingDirectory);
+        if (link != null)
+        {
+            return LinkDetectionHelper.OpenTarget(link.ResolvedTarget, vm.WorkingDirectory);
+        }
+
+        if (vm.TerminalModel.HasSelection || Terminal.HasSelection)
+        {
+            var selected = (!string.IsNullOrEmpty(Terminal.SelectedText) ? Terminal.SelectedText : vm.TerminalModel.SelectedText).Trim();
+            return LinkDetectionHelper.OpenTarget(selected, vm.WorkingDirectory);
+        }
+
+        return false;
     }
 
     /// <summary>

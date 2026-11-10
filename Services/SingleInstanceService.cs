@@ -60,83 +60,110 @@ public class SingleInstanceService : ISingleInstanceService
             return;
         }
 
-        _serverTask = Task.Run(async () =>
+        _serverTask = Task.Run(RunServerLoopAsync);
+    }
+
+    private async Task RunServerLoopAsync()
+    {
+        while (!_cts.IsCancellationRequested)
         {
-            while (!_cts.IsCancellationRequested)
+            if (!await AcceptNextConnectionAsync().ConfigureAwait(false))
             {
-                NamedPipeServerStream? server = null;
-                try
-                {
-                    server = new NamedPipeServerStream(
-                        _pipeName,
-                        PipeDirection.In,
-                        NamedPipeServerStream.MaxAllowedServerInstances,
-                        PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-
-                    lock (_pipeLock)
-                    {
-                        if (_isDisposed || _cts.IsCancellationRequested)
-                        {
-                            server.Dispose();
-                            break;
-                        }
-                        _currentServer = server;
-                    }
-
-                    await server.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
-
-                    using var readCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-                    readCts.CancelAfter(TimeSpan.FromSeconds(5));
-
-                    using var reader = new StreamReader(server, Encoding.UTF8);
-                    var buffer = new char[4096];
-                    int charsRead = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), readCts.Token).ConfigureAwait(false);
-                    var message = new string(buffer, 0, charsRead);
-
-                    string? targetDirectory = null;
-                    if (!string.IsNullOrWhiteSpace(message))
-                    {
-                        var trimmed = message.Trim();
-                        targetDirectory = _pathResolver.ResolveWorkingDirectory(trimmed);
-                    }
-
-                    DirectoryOpenRequested?.Invoke(targetDirectory);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (ObjectDisposedException)
-                {
-                    break;
-                }
-                catch
-                {
-                    if (_cts.IsCancellationRequested) break;
-                    // Short back-off on transient pipe error before listening again
-                    try
-                    {
-                        await Task.Delay(100, _cts.Token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        break;
-                    }
-                }
-                finally
-                {
-                    lock (_pipeLock)
-                    {
-                        if (_currentServer == server)
-                        {
-                            _currentServer = null;
-                        }
-                    }
-                    server?.Dispose();
-                }
+                break;
             }
-        });
+        }
+    }
+
+    private async Task<bool> AcceptNextConnectionAsync()
+    {
+        NamedPipeServerStream? server = null;
+        try
+        {
+            server = new NamedPipeServerStream(
+                _pipeName,
+                PipeDirection.In,
+                NamedPipeServerStream.MaxAllowedServerInstances,
+                PipeTransmissionMode.Byte,
+                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+
+            if (!TrySetCurrentServer(server))
+            {
+                server.Dispose();
+                return false;
+            }
+
+            await server.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
+            var targetDirectory = await ReadTargetDirectoryAsync(server).ConfigureAwait(false);
+            DirectoryOpenRequested?.Invoke(targetDirectory);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+        catch (ObjectDisposedException)
+        {
+            return false;
+        }
+        catch
+        {
+            return await DelayAfterPipeErrorAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            ClearCurrentServer(server);
+            server?.Dispose();
+        }
+    }
+
+    private bool TrySetCurrentServer(NamedPipeServerStream server)
+    {
+        lock (_pipeLock)
+        {
+            if (_isDisposed || _cts.IsCancellationRequested) return false;
+            _currentServer = server;
+            return true;
+        }
+    }
+
+    private void ClearCurrentServer(NamedPipeServerStream? server)
+    {
+        lock (_pipeLock)
+        {
+            if (_currentServer == server)
+            {
+                _currentServer = null;
+            }
+        }
+    }
+
+    private async Task<string?> ReadTargetDirectoryAsync(NamedPipeServerStream server)
+    {
+        using var readCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+        readCts.CancelAfter(TimeSpan.FromSeconds(5));
+
+        using var reader = new StreamReader(server, Encoding.UTF8);
+        var buffer = new char[4096];
+        int charsRead = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), readCts.Token).ConfigureAwait(false);
+        var message = new string(buffer, 0, charsRead);
+
+        return string.IsNullOrWhiteSpace(message)
+            ? null
+            : _pathResolver.ResolveWorkingDirectory(message.Trim());
+    }
+
+    private async Task<bool> DelayAfterPipeErrorAsync()
+    {
+        if (_cts.IsCancellationRequested) return false;
+        try
+        {
+            await Task.Delay(100, _cts.Token).ConfigureAwait(false);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
     }
 
     public async Task<bool> SendArgsToFirstInstanceAsync(string[] args, string clientCurrentDirectory, int timeoutMs = 2000)
