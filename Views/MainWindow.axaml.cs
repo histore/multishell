@@ -105,34 +105,17 @@ public partial class MainWindow : Window
             ToggleHistoryToolbarBtn.Click += (_, _) => ToggleHistoryDrawer();
         }
 
-        if (SettingsProfilesMenuItem != null)
+        if (SettingsMenuBtn != null)
         {
-            SettingsProfilesMenuItem.Click += (_, _) =>
+            SettingsMenuBtn.ProfilesRequested += () =>
             {
-                SettingsToolbarBtn?.Flyout?.Hide();
                 if (DataContext is MainViewModel vm)
                 {
                     vm.OpenProfilesModal();
                 }
             };
-        }
-
-        if (SettingsHelpMenuItem != null)
-        {
-            SettingsHelpMenuItem.Click += (_, _) =>
-            {
-                SettingsToolbarBtn?.Flyout?.Hide();
-                ShowHelpModal();
-            };
-        }
-
-        if (SettingsAboutMenuItem != null)
-        {
-            SettingsAboutMenuItem.Click += (_, _) =>
-            {
-                SettingsToolbarBtn?.Flyout?.Hide();
-                ShowAboutModal();
-            };
+            SettingsMenuBtn.HelpRequested += ShowHelpModal;
+            SettingsMenuBtn.AboutRequested += ShowAboutModal;
         }
 
         // Modals

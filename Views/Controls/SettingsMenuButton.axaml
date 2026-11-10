@@ -1,0 +1,207 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MultiShell.ViewModels"
+             xmlns:models="using:MultiShell.Models"
+             x:Class="MultiShell.Views.Controls.SettingsMenuButton"
+             x:DataType="vm:MainViewModel">
+
+    <!-- Settings Button (Gear ⚙) with Flyout Menu -->
+    <Button x:Name="SettingsToolbarBtn"
+            Classes="toolbarActionBtn"
+            ToolTip.Tip="{Binding Loc[Settings_Menu_Title]}">
+        <StackPanel Orientation="Horizontal" Spacing="3">
+            <TextBlock Text="⚙" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="▾" FontSize="9" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+        </StackPanel>
+        <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedRight">
+                <Border Background="{DynamicResource AppSurfaceSubtle}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="6" Padding="6" MinWidth="260">
+                    <StackPanel Spacing="2">
+                        <!-- App Theme Toggle Item -->
+                        <Button Classes="tabMenuItemBtn"
+                                Command="{Binding ToggleAppThemeCommand}"
+                                HorizontalAlignment="Stretch"
+                                ToolTip.Tip="{Binding Loc[Settings_App_Theme]}">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_App_Theme]}" FontSize="12" VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Loc[Theme_Dark]}" FontSize="11" Foreground="{DynamicResource AppAccent}" IsVisible="{Binding IsDarkAppTheme}" />
+                                    <TextBlock Text="{Binding Loc[Theme_Light]}" FontSize="11" Foreground="#E0AF68" IsVisible="{Binding !IsDarkAppTheme}" />
+                                    <TextBlock Text="●" FontSize="8" Foreground="{DynamicResource AppSuccess}" VerticalAlignment="Center" Margin="2,0,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+
+                        <!-- Terminal Theme Toggle Item -->
+                        <Button Classes="tabMenuItemBtn"
+                                Command="{Binding ToggleTerminalThemeCommand}"
+                                HorizontalAlignment="Stretch"
+                                ToolTip.Tip="{Binding Loc[Settings_Terminal_Theme]}">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Terminal_Theme]}" FontSize="12" VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Loc[Theme_Dark]}" FontSize="11" Foreground="{DynamicResource AppAccent}" IsVisible="{Binding IsDarkTerminalTheme}" />
+                                    <TextBlock Text="{Binding Loc[Theme_Light]}" FontSize="11" Foreground="#E0AF68" IsVisible="{Binding !IsDarkTerminalTheme}" />
+                                    <TextBlock Text="●" FontSize="8" Foreground="{DynamicResource AppSuccess}" VerticalAlignment="Center" Margin="2,0,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+
+                        <!-- Language Selector Section -->
+                        <Border Classes="modalSection" Margin="0,2" Padding="8,6">
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Language]}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource AppTextSecondary}" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding CurrentLanguageUpper}"
+                                                   FontFamily="Consolas, monospace"
+                                                   FontSize="10"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource AppAccent}"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                                <ComboBox ItemsSource="{Binding AvailableLanguages}"
+                                          SelectedItem="{Binding SelectedLanguage}"
+                                          HorizontalAlignment="Stretch"
+                                          Padding="6,4"
+                                          FontSize="11">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="models:LanguageOption">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <Border Background="{DynamicResource AppSurfaceBackground}"
+                                                        BorderBrush="{DynamicResource AppBorder}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="3"
+                                                        Padding="4,1"
+                                                        MinWidth="26">
+                                                    <TextBlock Text="{Binding UpperCode}"
+                                                               FontFamily="Consolas, monospace"
+                                                               FontSize="9"
+                                                               FontWeight="Bold"
+                                                               HorizontalAlignment="Center"
+                                                               Foreground="{DynamicResource AppAccent}" />
+                                                </Border>
+                                                <TextBlock Text="{Binding NativeName}" FontSize="11" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding EnglishName, StringFormat='({0})'}"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource AppTextTertiary}"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- App Font Size Selector -->
+                        <Border Classes="modalSection" Margin="0,2" Padding="8,6">
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_App_FontSize]}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource AppTextSecondary}" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding AppFontSizeLevel, StringFormat='{}L{0}'}" FontSize="10" FontFamily="Consolas, monospace" FontWeight="Bold" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                                <Border Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="4" Padding="2">
+                                    <Grid ColumnDefinitions="*,*,*,*,*,*,*">
+                                        <Button Grid.Column="0" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel1}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="1" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_1]}">
+                                            <TextBlock Text="1" />
+                                        </Button>
+                                        <Button Grid.Column="1" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel2}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="2" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_2]}">
+                                            <TextBlock Text="2" />
+                                        </Button>
+                                        <Button Grid.Column="2" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel3}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="3" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_3]}">
+                                            <TextBlock Text="3" />
+                                        </Button>
+                                        <Button Grid.Column="3" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel4}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="4" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_4]}">
+                                            <TextBlock Text="4" />
+                                        </Button>
+                                        <Button Grid.Column="4" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel5}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="5" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_5]}">
+                                            <TextBlock Text="5" />
+                                        </Button>
+                                        <Button Grid.Column="5" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel6}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="6" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_6]}">
+                                            <TextBlock Text="6" />
+                                        </Button>
+                                        <Button Grid.Column="6" Classes="levelBtn" Classes.active="{Binding IsAppFontSizeLevel7}" Command="{Binding SetAppFontSizeLevelCommand}" CommandParameter="7" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_7]}">
+                                            <TextBlock Text="7" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Terminal Font Size Selector -->
+                        <Border Classes="modalSection" Margin="0,2" Padding="8,6">
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Terminal_FontSize]}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource AppTextSecondary}" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TerminalFontSize, StringFormat='{}{0:0.#} pt'}" FontSize="10" FontFamily="Consolas, monospace" FontWeight="Bold" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                                <Border Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="4" Padding="2">
+                                    <Grid ColumnDefinitions="*,*,*,*,*,*,*">
+                                        <Button Grid.Column="0" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel1}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="1" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_1]}">
+                                            <TextBlock Text="1" />
+                                        </Button>
+                                        <Button Grid.Column="1" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel2}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="2" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_2]}">
+                                            <TextBlock Text="2" />
+                                        </Button>
+                                        <Button Grid.Column="2" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel3}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="3" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_3]}">
+                                            <TextBlock Text="3" />
+                                        </Button>
+                                        <Button Grid.Column="3" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel4}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="4" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_4]}">
+                                            <TextBlock Text="4" />
+                                        </Button>
+                                        <Button Grid.Column="4" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel5}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="5" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_5]}">
+                                            <TextBlock Text="5" />
+                                        </Button>
+                                        <Button Grid.Column="5" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel6}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="6" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_6]}">
+                                            <TextBlock Text="6" />
+                                        </Button>
+                                        <Button Grid.Column="6" Classes="levelBtn" Classes.active="{Binding IsTerminalFontSizeLevel7}" Command="{Binding SetTerminalFontSizeLevelCommand}" CommandParameter="7" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Loc[FontSize_Level_7]}">
+                                            <TextBlock Text="7" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Rectangle Height="1" Fill="{DynamicResource AppBorder}" Margin="0,4" />
+
+                        <!-- Terminal Profiles Management Item -->
+                        <Button x:Name="SettingsProfilesMenuItem"
+                                Classes="tabMenuItemBtn"
+                                HorizontalAlignment="Stretch">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Profiles_Title]}" FontSize="12" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="⚙" FontSize="11" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
+
+                        <!-- Help Item -->
+                        <Button x:Name="SettingsHelpMenuItem"
+                                Classes="tabMenuItemBtn"
+                                HorizontalAlignment="Stretch">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Help_Title]}" FontSize="12" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Ctrl+Shift+F1" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
+
+                        <!-- About Item -->
+                        <Button x:Name="SettingsAboutMenuItem"
+                                Classes="tabMenuItemBtn"
+                                HorizontalAlignment="Stretch">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_About_Title]}" FontSize="12" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding AppVersion}" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</UserControl>

@@ -28,7 +28,11 @@ Services/
 ViewModels/
 ├── ViewModelBase.cs                   # Base ObservableObject
 ├── MainViewModel.cs                   # Root orchestrator & dependency wiring
+├── MainViewModel.Persistence.cs       # Workspace initialization, multi-window restoration & persistence
+├── MainViewModel.MultiWindow.cs       # Multi-window coordination, undocking/redocking & ICoordinatedWindow
 ├── MainViewModel.Tabs.cs              # Tab collection & lifecycle management
+├── MainViewModel.TabNavigation.cs     # Tab selection, cycling, indexed switching & reordering
+├── MainViewModel.Panes.cs             # Split-pane delegation commands for the active tab
 ├── MainViewModel.ClosedTabs.cs        # Recently closed tab history & restore commands
 ├── MainViewModel.Profiles.cs          # Shell profile selection & management
 ├── MainViewModel.Settings.cs          # Theme, font, language, and modal states
@@ -37,12 +41,16 @@ ViewModels/
 │   ├── IPaneNodeViewModel.cs          # Binary tree node contract (IsLeaf, GetLeaves, FindParent, FindLeaf)
 │   ├── LeafPaneNodeViewModel.cs       # Leaf node wrapping TerminalPaneViewModel
 │   ├── SplitPaneNodeViewModel.cs      # Binary split container (direction, ratio, child nodes)
-│   └── TerminalPaneViewModel.cs       # Independent pane session, ANSI processing, search & execution
+│   ├── TerminalPaneViewModel.cs       # Independent pane session & lifecycle
+│   ├── TerminalPaneViewModel.Streaming.cs # Per-pane PTY streaming, batching & activity status
+│   └── TerminalPaneViewModel.Search.cs # Per-pane in-terminal search state & commands
 ├── TerminalTabViewModel.cs            # Tab state, title coordination & delegation to active pane
+├── TerminalTabViewModel.Navigation.cs # Buffer scrolling/clearing & path breadcrumb navigation
 ├── TerminalTabViewModel.Panes.cs      # Binary tree split operations, directional navigation, focus & zoom
 ├── TerminalTabViewModel.ExecutionState.cs # Process status, activity timers, badges & toast notifications
 ├── TerminalTabViewModel.Streaming.cs  # Output batching & ANSI buffer streaming
 ├── TerminalTabViewModel.History.cs    # Path & directory history synchronization
+├── TerminalTabViewModel.HistoryActions.cs # History command execution, insertion & deletion commands
 ├── TerminalTabViewModel.Renaming.cs   # Custom renaming & color palette tagging
 ├── ClosedTabItemViewModel.cs          # Reopenable closed tab history item
 └── TerminalProfileItemViewModel.cs    # Selectable profile item in UI
@@ -57,17 +65,25 @@ Views/
 ├── SplitPaneContainerControl.cs       # Dynamic recursive renderer with Grid & GridSplitter + View Cache
 ├── TerminalPaneView.axaml             # Individual pane control with terminal, active border & mini toolbar
 ├── TerminalPaneView.axaml.cs          # Pane lifecycle & focus handling
+├── TerminalPaneView.Keyboard.cs       # Terminal keyboard shortcuts, AltGr, clipboard & pane routing
 ├── TerminalPaneView.Links.cs          # Per-pane pointer link & hover detection, Ctrl+wheel zoom
 ├── TerminalTabView.axaml              # Tab host containing SplitPaneContainerControl
 ├── TerminalTabView.axaml.cs           # SplitPaneContainerControl data binding
 ├── TerminalFocusHelper.cs             # Active terminal focus resolution & restoration
-└── Dialogs/                           # Modal overlay views (Profiles, About, HistoryDrawer)
+├── Controls/
+│   ├── SettingsMenuButton.axaml       # Settings flyout menu button (theme, language, font size, modals)
+│   ├── SettingsMenuButton.axaml.cs    # Settings menu navigation event bridge
+│   ├── StatusBarView.axaml            # Bottom status bar (process activity, breadcrumbs, zoom/caps/shell)
+│   └── StatusBarView.axaml.cs         # StatusBarView UserControl code-behind
+└── Dialogs/                           # Modal overlay & empty-state views (Profiles, About, HistoryDrawer, Welcome)
     ├── HistoryDrawerView.axaml        # History Drawer overlay layout
     ├── HistoryDrawerView.axaml.cs     # Drawer open/toggle & filter selection sync
     ├── HistoryDrawerView.Keyboard.cs  # Drawer arrow navigation & tab cycling
     ├── HistoryDrawerView.Actions.cs   # Drawer command/directory execute & paste
     ├── TabSwitcherOverlayView.axaml   # Quick tab switcher HUD overlay layout (REQ-TAB-019, REQ-TAB-027)
-    └── TabSwitcherOverlayView.axaml.cs # Quick tab switcher HUD overlay code-behind
+    ├── TabSwitcherOverlayView.axaml.cs # Quick tab switcher HUD overlay code-behind
+    ├── WelcomeDashboardView.axaml     # Empty-state welcome dashboard & quick-launch profile cards
+    └── WelcomeDashboardView.axaml.cs  # WelcomeDashboardView UserControl code-behind
 ```
 
 ## 3. Core ViewModels

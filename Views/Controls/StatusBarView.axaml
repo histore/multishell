@@ -1,0 +1,157 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MultiShell.ViewModels"
+             xmlns:models="using:MultiShell.Models"
+             xmlns:controls="using:MultiShell.Views.Controls"
+             x:Class="MultiShell.Views.Controls.StatusBarView"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding HasOpenTabs}">
+
+    <!-- Bottom Terminal Status Bar (Outside Terminal Viewport) -->
+    <LayoutTransformControl>
+        <LayoutTransformControl.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding AppFontScale}" ScaleY="{Binding AppFontScale}" />
+        </LayoutTransformControl.LayoutTransform>
+        <Border Background="{DynamicResource AppHeaderBackground}"
+                BorderBrush="{DynamicResource AppBorderSubtle}"
+                BorderThickness="0,1,0,0"
+                Padding="10,3,10,3"
+                MinHeight="24">
+            <Grid ColumnDefinitions="Auto, Auto, *, Auto">
+                <!-- Left: Process Status / Activity Indicator -->
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            Spacing="6"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{Binding SelectedTab.ExecutionStatusTooltip}">
+                    <TextBlock Text="{Binding SelectedTab.ExecutionStatusGlyph}"
+                               FontFamily="Consolas, Cascadia Code, monospace"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Foreground="{Binding SelectedTab.ExecutionStatusForeground}"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding SelectedTab.ProcessActivityText}"
+                               FontSize="11"
+                               FontWeight="Medium"
+                               Foreground="{Binding SelectedTab.ExecutionStatusForeground}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Divider Separator -->
+                <Border Grid.Column="1"
+                        Width="1"
+                        Height="12"
+                        Background="{DynamicResource AppBorderSubtle}"
+                        Margin="10,0"
+                        VerticalAlignment="Center" />
+
+                <!-- Center: Interactive Path Breadcrumbs (REQ-TERM-013) -->
+                <ScrollViewer Grid.Column="2"
+                              HorizontalScrollBarVisibility="Hidden"
+                              VerticalScrollBarVisibility="Disabled"
+                              VerticalAlignment="Center">
+                    <ItemsControl ItemsSource="{Binding SelectedTab.PathBreadcrumbs}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="1" VerticalAlignment="Center" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:PathBreadcrumbSegment">
+                                <StackPanel Orientation="Horizontal" Spacing="1" VerticalAlignment="Center">
+                                    <Button Classes="statusBreadcrumbBtn"
+                                            Classes.current="{Binding IsCurrent}"
+                                            IsEnabled="{Binding IsEnabled}"
+                                            Command="{Binding $parent[controls:StatusBarView].((vm:MainViewModel)DataContext).HandleBreadcrumbClickCommand}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="{Binding Tooltip}"
+                                            ToolTip.ShowOnDisabled="True"
+                                            ToolTip.ShowDelay="150">
+                                        <StackPanel Orientation="Horizontal" Spacing="3">
+                                            <TextBlock Text="📁"
+                                                       FontSize="9"
+                                                       VerticalAlignment="Center"
+                                                       IsVisible="{Binding IsCurrent}" />
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="10"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock Text="›"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource AppBorderSubtle}"
+                                               VerticalAlignment="Center"
+                                               Margin="1,0"
+                                               IsVisible="{Binding !IsCurrent}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Right: Keyboard Toggles (CAPS, INS/OVR), Encoding & Shell Type Badge -->
+                <StackPanel Grid.Column="3"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                    <!-- Maximized Pane Indicator (click restores split view) -->
+                    <Button Classes="statusBreadcrumbBtn"
+                            Command="{Binding SelectedTab.ToggleZoomCommand}"
+                            IsVisible="{Binding SelectedTab.IsZoomed}"
+                            ToolTip.Tip="{Binding Loc[Pane_Zoomed_Restore]}"
+                            ToolTip.ShowDelay="150"
+                            Background="#253B82F6"
+                            Padding="6,1"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="⛶"
+                                       FontSize="10"
+                                       Foreground="#7AA2F7"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[Pane_Zoomed_Badge]}"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7AA2F7"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Caps Lock Indicator Badge (Amber Highlight when active) -->
+                    <Border Background="#25E0AF68"
+                            BorderBrush="#E0AF68"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Padding="4,1"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{Binding Loc[Status_CapsLock_Tooltip]}"
+                            IsVisible="{Binding IsCapsLockActive}">
+                        <TextBlock Text="CAPS"
+                                   FontFamily="Consolas, monospace"
+                                   FontSize="9"
+                                   FontWeight="Bold"
+                                   Foreground="#E0AF68"
+                                   VerticalAlignment="Center" />
+                    </Border>
+
+                    <TextBlock Text="UTF-8"
+                               FontFamily="Consolas, monospace"
+                               FontSize="10"
+                               Foreground="{DynamicResource AppTextDimmed}"
+                               VerticalAlignment="Center" />
+                    <Border Background="{DynamicResource AppSurfaceSubtle}"
+                            CornerRadius="3"
+                            Padding="4,1"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{Binding SelectedTab.ShellIconTag}"
+                                   FontFamily="Consolas, Cascadia Code, monospace"
+                                   FontSize="9"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppAccent}"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </LayoutTransformControl>
+</UserControl>

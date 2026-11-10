@@ -1,0 +1,240 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MultiShell.ViewModels"
+             xmlns:dialogs="using:MultiShell.Views.Dialogs"
+             x:Class="MultiShell.Views.Dialogs.WelcomeDashboardView"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding HasNoTabs}"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
+
+    <!-- Empty State / Welcome Dashboard when 0 tabs are open (REQ-UI-008) -->
+    <Grid HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Background="{DynamicResource AppContentBackground}">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="24"
+                        Margin="32"
+                        MaxWidth="720">
+
+                <!-- Logo & Welcome Header -->
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <Border Width="64" Height="64"
+                            Background="{DynamicResource AppSurfaceSubtle}"
+                            BorderBrush="{DynamicResource AppBorder}"
+                            BorderThickness="1"
+                            CornerRadius="16"
+                            HorizontalAlignment="Center"
+                            BoxShadow="0 4 16 0 #33000000">
+                        <TextBlock Text="&gt;_"
+                                   FontFamily="Consolas, monospace"
+                                   FontSize="26"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppAccent}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="{Binding Loc[EmptyState_Title]}"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource AppTextPrimary}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding Loc[EmptyState_Description]}"
+                               FontSize="13"
+                               Foreground="{DynamicResource AppTextSecondary}"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center" />
+                </StackPanel>
+
+                <!-- Profile Cards Grid / Selector -->
+                <Border Background="{DynamicResource AppSurfaceSubtle}"
+                        BorderBrush="{DynamicResource AppBorder}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20"
+                        BoxShadow="0 2 12 0 #22000000">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="{Binding Loc[EmptyState_QuickLaunch]}"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   LetterSpacing="1"
+                                   Foreground="{DynamicResource AppTextMuted}" />
+
+                        <ItemsControl ItemsSource="{Binding Profiles}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vm:TerminalProfileItemViewModel">
+                                    <Button Command="{Binding $parent[dialogs:WelcomeDashboardView].((vm:MainViewModel)DataContext).AddNewTabWithProfileCommand}"
+                                            CommandParameter="{Binding}"
+                                            Classes="profileCardBtn"
+                                            Margin="0,0,12,12"
+                                            Width="200"
+                                            Padding="12,10"
+                                            CornerRadius="8"
+                                            Background="{DynamicResource AppSurfaceBackground}"
+                                            BorderBrush="{DynamicResource AppBorderSubtle}"
+                                            BorderThickness="1"
+                                            HorizontalContentAlignment="Stretch"
+                                            Cursor="Hand">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <Border Grid.Column="0"
+                                                    Background="{DynamicResource AppSurfaceSubtle}"
+                                                    BorderBrush="{DynamicResource AppBorder}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Padding="6,4"
+                                                    MinWidth="36"
+                                                    Margin="0,0,10,0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding IconTag}"
+                                                           FontFamily="Consolas, monospace"
+                                                           FontSize="11"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource AppAccent}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="13"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource AppTextPrimary}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding ExecutablePath}"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource AppTextMuted}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Recently Closed Tabs Card (REQ-TAB-021) -->
+                <Border IsVisible="{Binding HasClosedTabs}"
+                        Background="{DynamicResource AppSurfaceSubtle}"
+                        BorderBrush="{DynamicResource AppBorder}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20"
+                        BoxShadow="0 2 12 0 #22000000">
+                    <StackPanel Spacing="14">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding Loc[ClosedTabs_EmptyStateTitle]}"
+                                       FontSize="11"
+                                       FontWeight="Bold"
+                                       LetterSpacing="1"
+                                       Foreground="{DynamicResource AppTextMuted}"
+                                       VerticalAlignment="Center" />
+                            <Button Grid.Column="1"
+                                    Classes="tabMenuItemBtn"
+                                    Content="{Binding Loc[ClosedTabs_ClearAll]}"
+                                    Command="{Binding ClearClosedTabsCommand}"
+                                    FontSize="10"
+                                    Padding="6,2"
+                                    Foreground="{DynamicResource AppTextDimmed}"
+                                    VerticalAlignment="Center" />
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding ClosedTabs}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vm:ClosedTabItemViewModel">
+                                    <Border Margin="0,0,12,12"
+                                            Width="210"
+                                            Background="{DynamicResource AppSurfaceBackground}"
+                                            BorderBrush="{DynamicResource AppBorderSubtle}"
+                                            BorderThickness="1"
+                                            CornerRadius="8">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding $parent[dialogs:WelcomeDashboardView].((vm:MainViewModel)DataContext).RestoreClosedTabCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Classes="profileCardBtn"
+                                                    Padding="10,8"
+                                                    CornerRadius="8,0,0,8"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    ToolTip.Tip="{Binding $parent[dialogs:WelcomeDashboardView].((vm:MainViewModel)DataContext).Loc[ClosedTabs_RestoreTooltip]}"
+                                                    Cursor="Hand">
+                                                <Grid ColumnDefinitions="Auto, *">
+                                                    <Border Grid.Column="0"
+                                                            Background="{DynamicResource AppSurfaceSubtle}"
+                                                            BorderBrush="{DynamicResource AppBorder}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="4,2"
+                                                            MinWidth="30"
+                                                            Margin="0,0,8,0"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding ShellIconTag}"
+                                                                   FontFamily="Consolas, monospace"
+                                                                   FontSize="10"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{DynamicResource AppAccent}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                                        <TextBlock Text="{Binding Title}"
+                                                                   FontSize="12"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource AppTextPrimary}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding WorkingDirectory}"
+                                                                   FontSize="9"
+                                                                   Foreground="{DynamicResource AppTextMuted}"
+                                                                   TextTrimming="PrefixCharacterEllipsis" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Button>
+                                            <Button Grid.Column="1"
+                                                    Classes="tabCloseBtn"
+                                                    Content="×"
+                                                    Command="{Binding $parent[dialogs:WelcomeDashboardView].((vm:MainViewModel)DataContext).RemoveClosedTabCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip.Tip="{Binding $parent[dialogs:WelcomeDashboardView].((vm:MainViewModel)DataContext).Loc[ClosedTabs_RemoveTooltip]}"
+                                                    Width="22" Height="22"
+                                                    FontSize="11"
+                                                    Padding="0"
+                                                    VerticalAlignment="Center"
+                                                    Margin="0,0,4,0" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Keyboard Shortcut Guide Hint -->
+                <TextBlock Text="{Binding Loc[EmptyState_ShortcutsHint]}"
+                           FontFamily="Consolas, monospace"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppTextMuted}"
+                           HorizontalAlignment="Center"
+                           Opacity="0.8" />
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
