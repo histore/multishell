@@ -313,4 +313,41 @@ public class MainViewModelTests
             }
         }
     }
+
+    [Fact]
+    public void Dispose_UnsubscribesSharedServiceEvents()
+    {
+        // Arrange
+        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        try
+        {
+            var localizationService = new LocalizationService("en", isUserSelection: true);
+            var fontSizeService = new FontSizeService(initialAppLevel: 4, initialTerminalLevel: 4);
+            var vm = new MainViewModel(
+                new ShellProcessService(),
+                new TabStatePersistenceService(tempFile),
+                new MockThemeService(),
+                localizationService,
+                fontSizeService,
+                isSatellite: true);
+
+            // Act
+            vm.Dispose();
+            localizationService.SetLanguage("de", isUserSelection: true);
+            fontSizeService.SetAppFontSizeLevel(6);
+            fontSizeService.SetTerminalFontSizeLevel(7);
+
+            // Assert
+            Assert.Equal("en", vm.CurrentLanguage);
+            Assert.Equal(4, vm.AppFontSizeLevel);
+            Assert.Equal(4, vm.TerminalFontSizeLevel);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
 }

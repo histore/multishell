@@ -97,8 +97,7 @@ public sealed partial class ShellSession
             var args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments}";
             if (_shellType == ShellType.WSL && !string.IsNullOrWhiteSpace(workingDir) && !args.Contains("--cd"))
             {
-                var cleanDir = Path.TrimEndingDirectorySeparator(workingDir);
-                return $"\"{_customExecutable}\" --cd \"{cleanDir}\"{args}";
+                return BuildWslCommandLine(_customExecutable, workingDir, args);
             }
             return $"\"{_customExecutable}\"{args}";
         }
@@ -171,8 +170,7 @@ public sealed partial class ShellSession
 
             if (!string.IsNullOrWhiteSpace(workingDir))
             {
-                var cleanDir = Path.TrimEndingDirectorySeparator(workingDir);
-                return $"\"{exePath}\" --cd \"{cleanDir}\"";
+                return BuildWslCommandLine(exePath, workingDir);
             }
             return $"\"{exePath}\"";
         }
@@ -181,6 +179,29 @@ public sealed partial class ShellSession
                       Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
         if (!File.Exists(cmdPath)) cmdPath = "cmd.exe";
         return $"\"{cmdPath}\" /K \"chcp 65001 >nul\"";
+    }
+
+    internal static string BuildWslCommandLine(string executable, string workingDir, string? extraArgs = null)
+    {
+        var quotedDir = FormatWin32QuotedArgument(Path.TrimEndingDirectorySeparator(workingDir));
+        return $"\"{executable}\" --cd {quotedDir}{extraArgs}";
+    }
+
+    /// <summary>
+    /// Quotes a Win32 command-line argument and doubles trailing backslashes so a drive root
+    /// such as "C:\" does not escape the closing quotation mark.
+    /// </summary>
+    internal static string FormatWin32QuotedArgument(string value)
+    {
+        int trailingBackslashes = 0;
+        for (int i = value.Length - 1; i >= 0 && value[i] == '\\'; i--)
+        {
+            trailingBackslashes++;
+        }
+
+        return trailingBackslashes > 0
+            ? $"\"{value}{new string('\\', trailingBackslashes)}\""
+            : $"\"{value}\"";
     }
 
     private static string BuildEnvironmentBlock(IReadOnlyDictionary<string, string> environmentVariables)

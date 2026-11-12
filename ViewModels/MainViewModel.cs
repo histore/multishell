@@ -30,6 +30,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     private bool _isInitialized;
     private bool _isApplyingLoadedTabs;
     private readonly string? _initialDirectory;
+    private readonly Action<string> _languageChangedHandler;
+    private readonly Action<int> _appFontSizeLevelChangedHandler;
+    private readonly Action<int> _terminalFontSizeLevelChangedHandler;
 
     /// <summary>
     /// Gets or sets whether the application window is currently inactive (unfocused) in the OS.
@@ -266,22 +269,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
             OnPropertyChanged(nameof(HasClosedTabs));
         };
 
-        _localizationService.LanguageChanged += lang =>
+        _languageChangedHandler = lang =>
         {
             CurrentLanguage = lang;
             OnPropertyChanged(nameof(Loc));
             OnPropertyChanged(nameof(AvailableShells));
             OnPropertyChanged(nameof(NewTabTooltip));
         };
+        _localizationService.LanguageChanged += _languageChangedHandler;
 
-        _fontSizeService.AppFontSizeLevelChanged += lvl =>
+        _appFontSizeLevelChangedHandler = lvl =>
         {
             AppFontSizeLevel = lvl;
             AppFontScale = _fontSizeService.AppFontScale;
             TriggerSaveState();
         };
+        _fontSizeService.AppFontSizeLevelChanged += _appFontSizeLevelChangedHandler;
 
-        _fontSizeService.TerminalFontSizeLevelChanged += lvl =>
+        _terminalFontSizeLevelChangedHandler = lvl =>
         {
             TerminalFontSizeLevel = lvl;
             TerminalFontSize = _fontSizeService.TerminalFontSize;
@@ -291,6 +296,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
             }
             TriggerSaveState();
         };
+        _fontSizeService.TerminalFontSizeLevelChanged += _terminalFontSizeLevelChangedHandler;
 
         ReloadProfiles();
         if (!isSatellite)
@@ -317,6 +323,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     {
         if (_isDisposed) return;
         _isDisposed = true;
+
+        _terminalProfileService.ProfilesChanged -= ReloadProfiles;
+        _localizationService.LanguageChanged -= _languageChangedHandler;
+        _fontSizeService.AppFontSizeLevelChanged -= _appFontSizeLevelChangedHandler;
+        _fontSizeService.TerminalFontSizeLevelChanged -= _terminalFontSizeLevelChangedHandler;
 
         var tabsToDispose = Tabs.ToArray();
         foreach (var tab in tabsToDispose)

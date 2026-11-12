@@ -179,5 +179,25 @@ public class PowerShellSessionTests
         Assert.Contains("$lastExit = if ($success) { 0 } else { if ($code -ne $null -and $code -ne 0) { $code } else { 1 } }", decodedScript);
         Assert.Contains("$global:__multishell_last_history_id = $h.Id", decodedScript);
     }
+
+    [Fact]
+    public void BuildWslCommandLine_DriveRootWorkingDirectory_DoublesTrailingBackslash()
+    {
+        // Act
+        var cmdLine = ShellSession.BuildWslCommandLine("wsl.exe", @"C:\");
+
+        // Assert
+        Assert.Equal("\"wsl.exe\" --cd \"C:\\\\\"", cmdLine);
+    }
+
+    [Fact]
+    public void BuildWslCommandLine_SubdirectoryWithTrailingSlash_TrimsSeparator()
+    {
+        // Act
+        var cmdLine = ShellSession.BuildWslCommandLine("wsl.exe", @"C:\projekte\multishell\", " -d Ubuntu");
+
+        // Assert
+        Assert.Equal("\"wsl.exe\" --cd \"C:\\projekte\\multishell\" -d Ubuntu", cmdLine);
+    }
 }
 

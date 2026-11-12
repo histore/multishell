@@ -76,8 +76,7 @@ public partial class TerminalPaneViewModel
         {
             IsExecuting = true;
             _commandStartTime ??= DateTime.UtcNow;
-            ExecutionStatusBadge = "● " + (Tab.Loc != null ? Tab.Loc["Badge_Status_Active"] : "Aktiv");
-            FloatingHudBadge = ExecutionStatusBadge;
+            UpdateExecutionStatusBadge("● ", "Process_Activity_Active", "Active");
         }
 
         _silenceTimer?.Dispose();
@@ -87,8 +86,7 @@ public partial class TerminalPaneViewModel
             Dispatcher.UIThread.Post(() =>
             {
                 if (_isDisposed) return;
-                ExecutionStatusBadge = "○ " + (Tab.Loc != null ? Tab.Loc["Badge_Status_Waiting"] : "Wartet auf Eingabe");
-                FloatingHudBadge = ExecutionStatusBadge;
+                UpdateExecutionStatusBadge("○ ", "Process_Activity_Waiting", "Waiting for input");
             });
         }, null, 1500, Timeout.Infinite);
     }
@@ -132,9 +130,15 @@ public partial class TerminalPaneViewModel
         RunOnUi(() =>
         {
             IsExecuting = true;
-            ExecutionStatusBadge = "● " + (Tab.Loc != null ? Tab.Loc["Badge_Status_Active"] : "Aktiv");
-            FloatingHudBadge = ExecutionStatusBadge;
+            UpdateExecutionStatusBadge("● ", "Process_Activity_Active", "Active");
         });
+    }
+
+    private void UpdateExecutionStatusBadge(string symbol, string locKey, string fallback)
+    {
+        var label = Tab.Loc != null ? Tab.Loc[locKey] : fallback;
+        ExecutionStatusBadge = symbol + label;
+        FloatingHudBadge = ExecutionStatusBadge;
     }
 
     private void OnSessionCommandCompleted(int exitCode)

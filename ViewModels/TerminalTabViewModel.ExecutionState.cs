@@ -110,7 +110,7 @@ public partial class TerminalTabViewModel
     };
 
     /// <summary>
-    /// Short localized text for the terminal status bar (e.g. "Aktiv", "Wartet auf Eingabe", "Bereit").
+    /// Short localized text for the terminal status bar (e.g. "Active", "Waiting for input", "Ready").
     /// </summary>
     public string ProcessActivityText => ExecutionState switch
     {
