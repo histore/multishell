@@ -27,6 +27,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private readonly AnsiStreamProcessor _ansiStreamProcessor = new();
     private readonly StringBuilder _pendingUiFeedBuffer = new();
     private readonly Lock _pendingUiFeedLock = new();
+    private readonly Lock _silenceTimerLock = new();
     private readonly EventHandler<Avalonia.AvaloniaPropertyChangedEventArgs>? _terminalModelPropertyChangedHandler;
     private Timer? _silenceTimer;
     private DateTime? _commandStartTime;
@@ -366,8 +367,18 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         if (_isDisposed) return;
         _isDisposed = true;
 
-        _silenceTimer?.Dispose();
-        _silenceTimer = null;
+        lock (_silenceTimerLock)
+        {
+            _silenceTimer?.Dispose();
+            _silenceTimer = null;
+        }
+
+        lock (_pendingUiFeedLock)
+        {
+            _pendingUiFeedBuffer.Clear();
+            _pendingUiFeedBuffer.Capacity = 0;
+            _isUiFeedScheduled = false;
+        }
 
         if (_terminalModelPropertyChangedHandler != null)
         {

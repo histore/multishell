@@ -199,12 +199,47 @@ public partial class TerminalTabViewModel
     /// </summary>
     public void PulseOutputActivity()
     {
+        if (_isDisposed) return;
+
+        if (Avalonia.Application.Current != null && !Dispatcher.UIThread.CheckAccess())
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!_isDisposed)
+                {
+                    PulseOutputActivityCore();
+                }
+            });
+            return;
+        }
+
+        PulseOutputActivityCore();
+    }
+
+    private void PulseOutputActivityCore()
+    {
         if (ExecutionState != ProcessExecutionState.Running) return;
 
         OutputActivityOpacity = 1.0;
         IsOutputActive = true;
 
         RestartCooldownTimer();
+    }
+
+    internal void StopActivityCooldownTimer()
+    {
+        if (_activityCooldownTimer == null) return;
+
+        if (Avalonia.Application.Current != null && !Dispatcher.UIThread.CheckAccess())
+        {
+            var timer = _activityCooldownTimer;
+            _activityCooldownTimer = null;
+            Dispatcher.UIThread.Post(() => timer.Stop());
+            return;
+        }
+
+        _activityCooldownTimer.Stop();
+        _activityCooldownTimer = null;
     }
 
     private void RestartCooldownTimer()

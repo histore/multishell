@@ -188,20 +188,47 @@ public sealed partial class ShellSession
     }
 
     /// <summary>
-    /// Quotes a Win32 command-line argument and doubles trailing backslashes so a drive root
-    /// such as "C:\" does not escape the closing quotation mark.
+    /// Quotes a Win32 command-line argument according to CommandLineToArgvW escaping rules
+    /// so trailing backslashes (e.g. "C:\") and embedded quotes do not break argument boundaries.
     /// </summary>
     internal static string FormatWin32QuotedArgument(string value)
     {
-        int trailingBackslashes = 0;
-        for (int i = value.Length - 1; i >= 0 && value[i] == '\\'; i--)
+        var sb = new StringBuilder(value.Length + 4);
+        sb.Append('"');
+
+        int backslashCount = 0;
+        foreach (char ch in value)
         {
-            trailingBackslashes++;
+            if (ch == '\\')
+            {
+                backslashCount++;
+                continue;
+            }
+
+            if (ch == '"')
+            {
+                sb.Append('\\', backslashCount * 2 + 1);
+                sb.Append('"');
+                backslashCount = 0;
+                continue;
+            }
+
+            if (backslashCount > 0)
+            {
+                sb.Append('\\', backslashCount);
+                backslashCount = 0;
+            }
+
+            sb.Append(ch);
         }
 
-        return trailingBackslashes > 0
-            ? $"\"{value}{new string('\\', trailingBackslashes)}\""
-            : $"\"{value}\"";
+        if (backslashCount > 0)
+        {
+            sb.Append('\\', backslashCount * 2);
+        }
+
+        sb.Append('"');
+        return sb.ToString();
     }
 
     private static string BuildEnvironmentBlock(IReadOnlyDictionary<string, string> environmentVariables)

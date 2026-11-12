@@ -199,5 +199,15 @@ public class PowerShellSessionTests
         // Assert
         Assert.Equal("\"wsl.exe\" --cd \"C:\\projekte\\multishell\" -d Ubuntu", cmdLine);
     }
+
+    [Fact]
+    public void FormatWin32QuotedArgument_EmbeddedQuotesAndBackslashes_EscapesProperly()
+    {
+        // Act
+        var formatted = ShellSession.FormatWin32QuotedArgument(@"C:\dir\" + "\"name\"\\");
+
+        // Assert
+        Assert.Equal("\"C:\\dir\\\\\\\"name\\\"\\\\\"", formatted);
+    }
 }
 

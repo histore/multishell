@@ -72,23 +72,41 @@ public partial class TerminalPaneViewModel
 
     private void PulseOutputActivity()
     {
-        if (!IsExecuting)
-        {
-            IsExecuting = true;
-            _commandStartTime ??= DateTime.UtcNow;
-            UpdateExecutionStatusBadge("● ", "Process_Activity_Active", "Active");
-        }
+        if (_isDisposed) return;
 
-        _silenceTimer?.Dispose();
-        _silenceTimer = new Timer(_ =>
+        RunOnUi(() =>
         {
             if (_isDisposed) return;
-            Dispatcher.UIThread.Post(() =>
+            if (!IsExecuting)
             {
-                if (_isDisposed) return;
-                UpdateExecutionStatusBadge("○ ", "Process_Activity_Waiting", "Waiting for input");
-            });
-        }, null, 1500, Timeout.Infinite);
+                IsExecuting = true;
+                _commandStartTime ??= DateTime.UtcNow;
+                UpdateExecutionStatusBadge("● ", "Process_Activity_Active", "Active");
+            }
+        });
+
+        lock (_silenceTimerLock)
+        {
+            if (_isDisposed) return;
+            if (_silenceTimer == null)
+            {
+                _silenceTimer = new Timer(OnSilenceTimerElapsed, null, 1500, Timeout.Infinite);
+            }
+            else
+            {
+                _silenceTimer.Change(1500, Timeout.Infinite);
+            }
+        }
+    }
+
+    private void OnSilenceTimerElapsed(object? _)
+    {
+        if (_isDisposed) return;
+        RunOnUi(() =>
+        {
+            if (_isDisposed) return;
+            UpdateExecutionStatusBadge("○ ", "Process_Activity_Waiting", "Waiting for input");
+        });
     }
 
     private static void RunOnUi(Action action)

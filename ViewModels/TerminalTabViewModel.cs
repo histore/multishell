@@ -414,6 +414,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         FocusTerminalRequested = null;
 
         _session.Dispose();
+        StopActivityCooldownTimer();
 
         if (_panes != null)
         {
