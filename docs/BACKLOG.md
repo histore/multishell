@@ -14,10 +14,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 
 ## Code Quality & Maintainability
 
-### `[BL-QUAL-001]` Replace Broad Silent `catch { }` Blocks with Targeted Handling (Review Item E)
+### `[BL-QUAL-001]` Replace Broad Silent `catch { }` Blocks with Targeted Handling (Review Item E) — **DONE**
 - **Priority**: Low
-- **Context**: Several files (`ShellSession.cs`, `ShellSession.Streams.cs`, `ShellDiscoveryService.cs`, `TerminalProfileService.cs`, `MainWindow.axaml.cs`, `TerminalPaneView.axaml.cs`, etc.) contain bare `catch { }` blocks that swallow all exceptions without diagnostics.
-- **Proposed Action**: Narrow catch clauses to expected exception types (`IOException`, `Win32Exception`, `ObjectDisposedException`, `UnauthorizedAccessException`) and log unexpected failures via `System.Diagnostics.Debug.WriteLine` (or a structured logger).
+- **Status**: `DONE` (narrowed bare catch clauses across `Services/`, `ViewModels/`, and `Views/` to expected exception types with `System.Diagnostics.Debug.WriteLine` diagnostics)
 
 ### `[BL-QUAL-002]` Use `ProcessStartInfo.ArgumentList` in `LinkDetectionHelper.OpenResolvedLocalPath` (Review Item E)
 - **Priority**: Low

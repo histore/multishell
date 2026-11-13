@@ -330,7 +330,10 @@ public partial class MainWindow : Window
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] StorageProvider suggested folder lookup failed: {ex.Message}");
+            }
         }
 
         var results = await topLevel.StorageProvider.OpenFilePickerAsync(options);
@@ -371,7 +374,10 @@ public partial class MainWindow : Window
                     options.SuggestedStartLocation = folder;
                 }
             }
-            catch { }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] StorageProvider suggested folder lookup failed: {ex.Message}");
+            }
         }
 
         var results = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
@@ -410,7 +416,10 @@ public partial class MainWindow : Window
                     options.SuggestedStartLocation = folder;
                 }
             }
-            catch { }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] StorageProvider suggested folder lookup failed: {ex.Message}");
+            }
         }
 
         try
@@ -421,7 +430,10 @@ public partial class MainWindow : Window
                 return results[0].TryGetLocalPath();
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] StorageProvider folder picker failed: {ex.Message}");
+        }
         finally
         {
             FocusActiveTerminal();

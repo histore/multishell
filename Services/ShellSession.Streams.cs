@@ -52,7 +52,10 @@ public sealed partial class ShellSession
                 ProcessOscBufferLocked(data);
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is ArgumentException or DecoderFallbackException or RegexMatchTimeoutException or UriFormatException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ShellSession.CheckForOscSequences] Failed to parse OSC sequence: {ex.Message}");
+        }
     }
 
     private void ProcessOscBufferLocked(ReadOnlySpan<byte> data)
@@ -141,7 +144,10 @@ public sealed partial class ShellSession
                 CommandExecuted?.Invoke(cmd);
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is FormatException or ArgumentException or DecoderFallbackException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ShellSession.TryHandleOsc133EMatch] Invalid Base64 OSC 133;E payload: {ex.Message}");
+        }
     }
 
     private void UpdateDirectory(string path)

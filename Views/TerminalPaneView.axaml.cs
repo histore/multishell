@@ -190,7 +190,10 @@ public partial class TerminalPaneView : UserControl
                 Terminal.ColumnDefinitions[1].Width = new GridLength(0);
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or IndexOutOfRangeException or System.Reflection.TargetInvocationException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TerminalPaneView.ConfigureOverlayScrollBar] Scrollbar layout customization skipped: {ex.Message}");
+        }
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -315,7 +318,10 @@ public partial class TerminalPaneView : UserControl
                 }
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is System.Reflection.TargetInvocationException or FieldAccessException or MethodAccessException or InvalidOperationException or ArgumentException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TerminalPaneView.ApplyTerminalTheme] Palette/cache reflection failed: {ex.Message}");
+        }
 
         Terminal.InvalidateVisual();
         foreach (var child in Terminal.Children)
@@ -331,7 +337,10 @@ public partial class TerminalPaneView : UserControl
                 surface.InvalidateVisual();
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is System.Reflection.TargetInvocationException or FieldAccessException or MethodAccessException or InvalidOperationException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TerminalPaneView.ApplyTerminalTheme] Surface invalidation reflection failed: {ex.Message}");
+        }
     }
 
 

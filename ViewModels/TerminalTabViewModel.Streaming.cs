@@ -34,7 +34,10 @@ public partial class TerminalTabViewModel
             {
                 _session.Send(Encoding.ASCII.GetBytes(response));
             }
-            catch { }
+            catch (Exception ex) when (ex is System.IO.IOException or ObjectDisposedException or InvalidOperationException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[TerminalTabViewModel] OSC color response send ignored: {ex.Message}");
+            }
         });
     }
 
@@ -67,7 +70,10 @@ public partial class TerminalTabViewModel
                 {
                     _session.Send(Encoding.ASCII.GetBytes(response));
                 }
-                catch { }
+                catch (Exception ex) when (ex is System.IO.IOException or ObjectDisposedException or InvalidOperationException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[TerminalTabViewModel] OSC color response send ignored: {ex.Message}");
+                }
             },
             isDarkTheme: IsDarkTerminalTheme);
 
@@ -154,8 +160,9 @@ public partial class TerminalTabViewModel
         {
             chars = Encoding.UTF8.GetChars(bytes);
         }
-        catch
+        catch (Exception ex) when (ex is ArgumentException or DecoderFallbackException)
         {
+            System.Diagnostics.Debug.WriteLine($"[TerminalTabViewModel.TrackInputBuffer] UTF-8 decode failed: {ex.Message}");
             return;
         }
 

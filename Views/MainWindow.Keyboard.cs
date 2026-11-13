@@ -277,7 +277,10 @@ public partial class MainWindow
                     options.SuggestedStartLocation = folder;
                 }
             }
-            catch { }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] StorageProvider suggested folder lookup failed: {ex.Message}");
+            }
         }
 
         try
@@ -325,7 +328,10 @@ public partial class MainWindow
                     options.SuggestedStartLocation = folder;
                 }
             }
-            catch { }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] StorageProvider suggested folder lookup failed: {ex.Message}");
+            }
         }
 
         try

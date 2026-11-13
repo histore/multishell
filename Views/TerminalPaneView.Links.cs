@@ -298,7 +298,10 @@ public partial class TerminalPaneView
                 return !string.IsNullOrEmpty(lineText);
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is System.Reflection.TargetInvocationException or FieldAccessException or MethodAccessException or InvalidOperationException or ArgumentException or IndexOutOfRangeException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TerminalPaneView.TryGetTerminalWordOrLine] Buffer/metrics inspection failed: {ex.Message}");
+        }
 
         return false;
     }
