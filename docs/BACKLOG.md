@@ -22,7 +22,6 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Priority**: Low
 - **Status**: `DONE` (replaced manual string interpolation `Arguments = $"\"{resolvedPath}\""` with `psi.ArgumentList.Add(resolvedPath)`)
 
-### `[BL-QUAL-003]` Consolidate Duplicate Streaming & UI-Feed Logic in Tab/Pane ViewModels (Review Item E)
+### `[BL-QUAL-003]` Consolidate Duplicate Streaming & UI-Feed Logic in Tab/Pane ViewModels (Review Item E) — **DONE**
 - **Priority**: Low
-- **Context**: `TerminalTabViewModel.Streaming.cs` and `TerminalPaneViewModel.Streaming.cs` share very similar UI-feed buffering (`FlushPendingUiFeed`) and dispatcher helpers (`RunOnUi`).
-- **Proposed Action**: Extract a shared helper or coordinator to eliminate duplicated buffering/dispatching code between tab and pane ViewModels.
+- **Status**: `DONE` (extracted shared ANSI streaming, OSC color query dispatch, and batched UI-feed coalescing into `Services/TerminalUiFeedCoordinator.cs`)

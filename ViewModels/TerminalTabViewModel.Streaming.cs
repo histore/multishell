@@ -8,13 +8,13 @@ namespace MultiShell.ViewModels;
 
 public partial class TerminalTabViewModel
 {
-    private readonly AnsiStreamProcessor _ansiStreamProcessor = new();
     private readonly StringBuilder _pendingUiFeedBuffer = new();
-    private readonly Lock _pendingUiFeedLock = new();
     private readonly StringBuilder _inputLineBuffer = new();
     private readonly Lock _inputLineBufferLock = new();
-    private bool _isUiFeedScheduled;
+    private TerminalUiFeedCoordinator? _uiFeedCoordinator;
     private bool _previousWasCr;
+
+    private TerminalUiFeedCoordinator UiFeedCoordinator => _uiFeedCoordinator ??= new TerminalUiFeedCoordinator(_pendingUiFeedBuffer);
 
     /// <summary>
     /// Indicates whether AltGr (Ctrl+Alt modifier) is currently pressed.
@@ -26,20 +26,8 @@ public partial class TerminalTabViewModel
     /// Checks if incoming text from the shell contains terminal color queries (OSC 10 foreground, OSC 11 background)
     /// emitted by TUIs such as Neovim, and responds back to the shell with the active theme RGB colors.
     /// </summary>
-    internal void CheckAndRespondToOscColorQueries(string text)
-    {
-        AnsiStreamProcessor.DispatchOscColorQueries(text, IsDarkTerminalTheme, response =>
-        {
-            try
-            {
-                _session.Send(Encoding.ASCII.GetBytes(response));
-            }
-            catch (Exception ex) when (ex is System.IO.IOException or ObjectDisposedException or InvalidOperationException)
-            {
-                System.Diagnostics.Debug.WriteLine($"[TerminalTabViewModel] OSC color response send ignored: {ex.Message}");
-            }
-        });
-    }
+    internal void CheckAndRespondToOscColorQueries(string text) =>
+        TerminalUiFeedCoordinator.DispatchOscColorQueries(text, IsDarkTerminalTheme, _session);
 
     /// <summary>
     /// Strips unsupported OSC escape sequences (e.g. OSC 8 hyperlinks, OSC 9/133 shell integration)
@@ -61,46 +49,7 @@ public partial class TerminalTabViewModel
         if (_isDisposed || data.IsEmpty) return;
 
         PulseOutputActivity();
-
-        string? textToFeed = _ansiStreamProcessor.ProcessChunk(
-            data.Span,
-            onOscColorResponse: response =>
-            {
-                try
-                {
-                    _session.Send(Encoding.ASCII.GetBytes(response));
-                }
-                catch (Exception ex) when (ex is System.IO.IOException or ObjectDisposedException or InvalidOperationException)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[TerminalTabViewModel] OSC color response send ignored: {ex.Message}");
-                }
-            },
-            isDarkTheme: IsDarkTerminalTheme);
-
-        if (string.IsNullOrEmpty(textToFeed) || _isDisposed) return;
-
-        if (_dispatcherService.CheckAccess())
-        {
-            // Direct synchronous feed when running in unit tests or already on UI thread
-            if (!_isDisposed)
-            {
-                TerminalModel.Feed(textToFeed);
-            }
-        }
-        else
-        {
-            // Coalesce rapid PTY chunks onto the UI thread at Normal priority so background tabs process output reliably without starving (REQ-TERM-011)
-            lock (_pendingUiFeedLock)
-            {
-                if (_isDisposed) return;
-                _pendingUiFeedBuffer.Append(textToFeed);
-                if (!_isUiFeedScheduled)
-                {
-                    _isUiFeedScheduled = true;
-                    _dispatcherService.Post(FlushPendingUiFeed);
-                }
-            }
-        }
+        UiFeedCoordinator.ProcessAndFeed(data.Span, IsDarkTerminalTheme, _session, TerminalModel, _dispatcherService);
     }
 
     /// <summary>
@@ -110,25 +59,7 @@ public partial class TerminalTabViewModel
     internal void FlushPendingUiFeed()
     {
         if (_isDisposed) return;
-        string batchText;
-        lock (_pendingUiFeedLock)
-        {
-            _isUiFeedScheduled = false;
-            if (_isDisposed || _pendingUiFeedBuffer.Length == 0) return;
-            batchText = _pendingUiFeedBuffer.ToString();
-            _pendingUiFeedBuffer.Clear();
-
-            // Prevent StringBuilder from holding huge memory capacity permanently after massive output bursts
-            if (_pendingUiFeedBuffer.Capacity > 65536)
-            {
-                _pendingUiFeedBuffer.Capacity = 4096;
-            }
-        }
-
-        if (!_isDisposed)
-        {
-            TerminalModel.Feed(batchText);
-        }
+        UiFeedCoordinator.Flush(TerminalModel);
     }
 
     private void OnTerminalUserInput(object? sender, ReadOnlyMemory<byte> data)
