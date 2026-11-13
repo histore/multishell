@@ -3,7 +3,6 @@ using System.Text;
 using System.Threading;
 using MultiShell.Models;
 using MultiShell.Services;
-using SvcSystems.UI.Terminal;
 
 namespace MultiShell.ViewModels;
 
@@ -74,7 +73,7 @@ public partial class TerminalTabViewModel
 
         if (string.IsNullOrEmpty(textToFeed) || _isDisposed) return;
 
-        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        if (_dispatcherService.CheckAccess())
         {
             // Direct synchronous feed when running in unit tests or already on UI thread
             if (!_isDisposed)
@@ -92,7 +91,7 @@ public partial class TerminalTabViewModel
                 if (!_isUiFeedScheduled)
                 {
                     _isUiFeedScheduled = true;
-                    Avalonia.Threading.Dispatcher.UIThread.Post(FlushPendingUiFeed, Avalonia.Threading.DispatcherPriority.Normal);
+                    _dispatcherService.Post(FlushPendingUiFeed);
                 }
             }
         }
@@ -126,11 +125,11 @@ public partial class TerminalTabViewModel
         }
     }
 
-    private void OnTerminalUserInput(object? sender, TerminalUserInputEventArgs e)
+    private void OnTerminalUserInput(object? sender, ReadOnlyMemory<byte> data)
     {
-        if (!IsRunning || e.Data.IsEmpty) return;
+        if (!IsRunning || data.IsEmpty) return;
 
-        var bytes = e.Data.ToArray();
+        var bytes = data.ToArray();
 
         // When AltGr (Ctrl+Alt) is active on international keyboards (e.g. AltGr+Q for '@', AltGr+E for '€'),
         // SvcSystems.UI.Terminal misidentifies the key as Ctrl+Q (0x11) / Ctrl+E (0x05) in OnKeyDown.
@@ -246,14 +245,7 @@ public partial class TerminalTabViewModel
 
         if (HasDraftCommand != hasDraft)
         {
-            if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-            {
-                HasDraftCommand = hasDraft;
-            }
-            else
-            {
-                Avalonia.Threading.Dispatcher.UIThread.Post(() => HasDraftCommand = hasDraft);
-            }
+            _dispatcherService.RunOnUi(() => HasDraftCommand = hasDraft);
         }
     }
 
@@ -269,7 +261,7 @@ public partial class TerminalTabViewModel
         UpdateDraftCommandState();
     }
 
-    private void OnTerminalSizeChanged(object? sender, TerminalSizeChangedEventArgs e)
+    private void OnTerminalSizeChanged(object? sender, (int Cols, int Rows) e)
     {
         if (!IsRunning) return;
 

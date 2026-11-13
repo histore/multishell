@@ -358,11 +358,11 @@ public class SplitPaneTreeTests
         session2.SimulateDataReceived("Second Pane Prompt> "u8.ToArray());
 
         // Assert
-        var line2 = pane2.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        var line2 = ((SvcSystems.UI.Terminal.TerminalControlModel)pane2.TerminalModel.NativeModel).Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
         Assert.Equal("Second Pane Prompt>", line2);
 
         // Initial pane should not have received session2's data
-        var line1 = tab.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        var line1 = ((SvcSystems.UI.Terminal.TerminalControlModel)tab.TerminalModel.NativeModel).Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
         Assert.DoesNotContain("Second Pane", line1);
     }
 }

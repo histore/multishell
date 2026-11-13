@@ -386,7 +386,7 @@ public partial class TerminalTabViewModelTests
         session.SimulateDataReceived(Encoding.UTF8.GetBytes(promptText));
 
         // Assert - The text must appear exactly once, not duplicated
-        var line = vm.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        var line = ((SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel).Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
         Assert.Equal("PS C:\\test>", line);
     }
 

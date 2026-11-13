@@ -6,13 +6,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 
 ## Architecture & Clean Layering
 
-### `[BL-ARCH-001]` Decouple ViewModels from Avalonia Framework Types (Review Item D)
+### `[BL-ARCH-001]` Decouple ViewModels from Avalonia Framework Types (Review Item D) — **DONE**
 - **Priority**: Medium
-- **Context**: Per [`ARCHITECTURE.md`](../ARCHITECTURE.md), ViewModels should remain decoupled from UI framework types (`Avalonia.Threading.Dispatcher`, `Avalonia.Media.Immutable`, `Avalonia.AvaloniaPropertyChangedEventArgs`, `SvcSystems.UI.Terminal`).
-- **Current State**: Several ViewModels (`MainViewModel`, `TerminalTabViewModel`, `TerminalPaneViewModel` and their partials) reference `Avalonia.*` and `SvcSystems.UI.Terminal` directly.
-- **Proposed Action**:
-  - Introduce a lightweight `IDispatcherService` abstraction for UI-thread marshaling.
-  - Abstract terminal buffer/model interactions behind a domain/service interface so ViewModels depend only on Models and Service contracts.
+- **Status**: `DONE` (implemented via `IDispatcherService` / `AvaloniaDispatcherService`, `ITerminalModelAdapter` / `AvaloniaTerminalModelAdapter`, `UiFrameworkInfo`, and hex color/font-family string bindings)
 
 ---
 

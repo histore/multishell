@@ -18,8 +18,9 @@ public partial class TerminalTabViewModelTests
         using var vm = new TerminalTabViewModel(session);
 
         // Act - Simulate typing 'Write "llll"' followed by Enter (\r)
-        vm.TerminalModel.Send("Write \"llll\"");
-        vm.TerminalModel.Send(new byte[] { 0x0D });
+        var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel;
+        nativeModel.Send("Write \"llll\"");
+        nativeModel.Send(new byte[] { 0x0D });
 
         // Assert - CommandHistory contains full command with quotes
         Assert.Single(vm.CommandHistory);
@@ -35,8 +36,9 @@ public partial class TerminalTabViewModelTests
         using var vm = new TerminalTabViewModel(session);
 
         // Act - Simulate typing "git status" and pressing Enter (\r)
-        vm.TerminalModel.Send("git status");
-        vm.TerminalModel.Send(new byte[] { 0x0D });
+        var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel;
+        nativeModel.Send("git status");
+        nativeModel.Send(new byte[] { 0x0D });
 
         // Assert - "git status" should be added to CommandHistory
         Assert.Single(vm.CommandHistory);
@@ -52,16 +54,17 @@ public partial class TerminalTabViewModelTests
         using var vm = new TerminalTabViewModel(session);
 
         // Act 1: Type "git abc", Backspace 3 times, type "status", press Enter
-        vm.TerminalModel.Send("git abc");
-        vm.TerminalModel.Send(new byte[] { 0x08, 0x08, 0x08 });
-        vm.TerminalModel.Send("status");
-        vm.TerminalModel.Send(new byte[] { 0x0D });
+        var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel;
+        nativeModel.Send("git abc");
+        nativeModel.Send(new byte[] { 0x08, 0x08, 0x08 });
+        nativeModel.Send("status");
+        nativeModel.Send(new byte[] { 0x0D });
 
         // Act 2: Type "failed_cmd", press Ctrl+C (0x03), type "cls", press Enter
-        vm.TerminalModel.Send("failed_cmd");
-        vm.TerminalModel.Send(new byte[] { 0x03 });
-        vm.TerminalModel.Send("cls");
-        vm.TerminalModel.Send(new byte[] { 0x0D });
+        nativeModel.Send("failed_cmd");
+        nativeModel.Send(new byte[] { 0x03 });
+        nativeModel.Send("cls");
+        nativeModel.Send(new byte[] { 0x0D });
 
         // Assert
         Assert.Equal(2, vm.CommandHistory.Count);
@@ -96,13 +99,14 @@ public partial class TerminalTabViewModelTests
         vm.IsAltGrActive = true;
 
         // Act 1: Simulate TerminalControl.OnKeyDown sending rogue Ctrl+Q (0x11)
-        vm.TerminalModel.Send(new byte[] { 0x11 });
+        var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel;
+        nativeModel.Send(new byte[] { 0x11 });
 
         // Assert 1: The rogue 0x11 is dropped when AltGr is active
         Assert.Empty(session.SentData);
 
         // Act 2: Simulate TerminalControl.OnTextInput sending '@' (0x40)
-        vm.TerminalModel.Send("@");
+        nativeModel.Send("@");
 
         // Assert 2: The printable character '@' is passed through
         Assert.Single(session.SentData);
@@ -117,7 +121,7 @@ public partial class TerminalTabViewModelTests
         using var vm = new TerminalTabViewModel(session);
         var terminal = new SvcSystems.UI.Terminal.TerminalControl
         {
-            Model = vm.TerminalModel
+            Model = (SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel
         };
 
         terminal.RaiseEvent(new Avalonia.Input.KeyEventArgs
@@ -186,8 +190,9 @@ public partial class TerminalTabViewModelTests
         using var vm = new TerminalTabViewModel(session);
 
         // Act 1: AltGr inactive (default) -> ESC (0x1B) and Ctrl+C (0x03) must pass through
-        vm.TerminalModel.Send(new byte[] { 0x1B });
-        vm.TerminalModel.Send(new byte[] { 0x03 });
+        var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel;
+        nativeModel.Send(new byte[] { 0x1B });
+        nativeModel.Send(new byte[] { 0x03 });
 
         Assert.Equal(2, session.SentData.Count);
         Assert.Equal(new byte[] { 0x1B }, session.SentData[0]);
@@ -197,13 +202,13 @@ public partial class TerminalTabViewModelTests
 
         // Act 2: AltGr active -> rogue control chars filtered out
         vm.IsAltGrActive = true;
-        vm.TerminalModel.Send(new byte[] { 0x1B });
-        vm.TerminalModel.Send(new byte[] { 0x03 });
+        nativeModel.Send(new byte[] { 0x1B });
+        nativeModel.Send(new byte[] { 0x03 });
         Assert.Empty(session.SentData);
 
         // Act 3: AltGr reset to inactive -> control chars pass through again
         vm.IsAltGrActive = false;
-        vm.TerminalModel.Send(new byte[] { 0x1B });
+        nativeModel.Send(new byte[] { 0x1B });
         Assert.Single(session.SentData);
         Assert.Equal(new byte[] { 0x1B }, session.SentData[0]);
     }
@@ -217,7 +222,7 @@ public partial class TerminalTabViewModelTests
 
         // Assert
         Assert.NotNull(vm.TerminalFontFamily);
-        Assert.Contains(vm.TerminalFontFamily.FamilyNames, f => f.Contains("FiraCode") || f.Contains("Cascadia") || f.Contains("Consolas"));
+        Assert.True(vm.TerminalFontFamily.Contains("FiraCode") || vm.TerminalFontFamily.Contains("Cascadia") || vm.TerminalFontFamily.Contains("Consolas"));
     }
 
     [Fact]
@@ -441,7 +446,7 @@ public partial class TerminalTabViewModelTests
 
         vm.TerminalModel.Feed("echo https://github.com/histore/multishell\r\n");
 
-        var term = vm.TerminalModel.Terminal;
+        var term = ((SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel).Terminal;
         var buffer = term.GetType().GetProperty("Buffer")?.GetValue(term);
         Assert.NotNull(buffer);
 

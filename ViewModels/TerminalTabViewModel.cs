@@ -5,13 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia.Media;
-using Avalonia.Media.Immutable;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MultiShell.Models;
 using MultiShell.Services;
-using SvcSystems.UI.Terminal;
 
 namespace MultiShell.ViewModels;
 
@@ -25,10 +22,12 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
     private readonly IFuzzySearchService _fuzzySearchService;
     private readonly IPathCommandHistoryService _pathCommandHistoryService;
     private readonly IDirectoryHistoryService _directoryHistoryService;
+    private readonly IDispatcherService _dispatcherService;
+    private readonly ITerminalModelFactory _terminalModelFactory;
     private readonly Lock _commandHistoryLock = new();
     private readonly Lock _directoryHistoryLock = new();
     private readonly Lock _globalHistoryLock = new();
-    private readonly EventHandler<Avalonia.AvaloniaPropertyChangedEventArgs>? _terminalModelPropertyChangedHandler;
+    private readonly EventHandler? _terminalModelSearchStateChangedHandler;
     private string? _pendingCommandDirectory;
     private bool _isDisposed;
 
@@ -153,30 +152,30 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
     };
 
     /// <summary>
-    /// The terminal control model providing ConPTY VT100/ANSI rendering for the UI.
+    /// The terminal model adapter providing ConPTY VT100/ANSI rendering for the UI.
     /// </summary>
-    public TerminalControlModel TerminalModel { get; }
+    public ITerminalModelAdapter TerminalModel { get; }
 
-    private static readonly IBrush DarkTerminalBackground = new SolidColorBrush(Color.Parse("#0E0F15"));
-    private static readonly IBrush LightTerminalBackground = new SolidColorBrush(Color.Parse("#F8F9FC"));
-    private static readonly IBrush DarkTerminalCaret = new SolidColorBrush(Color.Parse("#7AA2F7"));
-    private static readonly IBrush LightTerminalCaret = new SolidColorBrush(Color.Parse("#2563EB"));
+    private const string DarkTerminalBackground = "#0E0F15";
+    private const string LightTerminalBackground = "#F8F9FC";
+    private const string DarkTerminalCaret = "#7AA2F7";
+    private const string LightTerminalCaret = "#2563EB";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ExecutionStatusForeground))]
     private bool _isDarkTerminalTheme = true;
 
     [ObservableProperty]
-    private IBrush _terminalBackgroundBrush = DarkTerminalBackground;
+    private string _terminalBackgroundBrush = DarkTerminalBackground;
 
     [ObservableProperty]
-    private IBrush _terminalCaretBrush = DarkTerminalCaret;
+    private string _terminalCaretBrush = DarkTerminalCaret;
 
     [ObservableProperty]
     private double _terminalFontSize = 14.0;
 
     [ObservableProperty]
-    private FontFamily _terminalFontFamily = new("avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace");
+    private string _terminalFontFamily = "avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace";
 
     /// <summary>
     /// Dynamic localization service for the tab and in-terminal search.
@@ -225,12 +224,16 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         IFuzzySearchService? fuzzySearchService = null,
         IPathCommandHistoryService? pathCommandHistoryService = null,
         IDirectoryHistoryService? directoryHistoryService = null,
-        ILocalizationService? localizationService = null)
+        ILocalizationService? localizationService = null,
+        IDispatcherService? dispatcherService = null,
+        ITerminalModelFactory? terminalModelFactory = null)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _fuzzySearchService = fuzzySearchService ?? new FuzzySearchService();
         _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
         _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
+        _dispatcherService = dispatcherService ?? AvaloniaDispatcherService.Instance;
+        _terminalModelFactory = terminalModelFactory ?? AvaloniaTerminalModelFactory.Instance;
         Loc = localizationService ?? new LocalizationService();
         Loc.PropertyChanged += OnLocalizationPropertyChanged;
         _workingDirectory = session.WorkingDirectory;
@@ -251,28 +254,18 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         _directoryHistoryService.HistoryChanged += OnSharedDirectoryHistoryChanged;
         SyncGlobalHistory();
 
-        TerminalModel = new TerminalControlModel(new TerminalOptions
-        {
-            ReflowOnResize = false,
-        });
+        TerminalModel = _terminalModelFactory.Create();
 
-        _terminalModelPropertyChangedHandler = (s, e) =>
+        _terminalModelSearchStateChangedHandler = (_, _) =>
         {
-            if (e.Property.Name == "SearchResultCount")
-            {
-                SearchResultCount = TerminalModel.SearchResultCount;
-                UpdateSearchMatchSummary();
-            }
-            else if (e.Property.Name == "CurrentSearchResultIndex")
-            {
-                CurrentSearchResultIndex = TerminalModel.CurrentSearchResultIndex;
-                UpdateSearchMatchSummary();
-            }
+            SearchResultCount = TerminalModel.SearchResultCount;
+            CurrentSearchResultIndex = TerminalModel.CurrentSearchResultIndex;
+            UpdateSearchMatchSummary();
         };
-        TerminalModel.PropertyChanged += _terminalModelPropertyChangedHandler;
+        TerminalModel.SearchStateChanged += _terminalModelSearchStateChangedHandler;
 
         Panes = new ReadOnlyObservableCollection<TerminalPaneViewModel>(_panes);
-        var initialPane = new TerminalPaneViewModel(this, session, IsDarkTerminalTheme, TerminalFontSize, TerminalFontFamily, TerminalModel);
+        var initialPane = new TerminalPaneViewModel(this, session, IsDarkTerminalTheme, TerminalFontSize, TerminalFontFamily, TerminalModel, _dispatcherService, _terminalModelFactory);
         InitializeSplitPanes(initialPane);
 
         // Wire PTY output -> terminal rendering, directory tracking & command tracking
@@ -304,9 +297,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
             OnPropertyChanged(nameof(IsRunning));
 
             // Only apply resize if the control has already been measured
-            if (TerminalModel.Terminal.Cols > 1 && TerminalModel.Terminal.Rows > 1)
+            if (TerminalModel.Cols > 1 && TerminalModel.Rows > 1)
             {
-                _session.Resize(TerminalModel.Terminal.Cols, TerminalModel.Terminal.Rows);
+                _session.Resize(TerminalModel.Cols, TerminalModel.Rows);
             }
         }
         catch (Exception ex)
@@ -345,14 +338,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
             DirectoryChanged?.Invoke(this, newDir);
         }
 
-        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            UpdateDir();
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(UpdateDir);
-        }
+        _dispatcherService.RunOnUi(UpdateDir);
     }
     private void OnSessionExited(int exitCode)
     {
@@ -368,14 +354,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
             CloseRequested?.Invoke(this);
         }
 
-        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            HandleExit();
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(HandleExit);
-        }
+        _dispatcherService.RunOnUi(HandleExit);
     }
 
     [RelayCommand]
@@ -399,11 +378,11 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
         TerminalModel.UserInput -= OnTerminalUserInput;
         TerminalModel.SizeChanged -= OnTerminalSizeChanged;
-        TerminalModel.UpdateUI = null;
-        if (_terminalModelPropertyChangedHandler != null)
+        if (_terminalModelSearchStateChangedHandler != null)
         {
-            TerminalModel.PropertyChanged -= _terminalModelPropertyChangedHandler;
+            TerminalModel.SearchStateChanged -= _terminalModelSearchStateChangedHandler;
         }
+        TerminalModel.Dispose();
 
         RequestFolderPickerAsync = null;
         CloseRequested = null;

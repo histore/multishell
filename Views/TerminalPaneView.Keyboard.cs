@@ -103,7 +103,7 @@ public partial class TerminalPaneView
     {
         if (e.Key is not (Key.PageUp or Key.PageDown) || isCtrl) return false;
 
-        var isAltBuffer = vm.TerminalModel.Terminal.IsAlternateBufferActive;
+        var isAltBuffer = vm.TerminalModel.IsAlternateBufferActive;
         if (isAltBuffer || isAlt)
         {
             if (e.Key == Key.PageUp) vm.SendPageUp(alt: isAlt);

@@ -259,7 +259,8 @@ public partial class TerminalPaneView
         charWidth = 0;
         charHeight = 0;
 
-        if (terminal == null || vm?.TerminalModel?.Terminal?.Buffer == null)
+        var nativeModel = vm?.TerminalModel?.NativeModel as SvcSystems.UI.Terminal.TerminalControlModel;
+        if (terminal == null || nativeModel?.Terminal?.Buffer == null)
         {
             return false;
         }
@@ -287,7 +288,7 @@ public partial class TerminalPaneView
 
             if (colIndex < 0 || row < 0) return false;
 
-            var buffer = vm.TerminalModel.Terminal.Buffer;
+            var buffer = nativeModel.Terminal.Buffer;
             var targetRow = buffer.YDisp + row;
 
             if (targetRow >= 0 && targetRow < buffer.Lines.Length)

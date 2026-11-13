@@ -1,8 +1,7 @@
 using System;
-using Avalonia.Media;
-using Avalonia.Media.Immutable;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MultiShell.Services;
 
 namespace MultiShell.ViewModels;
 
@@ -83,14 +82,12 @@ public partial class TerminalTabViewModel
     /// <summary>
     /// Gets whether a user-assigned tab color is active and valid.
     /// </summary>
-    public bool HasTabColor => !string.IsNullOrWhiteSpace(TabColor) && Color.TryParse(TabColor, out _);
+    public bool HasTabColor => UiFrameworkInfo.IsValidHexColor(TabColor);
 
     /// <summary>
-    /// Gets the brush corresponding to the assigned tab color tag.
+    /// Gets the hex color string corresponding to the assigned tab color tag.
     /// </summary>
-    public IBrush? TabColorBrush => HasTabColor && Color.TryParse(TabColor, out var color)
-        ? new ImmutableSolidColorBrush(color)
-        : null;
+    public string? TabColorBrush => HasTabColor ? TabColor!.Trim() : null;
 
     /// <summary>
     /// Initiates inline tab renaming (REQ-TAB-020).
@@ -146,8 +143,8 @@ public partial class TerminalTabViewModel
     [RelayCommand]
     public void SetTabColor(string? colorHex)
     {
-        TabColor = string.IsNullOrWhiteSpace(colorHex) || !Color.TryParse(colorHex.Trim(), out _)
-            ? null
-            : colorHex.Trim();
+        TabColor = UiFrameworkInfo.IsValidHexColor(colorHex)
+            ? colorHex!.Trim()
+            : null;
     }
 }

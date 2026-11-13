@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using MultiShell.Models;
 using MultiShell.Services;
@@ -59,19 +57,11 @@ public partial class TerminalTabViewModel
     {
         // ANSI sequence: \x1b[2J (erase screen), \x1b[3J (erase scrollback), \x1b[H (cursor home)
         const string clearSequence = "\x1b[2J\x1b[3J\x1b[H";
-        if (Application.Current == null || Dispatcher.UIThread.CheckAccess())
+        _dispatcherService.RunOnUi(() =>
         {
             TerminalModel.Feed(clearSequence);
             TerminalModel.ClearSelection();
-        }
-        else
-        {
-            Dispatcher.UIThread.Post(() =>
-            {
-                TerminalModel.Feed(clearSequence);
-                TerminalModel.ClearSelection();
-            });
-        }
+        });
     }
 
     private void OnLocalizationPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -127,14 +117,7 @@ public partial class TerminalTabViewModel
             PathBreadcrumbs = localizedSegments;
         }
 
-        if (Application.Current == null || Dispatcher.UIThread.CheckAccess())
-        {
-            DoUpdate();
-        }
-        else
-        {
-            Dispatcher.UIThread.Post(DoUpdate);
-        }
+        _dispatcherService.RunOnUi(DoUpdate);
     }
 
     /// <summary>

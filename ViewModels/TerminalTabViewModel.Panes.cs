@@ -114,7 +114,9 @@ public partial class TerminalTabViewModel
             newSession,
             IsDarkTerminalTheme,
             TerminalFontSize,
-            TerminalFontFamily);
+            TerminalFontFamily,
+            dispatcherService: _dispatcherService,
+            terminalModelFactory: _terminalModelFactory);
 
         _panes.Add(newPane);
 

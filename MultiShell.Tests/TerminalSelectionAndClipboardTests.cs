@@ -126,13 +126,14 @@ public partial class TerminalSelectionAndClipboardTests
             var view = new TerminalPaneView { DataContext = paneVm };
 
             // Fill with scrollback lines
-            paneVm.TerminalModel.Resize(800, 300, 8, 16);
+            var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)paneVm.TerminalModel.NativeModel;
+            nativeModel.Resize(800, 300, 8, 16);
             for (int i = 0; i < 50; i++)
             {
                 paneVm.TerminalModel.Feed($"Line {i}\r\n");
             }
 
-            var initialYDisp = paneVm.TerminalModel.Terminal.Buffer.YDisp;
+            var initialYDisp = nativeModel.Terminal.Buffer.YDisp;
             Assert.True(initialYDisp > 0, "Buffer should have scrolled down initially");
 
             var onKeyDownMethod = typeof(TerminalPaneView).GetMethod("OnTerminalKeyDown", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -147,7 +148,7 @@ public partial class TerminalSelectionAndClipboardTests
             onKeyDownMethod.Invoke(view, new object[] { view, upArgs });
 
             Assert.True(upArgs.Handled);
-            Assert.True(paneVm.TerminalModel.Terminal.Buffer.YDisp < initialYDisp, "PageUp should scroll buffer up");
+            Assert.True(nativeModel.Terminal.Buffer.YDisp < initialYDisp, "PageUp should scroll buffer up");
 
             // PageDown KeyDown
             var downArgs = new KeyEventArgs
@@ -159,7 +160,7 @@ public partial class TerminalSelectionAndClipboardTests
             onKeyDownMethod.Invoke(view, new object[] { view, downArgs });
 
             Assert.True(downArgs.Handled);
-            Assert.Equal(initialYDisp, paneVm.TerminalModel.Terminal.Buffer.YDisp);
+            Assert.Equal(initialYDisp, nativeModel.Terminal.Buffer.YDisp);
         });
     }
 
@@ -174,8 +175,9 @@ public partial class TerminalSelectionAndClipboardTests
             var view = new TerminalPaneView { DataContext = paneVm };
 
             // Switch to Alternate Buffer (as used by htop, nano, vim, less)
-            paneVm.TerminalModel.Terminal.SwitchToAltBuffer();
-            Assert.True(paneVm.TerminalModel.Terminal.IsAlternateBufferActive);
+            var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)paneVm.TerminalModel.NativeModel;
+            nativeModel.Terminal.SwitchToAltBuffer();
+            Assert.True(paneVm.TerminalModel.IsAlternateBufferActive);
 
             var onKeyDownMethod = typeof(TerminalPaneView).GetMethod("OnTerminalKeyDown", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
@@ -288,8 +290,9 @@ public partial class TerminalSelectionAndClipboardTests
         var paneVm = tabVm.ActivePane!;
 
         // Enable bracketed paste mode (e.g. Copilot CLI \e[?2004h)
-        paneVm.TerminalModel.Terminal.Feed("\x1b[?2004h");
-        Assert.True(paneVm.TerminalModel.Terminal.Engine.BracketedPasteMode);
+        var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)paneVm.TerminalModel.NativeModel;
+        nativeModel.Terminal.Feed("\x1b[?2004h");
+        Assert.True(paneVm.TerminalModel.BracketedPasteMode);
 
         paneVm.PasteText("copilot prompt input");
 
@@ -305,7 +308,7 @@ public partial class TerminalSelectionAndClipboardTests
         var tabVm = new TerminalTabViewModel(session);
         var paneVm = tabVm.ActivePane!;
 
-        Assert.False(paneVm.TerminalModel.Terminal.Engine.BracketedPasteMode);
+        Assert.False(paneVm.TerminalModel.BracketedPasteMode);
 
         paneVm.PasteText("standard powershell paste");
 
@@ -322,14 +325,15 @@ public partial class TerminalSelectionAndClipboardTests
             var session = new TestSession();
             var tabVm = new TerminalTabViewModel(session);
             var paneVm = tabVm.ActivePane!;
-            paneVm.TerminalModel.Terminal.Resize(80, 25);
-            paneVm.TerminalModel.Terminal.Feed("Copilot CLI output prompt text\r\n");
+            var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)paneVm.TerminalModel.NativeModel;
+            nativeModel.Terminal.Resize(80, 25);
+            nativeModel.Terminal.Feed("Copilot CLI output prompt text\r\n");
 
             // Copilot CLI enables mouse tracking mode \e[?1000h
-            paneVm.TerminalModel.Terminal.Feed("\x1b[?1000h");
-            Assert.True(paneVm.TerminalModel.IsMouseModeActive);
+            nativeModel.Terminal.Feed("\x1b[?1000h");
+            Assert.True(nativeModel.IsMouseModeActive);
 
-            var ctrl = new TerminalControl { Model = paneVm.TerminalModel };
+            var ctrl = new TerminalControl { Model = nativeModel };
             ctrl.Width = 800;
             ctrl.Height = 600;
             ctrl.Measure(new Size(800, 600));
@@ -337,7 +341,7 @@ public partial class TerminalSelectionAndClipboardTests
 
             // Suppress mouse tracking mode
             paneVm.SuppressMouseTrackingMode();
-            Assert.False(paneVm.TerminalModel.IsMouseModeActive);
+            Assert.False(nativeModel.IsMouseModeActive);
 
             // Native selection now succeeds on pointer drag
             var pressArgs = new PointerPressedEventArgs(
@@ -387,10 +391,11 @@ public partial class TerminalSelectionAndClipboardTests
             var tabVm = new TerminalTabViewModel(session);
             var paneVm = tabVm.ActivePane!;
 
-            paneVm.TerminalModel.Resize(800, 600, 8, 16);
+            var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)paneVm.TerminalModel.NativeModel;
+            nativeModel.Resize(800, 600, 8, 16);
             paneVm.TerminalModel.Feed("Visit https://github.com/histore/multishell for code\r\n");
 
-            var ctrl = new TerminalControl { Model = paneVm.TerminalModel };
+            var ctrl = new TerminalControl { Model = nativeModel };
             ctrl.FontSize = 14;
 
             // Coordinates on the first line (e.g. x = 80, y = 8)
@@ -422,16 +427,17 @@ public partial class TerminalSelectionAndClipboardTests
             var tabVm = new TerminalTabViewModel(session);
             var paneVm = tabVm.ActivePane!;
 
-            paneVm.TerminalModel.Terminal.Resize(80, 10);
+            var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)paneVm.TerminalModel.NativeModel;
+            nativeModel.Terminal.Resize(80, 10);
             for (int i = 0; i < 30; i++)
             {
-                paneVm.TerminalModel.Terminal.Feed($"Line {i:D2}: output text\r\n");
+                nativeModel.Terminal.Feed($"Line {i:D2}: output text\r\n");
             }
 
-            var ctrl = new TerminalControl { Model = paneVm.TerminalModel };
+            var ctrl = new TerminalControl { Model = nativeModel };
             ctrl.FontSize = 14;
 
-            var buffer = paneVm.TerminalModel.Terminal.Buffer;
+            var buffer = nativeModel.Terminal.Buffer;
             // Scroll to top
             buffer.ScrollToTop();
             Assert.Equal(0, buffer.YDisp);

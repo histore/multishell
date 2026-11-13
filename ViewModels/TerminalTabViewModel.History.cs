@@ -255,14 +255,7 @@ public partial class TerminalTabViewModel
             HistoryChanged?.Invoke(this);
         }
 
-        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            Update();
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
-        }
+        _dispatcherService.RunOnUi(Update);
     }
 
     private void SyncCommandHistoryFromPath()
@@ -292,14 +285,7 @@ public partial class TerminalTabViewModel
             HistoryChanged?.Invoke(this);
         }
 
-        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            Update();
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
-        }
+        _dispatcherService.RunOnUi(Update);
     }
 
     private void OnSessionCommandExecuted(string command)
