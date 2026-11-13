@@ -160,7 +160,9 @@ public class LinkDetectionHelperTests
             Assert.NotNull(capturedPsi);
             Assert.EndsWith("notepad.exe", capturedPsi.FileName, StringComparison.OrdinalIgnoreCase);
             Assert.False(capturedPsi.UseShellExecute);
-            Assert.Contains(fileName, capturedPsi.Arguments);
+            Assert.Equal(string.Empty, capturedPsi.Arguments);
+            var arg = Assert.Single(capturedPsi.ArgumentList);
+            Assert.Contains(fileName, arg);
         }
         finally
         {

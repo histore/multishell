@@ -305,12 +305,13 @@ public static class LinkDetectionHelper
             var notepadPath = Path.Combine(sysDir, "notepad.exe");
             if (!File.Exists(notepadPath)) notepadPath = "notepad.exe";
 
-            return StartProcess(new ProcessStartInfo
+            var psi = new ProcessStartInfo
             {
                 FileName = notepadPath,
-                Arguments = $"\"{resolvedPath}\"",
                 UseShellExecute = false
-            });
+            };
+            psi.ArgumentList.Add(resolvedPath);
+            return StartProcess(psi);
         }
 
         return StartProcess(new ProcessStartInfo
