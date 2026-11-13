@@ -23,7 +23,10 @@ public partial class TerminalPaneViewModel
                 {
                     Session.Send(Encoding.ASCII.GetBytes(response));
                 }
-                catch { }
+                catch (Exception ex) when (ex is System.IO.IOException or ObjectDisposedException or InvalidOperationException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[TerminalPaneViewModel] OSC color response send ignored: {ex.Message}");
+                }
             },
             isDarkTheme: IsDarkTerminalTheme);
 

@@ -39,9 +39,10 @@ public sealed class WindowsToastNotificationService : IToastNotificationService
                     ShowWindowsToast(tabTitle, command, duration, exitCode);
                 }
             }
-            catch
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or IOException or ObjectDisposedException)
             {
                 // Non-critical: failure to display a desktop toast should never crash the terminal
+                System.Diagnostics.Debug.WriteLine($"[WindowsToastNotificationService] Failed to show toast: {ex.Message}");
             }
         });
     }

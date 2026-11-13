@@ -166,7 +166,10 @@ public sealed partial class ShellSession : IShellSession
             _process?.Kill(entireProcessTree: true);
             _process?.WaitForExit(500);
         }
-        catch { }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException or ObjectDisposedException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ShellSession.Dispose] Process termination ignored: {ex.Message}");
+        }
 
         // 3. Close streams and pipe handles cleanly
         _inputStream?.Dispose();

@@ -52,7 +52,10 @@ public class TerminalProfileService : ITerminalProfileService
                 }
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or NotSupportedException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TerminalProfileService.LoadProfilesSynchronously] Failed to load profiles from '{_filePath}': {ex.Message}");
+        }
 
         var defaults = CreateDefaultProfiles();
         ReplaceProfiles(defaults);

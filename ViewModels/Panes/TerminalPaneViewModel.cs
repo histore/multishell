@@ -176,9 +176,10 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
                     Session.Resize(TerminalModel.Cols, TerminalModel.Rows);
                 }
             }
-            catch
+            catch (Exception ex) when (ex is System.IO.IOException or System.ComponentModel.Win32Exception or InvalidOperationException or ObjectDisposedException)
             {
                 // ConPTY startup handled gracefully
+                System.Diagnostics.Debug.WriteLine($"[TerminalPaneViewModel.StartSession] ConPTY startup error: {ex.Message}");
             }
         }
     }
@@ -191,9 +192,10 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
             {
                 Session.Send(input);
             }
-            catch
+            catch (Exception ex) when (ex is System.IO.IOException or ObjectDisposedException or InvalidOperationException)
             {
                 // Ignore send errors during shutdown
+                System.Diagnostics.Debug.WriteLine($"[TerminalPaneViewModel.SendInput] Send error ignored: {ex.Message}");
             }
         }
     }
@@ -206,9 +208,10 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
             {
                 Session.Resize(cols, rows);
             }
-            catch
+            catch (Exception ex) when (ex is System.IO.IOException or System.ComponentModel.Win32Exception or ObjectDisposedException or InvalidOperationException)
             {
                 // Ignore resize failures on closed session
+                System.Diagnostics.Debug.WriteLine($"[TerminalPaneViewModel.Resize] Resize error ignored: {ex.Message}");
             }
         }
     }

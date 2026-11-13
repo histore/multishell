@@ -74,7 +74,10 @@ public class ShellDiscoveryService : IShellDiscoveryService
                 var candidate = Path.Combine(dir.Trim('"', ' '), name);
                 if (File.Exists(candidate)) return candidate;
             }
-            catch { }
+            catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException or UnauthorizedAccessException or IOException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ShellDiscoveryService.ResolveExecutable] Skipping invalid PATH entry '{dir}': {ex.Message}");
+            }
         }
 
         // 2. Standard Windows System paths
