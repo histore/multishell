@@ -407,13 +407,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         }
 
         ClearHistory();
-
-        lock (_pendingUiFeedLock)
-        {
-            _pendingUiFeedBuffer.Clear();
-            _pendingUiFeedBuffer.Capacity = 0;
-            _isUiFeedScheduled = false;
-        }
+        UiFeedCoordinator.Dispose();
     }
 
     /// <summary>

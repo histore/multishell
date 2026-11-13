@@ -21,15 +21,12 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private const string ActiveBorderAccentBrush = "#3B82F6";
     private const string InactiveBorderSubtleBrush = "#252836";
 
-    private readonly AnsiStreamProcessor _ansiStreamProcessor = new();
-    private readonly StringBuilder _pendingUiFeedBuffer = new();
-    private readonly Lock _pendingUiFeedLock = new();
+    private readonly TerminalUiFeedCoordinator _uiFeedCoordinator = new();
     private readonly Lock _silenceTimerLock = new();
     private readonly IDispatcherService _dispatcherService;
     private readonly EventHandler? _terminalModelSearchStateChangedHandler;
     private Timer? _silenceTimer;
     private DateTime? _commandStartTime;
-    private bool _isUiFeedScheduled;
     private bool _isDisposed;
 
     /// <summary>
@@ -299,7 +296,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     public void ClearBuffer()
     {
         const string clearSequence = "\x1b[2J\x1b[3J\x1b[H";
-        RunOnUi(() =>
+        _dispatcherService.RunOnUi(() =>
         {
             TerminalModel.Feed(clearSequence);
             TerminalModel.ClearSelection();
@@ -347,12 +344,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
             _silenceTimer = null;
         }
 
-        lock (_pendingUiFeedLock)
-        {
-            _pendingUiFeedBuffer.Clear();
-            _pendingUiFeedBuffer.Capacity = 0;
-            _isUiFeedScheduled = false;
-        }
+        _uiFeedCoordinator.Dispose();
 
         if (_terminalModelSearchStateChangedHandler != null)
         {

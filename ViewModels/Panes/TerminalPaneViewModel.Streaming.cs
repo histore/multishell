@@ -14,68 +14,14 @@ public partial class TerminalPaneViewModel
         if (_isDisposed || data.IsEmpty) return;
 
         PulseOutputActivity();
-
-        string? textToFeed = _ansiStreamProcessor.ProcessChunk(
-            data.Span,
-            onOscColorResponse: response =>
-            {
-                try
-                {
-                    Session.Send(Encoding.ASCII.GetBytes(response));
-                }
-                catch (Exception ex) when (ex is System.IO.IOException or ObjectDisposedException or InvalidOperationException)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[TerminalPaneViewModel] OSC color response send ignored: {ex.Message}");
-                }
-            },
-            isDarkTheme: IsDarkTerminalTheme);
-
-        if (string.IsNullOrEmpty(textToFeed) || _isDisposed) return;
-
-        if (_dispatcherService.CheckAccess())
-        {
-            if (!_isDisposed)
-            {
-                TerminalModel.Feed(textToFeed);
-            }
-        }
-        else
-        {
-            lock (_pendingUiFeedLock)
-            {
-                if (_isDisposed) return;
-                _pendingUiFeedBuffer.Append(textToFeed);
-                if (!_isUiFeedScheduled)
-                {
-                    _isUiFeedScheduled = true;
-                    _dispatcherService.Post(FlushPendingUiFeed);
-                }
-            }
-        }
-    }
-
-    private void FlushPendingUiFeed()
-    {
-        string text;
-        lock (_pendingUiFeedLock)
-        {
-            _isUiFeedScheduled = false;
-            if (_pendingUiFeedBuffer.Length == 0 || _isDisposed) return;
-            text = _pendingUiFeedBuffer.ToString();
-            _pendingUiFeedBuffer.Clear();
-        }
-
-        if (!_isDisposed)
-        {
-            TerminalModel.Feed(text);
-        }
+        _uiFeedCoordinator.ProcessAndFeed(data.Span, IsDarkTerminalTheme, Session, TerminalModel, _dispatcherService);
     }
 
     private void PulseOutputActivity()
     {
         if (_isDisposed) return;
 
-        RunOnUi(() =>
+        _dispatcherService.RunOnUi(() =>
         {
             if (_isDisposed) return;
             if (!IsExecuting)
@@ -103,18 +49,16 @@ public partial class TerminalPaneViewModel
     private void OnSilenceTimerElapsed(object? _)
     {
         if (_isDisposed) return;
-        RunOnUi(() =>
+        _dispatcherService.RunOnUi(() =>
         {
             if (_isDisposed) return;
             UpdateExecutionStatusBadge("○ ", "Process_Activity_Waiting", "Waiting for input");
         });
     }
 
-    private void RunOnUi(Action action) => _dispatcherService.RunOnUi(action);
-
     private void OnSessionExited(int exitCode)
     {
-        RunOnUi(() =>
+        _dispatcherService.RunOnUi(() =>
         {
             CloseRequested?.Invoke(this);
             Tab.ClosePane(this);
@@ -124,7 +68,7 @@ public partial class TerminalPaneViewModel
     private void OnSessionWorkingDirectoryChanged(string newDir)
     {
         if (_isDisposed) return;
-        RunOnUi(() =>
+        _dispatcherService.RunOnUi(() =>
         {
             WorkingDirectory = newDir;
             Title = newDir;
@@ -136,7 +80,7 @@ public partial class TerminalPaneViewModel
     {
         if (_isDisposed) return;
         _commandStartTime = DateTime.UtcNow;
-        RunOnUi(() =>
+        _dispatcherService.RunOnUi(() =>
         {
             IsExecuting = true;
             UpdateExecutionStatusBadge("● ", "Process_Activity_Active", "Active");
@@ -157,7 +101,7 @@ public partial class TerminalPaneViewModel
         _silenceTimer = null;
         _commandStartTime = null;
 
-        RunOnUi(() =>
+        _dispatcherService.RunOnUi(() =>
         {
             IsExecuting = false;
             ExecutionStatusBadge = null;
