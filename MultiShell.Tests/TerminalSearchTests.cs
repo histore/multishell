@@ -48,7 +48,7 @@ public class TerminalSearchTests
         using var vm = new TerminalTabViewModel(session, localizationService: _loc);
 
         vm.TerminalModel.Feed("line one error: connection failed\r\nline two\r\n");
-        vm.TerminalModel.SelectWordOrExpression(10, 0); // Select a word
+        ((SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel).SelectWordOrExpression(10, 0); // Select a word
         var selectedText = vm.TerminalModel.SelectedText;
 
         vm.OpenSearch();

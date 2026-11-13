@@ -97,14 +97,7 @@ public partial class MainViewModel
             }
         }
 
-        if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            Update();
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
-        }
+        _dispatcherService.RunOnUi(Update);
     }
 
     [RelayCommand]

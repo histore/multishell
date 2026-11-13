@@ -88,7 +88,7 @@ public partial class MainViewModel
         var title = $"{profileVm.IconTag} {nextId}";
         var workingDir = profileVm.WorkingDirectory;
         var session = _shellProcessService.CreateSession(title, workingDir, profileVm.ShellType, profileVm.ExecutablePath, profileVm.Arguments);
-        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
+        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService, dispatcherService: _dispatcherService, terminalModelFactory: _terminalModelFactory);
         tab.Title = title;
         tab.UpdateTheme(_themeService.IsDarkTerminalTheme);
         RegisterTabEvents(tab);
@@ -164,7 +164,7 @@ public partial class MainViewModel
         var (targetDir, customExe, customArgs) = ResolveProfileLaunchParameters(shellType, workingDirectory);
         var session = _shellProcessService.CreateSession(title, targetDir, shellType, customExe, customArgs);
 
-        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
+        var tab = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService, dispatcherService: _dispatcherService, terminalModelFactory: _terminalModelFactory);
         if (workingDirectory == null)
         {
             tab.Title = title;
@@ -301,17 +301,7 @@ public partial class MainViewModel
                 result.Command,
                 result.Duration,
                 result.ExitCode,
-                onActivated: () =>
-                {
-                    if (Avalonia.Application.Current == null || Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-                    {
-                        SelectedTab = tab;
-                    }
-                    else
-                    {
-                        Avalonia.Threading.Dispatcher.UIThread.Post(() => SelectedTab = tab);
-                    }
-                });
+                onActivated: () => _dispatcherService.RunOnUi(() => SelectedTab = tab));
         }
     }
 

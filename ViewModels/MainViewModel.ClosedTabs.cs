@@ -46,7 +46,7 @@ public partial class MainViewModel
 
         _tabCounter++;
         var session = _shellProcessService.CreateSession(closedItem.Title, closedItem.WorkingDirectory, closedItem.ShellType);
-        var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService);
+        var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService, dispatcherService: _dispatcherService, terminalModelFactory: _terminalModelFactory);
         tabVm.RestoreHistory(closedItem.CommandHistory, closedItem.DirectoryHistory);
         tabVm.CustomTitle = closedItem.CustomTitle;
         tabVm.TabColor = closedItem.TabColor;

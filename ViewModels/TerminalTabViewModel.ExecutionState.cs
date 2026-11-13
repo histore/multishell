@@ -1,24 +1,23 @@
 using System;
 using System.Diagnostics;
-using Avalonia.Media;
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MultiShell.Models;
+using MultiShell.Services;
 
 namespace MultiShell.ViewModels;
 
 public partial class TerminalTabViewModel
 {
-    public static readonly IBrush RunningActiveDarkBrush = new SolidColorBrush(Color.Parse("#7DCFFF"));
-    public static readonly IBrush RunningActiveLightBrush = new SolidColorBrush(Color.Parse("#0284C7"));
-    public static readonly IBrush RunningWaitingDarkBrush = new SolidColorBrush(Color.Parse("#FF9E64"));
-    public static readonly IBrush RunningWaitingLightBrush = new SolidColorBrush(Color.Parse("#E65100"));
-    public static readonly IBrush FailedStatusBrush = new SolidColorBrush(Color.Parse("#F7768E"));
-    public static readonly IBrush SuccessStatusBrush = new SolidColorBrush(Color.Parse("#9ECE6A"));
-    public static readonly IBrush IdleStatusBrush = new SolidColorBrush(Color.Parse("#757D96"));
+    public const string RunningActiveDarkBrush = "#7DCFFF";
+    public const string RunningActiveLightBrush = "#0284C7";
+    public const string RunningWaitingDarkBrush = "#FF9E64";
+    public const string RunningWaitingLightBrush = "#E65100";
+    public const string FailedStatusBrush = "#F7768E";
+    public const string SuccessStatusBrush = "#9ECE6A";
+    public const string IdleStatusBrush = "#757D96";
 
     private long _commandStartTimestamp;
-    private DispatcherTimer? _activityCooldownTimer;
+    private IDispatcherTimer? _activityCooldownTimer;
 
     /// <summary>
     /// Configurable threshold duration for identifying long-running commands (default: 10 seconds per REQ-TERM-012).
@@ -96,10 +95,10 @@ public partial class TerminalTabViewModel
     };
 
     /// <summary>
-    /// Foreground brush for the status indicator badge and floating HUD pill.
+    /// Foreground color hex for the status indicator badge and floating HUD pill.
     /// When waiting for input, uses striking theme-aware orange (e.g. #FF9E64 in dark themes, #E65100 in light themes).
     /// </summary>
-    public IBrush ExecutionStatusForeground => ExecutionState switch
+    public string ExecutionStatusForeground => ExecutionState switch
     {
         ProcessExecutionState.Running => IsOutputActive
             ? (IsDarkTerminalTheme ? RunningActiveDarkBrush : RunningActiveLightBrush)
@@ -201,19 +200,13 @@ public partial class TerminalTabViewModel
     {
         if (_isDisposed) return;
 
-        if (Avalonia.Application.Current != null && !Dispatcher.UIThread.CheckAccess())
+        _dispatcherService.RunOnUi(() =>
         {
-            Dispatcher.UIThread.Post(() =>
+            if (!_isDisposed)
             {
-                if (!_isDisposed)
-                {
-                    PulseOutputActivityCore();
-                }
-            });
-            return;
-        }
-
-        PulseOutputActivityCore();
+                PulseOutputActivityCore();
+            }
+        });
     }
 
     private void PulseOutputActivityCore()
@@ -230,38 +223,35 @@ public partial class TerminalTabViewModel
     {
         if (_activityCooldownTimer == null) return;
 
-        if (Avalonia.Application.Current != null && !Dispatcher.UIThread.CheckAccess())
-        {
-            var timer = _activityCooldownTimer;
-            _activityCooldownTimer = null;
-            Dispatcher.UIThread.Post(() => timer.Stop());
-            return;
-        }
-
-        _activityCooldownTimer.Stop();
+        var timer = _activityCooldownTimer;
         _activityCooldownTimer = null;
+        _dispatcherService.RunOnUi(() =>
+        {
+            timer.Stop();
+            timer.Dispose();
+        });
     }
 
     private void RestartCooldownTimer()
     {
-        if (Avalonia.Application.Current == null) return;
+        if (!_dispatcherService.IsAvailable) return;
 
         if (_activityCooldownTimer == null)
         {
-            _activityCooldownTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(1500)
-            };
-            _activityCooldownTimer.Tick += (_, _) =>
-            {
-                _activityCooldownTimer.Stop();
-                if (ExecutionState == ProcessExecutionState.Running)
+            _activityCooldownTimer = _dispatcherService.CreateTimer(
+                TimeSpan.FromMilliseconds(1500),
+                () =>
                 {
-                    OutputActivityOpacity = 1.0;
-                    IsOutputActive = false;
-                }
-            };
+                    _activityCooldownTimer?.Stop();
+                    if (ExecutionState == ProcessExecutionState.Running)
+                    {
+                        OutputActivityOpacity = 1.0;
+                        IsOutputActive = false;
+                    }
+                });
         }
+
+        if (_activityCooldownTimer == null) return;
 
         _activityCooldownTimer.Stop();
         _activityCooldownTimer.Start();

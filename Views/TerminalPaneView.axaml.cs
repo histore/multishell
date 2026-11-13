@@ -80,9 +80,9 @@ public partial class TerminalPaneView : UserControl
             {
                 if (DataContext is TerminalPaneViewModel vm)
                 {
-                    if (vm.TerminalModel.Terminal.Cols > 0 && vm.TerminalModel.Terminal.Rows > 0)
+                    if (vm.TerminalModel.Cols > 0 && vm.TerminalModel.Rows > 0)
                     {
-                        vm.Resize(vm.TerminalModel.Terminal.Cols, vm.TerminalModel.Terminal.Rows);
+                        vm.Resize(vm.TerminalModel.Cols, vm.TerminalModel.Rows);
                     }
                     if (vm.IsActive && !vm.IsSearchOpen)
                     {
@@ -95,9 +95,9 @@ public partial class TerminalPaneView : UserControl
         Terminal.SizeChanged += (_, _) =>
         {
             ConfigureOverlayScrollBar();
-            if (DataContext is TerminalPaneViewModel vm && vm.TerminalModel.Terminal.Cols > 0 && vm.TerminalModel.Terminal.Rows > 0)
+            if (DataContext is TerminalPaneViewModel vm && vm.TerminalModel.Cols > 0 && vm.TerminalModel.Rows > 0)
             {
-                vm.Resize(vm.TerminalModel.Terminal.Cols, vm.TerminalModel.Terminal.Rows);
+                vm.Resize(vm.TerminalModel.Cols, vm.TerminalModel.Rows);
             }
         };
 
@@ -220,7 +220,7 @@ public partial class TerminalPaneView : UserControl
 
     private void AttachViewModel(TerminalPaneViewModel vm)
     {
-        if (ReferenceEquals(_currentVm, vm) && ReferenceEquals(Terminal.Model, vm.TerminalModel))
+        if (ReferenceEquals(_currentVm, vm) && ReferenceEquals(Terminal.Model, vm.TerminalModel.NativeModel))
         {
             return;
         }
@@ -230,7 +230,7 @@ public partial class TerminalPaneView : UserControl
         _currentVm = vm;
         _currentVm.FocusSearchBoxRequested += OnFocusSearchBoxRequested;
         _currentVm.FocusTerminalRequested += OnFocusTerminalRequested;
-        Terminal.Model = vm.TerminalModel;
+        Terminal.Model = vm.TerminalModel.NativeModel as SvcSystems.UI.Terminal.TerminalControlModel;
         ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm);
 
         _propChangedHandler = (_, args) =>
@@ -247,7 +247,7 @@ public partial class TerminalPaneView : UserControl
                 Dispatcher.UIThread.Post(() =>
                 {
                     Terminal.FontSize = vm.TerminalFontSize;
-                    Terminal.FontFamily = vm.TerminalFontFamily;
+                    Terminal.FontFamily = FontFamily.Parse(vm.TerminalFontFamily);
                     ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm);
                 });
             }
@@ -275,7 +275,7 @@ public partial class TerminalPaneView : UserControl
         }
 
         Terminal.Background = palette[0];
-        Terminal.CaretBrush = vm.TerminalCaretBrush;
+        Terminal.CaretBrush = SolidColorBrush.Parse(vm.TerminalCaretBrush);
         Terminal.SelectionBrush = isDark
             ? new SolidColorBrush(Color.FromArgb(120, 122, 162, 247))
             : new SolidColorBrush(Color.FromArgb(120, 25, 118, 210));
@@ -347,7 +347,7 @@ public partial class TerminalPaneView : UserControl
             }
             else if (Terminal.Model == null)
             {
-                Terminal.Model = vm.TerminalModel;
+                Terminal.Model = vm.TerminalModel.NativeModel as SvcSystems.UI.Terminal.TerminalControlModel;
                 ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm);
             }
         }

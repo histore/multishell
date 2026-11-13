@@ -1,8 +1,6 @@
 using System;
 using System.Text;
 using System.Threading;
-using Avalonia;
-using Avalonia.Threading;
 
 namespace MultiShell.ViewModels;
 
@@ -31,7 +29,7 @@ public partial class TerminalPaneViewModel
 
         if (string.IsNullOrEmpty(textToFeed) || _isDisposed) return;
 
-        if (Application.Current == null || Dispatcher.UIThread.CheckAccess())
+        if (_dispatcherService.CheckAccess())
         {
             if (!_isDisposed)
             {
@@ -47,7 +45,7 @@ public partial class TerminalPaneViewModel
                 if (!_isUiFeedScheduled)
                 {
                     _isUiFeedScheduled = true;
-                    Dispatcher.UIThread.Post(FlushPendingUiFeed, DispatcherPriority.Normal);
+                    _dispatcherService.Post(FlushPendingUiFeed);
                 }
             }
         }
@@ -109,17 +107,7 @@ public partial class TerminalPaneViewModel
         });
     }
 
-    private static void RunOnUi(Action action)
-    {
-        if (Application.Current == null || Dispatcher.UIThread.CheckAccess())
-        {
-            action();
-        }
-        else
-        {
-            Dispatcher.UIThread.Post(action);
-        }
-    }
+    private void RunOnUi(Action action) => _dispatcherService.RunOnUi(action);
 
     private void OnSessionExited(int exitCode)
     {

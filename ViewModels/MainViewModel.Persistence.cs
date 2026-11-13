@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Threading;
 using MultiShell.Models;
 
 namespace MultiShell.ViewModels;
@@ -194,7 +192,9 @@ public partial class MainViewModel
             session,
             pathCommandHistoryService: _pathCommandHistoryService,
             directoryHistoryService: _directoryHistoryService,
-            localizationService: _localizationService);
+            localizationService: _localizationService,
+            dispatcherService: _dispatcherService,
+            terminalModelFactory: _terminalModelFactory);
 
         tabVm.RestoreHistory(tabState.CommandHistory, tabState.DirectoryHistory);
         tabVm.CustomTitle = tabState.CustomTitle;
@@ -203,16 +203,12 @@ public partial class MainViewModel
         return tabVm;
     }
 
-    private static Task RunOnUiThreadAsync(Action action)
-    {
-        if (Application.Current == null || Dispatcher.UIThread.CheckAccess())
+    private Task RunOnUiThreadAsync(Action action) =>
+        _dispatcherService.InvokeAsync(() =>
         {
             action();
             return Task.CompletedTask;
-        }
-
-        return Dispatcher.UIThread.InvokeAsync(action).GetTask();
-    }
+        });
 
     private WorkspaceState BuildWorkspaceState()
     {

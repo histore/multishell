@@ -153,7 +153,7 @@ public partial class TerminalTabViewModelTests
         session.SimulateDataReceived(chunk3);
 
         Assert.NotNull(vm.TerminalModel);
-        var terminalText = vm.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        var terminalText = ((SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel).Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
         Assert.Contains("Thinking...", terminalText);
     }
 
@@ -167,7 +167,7 @@ public partial class TerminalTabViewModelTests
         session.SimulateDataReceived(Encoding.UTF8.GetBytes("SUCCESS: "));
         session.SimulateDataReceived(Encoding.UTF8.GetBytes("\x1b[0mAll done\r\n"));
 
-        var line = vm.TerminalModel.Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        var line = ((SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel).Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
         Assert.Contains("SUCCESS: All done", line);
     }
 

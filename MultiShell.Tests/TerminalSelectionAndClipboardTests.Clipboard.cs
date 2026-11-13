@@ -16,10 +16,11 @@ public partial class TerminalSelectionAndClipboardTests
             var tabVm = new TerminalTabViewModel(session);
             var paneVm = tabVm.ActivePane!;
 
-            paneVm.TerminalModel.Resize(800, 600, 8, 16);
+            var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)paneVm.TerminalModel.NativeModel;
+            nativeModel.Resize(800, 600, 8, 16);
             paneVm.TerminalModel.Feed("Selected text to copy\r\n");
 
-            paneVm.TerminalModel.SelectAll();
+            nativeModel.SelectAll();
             Assert.True(paneVm.TerminalModel.HasSelection);
 
             var paneView = new TerminalPaneView

@@ -1,34 +1,32 @@
 using System;
 using System.Text;
 using System.Threading;
-using Avalonia.Media;
-using Avalonia.Media.Immutable;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MultiShell.Models;
 using MultiShell.Services;
-using SvcSystems.UI.Terminal;
 
 namespace MultiShell.ViewModels;
 
 /// <summary>
-/// ViewModel representing an individual terminal viewport (pane) backed by its own shell session and TerminalControl (REQ-UI-006).
+/// ViewModel representing an individual terminal viewport (pane) backed by its own shell session and terminal model adapter (REQ-UI-006).
 /// Multiple panes can be hosted inside a single TerminalTabViewModel via horizontal and vertical splits.
 /// </summary>
 public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
 {
-    private static readonly IBrush DarkTerminalBackground = new SolidColorBrush(Color.Parse("#0E0F15"));
-    private static readonly IBrush LightTerminalBackground = new SolidColorBrush(Color.Parse("#F8F9FC"));
-    private static readonly IBrush DarkTerminalCaret = new SolidColorBrush(Color.Parse("#7AA2F7"));
-    private static readonly IBrush LightTerminalCaret = new SolidColorBrush(Color.Parse("#2563EB"));
-    private static readonly IBrush ActiveBorderAccentBrush = new SolidColorBrush(Color.Parse("#3B82F6"));
-    private static readonly IBrush InactiveBorderSubtleBrush = new SolidColorBrush(Color.Parse("#252836"));
+    private const string DarkTerminalBackground = "#0E0F15";
+    private const string LightTerminalBackground = "#F8F9FC";
+    private const string DarkTerminalCaret = "#7AA2F7";
+    private const string LightTerminalCaret = "#2563EB";
+    private const string ActiveBorderAccentBrush = "#3B82F6";
+    private const string InactiveBorderSubtleBrush = "#252836";
 
     private readonly AnsiStreamProcessor _ansiStreamProcessor = new();
     private readonly StringBuilder _pendingUiFeedBuffer = new();
     private readonly Lock _pendingUiFeedLock = new();
     private readonly Lock _silenceTimerLock = new();
-    private readonly EventHandler<Avalonia.AvaloniaPropertyChangedEventArgs>? _terminalModelPropertyChangedHandler;
+    private readonly IDispatcherService _dispatcherService;
+    private readonly EventHandler? _terminalModelSearchStateChangedHandler;
     private Timer? _silenceTimer;
     private DateTime? _commandStartTime;
     private bool _isUiFeedScheduled;
@@ -50,9 +48,9 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     public IShellSession Session { get; }
 
     /// <summary>
-    /// Gets the native terminal control model for ANSI/VT100 rendering and text selection.
+    /// Gets the abstracted terminal model adapter for ANSI/VT100 rendering and text selection.
     /// </summary>
-    public TerminalControlModel TerminalModel { get; }
+    public ITerminalModelAdapter TerminalModel { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayTitle))]
@@ -71,16 +69,16 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private bool _isDarkTerminalTheme = true;
 
     [ObservableProperty]
-    private IBrush _terminalBackgroundBrush = DarkTerminalBackground;
+    private string _terminalBackgroundBrush = DarkTerminalBackground;
 
     [ObservableProperty]
-    private IBrush _terminalCaretBrush = DarkTerminalCaret;
+    private string _terminalCaretBrush = DarkTerminalCaret;
 
     [ObservableProperty]
     private double _terminalFontSize = 14.0;
 
     [ObservableProperty]
-    private FontFamily _terminalFontFamily = new("avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace");
+    private string _terminalFontFamily = "avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace";
 
     [ObservableProperty]
     private bool _isExecuting;
@@ -113,7 +111,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         ? TerminalTabViewModel.FormatMiddleEllipsis(WorkingDirectory, 24)
         : (!string.IsNullOrWhiteSpace(Title) ? Title : Session.Title);
 
-    public IBrush BorderBrush => IsActive ? ((Tab.HasTabColor && Tab.TabColorBrush != null) ? Tab.TabColorBrush : ActiveBorderAccentBrush) : InactiveBorderSubtleBrush;
+    public string BorderBrush => IsActive ? ((Tab.HasTabColor && Tab.TabColorBrush != null) ? Tab.TabColorBrush : ActiveBorderAccentBrush) : InactiveBorderSubtleBrush;
     public double BorderThickness => IsActive ? 1.5 : 1.0;
 
     public event Action? FocusSearchBoxRequested;
@@ -127,38 +125,32 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         IShellSession session,
         bool isDarkTheme = true,
         double fontSize = 12.0,
-        FontFamily? fontFamily = null,
-        TerminalControlModel? terminalModel = null)
+        string? fontFamily = null,
+        ITerminalModelAdapter? terminalModel = null,
+        IDispatcherService? dispatcherService = null,
+        ITerminalModelFactory? terminalModelFactory = null)
     {
         Tab = tab ?? throw new ArgumentNullException(nameof(tab));
         Session = session ?? throw new ArgumentNullException(nameof(session));
+        _dispatcherService = dispatcherService ?? AvaloniaDispatcherService.Instance;
+        var modelFactory = terminalModelFactory ?? AvaloniaTerminalModelFactory.Instance;
         _workingDirectory = session.WorkingDirectory;
         _title = !string.IsNullOrWhiteSpace(_workingDirectory) ? _workingDirectory : session.Title;
         _isDarkTerminalTheme = isDarkTheme;
         _terminalFontSize = fontSize;
-        if (fontFamily != null) _terminalFontFamily = fontFamily;
+        if (!string.IsNullOrWhiteSpace(fontFamily)) _terminalFontFamily = fontFamily;
 
         UpdateTheme(isDarkTheme);
 
-        TerminalModel = terminalModel ?? new TerminalControlModel(new TerminalOptions
-        {
-            ReflowOnResize = false,
-        });
+        TerminalModel = terminalModel ?? modelFactory.Create();
 
-        _terminalModelPropertyChangedHandler = (s, e) =>
+        _terminalModelSearchStateChangedHandler = (_, _) =>
         {
-            if (e.Property.Name == "SearchResultCount")
-            {
-                SearchResultCount = TerminalModel.SearchResultCount;
-                UpdateSearchMatchSummary();
-            }
-            else if (e.Property.Name == "CurrentSearchResultIndex")
-            {
-                CurrentSearchResultIndex = TerminalModel.CurrentSearchResultIndex;
-                UpdateSearchMatchSummary();
-            }
+            SearchResultCount = TerminalModel.SearchResultCount;
+            CurrentSearchResultIndex = TerminalModel.CurrentSearchResultIndex;
+            UpdateSearchMatchSummary();
         };
-        TerminalModel.PropertyChanged += _terminalModelPropertyChangedHandler;
+        TerminalModel.SearchStateChanged += _terminalModelSearchStateChangedHandler;
         if (!ReferenceEquals(tab.TerminalModel, TerminalModel))
         {
             TerminalModel.SizeChanged += OnTerminalSizeChanged;
@@ -179,9 +171,9 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
             try
             {
                 Session.Start();
-                if (TerminalModel.Terminal.Cols > 0 && TerminalModel.Terminal.Rows > 0)
+                if (TerminalModel.Cols > 0 && TerminalModel.Rows > 0)
                 {
-                    Session.Resize(TerminalModel.Terminal.Cols, TerminalModel.Terminal.Rows);
+                    Session.Resize(TerminalModel.Cols, TerminalModel.Rows);
                 }
             }
             catch
@@ -232,7 +224,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         // In Bracketed Paste Mode (VT 2004h), wrap pasted text with ESC [ 200 ~ and ESC [ 201 ~.
         // This informs the interactive CLI / TUI that the input is a single pasted payload
         // and prevents characters from being dropped or prematurely submitted.
-        if (TerminalModel.Terminal.Engine.BracketedPasteMode)
+        if (TerminalModel.BracketedPasteMode)
         {
             var bracketed = $"\x1b[200~{text}\x1b[201~";
             SendInput(Encoding.UTF8.GetBytes(bracketed));
@@ -247,34 +239,13 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     /// Suppresses VT mouse tracking mode so that terminal pointer interactions (click, double-click, drag)
     /// always perform native text selection instead of sending raw mouse reporting escape sequences.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Safe reflection on terminal engine internal mouse tracker with null-safety.")]
-    public void SuppressMouseTrackingMode()
+    public void SuppressMouseTrackingMode() => TerminalModel.SuppressMouseTracking();
+
+    private void OnTerminalUserInput(object? sender, ReadOnlyMemory<byte> data)
     {
-        try
-        {
-            // Reset DEC private modes for mouse tracking via standard VT sequences (1000, 1002, 1003, 1006)
-            TerminalModel.Terminal.Feed("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l");
-        }
-        catch { }
+        if (!Session.IsRunning || data.IsEmpty) return;
 
-        try
-        {
-            var engine = TerminalModel.Terminal.Engine;
-            var trackerField = engine.GetType().GetField("_mouseTracker", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (trackerField?.GetValue(engine) is object tracker)
-            {
-                var prop = tracker.GetType().GetProperty("TrackingMode");
-                prop?.SetValue(tracker, 0); // MouseTrackingMode.None
-            }
-        }
-        catch { }
-    }
-
-    private void OnTerminalUserInput(object? sender, TerminalUserInputEventArgs e)
-    {
-        if (!Session.IsRunning || e.Data.IsEmpty) return;
-
-        var bytes = e.Data.ToArray();
+        var bytes = data.ToArray();
 
         // When AltGr (Ctrl+Alt) is active on international keyboards (e.g. AltGr+Q for '@', AltGr+E for '€'),
         // SvcSystems.UI.Terminal misidentifies the key as Ctrl+Q (0x11) / Ctrl+E (0x05) in OnKeyDown.
@@ -287,7 +258,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         SendInput(bytes);
     }
 
-    private void OnTerminalSizeChanged(object? sender, TerminalSizeChangedEventArgs e)
+    private void OnTerminalSizeChanged(object? sender, (int Cols, int Rows) e)
     {
         if (e.Cols > 0 && e.Rows > 0)
         {
@@ -380,9 +351,9 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
             _isUiFeedScheduled = false;
         }
 
-        if (_terminalModelPropertyChangedHandler != null)
+        if (_terminalModelSearchStateChangedHandler != null)
         {
-            TerminalModel.PropertyChanged -= _terminalModelPropertyChangedHandler;
+            TerminalModel.SearchStateChanged -= _terminalModelSearchStateChangedHandler;
         }
 
         if (!ReferenceEquals(Tab.TerminalModel, TerminalModel))
@@ -390,6 +361,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
             TerminalModel.SizeChanged -= OnTerminalSizeChanged;
             TerminalModel.UserInput -= OnTerminalUserInput;
             Session.DataReceived -= OnSessionDataReceived;
+            TerminalModel.Dispose();
         }
 
         Session.Exited -= OnSessionExited;

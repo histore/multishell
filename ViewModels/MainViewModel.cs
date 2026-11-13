@@ -25,6 +25,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     private readonly IPathColorCodingService _pathColorCodingService;
     private readonly IToastNotificationService _toastNotificationService;
     private readonly IWindowCoordinatorService _windowCoordinator;
+    private readonly IDispatcherService _dispatcherService;
+    private readonly ITerminalModelFactory _terminalModelFactory;
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
@@ -185,12 +187,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         return "v0.0.1";
     }
 
-    private static string DetermineUiTerminalStack()
-    {
-        var avaloniaVersion = typeof(Avalonia.Application).Assembly.GetName().Version;
-        var versionStr = avaloniaVersion != null ? $"{avaloniaVersion.Major}.{avaloniaVersion.Minor}" : "12.1";
-        return $"Avalonia UI {versionStr} / ConPTY";
-    }
+    private static string DetermineUiTerminalStack() => UiFrameworkInfo.GetUiTerminalStack();
 
     public MainViewModel(string? initialDirectory = null, IWindowCoordinatorService? windowCoordinator = null)
         : this(new ShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), windowCoordinator: windowCoordinator, initialDirectory: initialDirectory)
@@ -221,7 +218,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         IToastNotificationService? toastNotificationService = null,
         IWindowCoordinatorService? windowCoordinator = null,
         string? initialDirectory = null,
-        bool isSatellite = false)
+        bool isSatellite = false,
+        IDispatcherService? dispatcherService = null,
+        ITerminalModelFactory? terminalModelFactory = null)
     {
         _initialDirectory = initialDirectory;
         _shellProcessService = shellProcessService ?? throw new ArgumentNullException(nameof(shellProcessService));
@@ -237,6 +236,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         _pathColorCodingService = pathColorCodingService ?? new PathColorCodingService();
         _toastNotificationService = toastNotificationService ?? new WindowsToastNotificationService(_localizationService);
         _windowCoordinator = windowCoordinator ?? WindowCoordinatorService.Instance;
+        _dispatcherService = dispatcherService ?? AvaloniaDispatcherService.Instance;
+        _terminalModelFactory = terminalModelFactory ?? AvaloniaTerminalModelFactory.Instance;
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;
