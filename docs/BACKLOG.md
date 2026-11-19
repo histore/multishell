@@ -66,9 +66,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `ViewModels/TerminalTabViewModel.ExecutionState.cs`, `ViewModels/Panes/TerminalPaneViewModel.Streaming.cs`, `Services/TerminalUiFeedCoordinator.cs`, `ViewModels/TerminalTabViewModel.cs`
 - **Summary**: (1) `TerminalTabViewModel.OnSessionCommandCompleted` mutates observable properties and stops `_activityCooldownTimer` directly on the PTY background thread; (2) `TerminalPaneViewModel.OnSessionCommandCompleted` disposes `_silenceTimer` outside `_silenceTimerLock` and UI callbacks omit `_isDisposed` re-checks; (3) `TerminalUiFeedCoordinator` uses non-volatile `_isDisposed`, can feed out-of-order when `CheckAccess()` is true while buffered chunks remain, is disposed after `TerminalModel.Dispose()`, and lacks dedicated unit tests.
 
-#### `[BL-HIGH-004]` Fix Event/Visual-Tree Memory Leaks & Broken Re-Attach in Views
+#### `[BL-HIGH-004]` Fix Event/Visual-Tree Memory Leaks & Broken Re-Attach in Views — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (added symmetric `OnAttachedToVisualTree`/`OnDetachedFromVisualTree` re-subscription and tracked split-node `PropertyChanged` cleanup + cache eviction `DataContext = null` in `SplitPaneContainerControl`, plus named VM/tab listener cleanup in `MainWindow` and `HistoryDrawerView`)
 - **Scope**: `Views/SplitPaneContainerControl.cs`, `Views/MainWindow.axaml.cs`, `Views/MainWindow.TabDropAndRename.cs`, `Views/Dialogs/HistoryDrawerView.axaml.cs`
 - **Summary**: (1) `SplitPaneContainerControl` unsubscribes `LayoutChanged` in `OnDetachedFromVisualTree` without re-subscribing in `OnAttachedToVisualTree`; (2) `ConfigureVerticalSplitGrid`/`ConfigureHorizontalSplitGrid` accumulate anonymous `split.PropertyChanged` handlers on every `RebuildVisualTree()`; (3) `CleanupViewCache()` evicts `TerminalPaneView` instances without clearing `DataContext = null`; (4) `MainWindow` and `HistoryDrawerView` do not unsubscribe VM/tab event handlers on detach/close.
 
