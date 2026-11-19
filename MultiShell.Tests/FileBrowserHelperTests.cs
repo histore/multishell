@@ -98,4 +98,33 @@ public class FileBrowserHelperTests
         Assert.NotNull(resolved);
         Assert.Equal(root, resolved);
     }
+
+    [Fact]
+    public void OpenInFileBrowser_WhenFileProvidedOnWindows_ResolvesWindowsExplorerPath()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        var tempFile = Path.GetTempFileName();
+        System.Diagnostics.ProcessStartInfo? capturedPsi = null;
+        FileBrowserHelper.ProcessLauncher = psi =>
+        {
+            capturedPsi = psi;
+            return true;
+        };
+
+        try
+        {
+            var ok = FileBrowserHelper.OpenInFileBrowser(tempFile);
+            Assert.True(ok);
+            Assert.NotNull(capturedPsi);
+            Assert.EndsWith("explorer.exe", capturedPsi!.FileName, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(Environment.GetFolderPath(Environment.SpecialFolder.Windows), capturedPsi.FileName, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains($"/select,{Path.GetFullPath(tempFile)}", capturedPsi.ArgumentList);
+        }
+        finally
+        {
+            FileBrowserHelper.ProcessLauncher = null;
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
 }

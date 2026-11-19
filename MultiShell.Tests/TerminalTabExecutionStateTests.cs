@@ -64,7 +64,7 @@ public class TerminalTabExecutionStateTests
             string command,
             TimeSpan duration,
             int exitCode,
-            Action onActivated)
+            Action? onActivated = null)
         {
             Notifications.Add((tabTitle, command, duration, exitCode));
         }

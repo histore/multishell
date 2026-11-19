@@ -158,9 +158,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/ShellSession.Streams.cs`, `Services/AnsiStreamProcessor.cs`, `Services/LinkDetectionHelper.cs`, `Services/ShellSession.cs`
 - **Summary**: Replace `RegexOptions.Compiled` with NativeAOT-friendly `[GeneratedRegex]`, skip `_oscBuffer.ToString()` / regex scans when chunks contain no `0x1B` byte, and remove dead `_lastExecutedCommand` field.
 
-#### `[BL-LOW-002]` Dispose `Process.Start` Handles & Implement/Remove Ignored Toast `onActivated` Callback
+#### `[BL-LOW-002]` Dispose `Process.Start` Handles & Implement/Remove Ignored Toast `onActivated` Callback — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (disposed `Process.Start` handles in `FileBrowserHelper` and `MainViewModel.OpenGitHubUrl`, resolved `explorer.exe` via `%SystemRoot%`, made `onActivated` optional on `IToastNotificationService` with documented AUMID limitation, and guarded null toast inputs)
 - **Scope**: `Services/FileBrowserHelper.cs`, `ViewModels/MainViewModel.cs`, `Services/WindowsToastNotificationService.cs`
 - **Summary**: Wrap `Process.Start(...)` results in `using` and resolve unqualified `explorer.exe` via `%SystemRoot%`; either wire `onActivated` or simplify `IToastNotificationService` contract.
 

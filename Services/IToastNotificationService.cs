@@ -14,11 +14,11 @@ public interface IToastNotificationService
     /// <param name="command">The command line string executed.</param>
     /// <param name="duration">Total execution duration.</param>
     /// <param name="exitCode">Exit code returned by the command or process.</param>
-    /// <param name="onActivated">Callback invoked when the user clicks or activates the notification.</param>
+    /// <param name="onActivated">Optional callback reserved for platforms/hosts supporting interactive toast activation.</param>
     void ShowProcessCompletionNotification(
         string tabTitle,
         string command,
         TimeSpan duration,
         int exitCode,
-        Action onActivated);
+        Action? onActivated = null);
 }
