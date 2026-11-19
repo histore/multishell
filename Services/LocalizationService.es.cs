@@ -142,6 +142,7 @@ public partial class LocalizationService
         ["Profiles_Field_ShellType"] = "Tipo de emulación de shell",
         ["Profiles_Edit_Title"] = "Editar perfil",
         ["Profiles_Create_Title"] = "Crear nuevo perfil",
+        ["Profiles_Default_CustomName"] = "Terminal personalizado",
 
         // Empty State Welcome Dashboard (REQ-UI-008)
         ["EmptyState_Title"] = "No hay pestañas de terminal activas",

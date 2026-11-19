@@ -142,6 +142,7 @@ public partial class LocalizationService
         ["Profiles_Field_ShellType"] = "Tipo de emulação de shell",
         ["Profiles_Edit_Title"] = "Editar perfil",
         ["Profiles_Create_Title"] = "Criar novo perfil",
+        ["Profiles_Default_CustomName"] = "Terminal personalizado",
 
         // Empty State Welcome Dashboard (REQ-UI-008)
         ["EmptyState_Title"] = "Sem separadores de terminal ativos",

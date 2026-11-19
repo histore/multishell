@@ -37,6 +37,38 @@ public class TerminalProfileService : ITerminalProfileService
         }
 
         LoadProfilesSynchronously();
+
+        if (_localizationService != null)
+        {
+            _localizationService.LanguageChanged += OnLanguageChanged;
+        }
+    }
+
+    private void OnLanguageChanged(string _)
+    {
+        if (_localizationService == null) return;
+
+        bool updated = false;
+        var localizedCmdName = _localizationService["Shell_CMD"];
+        var builtInCmdId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+        lock (_profilesLock)
+        {
+            for (int i = 0; i < _profiles.Count; i++)
+            {
+                var p = _profiles[i];
+                if (p.IsBuiltIn && p.Id == builtInCmdId && !string.Equals(p.Name, localizedCmdName, StringComparison.Ordinal))
+                {
+                    _profiles[i] = p with { Name = localizedCmdName };
+                    updated = true;
+                }
+            }
+        }
+
+        if (updated)
+        {
+            ProfilesChanged?.Invoke();
+        }
     }
 
     private void LoadProfilesSynchronously()

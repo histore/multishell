@@ -120,7 +120,7 @@ public partial class MainViewModel
         IsCreatingNewProfile = true;
         IsEditingProfile = true;
         EditingProfileId = null;
-        EditingProfileName = "Custom Terminal";
+        EditingProfileName = _localizationService["Profiles_Default_CustomName"];
         EditingExecutablePath = "pwsh.exe";
         EditingWorkingDirectory = TerminalProfileService.GetDefaultWorkingDirectory();
         EditingArguments = string.Empty;
