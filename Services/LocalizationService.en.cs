@@ -26,16 +26,8 @@ public partial class LocalizationService
         ["FontSize_Level_5"] = "Large (5)",
         ["FontSize_Level_6"] = "Very Large (6)",
         ["FontSize_Level_7"] = "Huge (7)",
-        ["FontSize_Default_Badge"] = "Standard",
-        ["Lang_German"] = "Deutsch",
-        ["Lang_English"] = "English",
-        ["Lang_French"] = "Français",
-        ["Lang_Spanish"] = "Español",
-        ["Lang_Italian"] = "Italiano",
-        ["Lang_Portuguese"] = "Português",
 
         // Toolbar & Tabs
-        ["Btn_New_Tab_Tooltip"] = "New Tab (Ctrl+Shift+T)",
         ["Btn_New_Tab_With_Shell_Tooltip"] = "New {0} Tab (Ctrl+Shift+T)",
         ["Btn_Select_Shell_Tooltip"] = "Select Terminal Type",
         ["Shell_PowerShell"] = "PowerShell",
@@ -83,8 +75,6 @@ public partial class LocalizationService
         // Help Modal
         ["Help_Modal_Title"] = "Keyboard Shortcuts & Usage",
         ["Help_Section_Navigation"] = "SHORTCUTS",
-        ["Help_Section_Tabs"] = "TAB MANAGEMENT",
-        ["Help_Section_History"] = "HISTORY OVERLAY",
         ["Help_Section_Features"] = "FEATURES",
         ["Help_Close_Button"] = "Close",
         ["Help_Tab_New"] = "Open new PowerShell tab",
@@ -98,7 +88,6 @@ public partial class LocalizationService
         ["Help_Scroll_Shortcuts"] = "Scroll up / down through terminal buffer",
         ["Help_Buffer_Clear"] = "Clear terminal screen and scrollback buffer",
         ["Help_Copy_Paste"] = "Copy / paste text without signal interruption",
-        ["Help_Hist_Toggle"] = "Toggle History Overlay (Navigate with ▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Toggle command history drawer (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Toggle directory history drawer (▲/▼, Enter)",
         ["Help_Hist_Global"] = "Toggle global history drawer (▲/▼, Enter)",
@@ -153,7 +142,6 @@ public partial class LocalizationService
         ["Profiles_Field_ShellType"] = "Shell Emulation Type",
         ["Profiles_Edit_Title"] = "Edit Profile",
         ["Profiles_Create_Title"] = "Create New Profile",
-        ["Profiles_Empty"] = "No profiles configured.",
 
         // Empty State Welcome Dashboard (REQ-UI-008)
         ["EmptyState_Title"] = "No Active Terminal Tabs",
@@ -167,7 +155,6 @@ public partial class LocalizationService
         ["ClosedTabs_RemoveTooltip"] = "Remove from history",
         ["ClosedTabs_ClearAll"] = "Clear History",
         ["ClosedTabs_EmptyStateTitle"] = "Recently Closed Tabs",
-        ["ClosedTabs_EmptyHint"] = "No closed tabs in history",
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Find in terminal...",
@@ -206,11 +193,8 @@ public partial class LocalizationService
         ["Process_Activity_Ready"] = "Ready",
         ["Process_Activity_Success"] = "Success",
         ["Process_Activity_Failed"] = "Failed",
-        ["Process_Status_Running_Tooltip"] = "Command is running...",
         ["Process_Status_Failed_Tooltip"] = "Command failed (Exit code: {0}, Duration: {1:0.1}s)",
         ["Process_Status_Success_Tooltip"] = "Command completed successfully (Duration: {0:0.1}s)",
-        ["Process_Notification_Title_Success"] = "MultiShell - Command Completed",
-        ["Process_Notification_Title_Failed"] = "MultiShell - Command Failed",
 
         // Keyboard Status Bar Indicators
         ["Status_CapsLock_Tooltip"] = "Caps Lock is active",

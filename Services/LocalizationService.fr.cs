@@ -26,16 +26,8 @@ public partial class LocalizationService
         ["FontSize_Level_5"] = "Grand (5)",
         ["FontSize_Level_6"] = "Très grand (6)",
         ["FontSize_Level_7"] = "Énorme (7)",
-        ["FontSize_Default_Badge"] = "Standard",
-        ["Lang_German"] = "Deutsch",
-        ["Lang_English"] = "English",
-        ["Lang_French"] = "Français",
-        ["Lang_Spanish"] = "Español",
-        ["Lang_Italian"] = "Italiano",
-        ["Lang_Portuguese"] = "Português",
 
         // Toolbar & Tabs
-        ["Btn_New_Tab_Tooltip"] = "Nouvel onglet (Ctrl+Maj+T)",
         ["Btn_New_Tab_With_Shell_Tooltip"] = "Nouvel onglet {0} (Ctrl+Maj+T)",
         ["Btn_Select_Shell_Tooltip"] = "Sélectionner le type de terminal",
         ["Shell_PowerShell"] = "PowerShell",
@@ -50,12 +42,12 @@ public partial class LocalizationService
         ["Btn_Tab_Close_Tooltip"] = "Fermer l'onglet (Ctrl+Maj+W)",
 
         // Split Panes (REQ-UI-006)
-        ["Pane_Split_Right"] = "Diviser à droite (Alt+Shift+➔ / V)",
-        ["Pane_Split_Down"] = "Diviser vers le bas (Alt+Shift+⬇ / H)",
-        ["Pane_Zoom"] = "Basculer le zoom (Alt+Shift+Z)",
+        ["Pane_Split_Right"] = "Diviser à droite (Alt+Maj+➔ / V)",
+        ["Pane_Split_Down"] = "Diviser vers le bas (Alt+Maj+⬇ / H)",
+        ["Pane_Zoom"] = "Basculer le zoom (Alt+Maj+Z)",
         ["Pane_Zoomed_Badge"] = "Agrandi",
-        ["Pane_Zoomed_Restore"] = "Clic ou Alt+Shift+Z : restaurer la vue divisée",
-        ["Pane_Close"] = "Fermer le volet (Ctrl+Shift+W)",
+        ["Pane_Zoomed_Restore"] = "Clic ou Alt+Maj+Z : restaurer la vue divisée",
+        ["Pane_Close"] = "Fermer le volet (Ctrl+Maj+W)",
         ["Menu_Pane_SplitRight"] = "Diviser le volet à droite",
         ["Menu_Pane_SplitDown"] = "Diviser le volet vers le bas",
         ["Menu_Pane_ToggleZoom"] = "Basculer le zoom du volet",
@@ -83,8 +75,6 @@ public partial class LocalizationService
         // Help Modal
         ["Help_Modal_Title"] = "Raccourcis clavier & Utilisation",
         ["Help_Section_Navigation"] = "RACCOURCIS",
-        ["Help_Section_Tabs"] = "GESTION DES ONGLETS",
-        ["Help_Section_History"] = "VOLET HISTORIQUE",
         ["Help_Section_Features"] = "FONCTIONNALITÉS",
         ["Help_Close_Button"] = "Fermer",
         ["Help_Tab_New"] = "Ouvrir un nouvel onglet PowerShell",
@@ -98,7 +88,6 @@ public partial class LocalizationService
         ["Help_Scroll_Shortcuts"] = "Défiler vers le haut / bas dans le tampon du terminal",
         ["Help_Buffer_Clear"] = "Effacer l'écran et le tampon de défilement du terminal",
         ["Help_Copy_Paste"] = "Copier / coller le texte sans interruption de signal",
-        ["Help_Hist_Toggle"] = "Afficher/Masquer le volet d'historique (▲/▼, Entrée)",
         ["Help_Hist_Commands"] = "Afficher/Masquer l'historique des commandes (▲/▼, Entrée)",
         ["Help_Hist_Directories"] = "Afficher/Masquer l'historique des répertoires (▲/▼, Entrée)",
         ["Help_Hist_Global"] = "Afficher/Masquer l'historique global (▲/▼, Entrée)",
@@ -153,7 +142,6 @@ public partial class LocalizationService
         ["Profiles_Field_ShellType"] = "Type d'émulation de shell",
         ["Profiles_Edit_Title"] = "Modifier le profil",
         ["Profiles_Create_Title"] = "Créer un nouveau profil",
-        ["Profiles_Empty"] = "Aucun profil configuré.",
 
         // Empty State Welcome Dashboard (REQ-UI-008)
         ["EmptyState_Title"] = "Aucun onglet de terminal actif",
@@ -167,7 +155,6 @@ public partial class LocalizationService
         ["ClosedTabs_RemoveTooltip"] = "Supprimer de l'historique",
         ["ClosedTabs_ClearAll"] = "Effacer l'historique",
         ["ClosedTabs_EmptyStateTitle"] = "Onglets récemment fermés",
-        ["ClosedTabs_EmptyHint"] = "Aucun onglet fermé dans l'historique",
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Rechercher dans le terminal...",
@@ -206,11 +193,8 @@ public partial class LocalizationService
         ["Process_Activity_Ready"] = "Prêt",
         ["Process_Activity_Success"] = "Succès",
         ["Process_Activity_Failed"] = "Échoué",
-        ["Process_Status_Running_Tooltip"] = "La commande s'exécute...",
         ["Process_Status_Failed_Tooltip"] = "La commande a échoué (code de sortie: {0}, durée: {1:0.1}s)",
         ["Process_Status_Success_Tooltip"] = "La commande s'est terminée avec succès (durée: {0:0.1}s)",
-        ["Process_Notification_Title_Success"] = "MultiShell - Commande terminée",
-        ["Process_Notification_Title_Failed"] = "MultiShell - Commande échouée",
 
         // Keyboard Status Bar Indicators
         ["Status_CapsLock_Tooltip"] = "Verrouillage des majuscules activé (Caps Lock)",

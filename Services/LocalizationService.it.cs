@@ -26,16 +26,8 @@ public partial class LocalizationService
         ["FontSize_Level_5"] = "Grande (5)",
         ["FontSize_Level_6"] = "Molto grande (6)",
         ["FontSize_Level_7"] = "Enorme (7)",
-        ["FontSize_Default_Badge"] = "Standard",
-        ["Lang_German"] = "Deutsch",
-        ["Lang_English"] = "English",
-        ["Lang_French"] = "Français",
-        ["Lang_Spanish"] = "Español",
-        ["Lang_Italian"] = "Italiano",
-        ["Lang_Portuguese"] = "Português",
 
         // Toolbar & Tabs
-        ["Btn_New_Tab_Tooltip"] = "Nuova scheda (Ctrl+Shift+T)",
         ["Btn_New_Tab_With_Shell_Tooltip"] = "Nuova scheda {0} (Ctrl+Shift+T)",
         ["Btn_Select_Shell_Tooltip"] = "Seleziona tipo di terminale",
         ["Shell_PowerShell"] = "PowerShell",
@@ -83,8 +75,6 @@ public partial class LocalizationService
         // Help Modal
         ["Help_Modal_Title"] = "Scorciatoie da tastiera & Utilizzo",
         ["Help_Section_Navigation"] = "SCORCIATOIE",
-        ["Help_Section_Tabs"] = "GESTIONE SCHEDE",
-        ["Help_Section_History"] = "PANNELLO CRONOLOGIA",
         ["Help_Section_Features"] = "FUNZIONALITÀ",
         ["Help_Close_Button"] = "Chiudi",
         ["Help_Tab_New"] = "Apri nuova scheda PowerShell",
@@ -98,15 +88,14 @@ public partial class LocalizationService
         ["Help_Scroll_Shortcuts"] = "Scorri in alto / in basso nel buffer del terminale",
         ["Help_Buffer_Clear"] = "Cancella schermo e buffer di scorrimento del terminale",
         ["Help_Copy_Paste"] = "Copia / incolla testo senza interruzione del segnale",
-        ["Help_Hist_Toggle"] = "Attiva pannello cronologia (Naviga con ▲/▼, Invio)",
         ["Help_Hist_Commands"] = "Attiva cronologia comandi (▲/▼, Invio)",
         ["Help_Hist_Directories"] = "Attiva cronologia directory (▲/▼, Invio)",
         ["Help_Hist_Global"] = "Attiva cronologia globale (▲/▼, Invio)",
-        ["Help_Search_Terminal"] = "Apri/chiudi ricerca nel terminale (Ctrl+Maiusc+F / Ctrl+Maiusc+F3, Esc)",
-        ["Help_Pick_File"] = "Seleziona file e inserisci percorso (Ctrl+Maiusc+O)",
-        ["Help_Pick_Folder"] = "Seleziona cartella e inserisci percorso (Ctrl+Maiusc+B)",
-        ["Help_Open_Explorer"] = "Apri esplora file nella cartella corrente (Ctrl+Maiusc+E)",
-        ["Help_Nav_F1"] = "Apri questa finestra di guida (Ctrl+Maiusc+F1)",
+        ["Help_Search_Terminal"] = "Apri/chiudi ricerca nel terminale (Ctrl+Shift+F / Ctrl+Shift+F3, Esc)",
+        ["Help_Pick_File"] = "Seleziona file e inserisci percorso (Ctrl+Shift+O)",
+        ["Help_Pick_Folder"] = "Seleziona cartella e inserisci percorso (Ctrl+Shift+B)",
+        ["Help_Open_Explorer"] = "Apri esplora file nella cartella corrente (Ctrl+Shift+E)",
+        ["Help_Nav_F1"] = "Apri questa finestra di guida (Ctrl+Shift+F1)",
         ["Help_Nav_Esc"] = "Chiudi finestra / dialogo attivo e focalizza il terminale",
         ["Help_Feature_1"] = "• Cronologia scheda: Passa il mouse sul bordo sinistro o premi Ctrl+Shift+H (Comandi) / Ctrl+Shift+L (Directory). Clic sinistro/Invio per inserire, clic destro per eseguire.",
         ["Help_Feature_2"] = "• Trascina & Rilascia: Riordina le schede trascinandole con il tasto sinistro del mouse.",
@@ -153,13 +142,12 @@ public partial class LocalizationService
         ["Profiles_Field_ShellType"] = "Tipo di emulazione shell",
         ["Profiles_Edit_Title"] = "Modifica profilo",
         ["Profiles_Create_Title"] = "Crea nuovo profilo",
-        ["Profiles_Empty"] = "Nessun profilo configurato.",
 
         // Empty State Welcome Dashboard (REQ-UI-008)
         ["EmptyState_Title"] = "Nessuna scheda terminale attiva",
         ["EmptyState_Description"] = "Seleziona un profilo terminale in basso o avvia una nuova sessione con le scorciatoie.",
         ["EmptyState_QuickLaunch"] = "AVVIO RAPIDO",
-        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nuova scheda  |  Ctrl+Maiusc+T Menu profili  |  Ctrl+Maiusc+F1 Guida ]",
+        ["EmptyState_ShortcutsHint"] = "[ Ctrl+T Nuova scheda  |  Ctrl+Shift+T Menu profili  |  Ctrl+Shift+F1 Guida ]",
 
         // Recently Closed Tabs History (REQ-TAB-021)
         ["ClosedTabs_Title"] = "Schede chiuse di recente",
@@ -167,12 +155,11 @@ public partial class LocalizationService
         ["ClosedTabs_RemoveTooltip"] = "Rimuovi dalla cronologia",
         ["ClosedTabs_ClearAll"] = "Cancella cronologia",
         ["ClosedTabs_EmptyStateTitle"] = "Schede chiuse di recente",
-        ["ClosedTabs_EmptyHint"] = "Nessuna scheda chiusa nella cronologia",
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Cerca nel terminale...",
-        ["Search_Terminal_Previous"] = "Corrispondenza precedente (Maiusc+Invio)",
-        ["Search_Terminal_Next"] = "Corrispondenza successiva (Invio / Ctrl+Maiusc+F3)",
+        ["Search_Terminal_Previous"] = "Corrispondenza precedente (Shift+Invio)",
+        ["Search_Terminal_Next"] = "Corrispondenza successiva (Invio / Ctrl+Shift+F3)",
         ["Search_Terminal_Close"] = "Chiudi ricerca (Esc)",
         ["Search_Terminal_NoResults"] = "Nessun risultato",
         ["Search_Terminal_Matches"] = "{0} di {1}",
@@ -206,11 +193,8 @@ public partial class LocalizationService
         ["Process_Activity_Ready"] = "Pronto",
         ["Process_Activity_Success"] = "Completato",
         ["Process_Activity_Failed"] = "Non riuscito",
-        ["Process_Status_Running_Tooltip"] = "Il comando è in esecuzione...",
         ["Process_Status_Failed_Tooltip"] = "Il comando è terminato con errore (codice di uscita: {0}, durata: {1:0.1}s)",
         ["Process_Status_Success_Tooltip"] = "Il comando è stato completato con successo (durata: {0:0.1}s)",
-        ["Process_Notification_Title_Success"] = "MultiShell - Comando completato",
-        ["Process_Notification_Title_Failed"] = "MultiShell - Comando non riuscito",
 
         // Keyboard Status Bar Indicators
         ["Status_CapsLock_Tooltip"] = "Blocco maiuscole attivo (Caps Lock)",

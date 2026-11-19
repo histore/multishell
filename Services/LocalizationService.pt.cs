@@ -26,16 +26,8 @@ public partial class LocalizationService
         ["FontSize_Level_5"] = "Grande (5)",
         ["FontSize_Level_6"] = "Muito grande (6)",
         ["FontSize_Level_7"] = "Enorme (7)",
-        ["FontSize_Default_Badge"] = "Padrão",
-        ["Lang_German"] = "Deutsch",
-        ["Lang_English"] = "English",
-        ["Lang_French"] = "Français",
-        ["Lang_Spanish"] = "Español",
-        ["Lang_Italian"] = "Italiano",
-        ["Lang_Portuguese"] = "Português",
 
         // Toolbar & Tabs
-        ["Btn_New_Tab_Tooltip"] = "Novo separador (Ctrl+Shift+T)",
         ["Btn_New_Tab_With_Shell_Tooltip"] = "Novo separador {0} (Ctrl+Shift+T)",
         ["Btn_Select_Shell_Tooltip"] = "Selecionar tipo de terminal",
         ["Shell_PowerShell"] = "PowerShell",
@@ -83,8 +75,6 @@ public partial class LocalizationService
         // Help Modal
         ["Help_Modal_Title"] = "Atalhos de teclado & Utilização",
         ["Help_Section_Navigation"] = "ATALHOS",
-        ["Help_Section_Tabs"] = "GESTÃO DE SEPARADORES",
-        ["Help_Section_History"] = "PAINEL DE HISTÓRICO",
         ["Help_Section_Features"] = "FUNCIONALIDADES",
         ["Help_Close_Button"] = "Fechar",
         ["Help_Tab_New"] = "Abrir novo separador PowerShell",
@@ -98,7 +88,6 @@ public partial class LocalizationService
         ["Help_Scroll_Shortcuts"] = "Deslocar para cima / para baixo no buffer do terminal",
         ["Help_Buffer_Clear"] = "Limpar ecrã e buffer de deslocamento do terminal",
         ["Help_Copy_Paste"] = "Copiar / colar texto sem interrupção de sinal",
-        ["Help_Hist_Toggle"] = "Alternar painel de histórico (Navegar com ▲/▼, Enter)",
         ["Help_Hist_Commands"] = "Alternar histórico de comandos (▲/▼, Enter)",
         ["Help_Hist_Directories"] = "Alternar histórico de diretórios (▲/▼, Enter)",
         ["Help_Hist_Global"] = "Alternar histórico global (▲/▼, Enter)",
@@ -153,7 +142,6 @@ public partial class LocalizationService
         ["Profiles_Field_ShellType"] = "Tipo de emulação de shell",
         ["Profiles_Edit_Title"] = "Editar perfil",
         ["Profiles_Create_Title"] = "Criar novo perfil",
-        ["Profiles_Empty"] = "Nenhum perfil configurado.",
 
         // Empty State Welcome Dashboard (REQ-UI-008)
         ["EmptyState_Title"] = "Sem separadores de terminal ativos",
@@ -167,7 +155,6 @@ public partial class LocalizationService
         ["ClosedTabs_RemoveTooltip"] = "Remover do histórico",
         ["ClosedTabs_ClearAll"] = "Limpar histórico",
         ["ClosedTabs_EmptyStateTitle"] = "Separadores fechados recentemente",
-        ["ClosedTabs_EmptyHint"] = "Nenhum separador fechado no histórico",
 
         // In-Terminal Search (REQ-TERM-006)
         ["Search_Terminal_Watermark"] = "Localizar no terminal...",
@@ -206,11 +193,8 @@ public partial class LocalizationService
         ["Process_Activity_Ready"] = "Pronto",
         ["Process_Activity_Success"] = "Sucesso",
         ["Process_Activity_Failed"] = "Falhou",
-        ["Process_Status_Running_Tooltip"] = "O comando está em execução...",
         ["Process_Status_Failed_Tooltip"] = "O comando terminou com erro (código de saída: {0}, duração: {1:0.1}s)",
         ["Process_Status_Success_Tooltip"] = "O comando foi concluído com sucesso (duração: {0:0.1}s)",
-        ["Process_Notification_Title_Success"] = "MultiShell - Comando concluído",
-        ["Process_Notification_Title_Failed"] = "MultiShell - Comando falhou",
 
         // Keyboard Status Bar Indicators
         ["Status_CapsLock_Tooltip"] = "Bloqueio de maiúsculas ativo (Caps Lock)",
