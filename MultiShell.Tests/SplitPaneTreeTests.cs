@@ -451,4 +451,34 @@ public class SplitPaneTreeTests
         Assert.Contains("Pane1 Retained Text", line1);
         Assert.DoesNotContain("Pane2 Cleared Text", line2);
     }
+
+    [Fact]
+    public void SetActivePane_SynchronizesInTerminalSearchStateWithFocusedPane()
+    {
+        var session1 = new TestSession();
+        var session2 = new TestSession();
+        using var tab = new TerminalTabViewModel(session1);
+        tab.SessionFactory = (_, _) => session2;
+
+        var pane1 = tab.Panes[0];
+        var pane2 = tab.SplitActivePane(PaneSplitDirection.Vertical);
+
+        // Open search on pane2
+        tab.OpenSearch();
+        tab.SearchQuery = "error";
+        Assert.True(pane2.IsSearchOpen);
+        Assert.True(tab.IsSearchOpen);
+        Assert.Equal("error", tab.SearchQuery);
+
+        // Switch focus to pane1 (where search is closed) -> tab search state must reflect pane1
+        tab.SetActivePane(pane1);
+        Assert.False(pane1.IsSearchOpen);
+        Assert.False(tab.IsSearchOpen);
+        Assert.Equal(string.Empty, tab.SearchQuery);
+
+        // Switch focus back to pane2 -> tab search state must reflect pane2's open search
+        tab.SetActivePane(pane2);
+        Assert.True(tab.IsSearchOpen);
+        Assert.Equal("error", tab.SearchQuery);
+    }
 }
