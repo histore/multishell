@@ -283,7 +283,7 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Handles user interaction on a status bar path breadcrumb (REQ-TERM-013).
+    /// Handles user interaction on a status bar path breadcrumb (REQ-UI-010).
     /// </summary>
     [RelayCommand]
     public async Task HandleBreadcrumbClickAsync(PathBreadcrumbSegment? segment)

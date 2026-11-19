@@ -14,7 +14,7 @@ The Workspace State Persistence module provides reliable, atomic serialization a
     * `WorkingDirectory`: Working directory path at the moment of persistence.
     * `CommandHistory`: List of recent commands (retained for backward compatibility).
     * `DirectoryHistory`: List of visited directories.
-    * `ShellType`: Shell executable type (`PowerShell`, `WindowsPowerShell`, `Cmd`, `Wsl`, `NuShell`).
+    * `ShellType`: Shell executable type (`PowerShell`, `NuShell`, `WSL`, `CMD`).
 * **`WindowWorkspaceState`**:
   * Immutable record capturing per-window snapshot (`WindowNumber`, `Tabs`, `SelectedIndex`).
 * **`WorkspaceState`**:
@@ -44,11 +44,10 @@ The Workspace State Persistence module provides reliable, atomic serialization a
 
 ## 4. Resilience & Atomic Swap Strategy
 To prevent data corruption caused by application crash or power interruption during write operations:
-1. Data is serialized into memory.
-2. Written to a temporary file in the target directory (`tabs_state.json.tmp`).
-3. Flushed to disk with `FileStream.Flush(flushToDisk: true)`.
-4. Atomically moved or replaced over `tabs_state.json` via `File.Move(..., overwrite: true)` or `File.Replace(...)`.
-5. If deserialization fails (e.g. invalid JSON from an external edit), the service logs a warning, backs up the corrupt file as `.corrupt`, and safely returns an empty workspace.
+1. Data is serialized into memory using `MultiShellJsonSerializerContext`.
+2. Written via `AtomicFileHelper` to a GUID-unique temporary file in the target directory (`{filePath}.{Guid.NewGuid():N}.tmp`).
+3. Atomically moved over `tabs_state.json` via `File.Move(tempPath, filePath, overwrite: true)` with a `finally` block cleaning up any leftover `.tmp` file.
+4. If deserialization fails (e.g. invalid JSON from an external edit), `TabStatePersistenceService` logs a diagnostic message and safely returns `null` so the application boots with a clean default workspace.
 
 ## 5. Theme & Settings Lifecycle
 * **Hydration on Startup**:

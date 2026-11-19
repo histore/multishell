@@ -298,9 +298,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `ViewModels/MainViewModel.Profiles.cs`, `Services/TerminalProfileService.cs`, `Services/LocalizationService.*.cs`
 - **Summary**: Replace hardcoded `"Custom Terminal"` in `MainViewModel.StartNewProfile()` with a localized resource key across all 6 languages and refresh unmodified built-in profile display names when `LanguageChanged` fires.
 
-#### `[BL-MED-020]` (`REV2-MED-011`) Fail CI on Vulnerable NuGet Packages & Synchronize Architecture/Requirements Module Docs
+#### `[BL-MED-020]` (`REV2-MED-011`) Fail CI on Vulnerable NuGet Packages & Synchronize Architecture/Requirements Module Docs — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `.github/workflows/ci.yml` to fail on vulnerable NuGet package output, enabled `NuGetAudit` in `MultiShell.Tests.csproj`, and synchronized `docs/architecture/modules/*.md`, `docs/requirements/modules/*.md`, `MainViewModel.Tabs.cs`, and `README.md` with current code and test file names)
 - **Scope**: `.github/workflows/ci.yml`, `MultiShell.Tests/MultiShell.Tests.csproj`, `docs/architecture/modules/*.md`, `docs/requirements/modules/*.md`, `README.md`
 - **Summary**: Fail the CI security audit step when `dotnet list package --vulnerable` outputs vulnerable packages, enable `NuGetAudit` in `MultiShell.Tests.csproj`, and align module architecture docs, requirements traceability test paths/ACs, and `README.md` with the current implementation.
 

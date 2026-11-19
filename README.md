@@ -18,7 +18,7 @@
 | 🪟 **Terminal Split Panes (Horizontal & Vertical)** | Split any tab into horizontal or vertical sub-panes with draggable splitters and independent, persistent PTY sessions. |
 | 🔀 **Tab Switcher Overlay with Process Status** | Centered visual tab switcher (`Ctrl+Tab`) with real-time process execution badges (Running `●`, Waiting for Input `○`, Exit Codes, Output Activity Pulse) and hover close buttons. |
 | 🎨 **Independent Dual-Theme Engine** | Switch **App UI** (Dark / Light) and **Terminal Shell** (Dark / Light) completely independently in the Settings menu (`⚙ ▾`). |
-| 🔤 **7-Level Font Scaling & Zoom** | 7 granular font sizes (10pt to 22pt, 14pt default) configurable via settings or keyboard shortcuts (`Ctrl++` / `Ctrl+-` / `Ctrl+0`). |
+| 🔤 **7-Level Font Scaling & Zoom** | 7 granular font sizes (10pt to 21pt, 14pt default) configurable via settings or keyboard shortcuts (`Ctrl++` / `Ctrl+-` / `Ctrl+0`). |
 | 🔍 **In-Terminal Buffer Search** | Search through terminal output and scrollback history (`Ctrl+Shift+F`) with match highlighting, case sensitivity, regex support, and `Ctrl+Shift+F3` navigation. |
 | 📜 **Fuzzy History & Directory Drawer** | Centered / slide-out drawer (`Ctrl+Shift+H` for Commands, `Ctrl+Shift+L` for Directories) with subsequence fuzzy matching, MRU recency, and instant execution. |
 | 🌈 **Padovan Path Color Stripes** | Deterministic folder-depth color coding along tab headers with Padovan-sequence widths for immediate visual workspace orientation. |
@@ -128,7 +128,7 @@ dotnet run
 | `Ctrl + Shift + B` | Open folder picker to paste directory path into terminal |
 | `Ctrl + +` / `Ctrl + -` / `Ctrl + 0` | Increase, decrease, or reset terminal font size |
 | `Ctrl + Enter` / `Shift + Enter` | Insert newline (`\n`) without executing command (multi-line scripts) |
-| `F1` | Open Help & Keyboard Shortcuts guide |
+| `Ctrl + Shift + F1` | Open Help & Keyboard Shortcuts guide |
 | `Escape` | Close active dialog / drawer / search overlay and focus terminal |
 
 ---

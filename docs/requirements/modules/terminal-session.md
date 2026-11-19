@@ -55,7 +55,7 @@ This document defines the functional and non-functional requirements specific to
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/terminal-session.md`
-- **Test Suite**: `MultiShell.Tests/PowerShellProcessServiceTests.cs`
+- **Test Suite**: `MultiShell.Tests/PowerShellSessionTests.cs`
 
 ---
 
@@ -77,7 +77,7 @@ This document defines the functional and non-functional requirements specific to
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/terminal-session.md`
-- **Test Suite**: `MultiShell.Tests/PowerShellProcessServiceTests.cs`
+- **Test Suite**: `MultiShell.Tests/PowerShellSessionTests.cs`
 
 ---
 
@@ -311,7 +311,7 @@ This document defines the functional and non-functional requirements specific to
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/terminal-session.md`
-- **Test Suite**: `MultiShell.Tests/SingleInstanceAndStartupTests.cs`
+- **Test Suite**: `MultiShell.Tests/SingleInstanceServiceTests.cs`, `MultiShell.Tests/StartupPathResolverTests.cs`
 
 ---
 
@@ -348,7 +348,7 @@ This document defines the functional and non-functional requirements specific to
 #### Acceptance Criteria (Given-When-Then)
 - [x] **AC-1**: **Given** a command runs longer than a configurable threshold (default: 10 seconds), **When** the process finishes while MultiShell or that tab is inactive, **Then** a native Windows toast notification displays the command name, duration, and exit status code.
 - [x] **AC-2**: **When** the tab is in the background within the active window, **Then** a visual completion indicator (badge/accent glow) highlights on the tab header until selected.
-- [x] **AC-3**: **When** clicking the desktop notification, **Then** MultiShell brings itself to the foreground and focuses the notifying tab.
+- [x] **AC-3**: `IToastNotificationService` exposes an optional `onActivated` callback contract for foregrounding and focusing the notifying tab when COM AUMID toast activation is registered.
 - [x] **AC-4**: **When** an interactive command or background process (e.g. AGY, REPL, build tool) is executing, **Then** terminal output activity is tracked: actively streaming output displays an active indicator (`●` / `Aktiv`) on the tab badge and floating terminal HUD, transitioning after 1.5 seconds of output silence to a calm waiting state (`○` / `Wartet auf Eingabe`).
 
 #### Traceability & Verification

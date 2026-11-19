@@ -30,7 +30,7 @@ This document defines the functional and non-functional requirements specific to
 #### Acceptance Criteria (Given-When-Then)
 - [x] **AC-1**: **Given** the active terminal or terminal workspace, **When** pressing `Ctrl+Shift` and middle-clicking (scroll wheel click), **Then** the interactive History Overlay opens centered over the terminal area.
 - [x] **AC-2**: The overlay is centered within the terminal area with a prominent margin to the outer boundary (`Margin="32"`, `MaxWidth="780"`, `MaxHeight="520"`), not full-screen.
-- [x] **AC-3**: The overlay displays two tabs: `Commands` and `Directories` with live fuzzy search filtering.
+- [x] **AC-3**: The overlay displays three tabs: `Commands`, `Directories`, and `Global` with live fuzzy search filtering.
 - [x] **AC-4**: Clicking an item in the list sends the command or directory navigation to the active terminal and closes the overlay.
 - [x] **AC-5**: Pressing `Escape` or clicking anywhere on the outer semi-transparent backdrop outside the dialog panel closes the overlay and restores terminal focus.
 - [x] **AC-6**: Dedicated keyboard shortcuts `Ctrl+Shift+H` (Commands) and `Ctrl+Shift+L` (Directories) continue to open/toggle the centered overlay on the respective tab.
@@ -141,8 +141,8 @@ This document defines the functional and non-functional requirements specific to
 #### Acceptance Criteria (Given-When-Then)
 - [x] **AC-1**: Pressing `Ctrl+Shift+F` displays the search overlay in the top-right corner of the active terminal and focuses the search box.
 - [x] **AC-2**: Entering a search query searches across the terminal scrollback and screen buffer in real-time, displaying total matches and current index (e.g. `1/14` or `0/0`).
-- [x] **AC-3**: `Enter` or `↓` navigates to next match; `Shift+Enter` or `↑` navigates to previous match; `F3` / `Shift+F3` function keys also navigate matches.
-- [x] **AC-4**: Toggling `Match Case` (`Aa`) and `Regular Expression` (`.*`) updates search evaluation accordingly.
+- [x] **AC-3**: `Enter` or `↓` navigates to next match; `Shift+Enter` or `↑` navigates to previous match; `Ctrl+Shift+F3` also navigates to the next match.
+- [x] **AC-4**: Search match summary displays active match index and total count (or localized no-results badge).
 - [x] **AC-5**: Pressing `Escape` closes the search overlay and immediately restores keyboard focus to the active terminal.
 
 #### Traceability & Verification

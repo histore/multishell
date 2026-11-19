@@ -77,7 +77,7 @@ This document defines the functional and non-functional requirements specific to
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/persistence.md`
-- **Test Suite**: `MultiShell.Tests/ClosedTabsHistoryTests.cs`
+- **Test Suite**: `MultiShell.Tests/MainViewModelTabTests.ClosedTabsAndLifecycle.cs`
 
 ---
 
