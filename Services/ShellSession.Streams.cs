@@ -10,10 +10,17 @@ namespace MultiShell.Services;
 
 public sealed partial class ShellSession
 {
-    private static readonly Regex Osc9Regex = new(@"\x1b\]9;9;""?([^""\x1b\x07]+)""?(\x1b\\|\x07)", RegexOptions.Compiled);
-    private static readonly Regex Osc7Regex = new(@"\x1b\]7;file://[^/\x1b\x07]*/?([^\x1b\x07]+)(\x1b\\|\x07)", RegexOptions.Compiled);
-    private static readonly Regex Osc133ERegex = new(@"\x1b\]133;E;([A-Za-z0-9+/=]+)\x07|\x1b\]133;E;([A-Za-z0-9+/=]+)\x1b\\", RegexOptions.Compiled);
-    private static readonly Regex Osc133DRegex = new(@"\x1b\]133;D;(-?\d+)\x07|\x1b\]133;D;(-?\d+)\x1b\\", RegexOptions.Compiled);
+    [GeneratedRegex(@"\x1b\]9;9;""?([^""\x1b\x07]+)""?(\x1b\\|\x07)")]
+    private static partial Regex GetOsc9Regex();
+
+    [GeneratedRegex(@"\x1b\]7;file://[^/\x1b\x07]*/?([^\x1b\x07]+)(\x1b\\|\x07)")]
+    private static partial Regex GetOsc7Regex();
+
+    [GeneratedRegex(@"\x1b\]133;E;([A-Za-z0-9+/=]+)\x07|\x1b\]133;E;([A-Za-z0-9+/=]+)\x1b\\")]
+    private static partial Regex GetOsc133ERegex();
+
+    [GeneratedRegex(@"\x1b\]133;D;(-?\d+)\x07|\x1b\]133;D;(-?\d+)\x1b\\")]
+    private static partial Regex GetOsc133DRegex();
 
     private readonly StringBuilder _oscBuffer = new();
     private readonly Lock _oscBufferLock = new();
@@ -101,6 +108,13 @@ public sealed partial class ShellSession
             int actualChars = _oscDecoder.GetChars(data, rentedChars, flush: false);
             if (actualChars <= 0) return;
 
+            // Fast-path: if no partial OSC buffer exists and the decoded chunk has no ESC byte,
+            // skip StringBuilder allocation and all 4 regex scans.
+            if (_oscBuffer.Length == 0 && rentedChars.AsSpan(0, actualChars).IndexOf('\x1b') < 0)
+            {
+                return;
+            }
+
             _oscBuffer.Append(rentedChars, 0, actualChars);
 
             var currentBuffer = _oscBuffer.ToString();
@@ -129,7 +143,7 @@ public sealed partial class ShellSession
     {
         int lastProcessedIndex = -1;
 
-        foreach (Match match in Osc133DRegex.Matches(currentBuffer))
+        foreach (Match match in GetOsc133DRegex().Matches(currentBuffer))
         {
             if (TryParseOsc133DMatch(match, out int exitCode))
             {
@@ -138,7 +152,7 @@ public sealed partial class ShellSession
             lastProcessedIndex = Math.Max(lastProcessedIndex, match.Index + match.Length);
         }
 
-        foreach (Match match in Osc133ERegex.Matches(currentBuffer))
+        foreach (Match match in GetOsc133ERegex().Matches(currentBuffer))
         {
             if (TryParseOsc133EMatch(match, out var cmd))
             {
@@ -147,7 +161,7 @@ public sealed partial class ShellSession
             lastProcessedIndex = Math.Max(lastProcessedIndex, match.Index + match.Length);
         }
 
-        var matches9 = Osc9Regex.Matches(currentBuffer);
+        var matches9 = GetOsc9Regex().Matches(currentBuffer);
         if (matches9.Count > 0)
         {
             var candidate = matches9[^1].Groups[1].Value.Trim();
@@ -158,7 +172,7 @@ public sealed partial class ShellSession
             lastProcessedIndex = Math.Max(lastProcessedIndex, matches9[^1].Index + matches9[^1].Length);
         }
 
-        var matches7 = Osc7Regex.Matches(currentBuffer);
+        var matches7 = GetOsc7Regex().Matches(currentBuffer);
         if (matches7.Count > 0)
         {
             var candidate = Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim());
