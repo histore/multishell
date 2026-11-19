@@ -20,6 +20,8 @@ public partial class TerminalTabViewModel
     private long _commandStartTimestamp;
     private IDispatcherTimer? _activityCooldownTimer;
 
+    internal TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
     /// <summary>
     /// Configurable threshold duration for identifying long-running commands (default: 10 seconds per REQ-TERM-012).
     /// </summary>
@@ -156,7 +158,7 @@ public partial class TerminalTabViewModel
         if (_isDisposed || string.IsNullOrWhiteSpace(command)) return;
 
         var trimmed = command.Trim();
-        Interlocked.Exchange(ref _commandStartTimestamp, Stopwatch.GetTimestamp());
+        Interlocked.Exchange(ref _commandStartTimestamp, TimeProvider.GetTimestamp());
 
         _dispatcherService.RunOnUi(() =>
         {
@@ -181,7 +183,7 @@ public partial class TerminalTabViewModel
 
         var startTimestamp = Interlocked.Exchange(ref _commandStartTimestamp, 0);
         var duration = startTimestamp > 0
-            ? Stopwatch.GetElapsedTime(startTimestamp)
+            ? TimeProvider.GetElapsedTime(startTimestamp)
             : TimeSpan.Zero;
 
         _dispatcherService.RunOnUi(() =>

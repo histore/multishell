@@ -110,7 +110,7 @@ public sealed partial class ShellSession
         }
     }
 
-    private string GenerateShellCommandLine(string? workingDir)
+    internal string GenerateShellCommandLine(string? workingDir)
     {
         if (!string.IsNullOrWhiteSpace(_customExecutable))
         {
