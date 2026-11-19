@@ -118,9 +118,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/PathCommandHistoryService.cs`
 - **Summary**: Evicting entries exceeding `MaxHistoryPerPath` never prunes `_globalCommands` or `_commandTimestamps`, allowing unbounded growth and stale global history entries.
 
-#### `[BL-MED-005]` Define Missing `Button.tabMenuItemBtn` Style & Localize Remaining Hardcoded UI Strings
+#### `[BL-MED-005]` Define Missing `Button.tabMenuItemBtn` Style & Localize Remaining Hardcoded UI Strings — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (defined `Button.tabMenuItemBtn` style in `Styles/TabStyles.axaml`, bound `ProfilesModalView`/`AboutModalView`/`HelpModalView` to existing localization keys, and localized executable file-picker filter, terminal start/exit messages, and toast exit-code text across all 6 languages)
 - **Scope**: `Styles/TabStyles.axaml`, `Views/MainWindow.axaml.cs`, `Views/Dialogs/ProfilesModalView.axaml`, `Views/Dialogs/AboutModalView.axaml`, `Views/Dialogs/HelpModalView.axaml`, `Views/Controls/SettingsMenuButton.axaml`, `ViewModels/TerminalTabViewModel.cs`, `Services/WindowsToastNotificationService.cs`
 - **Summary**: `Classes="tabMenuItemBtn"` is applied in 10 places without a matching style rule; hardcoded strings remain in file picker filters, shell type dropdowns, shortcut labels, and terminal error/exit notices.
 

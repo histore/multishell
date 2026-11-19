@@ -333,7 +333,7 @@ public partial class MainWindow : Window
             AllowMultiple = false,
             FileTypeFilter = new List<FilePickerFileType>
             {
-                new("Executables (*.exe, *.cmd, *.bat)")
+                new(vm.Loc["Profiles_Browse_Exe_Filter"])
                 {
                     Patterns = new[] { "*.exe", "*.cmd", "*.bat", "*.*" }
                 },

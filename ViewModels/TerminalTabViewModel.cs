@@ -314,7 +314,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         }
         catch (Exception ex)
         {
-            TerminalModel.Feed($"Failed to start shell session.\r\n{ex.Message}\r\n");
+            TerminalModel.Feed($"{Loc["Terminal_Start_Failed"]}\r\n{ex.Message}\r\n");
             OnPropertyChanged(nameof(IsRunning));
         }
     }
@@ -373,7 +373,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
 
             if (!pane.IsDisposed)
             {
-                pane.TerminalModel.Feed($"\r\n[Process exited with code {exitCode}]\r\n");
+                pane.TerminalModel.Feed($"\r\n{string.Format(Loc["Terminal_Process_Exited"], exitCode)}\r\n");
             }
 
             pane.RaiseCloseRequested();
