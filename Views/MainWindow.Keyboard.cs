@@ -79,6 +79,14 @@ public partial class MainWindow
                     return true;
                 }
                 return false;
+            case Key.K:
+                if (DataContext is MainViewModel clearVm && clearVm.SelectedTab != null)
+                {
+                    clearVm.ClearActiveTabBuffer();
+                    e.Handled = true;
+                    return true;
+                }
+                return false;
             case Key.C: return TryHandleCtrlShiftCopyKeyDown(e);
             case Key.V: return TryHandleCtrlShiftPasteKeyDown(e);
             default: return false;

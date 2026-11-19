@@ -27,6 +27,7 @@
         <KeyBinding Command="{Binding UndockTabCommand}" Gesture="Ctrl+Shift+U" />
         <KeyBinding Command="{Binding CloseActivePaneOrTabCommand}" Gesture="Ctrl+Shift+W" />
         <KeyBinding Command="{Binding CloseActivePaneOrTabCommand}" Gesture="Ctrl+Shift+F4" />
+        <KeyBinding Command="{Binding ClearActiveTabBufferCommand}" Gesture="Ctrl+Shift+K" />
         <!-- Split Panes Keybindings (REQ-UI-006) -->
         <KeyBinding Command="{Binding SplitActiveTabRightCommand}" Gesture="Alt+Shift+Right" />
         <KeyBinding Command="{Binding SplitActiveTabRightCommand}" Gesture="Alt+Shift+V" />
