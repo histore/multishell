@@ -200,9 +200,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `ViewModels/Panes/TerminalPaneViewModel.cs`, `ViewModels/Panes/TerminalPaneViewModel.Streaming.cs`, `ViewModels/TerminalTabViewModel.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`
 - **Summary**: Forward `WorkingDirectoryChanged`, `CommandExecuted`, `CommandCompleted`, and `UserInput` (`TrackInputBuffer`) from secondary split panes to `TerminalTabViewModel` so directory breadcrumbs, path color stripes, command/directory history, execution state, and long-running command toast notifications work across all split panes.
 
-#### `[BL-HIGH-009]` (`REV2-HIGH-002`) Route `Ctrl+Shift+W` & `Ctrl+Shift+F4` Tunnel Handlers to `CloseActivePaneOrTab()` Instead of `CloseSelectedTab()`
+#### `[BL-HIGH-009]` (`REV2-HIGH-002`) Route `Ctrl+Shift+W` & `Ctrl+Shift+F4` Tunnel Handlers to `CloseActivePaneOrTab()` Instead of `CloseSelectedTab()` — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `TryHandleFunctionKeyDown` for `Key.F4` and `TryHandleTabManagementKeyDown` for `Key.W or Key.F4` in `MainWindow.Keyboard.cs` to invoke `CloseActivePaneOrTab()`)
 - **Scope**: `Views/MainWindow.Keyboard.cs`, `Views/MainWindow.axaml`
 - **Summary**: Update `TryHandleFunctionKeyDown` (`Key.F4`) and `TryHandleTabManagementKeyDown` (`Key.W or Key.F4`) in `MainWindow.Keyboard.cs` to invoke `CloseActivePaneOrTab()` instead of `CloseSelectedTab()`, preventing `Ctrl+Shift+W` / `Ctrl+Shift+F4` from destroying the entire tab when multiple split panes are open (`REQ-UI-006`).
 
