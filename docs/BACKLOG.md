@@ -274,9 +274,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/ShellSession.Process.cs`, `Services/ShellSession.cs`
 - **Summary**: Resolve `effectiveWorkingDir` fallback before building the shell command line (preventing `wsl.exe --cd` from receiving a deleted Windows directory), update `WorkingDirectory` on fallback, and reset `_isRunning = false` + raise `Exited` if the child process exits before `Process.GetProcessById`.
 
-#### `[BL-MED-016]` (`REV2-MED-007`) Enforce Credential Masking Inside `PathCommandHistoryService` & Fix Single-Quote Regex in `ShellCommandFilter`
+#### `[BL-MED-016]` (`REV2-MED-007`) Enforce Credential Masking Inside `PathCommandHistoryService` & Fix Single-Quote Regex in `ShellCommandFilter` — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (applied `ShellCommandFilter.SanitizeCommandForHistory` directly inside `PathCommandHistoryService.RecordCommand` and `ImportCommandsForPath`, fixed the single-quote regex branch `'[^']*'` in `ShellCommandFilter`, migrated `ShellCommandFilter` regexes to `[GeneratedRegex]`, and added unit test in `PathCommandHistoryServiceTests`)
 - **Scope**: `Services/PathCommandHistoryService.cs`, `Services/ShellCommandFilter.cs`
 - **Summary**: Call `ShellCommandFilter.SanitizeCommandForHistory` directly inside `PathCommandHistoryService.RecordCommand` and `ImportCommandsForPath`, fix the unclosed single-quote branch (`'[^']*'`) in `ShellCommandFilter`, and migrate its regexes to `[GeneratedRegex]`.
 

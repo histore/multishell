@@ -373,4 +373,20 @@ public class PathCommandHistoryServiceTests : IDisposable
         Assert.Contains("shared-cmd", allCommands);
         Assert.Equal(PathCommandHistoryService.MaxHistoryPerPath + 1, allCommands.Count);
     }
+
+    [Fact]
+    public void RecordCommand_AndImportAll_MaskCredentialsAndSingleQuotedSecrets()
+    {
+        var service = new PathCommandHistoryService();
+
+        service.RecordCommand(_testTempDir, "cli login --password 'my secret'");
+        service.ImportAll(new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>
+        {
+            [_testTempDir] = new() { "curl -H \"Authorization: Bearer 'tok 123'\" https://user:pass@example.com" }
+        });
+
+        var history = service.GetHistory(_testTempDir);
+        Assert.Contains("cli login --password ******", history);
+        Assert.DoesNotContain(history, h => h.Contains("my secret") || h.Contains("******'") || h.Contains("tok 123") || h.Contains("pass@"));
+    }
 }
