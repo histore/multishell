@@ -84,9 +84,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/AvaloniaTerminalModelAdapter.cs`, `Views/TerminalPaneView.axaml.cs`, `Views/TerminalPaneView.Links.cs`
 - **Summary**: Private reflection against `SvcSystems.UI.Terminal` (`_mouseTracker`, `TrackingMode`, `FallbackXtermPalette`, `ClearFormattedTextCache`, `_formattedTextCache`, `_surface`, `_consoleTextSize`) is unguarded against NativeAOT trimming (`IL2075` suppressed without `[DynamicDependency]`), risking silent runtime regressions in Release AOT builds.
 
-#### `[BL-HIGH-007]` Fix Undefined XAML Resources, Hardcoded German Window Title & `REQ-REL-003` Release Gap
+#### `[BL-HIGH-007]` Fix Undefined XAML Resources, Hardcoded German Window Title & `REQ-REL-003` Release Gap — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (defined `AppTextTertiary` and `AppDangerSubtle` in Dark/Light `ThemeDictionaries` of `App.axaml`, localized `MainViewModel.WindowTitle` via `Window_Secondary_Title_Prefix` across all 6 languages with dynamic `WindowTitle` change notification, updated `WindowCoordinatorServiceTests`, and added framework-dependent lightweight archive packaging to `.github/workflows/release.yml` per `REQ-REL-003`)
 - **Scope**: `App.axaml`, `Views/Controls/SettingsMenuButton.axaml`, `Styles/TabStyles.axaml`, `ViewModels/MainViewModel.Tabs.cs`, `Services/LocalizationService.*.cs`, `MultiShell.Tests/WindowCoordinatorServiceTests.cs`, `.github/workflows/release.yml`
 - **Summary**: (1) `AppTextTertiary` (`SettingsMenuButton.axaml:88`) and `AppDangerSubtle` (`TabStyles.axaml:208`) are undefined in `App.axaml`; (2) `MainViewModel.WindowTitle` hardcodes German `"[Fenster {WindowNumber} ⧉] "` (and `WindowCoordinatorServiceTests.cs:241` asserts this bug under `"en"`); (3) `.github/workflows/release.yml` omits the framework-dependent lightweight archive required by `REQ-REL-003`.
 

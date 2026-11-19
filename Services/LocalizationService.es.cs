@@ -220,6 +220,9 @@ public partial class LocalizationService
         ["Status_Breadcrumb_Insert_Tooltip"] = "Insertar ruta: {0}",
         ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Seleccionar carpeta y cambiar...",
         ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Seleccionar carpeta e insertar ruta...",
-        ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navegación no disponible mientras se ejecuta un proceso"
+        ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navegación no disponible mientras se ejecuta un proceso",
+
+        // Multi-Window Title Prefix (REQ-TAB-026)
+        ["Window_Secondary_Title_Prefix"] = "[Ventana {0} ⧉] "
     };
 }

@@ -285,14 +285,20 @@ public class WindowCoordinatorServiceTests
     }
 
     [Fact]
-    public void WindowTitle_FormattedWithSecondaryPrefix_WhenNotPrimary()
+    public void WindowTitle_FormattedWithLocalizedSecondaryPrefix_WhenNotPrimary()
     {
         var coordinator = new WindowCoordinatorService();
         using var secondary = CreateTestViewModel(coordinator);
         coordinator.RegisterWindow(secondary, isPrimary: false);
 
         Assert.False(secondary.IsPrimary);
+        Assert.StartsWith("[Window 2 ⧉] MultiShell", secondary.WindowTitle);
+
+        secondary.Loc.SetLanguage("de");
         Assert.StartsWith("[Fenster 2 ⧉] MultiShell", secondary.WindowTitle);
+
+        secondary.Loc.SetLanguage("fr");
+        Assert.StartsWith("[Fenêtre 2 ⧉] MultiShell", secondary.WindowTitle);
     }
 
     private class MockPreloadedPersistenceService : ITabStatePersistenceService

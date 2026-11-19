@@ -220,6 +220,9 @@ public partial class LocalizationService
         ["Status_Breadcrumb_Insert_Tooltip"] = "Inserisci percorso: {0}",
         ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Seleziona cartella e passa...",
         ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Seleziona cartella e inserisci percorso...",
-        ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navigazione non disponibile durante l'esecuzione di un processo"
+        ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navigazione non disponibile durante l'esecuzione di un processo",
+
+        // Multi-Window Title Prefix (REQ-TAB-026)
+        ["Window_Secondary_Title_Prefix"] = "[Finestra {0} ⧉] "
     };
 }

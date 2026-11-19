@@ -83,6 +83,27 @@ jobs:
           Write-Output "ZIP_NAME=$zipName" >> $env:GITHUB_OUTPUT
         id: package
 
+      - name: Publish Lightweight Framework-Dependent Executable (REQ-REL-003)
+        shell: pwsh
+        run: |
+          dotnet publish MultiShell.csproj `
+            -c Release `
+            -r win-x64 `
+            -p:PublishAot=false `
+            --self-contained false `
+            -p:PublishSingleFile=true `
+            -o ./publish-framework-dependent
+
+          Get-ChildItem -Path ./publish-framework-dependent -Recurse -Include *.pdb, *.xml | Remove-Item -Force -ErrorAction SilentlyContinue
+
+      - name: Create Lightweight Framework-Dependent Zip Archive (REQ-REL-003)
+        shell: pwsh
+        run: |
+          $fdZipName = "MultiShell-FrameworkDependent-win-x64-${{ steps.vars.outputs.TAG_NAME }}.zip"
+          Compress-Archive -Path ./publish-framework-dependent/* -DestinationPath "./$fdZipName"
+          Write-Output "FD_ZIP_NAME=$fdZipName" >> $env:GITHUB_OUTPUT
+        id: package-fd
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -94,3 +115,4 @@ jobs:
           files: |
             dist/*.exe
             ${{ steps.package.outputs.ZIP_NAME }}
+            ${{ steps.package-fd.outputs.FD_ZIP_NAME }}
