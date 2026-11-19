@@ -112,7 +112,8 @@ public sealed partial class ShellSession
 
     internal string GenerateShellCommandLine(string? workingDir)
     {
-        if (!string.IsNullOrWhiteSpace(_customExecutable))
+        if (!string.IsNullOrWhiteSpace(_customExecutable) &&
+            _shellType is not (ShellType.PowerShell or ShellType.CMD))
         {
             var args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments}";
             if (_shellType == ShellType.WSL && !string.IsNullOrWhiteSpace(workingDir) && !args.Contains("--cd"))
@@ -124,10 +125,23 @@ public sealed partial class ShellSession
 
         if (_shellType == ShellType.PowerShell)
         {
-            string exePath = ShellDiscoveryService.ResolveExecutable("pwsh.exe") ??
-                             ShellDiscoveryService.ResolveExecutable("powershell.exe") ??
-                             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
-            if (!File.Exists(exePath)) exePath = "powershell.exe";
+            string exePath;
+            if (!string.IsNullOrWhiteSpace(_customExecutable))
+            {
+                exePath = _customExecutable;
+            }
+            else
+            {
+                exePath = ShellDiscoveryService.ResolveExecutable("pwsh.exe") ??
+                          ShellDiscoveryService.ResolveExecutable("powershell.exe") ??
+                          Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+                if (!File.Exists(exePath)) exePath = "powershell.exe";
+            }
+
+            if (HasExplicitPowerShellCommandArgument(_customArguments))
+            {
+                return $"{FormatWin32QuotedArgument(exePath)} {_customArguments!.Trim()}";
+            }
 
             // Build the prompt hook script as a plain string (no escaping needed here).
             // Explicitly set Win32 console code page (65001), UTF-8 console output/input,
@@ -173,7 +187,8 @@ public sealed partial class ShellSession
 
             // Encode as UTF-16LE Base64 for -EncodedCommand; avoids all quoting issues.
             string encodedHook = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(hookScript));
-            return $"{FormatWin32QuotedArgument(exePath)} -NoLogo -NoExit -EncodedCommand {encodedHook}";
+            string extraFlags = BuildAdditionalPowerShellFlags(_customArguments);
+            return $"{FormatWin32QuotedArgument(exePath)}{extraFlags} -NoLogo -NoExit -EncodedCommand {encodedHook}";
         }
 
         if (_shellType == ShellType.NuShell)
@@ -195,10 +210,59 @@ public sealed partial class ShellSession
             return FormatWin32QuotedArgument(exePath);
         }
 
-        var cmdPath = ShellDiscoveryService.ResolveExecutable("cmd.exe") ??
+        string cmdPath;
+        if (!string.IsNullOrWhiteSpace(_customExecutable))
+        {
+            cmdPath = _customExecutable;
+        }
+        else
+        {
+            cmdPath = ShellDiscoveryService.ResolveExecutable("cmd.exe") ??
                       Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
-        if (!File.Exists(cmdPath)) cmdPath = "cmd.exe";
+            if (!File.Exists(cmdPath)) cmdPath = "cmd.exe";
+        }
+
+        if (!string.IsNullOrWhiteSpace(_customArguments))
+        {
+            return $"{FormatWin32QuotedArgument(cmdPath)} {_customArguments.Trim()}";
+        }
         return $"{FormatWin32QuotedArgument(cmdPath)} /K \"chcp 65001 >nul\"";
+    }
+
+    private static bool HasExplicitPowerShellCommandArgument(string? customArguments)
+    {
+        if (string.IsNullOrWhiteSpace(customArguments)) return false;
+
+        foreach (var token in customArguments.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (token.Equals("-Command", StringComparison.OrdinalIgnoreCase) ||
+                token.Equals("-c", StringComparison.OrdinalIgnoreCase) ||
+                token.Equals("-EncodedCommand", StringComparison.OrdinalIgnoreCase) ||
+                token.Equals("-ec", StringComparison.OrdinalIgnoreCase) ||
+                token.Equals("-File", StringComparison.OrdinalIgnoreCase) ||
+                token.Equals("-f", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static string BuildAdditionalPowerShellFlags(string? customArguments)
+    {
+        if (string.IsNullOrWhiteSpace(customArguments)) return string.Empty;
+
+        var filtered = new System.Collections.Generic.List<string>();
+        foreach (var token in customArguments.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (!token.Equals("-NoLogo", StringComparison.OrdinalIgnoreCase) &&
+                !token.Equals("-NoExit", StringComparison.OrdinalIgnoreCase))
+            {
+                filtered.Add(token);
+            }
+        }
+
+        return filtered.Count > 0 ? " " + string.Join(' ', filtered) : string.Empty;
     }
 
     internal static string BuildWslCommandLine(string executable, string workingDir, string? extraArgs = null)
