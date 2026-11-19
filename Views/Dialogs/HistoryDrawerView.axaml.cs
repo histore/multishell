@@ -53,17 +53,7 @@ public partial class HistoryDrawerView : UserControl
                     OnDirectoryListOpened();
                 }
 
-                var hasFilter = false;
-                if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-                {
-                    hasFilter = HistoryTabControl.SelectedIndex switch
-                    {
-                        1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                        2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                        _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-                    };
-                }
-                FocusActiveHistoryList(selectLastItem: !hasFilter);
+                FocusActiveHistoryList(selectFirstItem: true, selectLastItem: false);
             };
         }
 
@@ -176,9 +166,7 @@ public partial class HistoryDrawerView : UserControl
             {
                 if (listBox.ItemCount <= 0) return;
 
-                listBox.SelectedIndex = !string.IsNullOrWhiteSpace(filterText)
-                    ? 0
-                    : listBox.ItemCount - 1;
+                listBox.SelectedIndex = 0;
 
                 if (listBox.SelectedItem != null)
                 {

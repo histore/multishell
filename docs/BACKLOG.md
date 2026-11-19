@@ -312,9 +312,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Views/TerminalPaneView.axaml`, `ViewModels/Panes/TerminalPaneViewModel.cs`, `Views/SplitPaneContainerControl.cs`, `Views/MainWindow.axaml`, `App.axaml`
 - **Summary**: Use theme-aware dynamic resources for `MiniHeader` background (`#D9161822`), inactive pane border/splitter brushes (`#252836`), and tab bar scroll edge fades (`#B30C0D12`) so Light theme renders cleanly.
 
-#### `[BL-LOW-008]` (`REV2-LOW-002`) Select Newest Entry (Index `0`) Instead of Oldest Entry When Switching Tabs or Clearing Filter in `HistoryDrawerView`
+#### `[BL-LOW-008]` (`REV2-LOW-002`) Select Newest Entry (Index `0`) Instead of Oldest Entry When Switching Tabs or Clearing Filter in `HistoryDrawerView` — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `HistoryDrawerView.axaml.cs` and `HistoryDrawerView.Keyboard.cs` to select index `0` (`selectFirstItem: true, selectLastItem: false`) when switching history tabs or clearing filter text, matching the descending chronological order of history collections)
 - **Scope**: `Views/Dialogs/HistoryDrawerView.axaml.cs`, `Views/Dialogs/HistoryDrawerView.Keyboard.cs`
 - **Summary**: Because history collections are sorted descending (`OrderByDescending(x => x.LastUsedAt)`), select index `0` (`selectFirstItem: true, selectLastItem: false`) when switching history tabs or clearing filter text.
 
