@@ -152,7 +152,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
                 FileName = GitHubUrl,
                 UseShellExecute = true
             };
-            System.Diagnostics.Process.Start(psi);
+            using var proc = System.Diagnostics.Process.Start(psi);
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
         {

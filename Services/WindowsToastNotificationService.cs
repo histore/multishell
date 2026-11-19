@@ -28,18 +28,20 @@ public sealed class WindowsToastNotificationService : IToastNotificationService
         string command,
         TimeSpan duration,
         int exitCode,
-        Action onActivated)
+        Action? onActivated = null)
     {
-        Task.Run(() =>
+        // Note: transient WinRT PowerShell toast dispatch does not host a persistent COM activation server,
+        // so onActivated cannot be invoked out-of-process without an installed AppUserModelID shortcut.
+        _ = Task.Run(() =>
         {
             try
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    ShowWindowsToast(tabTitle, command, duration, exitCode);
+                    ShowWindowsToast(tabTitle ?? string.Empty, command ?? string.Empty, duration, exitCode);
                 }
             }
-            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or IOException or ObjectDisposedException)
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or IOException or ObjectDisposedException or ArgumentException or NotSupportedException or FormatException)
             {
                 // Non-critical: failure to display a desktop toast should never crash the terminal
                 System.Diagnostics.Debug.WriteLine($"[WindowsToastNotificationService] Failed to show toast: {ex.Message}");
@@ -80,6 +82,8 @@ public sealed class WindowsToastNotificationService : IToastNotificationService
         string failedLabel = "Failed",
         string failedWithExitCodeFormat = "{0} (Exit code {1})")
     {
+        command ??= string.Empty;
+        tabTitle ??= string.Empty;
         var status = exitCode == 0 ? successLabel : string.Format(failedWithExitCodeFormat, failedLabel, exitCode);
         var truncatedCmd = command.Length > 60 ? command[..57] + "..." : command;
         var durationText = duration.TotalSeconds >= 60

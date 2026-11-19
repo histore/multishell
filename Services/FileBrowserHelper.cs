@@ -11,6 +11,18 @@ namespace MultiShell.Services;
 /// </summary>
 public static class FileBrowserHelper
 {
+    internal static Func<ProcessStartInfo, bool>? ProcessLauncher { get; set; }
+
+    private static bool StartProcess(ProcessStartInfo psi)
+    {
+        if (ProcessLauncher != null)
+        {
+            return ProcessLauncher(psi);
+        }
+
+        using var proc = Process.Start(psi);
+        return proc != null;
+    }
     /// <summary>
     /// Opens the native file browser with the specified directory, or falls back to the user's home directory.
     /// If an existing file path is passed, the containing directory is opened and the file highlighted where supported.
@@ -86,12 +98,11 @@ public static class FileBrowserHelper
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             // Windows ShellExecuteEx natively handles directories without CLI quote-escaping pitfalls
-            Process.Start(new ProcessStartInfo
+            return StartProcess(new ProcessStartInfo
             {
                 FileName = directoryPath,
                 UseShellExecute = true
             });
-            return true;
         }
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
@@ -101,8 +112,7 @@ public static class FileBrowserHelper
                 UseShellExecute = false
             };
             psi.ArgumentList.Add(directoryPath);
-            Process.Start(psi);
-            return true;
+            return StartProcess(psi);
         }
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
@@ -112,8 +122,7 @@ public static class FileBrowserHelper
                 UseShellExecute = false
             };
             psi.ArgumentList.Add(directoryPath);
-            Process.Start(psi);
-            return true;
+            return StartProcess(psi);
         }
 
         return false;
@@ -125,7 +134,9 @@ public static class FileBrowserHelper
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            psi.FileName = "explorer.exe";
+            var winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            var explorerPath = !string.IsNullOrWhiteSpace(winDir) ? Path.Combine(winDir, "explorer.exe") : "explorer.exe";
+            psi.FileName = File.Exists(explorerPath) ? explorerPath : "explorer.exe";
             // ArgumentList automatically applies Win32 escaping rules
             psi.ArgumentList.Add($"/select,{filePath}");
         }
@@ -146,7 +157,6 @@ public static class FileBrowserHelper
             return false;
         }
 
-        Process.Start(psi);
-        return true;
+        return StartProcess(psi);
     }
 }
