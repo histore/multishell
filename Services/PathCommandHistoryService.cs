@@ -135,6 +135,12 @@ public class PathCommandHistoryService : IPathCommandHistoryService
             return;
         }
 
+        var sanitizedCommand = ShellCommandFilter.SanitizeCommandForHistory(command);
+        if (string.IsNullOrWhiteSpace(sanitizedCommand))
+        {
+            return;
+        }
+
         lock (_lock)
         {
             if (!_pathHistories.TryGetValue(normalizedPath, out var list))
@@ -143,7 +149,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
                 _pathHistories[normalizedPath] = list;
             }
 
-            AppendCommandLocked(list, command);
+            AppendCommandLocked(list, sanitizedCommand);
         }
 
         // Notify subscribers outside lock to avoid deadlocks
@@ -341,7 +347,11 @@ public class PathCommandHistoryService : IPathCommandHistoryService
                 continue;
             }
 
-            AppendCommandLocked(list, cmd);
+            var sanitizedCmd = ShellCommandFilter.SanitizeCommandForHistory(cmd);
+            if (!string.IsNullOrWhiteSpace(sanitizedCmd))
+            {
+                AppendCommandLocked(list, sanitizedCmd);
+            }
         }
     }
 }
