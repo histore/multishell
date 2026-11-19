@@ -26,7 +26,7 @@ public class SingleInstanceService : ISingleInstanceService
     private readonly Lock _pipeLock = new();
     private NamedPipeServerStream? _currentServer;
     private Task? _serverTask;
-    private bool _isDisposed;
+    private int _disposed;
 
     public bool IsFirstInstance { get; }
 
@@ -46,16 +46,17 @@ public class SingleInstanceService : ISingleInstanceService
             _mutex = new Mutex(true, _mutexName, out bool createdNew);
             IsFirstInstance = createdNew;
         }
-        catch
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or ApplicationException or WaitHandleCannotBeOpenedException)
         {
             // If mutex creation fails (e.g. access denied), treat as secondary instance
+            System.Diagnostics.Debug.WriteLine($"[SingleInstanceService] Mutex creation failed: {ex.Message}");
             IsFirstInstance = false;
         }
     }
 
     public void StartServer()
     {
-        if (!IsFirstInstance || _serverTask != null || _isDisposed)
+        if (!IsFirstInstance || _serverTask != null || Volatile.Read(ref _disposed) != 0)
         {
             return;
         }
@@ -63,14 +64,23 @@ public class SingleInstanceService : ISingleInstanceService
         _serverTask = Task.Run(RunServerLoopAsync);
     }
 
+    private const int MaxPipePayloadChars = 32768;
+
     private async Task RunServerLoopAsync()
     {
-        while (!_cts.IsCancellationRequested)
+        try
         {
-            if (!await AcceptNextConnectionAsync().ConfigureAwait(false))
+            while (Volatile.Read(ref _disposed) == 0 && !_cts.IsCancellationRequested)
             {
-                break;
+                if (!await AcceptNextConnectionAsync().ConfigureAwait(false))
+                {
+                    break;
+                }
             }
+        }
+        catch (ObjectDisposedException)
+        {
+            // Shutdown disposed CancellationTokenSource concurrently
         }
     }
 
@@ -105,8 +115,9 @@ public class SingleInstanceService : ISingleInstanceService
         {
             return false;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
+            System.Diagnostics.Debug.WriteLine($"[SingleInstanceService] Pipe accept error: {ex.Message}");
             return await DelayAfterPipeErrorAsync().ConfigureAwait(false);
         }
         finally
@@ -120,7 +131,7 @@ public class SingleInstanceService : ISingleInstanceService
     {
         lock (_pipeLock)
         {
-            if (_isDisposed || _cts.IsCancellationRequested) return false;
+            if (Volatile.Read(ref _disposed) != 0 || _cts.IsCancellationRequested) return false;
             _currentServer = server;
             return true;
         }
@@ -142,11 +153,22 @@ public class SingleInstanceService : ISingleInstanceService
         using var readCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
         readCts.CancelAfter(TimeSpan.FromSeconds(5));
 
-        using var reader = new StreamReader(server, Encoding.UTF8);
-        var buffer = new char[4096];
-        int charsRead = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), readCts.Token).ConfigureAwait(false);
-        var message = new string(buffer, 0, charsRead);
+        using var reader = new StreamReader(server, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true);
+        var builder = new StringBuilder();
+        var buffer = new char[1024];
 
+        while (builder.Length < MaxPipePayloadChars)
+        {
+            int maxToRead = Math.Min(buffer.Length, MaxPipePayloadChars - builder.Length);
+            int charsRead = await reader.ReadAsync(buffer.AsMemory(0, maxToRead), readCts.Token).ConfigureAwait(false);
+            if (charsRead == 0)
+            {
+                break;
+            }
+            builder.Append(buffer, 0, charsRead);
+        }
+
+        var message = builder.ToString();
         return string.IsNullOrWhiteSpace(message)
             ? null
             : _pathResolver.ResolveWorkingDirectory(message.Trim());
@@ -154,13 +176,13 @@ public class SingleInstanceService : ISingleInstanceService
 
     private async Task<bool> DelayAfterPipeErrorAsync()
     {
-        if (_cts.IsCancellationRequested) return false;
+        if (Volatile.Read(ref _disposed) != 0 || _cts.IsCancellationRequested) return false;
         try
         {
             await Task.Delay(100, _cts.Token).ConfigureAwait(false);
             return true;
         }
-        catch (OperationCanceledException)
+        catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
         {
             return false;
         }
@@ -190,7 +212,11 @@ public class SingleInstanceService : ISingleInstanceService
     {
         try
         {
-            using var client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
+            using var client = new NamedPipeClientStream(
+                ".",
+                pipeName,
+                PipeDirection.Out,
+                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
             await client.ConnectAsync(timeoutMs).ConfigureAwait(false);
 
             using var writer = new StreamWriter(client, Encoding.UTF8);
@@ -198,22 +224,22 @@ public class SingleInstanceService : ISingleInstanceService
             await writer.FlushAsync().ConfigureAwait(false);
             return true;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or TimeoutException or UnauthorizedAccessException or OperationCanceledException or InvalidOperationException)
         {
+            System.Diagnostics.Debug.WriteLine($"[SingleInstanceService] Failed to send args to pipe '{pipeName}': {ex.Message}");
             return false;
         }
     }
 
     public void Dispose()
     {
-        if (_isDisposed) return;
-        _isDisposed = true;
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
 
         try
         {
             _cts.Cancel();
         }
-        catch
+        catch (ObjectDisposedException)
         {
             // Ignore cancellation disposal errors
         }
@@ -225,9 +251,21 @@ public class SingleInstanceService : ISingleInstanceService
                 _currentServer?.Dispose();
                 _currentServer = null;
             }
-            catch
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException)
             {
-                // Ignore pipe disposal errors
+                System.Diagnostics.Debug.WriteLine($"[SingleInstanceService.Dispose] Pipe disposal ignored: {ex.Message}");
+            }
+        }
+
+        if (_serverTask != null)
+        {
+            try
+            {
+                _serverTask.Wait(TimeSpan.FromMilliseconds(500));
+            }
+            catch (Exception ex) when (ex is AggregateException or OperationCanceledException or ObjectDisposedException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SingleInstanceService.Dispose] Server task wait ignored: {ex.Message}");
             }
         }
 
@@ -237,13 +275,17 @@ public class SingleInstanceService : ISingleInstanceService
             {
                 _mutex.ReleaseMutex();
             }
-            catch
+            catch (Exception ex) when (ex is ApplicationException or ObjectDisposedException)
             {
                 // Mutex might not be held or already abandoned
+                System.Diagnostics.Debug.WriteLine($"[SingleInstanceService.Dispose] Mutex release ignored: {ex.Message}");
             }
         }
 
         _mutex?.Dispose();
-        _cts.Dispose();
+        if (_serverTask == null || _serverTask.IsCompleted)
+        {
+            _cts.Dispose();
+        }
     }
 }

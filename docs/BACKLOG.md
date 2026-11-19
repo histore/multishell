@@ -100,9 +100,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/TabStatePersistenceService.cs`, `Services/TerminalProfileService.cs`, `ViewModels/MainViewModel.Persistence.cs`
 - **Summary**: Fixed `.tmp` filenames collide under `--multi-instance`; rapid `TriggerSaveState()` calls lack debouncing and can overwrite newer snapshots out of order; `TerminalProfileService.LoadProfilesAsync` lacks JSON/IO `try/catch` handling.
 
-#### `[BL-MED-002]` Harden `SingleInstanceService` Pipe Framing, Client Security & Shutdown Ordering
+#### `[BL-MED-002]` Harden `SingleInstanceService` Pipe Framing, Client Security & Shutdown Ordering — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `ReadTargetDirectoryAsync` to read until EOF with a 32K char cap, added `PipeOptions.CurrentUserOnly` to `NamedPipeClientStream`, waited on `_serverTask` before disposing `_cts`, and narrowed exception filters)
 - **Scope**: `Services/SingleInstanceService.cs`
 - **Summary**: Single `ReadAsync` call can truncate payloads; `NamedPipeClientStream` omits `PipeOptions.CurrentUserOnly`; `Dispose()` disposes `_cts` before `_serverTask` exits.
 

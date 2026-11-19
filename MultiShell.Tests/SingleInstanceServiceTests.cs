@@ -142,4 +142,54 @@ public class SingleInstanceServiceTests
         // Assert - completed gracefully
         Assert.True(result || !result);
     }
+
+    [Fact]
+    public async Task Server_ReadsMultiWriteChunkedPayloadUntilEof_AndDisposesCleanly()
+    {
+        var testGuid = Guid.NewGuid().ToString("N");
+        var mutexName = $@"Local\MultiShell_Test_Mutex_{testGuid}";
+        var pipeName = $"MultiShell_Test_Pipe_{testGuid}";
+
+        var tempDir = Path.Combine(Path.GetTempPath(), $"multishell_chunked_ipc_{testGuid}");
+        Directory.CreateDirectory(tempDir);
+
+        using var server = new SingleInstanceService(mutexName, pipeName);
+        var tcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        server.DirectoryOpenRequested += path => tcs.TrySetResult(path);
+        server.StartServer();
+
+        try
+        {
+            using (var rawClient = new System.IO.Pipes.NamedPipeClientStream(
+                ".",
+                pipeName,
+                System.IO.Pipes.PipeDirection.Out,
+                System.IO.Pipes.PipeOptions.Asynchronous | System.IO.Pipes.PipeOptions.CurrentUserOnly))
+            {
+                await rawClient.ConnectAsync(2000);
+                using var writer = new StreamWriter(rawClient, System.Text.Encoding.UTF8);
+                int splitPoint = tempDir.Length / 2;
+                await writer.WriteAsync(tempDir[..splitPoint]);
+                await writer.FlushAsync();
+                await Task.Delay(30);
+                await writer.WriteAsync(tempDir[splitPoint..]);
+                await writer.FlushAsync();
+            }
+
+            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(3000));
+            Assert.Equal(tcs.Task, completedTask);
+            Assert.Equal(Path.GetFullPath(tempDir), await tcs.Task);
+
+            var disposeEx = Record.Exception(() =>
+            {
+                server.Dispose();
+                server.Dispose();
+            });
+            Assert.Null(disposeEx);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
 }
