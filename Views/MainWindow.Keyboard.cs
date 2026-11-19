@@ -152,7 +152,8 @@ public partial class MainWindow
             e.Handled = true;
             return true;
         }
-        if (e.Key == Key.F3 && DataContext is MainViewModel f3Vm && f3Vm.SelectedTab?.IsSearchOpen == true)
+        if (e.Key == Key.F3 && DataContext is MainViewModel f3Vm && f3Vm.SelectedTab != null &&
+            (f3Vm.SelectedTab.IsSearchOpen || f3Vm.SelectedTab.ActivePane?.IsSearchOpen == true))
         {
             f3Vm.SelectedTab.SearchNext();
             e.Handled = true;
@@ -180,7 +181,8 @@ public partial class MainWindow
         if (AboutModal?.IsVisible == true) { HideAboutModal(); return true; }
         if (ProfilesModal?.IsVisible == true && DataContext is MainViewModel pvm) { pvm.CloseProfilesModal(); return true; }
         if (HistoryDrawer?.IsDrawerOpen == true) { HideHistoryDrawerAndFocusTerminal(); return true; }
-        if (DataContext is MainViewModel tvm && tvm.SelectedTab?.IsSearchOpen == true)
+        if (DataContext is MainViewModel tvm && tvm.SelectedTab != null &&
+            (tvm.SelectedTab.IsSearchOpen || tvm.SelectedTab.ActivePane?.IsSearchOpen == true))
         {
             tvm.SelectedTab.CloseSearch();
             FocusActiveTerminal();
