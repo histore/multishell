@@ -39,6 +39,8 @@ public class SplitPaneTabIntegrationTests
         public event Action<int>? CommandCompleted;
 #pragma warning restore CS0067
 
+        public System.Collections.Generic.List<byte[]> SentInputs { get; } = new();
+
         public DummySession(string title, string? workingDir, ShellType shellType)
         {
             Title = title;
@@ -47,8 +49,13 @@ public class SplitPaneTabIntegrationTests
         }
 
         public void Start() => IsRunning = true;
-        public void Send(byte[] input) { }
+        public void Send(byte[] input) => SentInputs.Add(input);
         public void Resize(int cols, int rows) { }
+        public void SimulateExit(int exitCode = 0)
+        {
+            IsRunning = false;
+            Exited?.Invoke(exitCode);
+        }
         public void Dispose() => IsRunning = false;
     }
 
@@ -130,5 +137,82 @@ public class SplitPaneTabIntegrationTests
         Assert.False(string.IsNullOrWhiteSpace(loc["Menu_Pane_SplitRight"]));
         Assert.False(string.IsNullOrWhiteSpace(loc["Menu_Pane_SplitDown"]));
         Assert.False(string.IsNullOrWhiteSpace(loc["Menu_Pane_ToggleZoom"]));
+    }
+
+    [Fact]
+    public void SplitTab_InitialPaneExit_CollapsesPaneWithoutClosingSurvivingTab()
+    {
+        var initialSession = new DummySession("Initial", @"C:\initial", ShellType.PowerShell);
+        var splitSession = new DummySession("Split", @"C:\split", ShellType.PowerShell);
+        using var tab = new TerminalTabViewModel(initialSession);
+        var initialPane = tab.ActivePane;
+        var splitPane = tab.SplitPane(initialPane, PaneSplitDirection.Vertical, splitSession);
+
+        int closeRequestedCount = 0;
+        tab.CloseRequested += _ => closeRequestedCount++;
+
+        // Act: Initial pane shell exits while split pane is still running
+        initialSession.SimulateExit(0);
+
+        // Assert: Tab stays open with surviving pane active and receiving input
+        Assert.Equal(0, closeRequestedCount);
+        Assert.Equal(1, tab.PaneCount);
+        Assert.Same(splitPane, tab.ActivePane);
+        Assert.True(initialPane.IsDisposed);
+        Assert.True(tab.IsRunning);
+
+        tab.ExecuteHistoryCommand("echo alive");
+        Assert.NotEmpty(splitSession.SentInputs);
+    }
+
+    [Fact]
+    public void SplitTab_ManualCloseOfInitialPane_KeepsTabRunningAndRoutesInputToSurvivingPane()
+    {
+        var initialSession = new DummySession("Initial", @"C:\initial", ShellType.PowerShell);
+        var splitSession = new DummySession("Split", @"C:\split", ShellType.CMD);
+        using var tab = new TerminalTabViewModel(initialSession);
+        var initialPane = tab.ActivePane;
+        var splitPane = tab.SplitPane(initialPane, PaneSplitDirection.Horizontal, splitSession);
+
+        tab.ClosePane(initialPane);
+
+        Assert.Equal(1, tab.PaneCount);
+        Assert.Same(splitPane, tab.ActivePane);
+        Assert.True(initialPane.IsDisposed);
+        Assert.True(tab.IsRunning);
+        Assert.Equal(ShellType.CMD, tab.ShellType);
+
+        tab.SendInput("dir\r"u8.ToArray());
+        Assert.Single(splitSession.SentInputs);
+    }
+
+    [Fact]
+    public void SinglePaneTab_SessionExit_FiresCloseRequestedExactlyOnce()
+    {
+        var session = new DummySession("Solo", @"C:\solo", ShellType.PowerShell);
+        using var tab = new TerminalTabViewModel(session);
+        int closeRequestedCount = 0;
+        tab.CloseRequested += _ => closeRequestedCount++;
+
+        session.SimulateExit(0);
+
+        Assert.Equal(1, closeRequestedCount);
+        Assert.False(tab.IsRunning);
+    }
+
+    [Fact]
+    public void TerminalTab_Dispose_DisposesInitialPaneAsWellAsSplitPanes()
+    {
+        var initialSession = new DummySession("Initial", @"C:\initial", ShellType.PowerShell);
+        var splitSession = new DummySession("Split", @"C:\split", ShellType.PowerShell);
+        var tab = new TerminalTabViewModel(initialSession);
+        var initialPane = tab.ActivePane;
+        var splitPane = tab.SplitPane(initialPane, PaneSplitDirection.Vertical, splitSession);
+
+        tab.Dispose();
+
+        Assert.True(tab.IsDisposed);
+        Assert.True(initialPane.IsDisposed);
+        Assert.True(splitPane.IsDisposed);
     }
 }

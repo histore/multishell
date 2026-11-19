@@ -32,9 +32,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 
 ### Critical
 
-#### `[BL-CRIT-001]` Fix Split-Pane Initial Session Ownership, Premature Tab Closure & Disposal Leak
+#### `[BL-CRIT-001]` Fix Split-Pane Initial Session Ownership, Premature Tab Closure & Disposal Leak — **DONE**
 - **Criticality**: `Critical`
-- **Status**: `OPEN`
+- **Status**: `DONE` (routed pane session exits through `TerminalTabViewModel.HandlePaneSessionExited`, delegated active session/model calls to `ActivePane`, and ensured `Dispose()` cleans up all panes including the initial pane)
 - **Scope**: `ViewModels/TerminalTabViewModel.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`, `ViewModels/Panes/TerminalPaneViewModel.cs`, `ViewModels/Panes/TerminalPaneViewModel.Streaming.cs`
 - **Summary**: `TerminalTabViewModel` shares `_session` with its initial pane, causing three failures: (1) exiting the initial pane in a split tab closes the entire tab via `TerminalTabViewModel.OnSessionExited`, (2) manually closing the initial pane disposes the tab's shared `_session` while other panes remain open, and (3) `TerminalTabViewModel.Dispose()` skips `initialPane.Dispose()`, leaking `_silenceTimer`, `_uiFeedCoordinator`, and event subscriptions.
 

@@ -102,6 +102,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private string _searchMatchSummary = string.Empty;
 
     public bool IsRunning => Session.IsRunning;
+    public bool IsDisposed => _isDisposed;
     public ShellType ShellType => Session.ShellType;
 
     public string DisplayTitle => !string.IsNullOrWhiteSpace(WorkingDirectory)
@@ -116,6 +117,8 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     public event Action<TerminalPaneViewModel>? CloseRequested;
     public event Action<TerminalPaneViewModel>? Activated;
     public event Action<TerminalPaneViewModel, string>? DirectoryChanged;
+
+    internal void RaiseCloseRequested() => CloseRequested?.Invoke(this);
 
     public TerminalPaneViewModel(
         TerminalTabViewModel tab,

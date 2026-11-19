@@ -122,12 +122,22 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
     [ObservableProperty]
     private bool _isSelected;
 
-    public bool IsRunning => _session.IsRunning;
+    public bool IsRunning => _panes.Count > 0 ? _panes.Any(p => p.IsRunning) : _session.IsRunning;
+
+    /// <summary>
+    /// Gets the currently active shell session (active split pane if available, otherwise the initial session).
+    /// </summary>
+    internal IShellSession ActiveSession => ActivePane?.Session ?? _session;
+
+    /// <summary>
+    /// Gets the currently active terminal model adapter (active split pane if available, otherwise the initial model).
+    /// </summary>
+    internal ITerminalModelAdapter ActiveTerminalModel => ActivePane?.TerminalModel ?? TerminalModel;
 
     /// <summary>
     /// Gets the underlying shell session running in this tab.
     /// </summary>
-    public IShellSession Session => _session;
+    public IShellSession Session => ActiveSession;
 
     /// <summary>
     /// Gets whether this tab has been disposed.
@@ -137,7 +147,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
     /// <summary>
     /// The type of shell (PowerShell, NuShell, WSL, CMD) running in this tab.
     /// </summary>
-    public ShellType ShellType => _session.ShellType;
+    public ShellType ShellType => ActiveSession.ShellType;
 
     /// <summary>
     /// Short badge/tag representing the shell (e.g. "PS", "NU", "WSL", "CMD").
@@ -269,8 +279,8 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         InitializeSplitPanes(initialPane);
 
         // Wire PTY output -> terminal rendering, directory tracking & command tracking
+        // Session exit is coordinated via TerminalPaneViewModel -> HandlePaneSessionExited so split panes collapse cleanly.
         _session.DataReceived += OnSessionDataReceived;
-        _session.Exited += OnSessionExited;
         _session.WorkingDirectoryChanged += OnSessionWorkingDirectoryChanged;
         _session.CommandExecuted += OnSessionCommandExecuted;
         _session.CommandCompleted += OnSessionCommandCompleted;
@@ -310,14 +320,15 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
     }
 
     /// <summary>
-    /// Sends raw input bytes directly to the underlying PTY shell session.
+    /// Sends raw input bytes directly to the active PTY shell session.
     /// </summary>
     public void SendInput(byte[] input)
     {
-        if (IsRunning && input.Length > 0)
+        var session = ActiveSession;
+        if (session.IsRunning && input.Length > 0)
         {
             TrackInputBuffer(input);
-            _session.Send(input);
+            session.Send(input);
         }
     }
 
@@ -340,21 +351,50 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
 
         _dispatcherService.RunOnUi(UpdateDir);
     }
-    private void OnSessionExited(int exitCode)
+
+    /// <summary>
+    /// Coordinates shell process exit for a pane: updates execution state, prints exit summary,
+    /// and collapses the pane (closing the tab only when the last pane exits).
+    /// </summary>
+    internal void HandlePaneSessionExited(TerminalPaneViewModel pane, int exitCode)
     {
+        if (_isDisposed) return;
+
         void HandleExit()
         {
+            if (_isDisposed) return;
+
             OnPropertyChanged(nameof(IsRunning));
-            if (exitCode != 0)
+            if (exitCode != 0 && (ReferenceEquals(pane, ActivePane) || _panes.Count <= 1))
             {
                 ExecutionState = ProcessExecutionState.Failed;
                 LastExitCode = exitCode;
             }
-            TerminalModel.Feed($"\r\n[Process exited with code {exitCode}]\r\n");
-            CloseRequested?.Invoke(this);
+
+            if (!pane.IsDisposed)
+            {
+                pane.TerminalModel.Feed($"\r\n[Process exited with code {exitCode}]\r\n");
+            }
+
+            pane.RaiseCloseRequested();
+            ClosePane(pane);
         }
 
         _dispatcherService.RunOnUi(HandleExit);
+    }
+
+    private void DetachInitialSessionHandlers()
+    {
+        _session.DataReceived -= OnSessionDataReceived;
+        _session.WorkingDirectoryChanged -= OnSessionWorkingDirectoryChanged;
+        _session.CommandExecuted -= OnSessionCommandExecuted;
+        _session.CommandCompleted -= OnSessionCommandCompleted;
+        TerminalModel.UserInput -= OnTerminalUserInput;
+        TerminalModel.SizeChanged -= OnTerminalSizeChanged;
+        if (_terminalModelSearchStateChangedHandler != null)
+        {
+            TerminalModel.SearchStateChanged -= _terminalModelSearchStateChangedHandler;
+        }
     }
 
     [RelayCommand]
@@ -369,45 +409,37 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         _isDisposed = true;
 
         Loc.PropertyChanged -= OnLocalizationPropertyChanged;
-        _session.DataReceived -= OnSessionDataReceived;
-        _session.Exited -= OnSessionExited;
-        _session.WorkingDirectoryChanged -= OnSessionWorkingDirectoryChanged;
-        _session.CommandExecuted -= OnSessionCommandExecuted;
-        _session.CommandCompleted -= OnSessionCommandCompleted;
+        DetachInitialSessionHandlers();
         _pathCommandHistoryService.HistoryChangedForPath -= OnPathHistoryChanged;
         _directoryHistoryService.HistoryChanged -= OnSharedDirectoryHistoryChanged;
-        TerminalModel.UserInput -= OnTerminalUserInput;
-        TerminalModel.SizeChanged -= OnTerminalSizeChanged;
-        if (_terminalModelSearchStateChangedHandler != null)
-        {
-            TerminalModel.SearchStateChanged -= _terminalModelSearchStateChangedHandler;
-        }
-        TerminalModel.Dispose();
 
-        RequestFolderPickerAsync = null;
-        CloseRequested = null;
-        DirectoryChanged = null;
-        HistoryChanged = null;
-        FocusRenameBoxRequested = null;
-        FocusSearchBoxRequested = null;
-        FocusTerminalRequested = null;
-
-        _session.Dispose();
         StopActivityCooldownTimer();
+        UiFeedCoordinator.Dispose();
 
         if (_panes != null)
         {
             foreach (var pane in _panes.ToList())
             {
-                if (pane.Session != _session)
-                {
-                    pane.Dispose();
-                }
+                pane.Dispose();
             }
+            _panes.Clear();
         }
 
+        TerminalModel.Dispose();
+        _session.Dispose();
+
+        RequestFolderPickerAsync = null;
+        CloseRequested = null;
+        UndockRequested = null;
+        DirectoryChanged = null;
+        HistoryChanged = null;
+        LayoutChanged = null;
+        CommandExecutionCompleted = null;
+        FocusRenameBoxRequested = null;
+        FocusSearchBoxRequested = null;
+        FocusTerminalRequested = null;
+
         ClearHistory();
-        UiFeedCoordinator.Dispose();
     }
 
     /// <summary>
