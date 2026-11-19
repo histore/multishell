@@ -47,33 +47,15 @@ public partial class TerminalPaneView
             ?? (Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow?.Clipboard;
     }
 
-    private async Task SetClipboardTextAsync(string text)
-    {
-        if (SetClipboardTextOverride != null)
-        {
-            await SetClipboardTextOverride(text);
-            return;
-        }
+    private Task SetClipboardTextAsync(string text) =>
+        SetClipboardTextOverride != null
+            ? SetClipboardTextOverride(text)
+            : ClipboardHelper.TrySetTextAsync(GetClipboard(), text, "TerminalPaneView");
 
-        var clipboard = GetClipboard();
-        if (clipboard != null)
-        {
-            await clipboard.SetTextAsync(text);
-        }
-    }
-
-    private async Task<string?> GetClipboardTextAsync()
-    {
-        if (GetClipboardTextOverride != null)
-        {
-            return await GetClipboardTextOverride();
-        }
-
-        var clipboard = GetClipboard();
-        if (clipboard == null) return null;
-
-        return await clipboard.TryGetTextAsync();
-    }
+    private Task<string?> GetClipboardTextAsync() =>
+        GetClipboardTextOverride != null
+            ? GetClipboardTextOverride()
+            : ClipboardHelper.TryGetTextAsync(GetClipboard(), "TerminalPaneView");
 
     private void OnTerminalPointerMoved(object? sender, PointerEventArgs e)
     {
@@ -224,23 +206,8 @@ public partial class TerminalPaneView
     /// <summary>
     /// Pastes clipboard text into the running shell session, respecting bracketed paste mode.
     /// </summary>
-    internal async Task PasteFromClipboardAsync(TerminalPaneViewModel vm)
-    {
-        if (!vm.IsRunning) return;
-
-        try
-        {
-            var text = await GetClipboardTextAsync();
-            if (!string.IsNullOrEmpty(text))
-            {
-                vm.PasteText(text);
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[TerminalPaneView] Clipboard paste failed: {ex.Message}");
-        }
-    }
+    internal Task PasteFromClipboardAsync(TerminalPaneViewModel vm) =>
+        ClipboardHelper.PasteToPaneAsync(vm, GetClipboardTextAsync, "TerminalPaneView");
 
     [DynamicDependency(DynamicallyAccessedMemberTypes.NonPublicFields, typeof(TerminalControl))]
     [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Preserved via DynamicDependency and ILLink.Descriptors.xml for NativeAOT safety (BL-HIGH-006).")]

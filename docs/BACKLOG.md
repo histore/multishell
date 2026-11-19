@@ -176,9 +176,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `MultiShell.Tests/TerminalTabExecutionStateTests.cs`, `MultiShell.Tests/MainViewModelTabTests.ProfilesAndPersistence.cs`, `MultiShell.Tests/SharedDirectoryHistoryIntegrationTests.cs`, `MultiShell.Tests/PowerShellSessionTests.cs`
 - **Summary**: Replace fragile wall-clock sleeps with deterministic clock/completion signals and add tests for OSC 7/9;9, split UTF-8 streams, and CMD/NuShell/custom profile command-line generation.
 
-#### `[BL-LOW-005]` Decompose Oversized God-Classes & Eliminate ViewModel/View Duplication
+#### `[BL-LOW-005]` Decompose Oversized God-Classes & Eliminate ViewModel/View Duplication — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (extracted shared `Views/StoragePickerHelper.cs` and `Views/ClipboardHelper.cs` to eliminate duplicated picker/clipboard handling across `MainWindow.axaml.cs`, `MainWindow.Keyboard.cs`, and `TerminalPaneView.Links.cs`, and deduplicated string-history filtering via `RefreshFilteredStringHistory` in `TerminalTabViewModel.History.cs`)
 - **Scope**: `ViewModels/MainViewModel*.cs`, `ViewModels/TerminalTabViewModel*.cs`, `Views/MainWindow*.cs`, `Views/TerminalPaneView*.cs`
 - **Summary**: Extract cohesive sub-ViewModels (e.g., `ProfilesDialogViewModel`, `HistoryOverlayViewModel`) and shared picker/clipboard helpers.
 
