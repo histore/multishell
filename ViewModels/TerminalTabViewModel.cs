@@ -185,7 +185,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
     private double _terminalFontSize = 14.0;
 
     [ObservableProperty]
-    private string _terminalFontFamily = "avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace";
+    private string _terminalFontFamily = UiServiceDefaults.DefaultTerminalFontFamily;
 
     /// <summary>
     /// Dynamic localization service for the tab and in-terminal search.
@@ -242,8 +242,8 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         _fuzzySearchService = fuzzySearchService ?? new FuzzySearchService();
         _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
         _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
-        _dispatcherService = dispatcherService ?? AvaloniaDispatcherService.Instance;
-        _terminalModelFactory = terminalModelFactory ?? AvaloniaTerminalModelFactory.Instance;
+        _dispatcherService = dispatcherService ?? UiServiceDefaults.DispatcherService;
+        _terminalModelFactory = terminalModelFactory ?? UiServiceDefaults.TerminalModelFactory;
         Loc = localizationService ?? new LocalizationService();
         Loc.PropertyChanged += OnLocalizationPropertyChanged;
         _workingDirectory = session.WorkingDirectory;

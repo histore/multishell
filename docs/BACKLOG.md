@@ -130,9 +130,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `.github/workflows/release.yml`, `installer.iss`, `MultiShell.csproj`
 - **Summary**: Published directories, portable ZIPs, and installed directories omit `LICENSE` and `THIRD_PARTY_NOTICES.md` despite bundling `FiraCodeNerdFontMono-Regular.ttf` (OFL-1.1).
 
-#### `[BL-MED-007]` Complete Clean Architecture & Modern Interop Cleanup (`[LibraryImport]`, Composition Root Defaults)
+#### `[BL-MED-007]` Complete Clean Architecture & Modern Interop Cleanup (`[LibraryImport]`, Composition Root Defaults) — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (migrated `SetForegroundWindow` in `MainWindow.axaml.cs` to `[LibraryImport]`, decoupled `ThemeService` via `IDispatcherService`, moved `Avalonia*` defaults and `avares://` font URI out of ViewModels into `UiServiceDefaults` / `App.axaml.cs`, and added `ViewModelDecouplingTests` guard)
 - **Scope**: `Views/MainWindow.axaml.cs`, `Services/ThemeService.cs`, `Services/UiFrameworkInfo.cs`, `ViewModels/MainViewModel.cs`, `ViewModels/TerminalTabViewModel.cs`, `ViewModels/Panes/TerminalPaneViewModel.cs`
 - **Summary**: Replace legacy `[DllImport]` in `MainWindow.axaml.cs:466` with `[LibraryImport]`; move `Avalonia*` singleton fallbacks and `avares://` font URIs out of ViewModels into composition root / UI layer; decouple `ThemeService` from direct `Dispatcher.UIThread` calls.
 

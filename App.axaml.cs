@@ -29,11 +29,19 @@ public partial class App : Application
 
     private static void InitializeDesktopApplication(IClassicDesktopStyleApplicationLifetime desktop)
     {
+        // Composition root: register Avalonia platform adapters for ViewModels
+        UiServiceDefaults.DispatcherService = AvaloniaDispatcherService.Instance;
+        UiServiceDefaults.TerminalModelFactory = AvaloniaTerminalModelFactory.Instance;
+
         var resolver = new StartupPathResolver();
         var initialDir = resolver.ResolveFromArgs(desktop.Args);
 
         var coordinator = WindowCoordinatorService.Instance;
-        var vm = new MainViewModel(windowCoordinator: coordinator, initialDirectory: initialDir);
+        var vm = new MainViewModel(
+            windowCoordinator: coordinator,
+            initialDirectory: initialDir,
+            dispatcherService: AvaloniaDispatcherService.Instance,
+            terminalModelFactory: AvaloniaTerminalModelFactory.Instance);
         coordinator.RegisterWindow(vm, isPrimary: true);
 
         var window = new MainWindow { DataContext = vm };

@@ -189,8 +189,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
 
     private static string DetermineUiTerminalStack() => UiFrameworkInfo.GetUiTerminalStack();
 
-    public MainViewModel(string? initialDirectory = null, IWindowCoordinatorService? windowCoordinator = null)
-        : this(new ShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), windowCoordinator: windowCoordinator, initialDirectory: initialDirectory)
+    public MainViewModel(string? initialDirectory = null, IWindowCoordinatorService? windowCoordinator = null, IDispatcherService? dispatcherService = null, ITerminalModelFactory? terminalModelFactory = null)
+        : this(new ShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), windowCoordinator: windowCoordinator, initialDirectory: initialDirectory, dispatcherService: dispatcherService, terminalModelFactory: terminalModelFactory)
     {
     }
 
@@ -236,8 +236,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         _pathColorCodingService = pathColorCodingService ?? new PathColorCodingService();
         _toastNotificationService = toastNotificationService ?? new WindowsToastNotificationService(_localizationService);
         _windowCoordinator = windowCoordinator ?? WindowCoordinatorService.Instance;
-        _dispatcherService = dispatcherService ?? AvaloniaDispatcherService.Instance;
-        _terminalModelFactory = terminalModelFactory ?? AvaloniaTerminalModelFactory.Instance;
+        _dispatcherService = dispatcherService ?? UiServiceDefaults.DispatcherService;
+        _terminalModelFactory = terminalModelFactory ?? UiServiceDefaults.TerminalModelFactory;
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;

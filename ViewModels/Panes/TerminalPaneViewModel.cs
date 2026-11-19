@@ -75,7 +75,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private double _terminalFontSize = 14.0;
 
     [ObservableProperty]
-    private string _terminalFontFamily = "avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace";
+    private string _terminalFontFamily = UiServiceDefaults.DefaultTerminalFontFamily;
 
     [ObservableProperty]
     private bool _isExecuting;
@@ -132,8 +132,8 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     {
         Tab = tab ?? throw new ArgumentNullException(nameof(tab));
         Session = session ?? throw new ArgumentNullException(nameof(session));
-        _dispatcherService = dispatcherService ?? AvaloniaDispatcherService.Instance;
-        var modelFactory = terminalModelFactory ?? AvaloniaTerminalModelFactory.Instance;
+        _dispatcherService = dispatcherService ?? UiServiceDefaults.DispatcherService;
+        var modelFactory = terminalModelFactory ?? UiServiceDefaults.TerminalModelFactory;
         _workingDirectory = session.WorkingDirectory;
         _title = !string.IsNullOrWhiteSpace(_workingDirectory) ? _workingDirectory : session.Title;
         _isDarkTerminalTheme = isDarkTheme;
