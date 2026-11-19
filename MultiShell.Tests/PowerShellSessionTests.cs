@@ -209,5 +209,54 @@ public class PowerShellSessionTests
         // Assert
         Assert.Equal("\"C:\\dir\\\\\\\"name\\\"\\\\\"", formatted);
     }
+
+    [Fact]
+    public async Task ConcurrentResizeAndDispose_DoesNotThrowOrCorruptHandles()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        using var session = new ShellSession("ConcurrentResizeDisposeSession");
+        session.Start();
+
+        var resizeTask = Task.Run(() =>
+        {
+            for (int i = 0; i < 40; i++)
+            {
+                session.Resize(80 + (i % 20), 24 + (i % 10));
+            }
+        });
+
+        var disposeTask = Task.Run(() =>
+        {
+            session.Dispose();
+            session.Dispose(); // Idempotent double-dispose
+        });
+
+        var exception = await Record.ExceptionAsync(() => Task.WhenAll(resizeTask, disposeTask));
+        Assert.Null(exception);
+        Assert.False(session.IsRunning);
+        Assert.Throws<ObjectDisposedException>(() => session.Start());
+    }
+
+    [Fact]
+    public void CheckForOscSequences_FiresDirectoryChangedWithoutHoldingLock()
+    {
+        using var session = new ShellSession("OscReentrancyTest");
+        string? observedDir = null;
+        bool nestedCheckSucceeded = false;
+
+        session.WorkingDirectoryChanged += dir =>
+        {
+            observedDir = dir;
+            // Verify invoking CheckForOscSequences from another thread while inside the handler does not deadlock
+            var task = Task.Run(() => session.CheckForOscSequences("\x1b]133;D;0\x07"u8.ToArray()));
+            nestedCheckSucceeded = task.Wait(TimeSpan.FromSeconds(2));
+        };
+
+        session.CheckForOscSequences("\x1b]9;9;\"C:\\Projects\\MultiShell\"\x07"u8.ToArray());
+
+        Assert.Equal(@"C:\Projects\MultiShell", observedDir);
+        Assert.True(nestedCheckSucceeded);
+    }
 }
 

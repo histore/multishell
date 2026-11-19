@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -45,20 +46,51 @@ public sealed partial class ShellSession
 
     private void CheckForOscSequences(ReadOnlySpan<byte> data)
     {
+        List<int>? completedCodes = null;
+        List<string>? executedCommands = null;
+        string? directoryUpdate = null;
+
         try
         {
             lock (_oscBufferLock)
             {
-                ProcessOscBufferLocked(data);
+                ProcessOscBufferLocked(data, ref completedCodes, ref executedCommands, ref directoryUpdate);
             }
         }
         catch (Exception ex) when (ex is ArgumentException or DecoderFallbackException or RegexMatchTimeoutException or UriFormatException)
         {
             System.Diagnostics.Debug.WriteLine($"[ShellSession.CheckForOscSequences] Failed to parse OSC sequence: {ex.Message}");
+            return;
+        }
+
+        // Invoke external event subscribers outside _oscBufferLock to prevent lock-inversion deadlocks
+        if (completedCodes != null)
+        {
+            foreach (var code in completedCodes)
+            {
+                CommandCompleted?.Invoke(code);
+            }
+        }
+
+        if (executedCommands != null)
+        {
+            foreach (var cmd in executedCommands)
+            {
+                CommandExecuted?.Invoke(cmd);
+            }
+        }
+
+        if (directoryUpdate != null)
+        {
+            WorkingDirectoryChanged?.Invoke(directoryUpdate);
         }
     }
 
-    private void ProcessOscBufferLocked(ReadOnlySpan<byte> data)
+    private void ProcessOscBufferLocked(
+        ReadOnlySpan<byte> data,
+        ref List<int>? completedCodes,
+        ref List<string>? executedCommands,
+        ref string? directoryUpdate)
     {
         int maxChars = Encoding.UTF8.GetMaxCharCount(data.Length);
         if (maxChars <= 0) return;
@@ -72,7 +104,7 @@ public sealed partial class ShellSession
             _oscBuffer.Append(rentedChars, 0, actualChars);
 
             var currentBuffer = _oscBuffer.ToString();
-            int lastProcessedIndex = ProcessOscMatches(currentBuffer);
+            int lastProcessedIndex = ProcessOscMatches(currentBuffer, ref completedCodes, ref executedCommands, ref directoryUpdate);
 
             if (lastProcessedIndex > 0)
             {
@@ -89,50 +121,66 @@ public sealed partial class ShellSession
         }
     }
 
-    private int ProcessOscMatches(string currentBuffer)
+    private int ProcessOscMatches(
+        string currentBuffer,
+        ref List<int>? completedCodes,
+        ref List<string>? executedCommands,
+        ref string? directoryUpdate)
     {
         int lastProcessedIndex = -1;
 
         foreach (Match match in Osc133DRegex.Matches(currentBuffer))
         {
-            TryHandleOsc133DMatch(match);
+            if (TryParseOsc133DMatch(match, out int exitCode))
+            {
+                (completedCodes ??= new List<int>()).Add(exitCode);
+            }
             lastProcessedIndex = Math.Max(lastProcessedIndex, match.Index + match.Length);
         }
 
         foreach (Match match in Osc133ERegex.Matches(currentBuffer))
         {
-            TryHandleOsc133EMatch(match);
+            if (TryParseOsc133EMatch(match, out var cmd))
+            {
+                (executedCommands ??= new List<string>()).Add(cmd);
+            }
             lastProcessedIndex = Math.Max(lastProcessedIndex, match.Index + match.Length);
         }
 
         var matches9 = Osc9Regex.Matches(currentBuffer);
         if (matches9.Count > 0)
         {
-            UpdateDirectory(matches9[^1].Groups[1].Value.Trim());
+            var candidate = matches9[^1].Groups[1].Value.Trim();
+            if (TryApplyDirectoryUpdate(candidate))
+            {
+                directoryUpdate = candidate;
+            }
             lastProcessedIndex = Math.Max(lastProcessedIndex, matches9[^1].Index + matches9[^1].Length);
         }
 
         var matches7 = Osc7Regex.Matches(currentBuffer);
         if (matches7.Count > 0)
         {
-            UpdateDirectory(Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim()));
+            var candidate = Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim());
+            if (TryApplyDirectoryUpdate(candidate))
+            {
+                directoryUpdate = candidate;
+            }
             lastProcessedIndex = Math.Max(lastProcessedIndex, matches7[^1].Index + matches7[^1].Length);
         }
 
         return lastProcessedIndex;
     }
 
-    private void TryHandleOsc133DMatch(Match match)
+    private static bool TryParseOsc133DMatch(Match match, out int exitCode)
     {
         string rawCode = (match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).Trim();
-        if (int.TryParse(rawCode, out int exitCode))
-        {
-            CommandCompleted?.Invoke(exitCode);
-        }
+        return int.TryParse(rawCode, out exitCode);
     }
 
-    private void TryHandleOsc133EMatch(Match match)
+    private static bool TryParseOsc133EMatch(Match match, out string command)
     {
+        command = string.Empty;
         string base64 = (match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).Trim();
         try
         {
@@ -140,22 +188,24 @@ public sealed partial class ShellSession
             var cmd = Encoding.UTF8.GetString(bytes).Trim();
             if (!string.IsNullOrWhiteSpace(cmd))
             {
-                _lastExecutedCommand = cmd;
-                CommandExecuted?.Invoke(cmd);
+                command = cmd;
+                return true;
             }
         }
         catch (Exception ex) when (ex is FormatException or ArgumentException or DecoderFallbackException)
         {
-            System.Diagnostics.Debug.WriteLine($"[ShellSession.TryHandleOsc133EMatch] Invalid Base64 OSC 133;E payload: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[ShellSession.TryParseOsc133EMatch] Invalid Base64 OSC 133;E payload: {ex.Message}");
         }
+        return false;
     }
 
-    private void UpdateDirectory(string path)
+    private bool TryApplyDirectoryUpdate(string path)
     {
         if (!string.IsNullOrWhiteSpace(path) && !string.Equals(WorkingDirectory, path, StringComparison.OrdinalIgnoreCase))
         {
             WorkingDirectory = path;
-            WorkingDirectoryChanged?.Invoke(path);
+            return true;
         }
+        return false;
     }
 }
