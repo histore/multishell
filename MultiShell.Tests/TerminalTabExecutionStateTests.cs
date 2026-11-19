@@ -207,6 +207,40 @@ public class TerminalTabExecutionStateTests
         Assert.Equal(42, tab.LastExitCode);
     }
 
+    private sealed class QueuedDispatcherService : IDispatcherService
+    {
+        public Queue<Action> Pending { get; } = new();
+        public bool IsAvailable => true;
+        public bool CheckAccess() => false;
+        public void Post(Action action) => Pending.Enqueue(action);
+        public void RunOnUi(Action action) => Pending.Enqueue(action);
+        public System.Threading.Tasks.Task InvokeAsync(Func<System.Threading.Tasks.Task> action) => action();
+        public IDispatcherTimer? CreateTimer(TimeSpan interval, Action tickHandler) => null;
+    }
+
+    [Fact]
+    public void OnSessionCommandCompleted_MarshalsStateUpdatesToUiDispatcher()
+    {
+        var dispatcher = new QueuedDispatcherService();
+        var session = new MockPowerShellSession("Tab1");
+        using var tab = new TerminalTabViewModel(session, dispatcherService: dispatcher);
+        dispatcher.Pending.Clear();
+
+        tab.MarkCommandStarted("dotnet test");
+        Assert.Equal(ProcessExecutionState.Idle, tab.ExecutionState);
+        while (dispatcher.Pending.Count > 0) dispatcher.Pending.Dequeue().Invoke();
+        Assert.Equal(ProcessExecutionState.Running, tab.ExecutionState);
+
+        session.SimulateCommandCompleted(0);
+        // Must not mutate ExecutionState synchronously off-UI-thread
+        Assert.Equal(ProcessExecutionState.Running, tab.ExecutionState);
+        Assert.NotEmpty(dispatcher.Pending);
+
+        while (dispatcher.Pending.Count > 0) dispatcher.Pending.Dequeue().Invoke();
+        Assert.Equal(ProcessExecutionState.Success, tab.ExecutionState);
+        Assert.Equal(0, tab.LastExitCode);
+    }
+
     [Fact]
     public void CommandStarted_SetsActiveOutputAndFullOpacity_AndTransitionsToWaitingAfterCooldown()
     {

@@ -27,7 +27,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private readonly EventHandler? _terminalModelSearchStateChangedHandler;
     private Timer? _silenceTimer;
     private DateTime? _commandStartTime;
-    private bool _isDisposed;
+    private volatile bool _isDisposed;
 
     /// <summary>
     /// Gets the unique identifier for this terminal pane.

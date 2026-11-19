@@ -60,9 +60,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/ShellSession.cs`, `Services/ShellSession.Process.cs`, `Services/ShellSession.Streams.cs`
 - **Summary**: (1) `CreatePseudoConsole` failure leaks `inputWriteHandle` and `outputReadHandle`; (2) `Dispose()` releases `_pseudoConsole` and `_inputStream` without acquiring `_syncRoot` / `_inputWriteLock` or atomic disposal state, racing with `Resize()`; (3) `finally` calls `DeleteProcThreadAttributeList` even if initialization failed; (4) `Process.GetProcessById` races with immediate exit and `WaitForExitAsync` misses `ObjectDisposedException`; (5) synchronous `_process.WaitForExit(500)` can stall the UI thread; (6) OSC events are invoked while holding `_oscBufferLock`.
 
-#### `[BL-HIGH-003]` Fix Thread-Safety Races, UI-Thread Marshaling & Add Unit Tests for `TerminalUiFeedCoordinator`
+#### `[BL-HIGH-003]` Fix Thread-Safety Races, UI-Thread Marshaling & Add Unit Tests for `TerminalUiFeedCoordinator` — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (marshaled `MarkCommandStarted`/`OnSessionCommandCompleted` onto `IDispatcherService`, synchronized `_silenceTimer` disposal under `_silenceTimerLock` with `_isDisposed` guards, made `_isDisposed` volatile and preserved UI-thread flush ordering in `TerminalUiFeedCoordinator`, and added `TerminalUiFeedCoordinatorTests`)
 - **Scope**: `ViewModels/TerminalTabViewModel.ExecutionState.cs`, `ViewModels/Panes/TerminalPaneViewModel.Streaming.cs`, `Services/TerminalUiFeedCoordinator.cs`, `ViewModels/TerminalTabViewModel.cs`
 - **Summary**: (1) `TerminalTabViewModel.OnSessionCommandCompleted` mutates observable properties and stops `_activityCooldownTimer` directly on the PTY background thread; (2) `TerminalPaneViewModel.OnSessionCommandCompleted` disposes `_silenceTimer` outside `_silenceTimerLock` and UI callbacks omit `_isDisposed` re-checks; (3) `TerminalUiFeedCoordinator` uses non-volatile `_isDisposed`, can feed out-of-order when `CheckAccess()` is true while buffered chunks remain, is disposed after `TerminalModel.Dispose()`, and lacks dedicated unit tests.
 

@@ -67,6 +67,7 @@ public partial class TerminalPaneViewModel
         if (_isDisposed) return;
         _dispatcherService.RunOnUi(() =>
         {
+            if (_isDisposed) return;
             WorkingDirectory = newDir;
             Title = newDir;
             DirectoryChanged?.Invoke(this, newDir);
@@ -79,6 +80,7 @@ public partial class TerminalPaneViewModel
         _commandStartTime = DateTime.UtcNow;
         _dispatcherService.RunOnUi(() =>
         {
+            if (_isDisposed) return;
             IsExecuting = true;
             UpdateExecutionStatusBadge("● ", "Process_Activity_Active", "Active");
         });
@@ -94,12 +96,17 @@ public partial class TerminalPaneViewModel
     private void OnSessionCommandCompleted(int exitCode)
     {
         if (_isDisposed) return;
-        _silenceTimer?.Dispose();
-        _silenceTimer = null;
+
+        lock (_silenceTimerLock)
+        {
+            _silenceTimer?.Dispose();
+            _silenceTimer = null;
+        }
         _commandStartTime = null;
 
         _dispatcherService.RunOnUi(() =>
         {
+            if (_isDisposed) return;
             IsExecuting = false;
             ExecutionStatusBadge = null;
             FloatingHudBadge = null;
