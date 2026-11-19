@@ -58,11 +58,8 @@ public partial class TerminalPaneViewModel
 
     private void OnSessionExited(int exitCode)
     {
-        _dispatcherService.RunOnUi(() =>
-        {
-            CloseRequested?.Invoke(this);
-            Tab.ClosePane(this);
-        });
+        if (_isDisposed) return;
+        Tab.HandlePaneSessionExited(this, exitCode);
     }
 
     private void OnSessionWorkingDirectoryChanged(string newDir)

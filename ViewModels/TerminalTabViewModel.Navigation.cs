@@ -25,12 +25,12 @@ public partial class TerminalTabViewModel
     /// <summary>
     /// Scrolls the terminal scrollback buffer up by one page (REQ-TERM-003).
     /// </summary>
-    public void PageUp() => TerminalModel.PageUp();
+    public void PageUp() => ActiveTerminalModel.PageUp();
 
     /// <summary>
     /// Scrolls the terminal scrollback buffer down by one page (REQ-TERM-003).
     /// </summary>
-    public void PageDown() => TerminalModel.PageDown();
+    public void PageDown() => ActiveTerminalModel.PageDown();
 
     /// <summary>
     /// Sends the VT escape sequence for PageUp to the active PTY shell session (REQ-TERM-003).
@@ -57,10 +57,11 @@ public partial class TerminalTabViewModel
     {
         // ANSI sequence: \x1b[2J (erase screen), \x1b[3J (erase scrollback), \x1b[H (cursor home)
         const string clearSequence = "\x1b[2J\x1b[3J\x1b[H";
+        var model = ActiveTerminalModel;
         _dispatcherService.RunOnUi(() =>
         {
-            TerminalModel.Feed(clearSequence);
-            TerminalModel.ClearSelection();
+            model.Feed(clearSequence);
+            model.ClearSelection();
         });
     }
 

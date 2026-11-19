@@ -90,6 +90,9 @@ public partial class TerminalTabViewModel
             WorkingDirectory = pane.WorkingDirectory;
         }
 
+        OnPropertyChanged(nameof(IsRunning));
+        OnPropertyChanged(nameof(ShellType));
+        OnPropertyChanged(nameof(ShellIconTag));
         OnPropertyChanged(nameof(DisplayTitle));
         OnPropertyChanged(nameof(TabTooltip));
     }
@@ -176,11 +179,18 @@ public partial class TerminalTabViewModel
         var leaf = RootPaneNode.FindLeaf(paneToClose);
         if (leaf == null) return;
 
+        bool isInitialSessionPane = ReferenceEquals(paneToClose.Session, _session);
+        if (isInitialSessionPane)
+        {
+            DetachInitialSessionHandlers();
+        }
+
         paneToClose.Dispose();
         _panes.Remove(paneToClose);
 
         if (_panes.Count == 0)
         {
+            OnPropertyChanged(nameof(IsRunning));
             RequestClose();
             return;
         }

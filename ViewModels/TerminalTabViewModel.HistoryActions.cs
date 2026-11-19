@@ -26,7 +26,7 @@ public partial class TerminalTabViewModel
 
         var commandWithEnter = clean.EndsWith('\r') || clean.EndsWith('\n') ? clean : clean + "\r";
         var bytes = Encoding.UTF8.GetBytes(commandWithEnter);
-        _session.Send(bytes);
+        ActiveSession.Send(bytes);
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public partial class TerminalTabViewModel
         var clean = command.Trim();
         var bytes = Encoding.UTF8.GetBytes(clean);
         TrackInputBuffer(bytes);
-        _session.Send(bytes);
+        ActiveSession.Send(bytes);
     }
 
     [RelayCommand]
@@ -54,7 +54,7 @@ public partial class TerminalTabViewModel
             CheckForDirectoryChangeCommand(command.Trim());
         }
 
-        _session.Send(Encoding.UTF8.GetBytes(command));
+        ActiveSession.Send(Encoding.UTF8.GetBytes(command));
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public partial class TerminalTabViewModel
         string command = BuildDirectoryNavigationCommand(directory, appendSubmitNewline: false);
         var bytes = Encoding.UTF8.GetBytes(command);
         TrackInputBuffer(bytes);
-        _session.Send(bytes);
+        ActiveSession.Send(bytes);
     }
 
     private string BuildDirectoryNavigationCommand(string directory, bool appendSubmitNewline)
@@ -137,7 +137,7 @@ public partial class TerminalTabViewModel
 
         var bytes = Encoding.UTF8.GetBytes(formatted);
         TrackInputBuffer(bytes);
-        _session.Send(bytes);
+        ActiveSession.Send(bytes);
         FocusTerminalRequested?.Invoke();
     }
 
