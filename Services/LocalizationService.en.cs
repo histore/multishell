@@ -69,7 +69,7 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "No commands executed in this tab yet.",
         ["Drawer_Empty_Directories"] = "No directories recorded in this tab yet.",
         ["Drawer_Empty_Global"] = "No commands or directories recorded yet.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navigate  |  Click/Enter Insert  |  Right-Click Execute  |  Del Delete  |  Esc Close ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navigate  |  Click/Shift+Enter Insert  |  Enter/Right-Click Execute  |  Del Delete  |  Esc Close ]",
         ["Drawer_Item_Delete_Tooltip"] = "Delete entry (Del)",
 
         // Help Modal
@@ -97,7 +97,7 @@ public partial class LocalizationService
         ["Help_Open_Explorer"] = "Open file browser in current folder (Ctrl+Shift+E)",
         ["Help_Nav_F1"] = "Open this Help dialog (Ctrl+Shift+F1)",
         ["Help_Nav_Esc"] = "Close active overlay / dialog and focus terminal",
-        ["Help_Feature_1"] = "• Tab History: Hover left edge or press Ctrl+Shift+H (Commands) / Ctrl+Shift+L (Directories). Left-click/Enter to insert, right-click to execute.",
+        ["Help_Feature_1"] = "• Tab History: Hover left edge or press Ctrl+Shift+H (Commands) / Ctrl+Shift+L (Directories). Left-click/Shift+Enter to insert, Enter/right-click to execute.",
         ["Help_Feature_2"] = "• Drag & Drop: Reorder tabs by dragging with left mouse button.",
         ["Help_Feature_3"] = "• Tab Overflow: Scroll buttons (‹ ›) and quick menu (≡ ▾) appear when tab count exceeds window.",
         ["Help_Feature_4"] = "• Zoom: Ctrl++, Ctrl+-, Ctrl+0 or Ctrl+MouseWheel to dynamically scale terminal font size.",

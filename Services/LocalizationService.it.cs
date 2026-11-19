@@ -69,7 +69,7 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "Nessun comando eseguito in questa scheda.",
         ["Drawer_Empty_Directories"] = "Nessuna directory registrata in questa scheda.",
         ["Drawer_Empty_Global"] = "Nessun comando o percorso registrato.",
-        ["Drawer_Hint"] = "[ ▲/▼ Naviga  |  Clic/Invio Inserisci  |  Clic destro Esegui  |  Canc Elimina  |  Esc Chiudi ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Naviga  |  Clic/Shift+Invio Inserisci  |  Invio/Clic destro Esegui  |  Canc Elimina  |  Esc Chiudi ]",
         ["Drawer_Item_Delete_Tooltip"] = "Elimina voce (Canc)",
 
         // Help Modal
@@ -97,7 +97,7 @@ public partial class LocalizationService
         ["Help_Open_Explorer"] = "Apri esplora file nella cartella corrente (Ctrl+Shift+E)",
         ["Help_Nav_F1"] = "Apri questa finestra di guida (Ctrl+Shift+F1)",
         ["Help_Nav_Esc"] = "Chiudi finestra / dialogo attivo e focalizza il terminale",
-        ["Help_Feature_1"] = "• Cronologia scheda: Passa il mouse sul bordo sinistro o premi Ctrl+Shift+H (Comandi) / Ctrl+Shift+L (Directory). Clic sinistro/Invio per inserire, clic destro per eseguire.",
+        ["Help_Feature_1"] = "• Cronologia scheda: Passa il mouse sul bordo sinistro o premi Ctrl+Shift+H (Comandi) / Ctrl+Shift+L (Directory). Clic sinistro/Shift+Invio per inserire, Invio/clic destro per eseguire.",
         ["Help_Feature_2"] = "• Trascina & Rilascia: Riordina le schede trascinandole con il tasto sinistro del mouse.",
         ["Help_Feature_3"] = "• Schede in eccesso: I pulsanti di scorrimento (‹ ›) e il menu rapido (≡ ▾) appaiono quando le schede superano la finestra.",
         ["Help_Feature_4"] = "• Zoom: Ctrl++, Ctrl+-, Ctrl+0 o Ctrl+Rotellina per ridimensionare dinamicamente il carattere.",

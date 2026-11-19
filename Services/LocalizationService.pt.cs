@@ -69,7 +69,7 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "Nenhum comando executado neste separador.",
         ["Drawer_Empty_Directories"] = "Nenhum diretório registado neste separador.",
         ["Drawer_Empty_Global"] = "Nenhum comando ou caminho registado.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navegar  |  Clique/Enter Inserir  |  Clique direito Executar  |  Del Excluir  |  Esc Fechar ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navegar  |  Clique/Shift+Enter Inserir  |  Enter/Clique direito Executar  |  Del Excluir  |  Esc Fechar ]",
         ["Drawer_Item_Delete_Tooltip"] = "Excluir entrada (Del)",
 
         // Help Modal
@@ -97,7 +97,7 @@ public partial class LocalizationService
         ["Help_Open_Explorer"] = "Abrir explorador de ficheiros na pasta atual (Ctrl+Shift+E)",
         ["Help_Nav_F1"] = "Abrir este diálogo de ajuda (Ctrl+Shift+F1)",
         ["Help_Nav_Esc"] = "Fechar sobreposição / diálogo ativo e focar no terminal",
-        ["Help_Feature_1"] = "• Histórico do separador: Passe o rato na margem esquerda ou prima Ctrl+Shift+H (Comandos) / Ctrl+Shift+L (Diretórios). Clique esquerdo/Enter para inserir, clique direito para executar.",
+        ["Help_Feature_1"] = "• Histórico do separador: Passe o rato na margem esquerda ou prima Ctrl+Shift+H (Comandos) / Ctrl+Shift+L (Diretórios). Clique esquerdo/Shift+Enter para inserir, Enter/clique direito para executar.",
         ["Help_Feature_2"] = "• Arrastar & Largar: Reordene os separadores arrastando com o botão esquerdo do rato.",
         ["Help_Feature_3"] = "• Transbordo de separadores: Botões de deslocamento (‹ ›) e menu rápido (≡ ▾) surgem quando os separadores excedem a janela.",
         ["Help_Feature_4"] = "• Zoom: Ctrl++, Ctrl+-, Ctrl+0 ou Ctrl+Roda do rato para dimensionar dinamicamente a fonte.",

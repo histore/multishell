@@ -318,9 +318,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Views/Dialogs/HistoryDrawerView.axaml.cs`, `Views/Dialogs/HistoryDrawerView.Keyboard.cs`
 - **Summary**: Because history collections are sorted descending (`OrderByDescending(x => x.LastUsedAt)`), select index `0` (`selectFirstItem: true, selectLastItem: false`) when switching history tabs or clearing filter text.
 
-#### `[BL-LOW-009]` (`REV2-LOW-003`) Align `Drawer_Hint` / `Help_Feature_1` Shortcut Descriptions & Add Split-Pane / Undock Shortcuts to Help Modal
+#### `[BL-LOW-009]` (`REV2-LOW-003`) Align `Drawer_Hint` / `Help_Feature_1` Shortcut Descriptions & Add Split-Pane / Undock Shortcuts to Help Modal — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `Drawer_Hint` and `Help_Feature_1` across all 6 localization dictionaries to reflect `Click/Shift+Enter Insert | Enter/Right-Click Execute`, and added `Ctrl+Shift+U`, `Alt+Shift+➔ / V`, `Alt+Shift+⬇ / H`, and `Alt+Shift+Z` to `HelpModalView.axaml`)
 - **Scope**: `Services/LocalizationService.*.cs`, `Views/Dialogs/HelpModalView.axaml`
 - **Summary**: Update `Drawer_Hint` and `Help_Feature_1` in all 6 languages to reflect `Click/Shift+Enter Insert | Enter/Right-Click Execute`, and add the implemented Split-Pane and Tab-Undock shortcuts to `HelpModalView.axaml`.
 
