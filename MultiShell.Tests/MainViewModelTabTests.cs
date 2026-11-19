@@ -233,6 +233,20 @@ public partial class MainViewModelTabTests
     }
 
     [Fact]
+    public void AddNewTab_AfterClosingEarlierTab_UsesMonotonicCounterWithoutDuplicateTitles()
+    {
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+
+        mainVm.AddNewTab(); // PS 2
+        mainVm.CloseTab(mainVm.Tabs[0]); // Close PS 1 while PS 2 remains open
+        mainVm.AddNewTab(); // Must be PS 3, not a second PS 2
+
+        Assert.Equal(new[] { "PS 2", "PS 3" }, mainVm.Tabs.Select(t => t.Title).ToArray());
+    }
+
+    [Fact]
     public void DuplicateTab_CreatesNewTabWithSameWorkingDirectory()
     {
         // Arrange

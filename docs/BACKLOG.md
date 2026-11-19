@@ -182,8 +182,8 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `ViewModels/MainViewModel*.cs`, `ViewModels/TerminalTabViewModel*.cs`, `Views/MainWindow*.cs`, `Views/TerminalPaneView*.cs`
 - **Summary**: Extract cohesive sub-ViewModels (e.g., `ProfilesDialogViewModel`, `HistoryOverlayViewModel`) and shared picker/clipboard helpers.
 
-#### `[BL-LOW-006]` Use Monotonic `_tabCounter` for New Tab Titles & Avoid Per-Getter Allocation in `DisplayRootNode`
+#### `[BL-LOW-006]` Use Monotonic `_tabCounter` for New Tab Titles & Avoid Per-Getter Allocation in `DisplayRootNode` — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `CreateNewTab`/`AddNewTabWithProfile` in `MainViewModel.Tabs.cs` to increment monotonic `++_tabCounter`, cached `_zoomedPaneNode` in `TerminalTabViewModel.Panes.cs` updated via `OnActivePaneChanged`/`OnIsZoomedChanged`, and added regression tests in `MainViewModelTabTests` and `SplitPaneTreeTests`)
 - **Scope**: `ViewModels/MainViewModel.Tabs.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`
 - **Summary**: Increment `_tabCounter` in `CreateNewTab`/`AddNewTabWithProfile` to avoid duplicate default titles after closing tabs, and cache the zoomed `LeafPaneNodeViewModel` instead of allocating on every getter read.
