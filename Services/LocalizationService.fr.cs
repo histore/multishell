@@ -69,7 +69,7 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "Aucune commande exécutée dans cet onglet.",
         ["Drawer_Empty_Directories"] = "Aucun répertoire enregistré dans cet onglet.",
         ["Drawer_Empty_Global"] = "Aucune commande ou aucun répertoire enregistré.",
-        ["Drawer_Hint"] = "[ ▲/▼ Naviguer  |  Clic/Entrée Insérer  |  Clic droit Exécuter  |  Suppr Supprimer  |  Échap Fermer ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Naviguer  |  Clic/Maj+Entrée Insérer  |  Entrée/Clic droit Exécuter  |  Suppr Supprimer  |  Échap Fermer ]",
         ["Drawer_Item_Delete_Tooltip"] = "Supprimer l'entrée (Suppr)",
 
         // Help Modal
@@ -97,7 +97,7 @@ public partial class LocalizationService
         ["Help_Open_Explorer"] = "Ouvrir l'explorateur de fichiers dans le dossier actuel (Ctrl+Maj+E)",
         ["Help_Nav_F1"] = "Ouvrir cette boîte de dialogue d'aide (Ctrl+Maj+F1)",
         ["Help_Nav_Esc"] = "Fermer le dialogue actif et donner le focus au terminal",
-        ["Help_Feature_1"] = "• Historique : Survoler le bord gauche ou Ctrl+Maj+H (Commandes) / Ctrl+Maj+L (Répertoires). Clic/Entrée pour insérer, clic droit pour exécuter.",
+        ["Help_Feature_1"] = "• Historique : Survoler le bord gauche ou Ctrl+Maj+H (Commandes) / Ctrl+Maj+L (Répertoires). Clic/Maj+Entrée pour insérer, Entrée/clic droit pour exécuter.",
         ["Help_Feature_2"] = "• Glisser-déposer : Réorganiser les onglets en les faisant glisser avec le bouton gauche.",
         ["Help_Feature_3"] = "• Débordement : Boutons de défilement (‹ ›) et menu rapide (≡ ▾).",
         ["Help_Feature_4"] = "• Zoom : Ctrl++, Ctrl+-, Ctrl+0 ou Ctrl+Molette pour ajuster dynamiquement la taille.",

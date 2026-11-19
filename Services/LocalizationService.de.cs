@@ -69,7 +69,7 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "In diesem Tab wurden noch keine Befehle ausgeführt.",
         ["Drawer_Empty_Directories"] = "In diesem Tab wurden noch keine Verzeichnisse erfasst.",
         ["Drawer_Empty_Global"] = "Es wurden noch keine Befehle oder Pfade erfasst.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navigieren  |  Klick/Enter Übernehmen  |  Rechtsklick Ausführen  |  Entf Löschen  |  Esc Schließen ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navigieren  |  Klick/Umschalt+Enter Übernehmen  |  Enter/Rechtsklick Ausführen  |  Entf Löschen  |  Esc Schließen ]",
         ["Drawer_Item_Delete_Tooltip"] = "Eintrag löschen (Entf)",
 
         // Help Modal
@@ -97,7 +97,7 @@ public partial class LocalizationService
         ["Help_Open_Explorer"] = "Dateibrowser im aktuellen Ordner öffnen (Strg+Umschalt+E)",
         ["Help_Nav_F1"] = "Diesen Hilfe-Dialog öffnen (Strg+Umschalt+F1)",
         ["Help_Nav_Esc"] = "Aktives Overlay/Dialog schließen und Terminal fokussieren",
-        ["Help_Feature_1"] = "• Tab-Verlauf: Linke Kante berühren oder Strg+Umschalt+H (Befehle) / Strg+Umschalt+L (Verzeichnisse) drücken. Mit Klick/Enter übernehmen, per Rechtsklick direkt ausführen.",
+        ["Help_Feature_1"] = "• Tab-Verlauf: Linke Kante berühren oder Strg+Umschalt+H (Befehle) / Strg+Umschalt+L (Verzeichnisse) drücken. Mit Klick/Umschalt+Enter übernehmen, per Enter/Rechtsklick direkt ausführen.",
         ["Help_Feature_2"] = "• Drag & Drop: Tabs mit der linken Maustaste per Ziehen neu anordnen.",
         ["Help_Feature_3"] = "• Tab-Überlauf: Scrollbuttons (‹ ›) und Schnellmenü (≡ ▾) bei vielen Tabs.",
         ["Help_Feature_4"] = "• Zoom: Strg++, Strg+-, Strg+0 oder Strg+Mausrad zum dynamischen Skalieren der Terminalgröße.",

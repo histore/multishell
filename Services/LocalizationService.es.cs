@@ -69,7 +69,7 @@ public partial class LocalizationService
         ["Drawer_Empty_Commands"] = "Aún no se han ejecutado comandos en esta pestaña.",
         ["Drawer_Empty_Directories"] = "Aún no se han registrado directorios en esta pestaña.",
         ["Drawer_Empty_Global"] = "Aún no se han registrado comandos o rutas.",
-        ["Drawer_Hint"] = "[ ▲/▼ Navegar  |  Clic/Enter Insertar  |  Clic derecho Ejecutar  |  Supr Eliminar  |  Esc Cerrar ]",
+        ["Drawer_Hint"] = "[ ▲/▼ Navegar  |  Clic/Mayús+Enter Insertar  |  Enter/Clic derecho Ejecutar  |  Supr Eliminar  |  Esc Cerrar ]",
         ["Drawer_Item_Delete_Tooltip"] = "Eliminar entrada (Supr)",
 
         // Help Modal
@@ -97,7 +97,7 @@ public partial class LocalizationService
         ["Help_Open_Explorer"] = "Abrir explorador de archivos en la carpeta actual (Ctrl+Mayús+E)",
         ["Help_Nav_F1"] = "Abrir este diálogo de ayuda (Ctrl+Mayús+F1)",
         ["Help_Nav_Esc"] = "Cerrar el diálogo activo y enfocar el terminal",
-        ["Help_Feature_1"] = "• Historial: Pase el ratón por el borde izquierdo o Ctrl+Mayús+H (Comandos) / Ctrl+Mayús+L (Directorios). Clic/Enter para insertar, clic derecho para ejecutar.",
+        ["Help_Feature_1"] = "• Historial: Pase el ratón por el borde izquierdo o Ctrl+Mayús+H (Comandos) / Ctrl+Mayús+L (Directorios). Clic/Mayús+Enter para insertar, Enter/clic derecho para ejecutar.",
         ["Help_Feature_2"] = "• Arrastrar y soltar: Reordene las pestañas arrastrándolas con el ratón.",
         ["Help_Feature_3"] = "• Desbordamiento: Botones de desplazamiento (‹ ›) y menú rápido (≡ ▾).",
         ["Help_Feature_4"] = "• Zoom: Ctrl++, Ctrl+-, Ctrl+0 o Ctrl+Rueda para escalar la fuente.",
