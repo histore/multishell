@@ -215,7 +215,7 @@ public partial class LocalizationService
         // Keyboard Status Bar Indicators
         ["Status_CapsLock_Tooltip"] = "Caps Lock is active",
 
-        // Status Bar Path Breadcrumbs (REQ-TERM-013)
+        // Status Bar Path Breadcrumbs (REQ-UI-010)
         ["Status_Breadcrumb_Navigate_Tooltip"] = "Switch to directory: {0}",
         ["Status_Breadcrumb_Insert_Tooltip"] = "Insert path: {0}",
         ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Select folder and switch to it...",

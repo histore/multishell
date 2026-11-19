@@ -5,7 +5,7 @@ using MultiShell.Models;
 namespace MultiShell.Services;
 
 /// <summary>
-/// Parses directory path strings across Windows, UNC, and Unix styles into structured breadcrumb segments (REQ-TERM-013).
+/// Parses directory path strings across Windows, UNC, and Unix styles into structured breadcrumb segments (REQ-UI-010).
 /// </summary>
 public static class PathBreadcrumbParser
 {

@@ -82,7 +82,7 @@ public partial class TerminalTabViewModel
 
     /// <summary>
     /// Regenerates path breadcrumb segments with localized tooltips and interactive state
-    /// based on current draft command state and process execution state (REQ-TERM-013).
+    /// based on current draft command state and process execution state (REQ-UI-010).
     /// </summary>
     public void UpdateBreadcrumbs()
     {
@@ -129,7 +129,7 @@ public partial class TerminalTabViewModel
     }
 
     /// <summary>
-    /// Handles user interaction when clicking a path breadcrumb in the status bar (REQ-TERM-013).
+    /// Handles user interaction when clicking a path breadcrumb in the status bar (REQ-UI-010).
     /// </summary>
     [RelayCommand]
     public async Task HandleBreadcrumbClickAsync(PathBreadcrumbSegment? segment)

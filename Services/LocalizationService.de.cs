@@ -215,7 +215,7 @@ public partial class LocalizationService
         // Keyboard Status Bar Indicators
         ["Status_CapsLock_Tooltip"] = "Feststelltaste aktiviert (Caps Lock)",
 
-        // Status Bar Path Breadcrumbs (REQ-TERM-013)
+        // Status Bar Path Breadcrumbs (REQ-UI-010)
         ["Status_Breadcrumb_Navigate_Tooltip"] = "Zum Ordner wechseln: {0}",
         ["Status_Breadcrumb_Insert_Tooltip"] = "Pfad einfügen: {0}",
         ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Ordner auswählen und dorthin wechseln...",

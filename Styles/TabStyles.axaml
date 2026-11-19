@@ -251,7 +251,7 @@
         <Setter Property="FontFamily" Value="Segoe UI, Inter, sans-serif" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
-    <!-- Status Bar Path Breadcrumb Buttons (REQ-TERM-013) -->
+    <!-- Status Bar Path Breadcrumb Buttons (REQ-UI-010) -->
     <Style Selector="Button.statusBreadcrumbBtn">
         <Setter Property="Height" Value="18" />
         <Setter Property="MinHeight" Value="18" />
