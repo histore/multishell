@@ -40,6 +40,13 @@ public class SplitPaneTreeTests
         public void Dispose() => IsRunning = false;
         public void SimulateExit(int code = 0) => Exited?.Invoke(code);
         public void SimulateDataReceived(ReadOnlyMemory<byte> data) => DataReceived?.Invoke(data);
+        public void SimulateWorkingDirectoryChanged(string dir)
+        {
+            WorkingDirectory = dir;
+            WorkingDirectoryChanged?.Invoke(dir);
+        }
+        public void SimulateCommandExecuted(string cmd) => CommandExecuted?.Invoke(cmd);
+        public void SimulateCommandCompleted(int exitCode) => CommandCompleted?.Invoke(exitCode);
     }
 
     [Fact]
@@ -390,5 +397,38 @@ public class SplitPaneTreeTests
 
         tab.ToggleZoom();
         Assert.Same(tab.RootPaneNode, tab.DisplayRootNode);
+    }
+
+    [Fact]
+    public void SplitPane_SecondPaneEventsAndInput_PropagateToTabHistoryDirectoryAndExecutionState()
+    {
+        var session1 = new TestSession { WorkingDirectory = @"C:\Repo\One" };
+        var session2 = new TestSession { WorkingDirectory = @"C:\Repo\One" };
+        using var tab = new TerminalTabViewModel(session1);
+        tab.SessionFactory = (_, _) => session2;
+
+        var pane2 = tab.SplitActivePane(PaneSplitDirection.Vertical);
+        Assert.Same(pane2, tab.ActivePane);
+
+        // 1. User input in 2nd pane updates draft command state and marks command started on Enter
+        pane2.SendInput("dotnet build"u8.ToArray());
+        Assert.True(tab.HasDraftCommand);
+        pane2.SendInput("\r"u8.ToArray());
+        Assert.False(tab.HasDraftCommand);
+        Assert.Equal(ProcessExecutionState.Running, tab.ExecutionState);
+
+        // 2. CommandExecuted & CommandCompleted in 2nd pane update tab CommandHistory and ExecutionState
+        session2.SimulateCommandExecuted("dotnet build --configuration Release");
+        Assert.Contains("dotnet build --configuration Release", tab.CommandHistory);
+
+        session2.SimulateCommandCompleted(0);
+        Assert.Equal(ProcessExecutionState.Success, tab.ExecutionState);
+        Assert.Equal(0, tab.LastExitCode);
+
+        // 3. Directory change in active 2nd pane updates Tab WorkingDirectory, Title, and DirectoryHistory
+        session2.SimulateWorkingDirectoryChanged(@"C:\Repo\Two");
+        Assert.Equal(@"C:\Repo\Two", tab.WorkingDirectory);
+        Assert.Equal(@"C:\Repo\Two", tab.Title);
+        Assert.Contains(@"C:\Repo\Two", tab.DirectoryHistory);
     }
 }

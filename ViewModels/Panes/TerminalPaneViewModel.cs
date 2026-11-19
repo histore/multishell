@@ -186,10 +186,11 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
 
     public void SendInput(byte[] input)
     {
-        if (Session.IsRunning)
+        if (Session.IsRunning && input.Length > 0)
         {
             try
             {
+                Tab.TrackInputBuffer(input, this);
                 Session.Send(input);
             }
             catch (Exception ex) when (ex is System.IO.IOException or ObjectDisposedException or InvalidOperationException)

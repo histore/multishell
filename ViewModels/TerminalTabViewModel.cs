@@ -332,6 +332,24 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         }
     }
 
+    internal void HandlePaneWorkingDirectoryChanged(TerminalPaneViewModel pane, string newDir)
+    {
+        if (_isDisposed || string.IsNullOrWhiteSpace(newDir)) return;
+
+        if (ReferenceEquals(pane, ActivePane) || _panes.Count <= 1)
+        {
+            OnSessionWorkingDirectoryChanged(newDir);
+        }
+        else
+        {
+            _dispatcherService.RunOnUi(() =>
+            {
+                if (_isDisposed) return;
+                _directoryHistoryService.RecordDirectory(newDir);
+            });
+        }
+    }
+
     private void OnSessionWorkingDirectoryChanged(string newDir)
     {
         if (string.IsNullOrWhiteSpace(newDir)) return;

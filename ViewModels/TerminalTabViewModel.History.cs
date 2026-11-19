@@ -290,6 +290,18 @@ public partial class TerminalTabViewModel
         _dispatcherService.RunOnUi(Update);
     }
 
+    internal void HandlePaneCommandExecuted(TerminalPaneViewModel pane, string command)
+    {
+        if (_isDisposed || string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
+
+        var targetDir = _pendingCommandDirectory
+            ?? (!string.IsNullOrWhiteSpace(pane.WorkingDirectory) ? pane.WorkingDirectory : WorkingDirectory);
+        _pendingCommandDirectory = null;
+
+        var sanitizedCommand = ShellCommandFilter.SanitizeCommandForHistory(command);
+        _pathCommandHistoryService.RecordCommand(targetDir, sanitizedCommand);
+    }
+
     private void OnSessionCommandExecuted(string command)
     {
         if (string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
@@ -301,12 +313,25 @@ public partial class TerminalTabViewModel
         _pathCommandHistoryService.RecordCommand(targetDir, sanitizedCommand);
     }
 
-    private void CheckForDirectoryChangeCommand(string command)
+    private void CheckForDirectoryChangeCommand(string command, TerminalPaneViewModel? sourcePane = null)
     {
-        if (ShellDirectoryChangeDetector.TryDetectDirectoryChange(command, WorkingDirectory, out var newDir) &&
+        var baseDir = !string.IsNullOrWhiteSpace(sourcePane?.WorkingDirectory)
+            ? sourcePane.WorkingDirectory
+            : WorkingDirectory;
+
+        if (ShellDirectoryChangeDetector.TryDetectDirectoryChange(command, baseDir, out var newDir) &&
             !string.IsNullOrWhiteSpace(newDir))
         {
-            OnSessionWorkingDirectoryChanged(newDir);
+            if (sourcePane != null)
+            {
+                sourcePane.WorkingDirectory = newDir;
+                sourcePane.Title = newDir;
+                HandlePaneWorkingDirectoryChanged(sourcePane, newDir);
+            }
+            else
+            {
+                OnSessionWorkingDirectoryChanged(newDir);
+            }
         }
     }
 
