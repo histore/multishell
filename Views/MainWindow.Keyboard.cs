@@ -161,7 +161,7 @@ public partial class MainWindow
         }
         if (e.Key == Key.F4 && DataContext is MainViewModel f4Vm)
         {
-            f4Vm.CloseSelectedTab();
+            f4Vm.CloseActivePaneOrTab();
             e.Handled = true;
             return true;
         }
@@ -205,7 +205,7 @@ public partial class MainWindow
         {
             if (e.Key == Key.PageUp) { vm.MoveSelectedTab(-1); e.Handled = true; return; }
             if (e.Key == Key.PageDown) { vm.MoveSelectedTab(1); e.Handled = true; return; }
-            if (e.Key is Key.W or Key.F4) { vm.CloseSelectedTab(); e.Handled = true; return; }
+            if (e.Key is Key.W or Key.F4) { vm.CloseActivePaneOrTab(); e.Handled = true; return; }
             if (e.Key == Key.Tab) { vm.ShowTabSwitcher(forward: false, isKeyboardTriggered: true); e.Handled = true; }
             return;
         }
