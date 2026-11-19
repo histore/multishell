@@ -286,6 +286,12 @@ public class PowerShellSessionTests
         Assert.Single(updates);
         Assert.Equal("C:/Projects/My App", updates[0]);
         Assert.Equal("C:/Projects/My App", session.WorkingDirectory);
+
+        // POSIX / WSL OSC 7 paths must preserve their leading root slash
+        session.CheckForOscSequences("\x1b]7;file://ubuntu/home/user/my%20repo\x07"u8.ToArray());
+        Assert.Equal(2, updates.Count);
+        Assert.Equal("/home/user/my repo", updates[1]);
+        Assert.Equal("/home/user/my repo", session.WorkingDirectory);
     }
 
     [Fact]

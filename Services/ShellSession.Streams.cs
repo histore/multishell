@@ -13,7 +13,7 @@ public sealed partial class ShellSession
     [GeneratedRegex(@"\x1b\]9;9;""?([^""\x1b\x07]+)""?(\x1b\\|\x07)")]
     private static partial Regex GetOsc9Regex();
 
-    [GeneratedRegex(@"\x1b\]7;file://[^/\x1b\x07]*/?([^\x1b\x07]+)(\x1b\\|\x07)")]
+    [GeneratedRegex(@"\x1b\]7;file://[^/\x1b\x07]*(/[^\x1b\x07]+)(\x1b\\|\x07)")]
     private static partial Regex GetOsc7Regex();
 
     [GeneratedRegex(@"\x1b\]133;E;([A-Za-z0-9+/=]+)\x07|\x1b\]133;E;([A-Za-z0-9+/=]+)\x1b\\")]
@@ -222,7 +222,7 @@ public sealed partial class ShellSession
         var matches7 = GetOsc7Regex().Matches(currentBuffer);
         if (matches7.Count > 0)
         {
-            var candidate = Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim());
+            var candidate = NormalizeOsc7Path(Uri.UnescapeDataString(matches7[^1].Groups[1].Value.Trim()));
             if (TryApplyDirectoryUpdate(candidate))
             {
                 directoryUpdate = candidate;
@@ -231,6 +231,15 @@ public sealed partial class ShellSession
         }
 
         return lastProcessedIndex;
+    }
+
+    private static string NormalizeOsc7Path(string path)
+    {
+        if (path.Length >= 3 && path[0] == '/' && char.IsAsciiLetter(path[1]) && path[2] == ':')
+        {
+            return path[1..];
+        }
+        return path;
     }
 
     private static bool TryParseOsc133DMatch(Match match, out int exitCode)

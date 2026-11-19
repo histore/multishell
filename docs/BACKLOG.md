@@ -238,9 +238,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 
 ### Medium
 
-#### `[BL-MED-010]` (`REV2-MED-001`) Preserve Leading `/` in POSIX / WSL OSC 7 Working Directory Paths
+#### `[BL-MED-010]` (`REV2-MED-001`) Preserve Leading `/` in POSIX / WSL OSC 7 Working Directory Paths — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `GetOsc7Regex()` in `ShellSession.Streams.cs` to capture the leading `/` and added `NormalizeOsc7Path` to strip `/` only before a Windows drive letter `/[A-Za-z]:`, preserving `/home/...` POSIX paths with regression test in `PowerShellSessionTests`)
 - **Scope**: `Services/ShellSession.Streams.cs`, `Services/PathNormalizer.cs`
 - **Summary**: Capture the leading `/` in `GetOsc7Regex()` and only strip it when followed by a Windows drive letter (`/[A-Za-z]:`), preventing Linux/WSL OSC 7 paths (`file://ubuntu/home/user`) from losing their leading slash and resolving as relative Windows paths.
 
