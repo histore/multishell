@@ -213,15 +213,19 @@ public class SplitPaneContainerControl : ContentControl
         return grid;
     }
 
-    private static GridSplitter CreateSplitSplitter(bool isVertical) => new()
+    private static GridSplitter CreateSplitSplitter(bool isVertical)
     {
-        Width = isVertical ? 4 : double.NaN,
-        Height = isVertical ? double.NaN : 4,
-        HorizontalAlignment = isVertical ? Avalonia.Layout.HorizontalAlignment.Center : Avalonia.Layout.HorizontalAlignment.Stretch,
-        VerticalAlignment = isVertical ? Avalonia.Layout.VerticalAlignment.Stretch : Avalonia.Layout.VerticalAlignment.Center,
-        Background = new SolidColorBrush(Color.Parse("#252836")),
-        Cursor = new Cursor(isVertical ? StandardCursorType.SizeWestEast : StandardCursorType.SizeNorthSouth)
-    };
+        var splitter = new GridSplitter
+        {
+            Width = isVertical ? 4 : double.NaN,
+            Height = isVertical ? double.NaN : 4,
+            HorizontalAlignment = isVertical ? Avalonia.Layout.HorizontalAlignment.Center : Avalonia.Layout.HorizontalAlignment.Stretch,
+            VerticalAlignment = isVertical ? Avalonia.Layout.VerticalAlignment.Stretch : Avalonia.Layout.VerticalAlignment.Center,
+            Cursor = new Cursor(isVertical ? StandardCursorType.SizeWestEast : StandardCursorType.SizeNorthSouth)
+        };
+        splitter.Bind(Avalonia.Controls.Primitives.TemplatedControl.BackgroundProperty, splitter.GetResourceObservable("AppBorder"));
+        return splitter;
+    }
 
     private void ConfigureVerticalSplitGrid(Grid grid, SplitPaneNodeViewModel split, Control first, GridSplitter splitter, Control second)
     {

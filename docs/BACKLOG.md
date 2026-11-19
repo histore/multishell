@@ -306,9 +306,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 
 ### Low
 
-#### `[BL-LOW-007]` (`REV2-LOW-001`) Replace Hardcoded Dark Theme Colors in `TerminalPaneView`, `SplitPaneContainerControl` & `MainWindow` Edge Fades
+#### `[BL-LOW-007]` (`REV2-LOW-001`) Replace Hardcoded Dark Theme Colors in `TerminalPaneView`, `SplitPaneContainerControl` & `MainWindow` Edge Fades — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (replaced hardcoded dark colors with `{DynamicResource AppSurfaceModal}` on `TerminalPaneView.MiniHeader`, theme-aware `LightInactiveBorderSubtleBrush` (`#CBD1E1`) in `TerminalPaneViewModel.BorderBrush`, dynamic `AppBorder` binding on `SplitPaneContainerControl` `GridSplitter`, and theme-aware `AppHeaderLeftFadeBrush`/`AppHeaderRightFadeBrush` resources in `App.axaml` and `MainWindow.axaml`)
 - **Scope**: `Views/TerminalPaneView.axaml`, `ViewModels/Panes/TerminalPaneViewModel.cs`, `Views/SplitPaneContainerControl.cs`, `Views/MainWindow.axaml`, `App.axaml`
 - **Summary**: Use theme-aware dynamic resources for `MiniHeader` background (`#D9161822`), inactive pane border/splitter brushes (`#252836`), and tab bar scroll edge fades (`#B30C0D12`) so Light theme renders cleanly.
 
