@@ -62,11 +62,20 @@ public static class PathNormalizer
     public static bool DirectoryExistsOrNonWindows(string? path)
     {
         if (string.IsNullOrWhiteSpace(path)) return false;
+
         // Do not prune WSL / POSIX style paths on Windows
-        if (path.StartsWith('/') || path.StartsWith(@"\\wsl", StringComparison.OrdinalIgnoreCase))
+        if (path.StartsWith('/') ||
+            path.StartsWith(@"\\wsl$\", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith(@"\\wsl.localhost\", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
+
+        if (!LinkDetectionHelper.IsSafeLocalPath(path))
+        {
+            return false;
+        }
+
         return Directory.Exists(path);
     }
 }

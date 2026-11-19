@@ -280,9 +280,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/PathCommandHistoryService.cs`, `Services/ShellCommandFilter.cs`
 - **Summary**: Call `ShellCommandFilter.SanitizeCommandForHistory` directly inside `PathCommandHistoryService.RecordCommand` and `ImportCommandsForPath`, fix the unclosed single-quote branch (`'[^']*'`) in `ShellCommandFilter`, and migrate its regexes to `[GeneratedRegex]`.
 
-#### `[BL-MED-017]` (`REV2-MED-008`) Guard `PathNormalizer` & `StartupPathResolver` Against Unsafe Remote UNC / SMB Paths
+#### `[BL-MED-017]` (`REV2-MED-008`) Guard `PathNormalizer` & `StartupPathResolver` Against Unsafe Remote UNC / SMB Paths — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (tightened WSL UNC prefix checks in `PathNormalizer.DirectoryExistsOrNonWindows` to `\\wsl$\` and `\\wsl.localhost\`, guarded `PathNormalizer` and `StartupPathResolver.ResolveWorkingDirectory` with `LinkDetectionHelper.IsSafeLocalPath`, and added unit tests in `StartupPathResolverTests`)
 - **Scope**: `Services/PathNormalizer.cs`, `Services/StartupPathResolver.cs`
 - **Summary**: Tighten `path.StartsWith(@"\\wsl")` in `PathNormalizer.DirectoryExistsOrNonWindows` to only allow `\\wsl$\` and `\\wsl.localhost\`, and guard `Directory.Exists`/`File.Exists` in `PathNormalizer` and `StartupPathResolver` with `LinkDetectionHelper.IsSafeLocalPath`.
 
