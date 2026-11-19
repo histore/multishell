@@ -119,7 +119,7 @@ public sealed partial class ShellSession
             {
                 return BuildWslCommandLine(_customExecutable, workingDir, args);
             }
-            return $"\"{_customExecutable}\"{args}";
+            return $"{FormatWin32QuotedArgument(_customExecutable)}{args}";
         }
 
         if (_shellType == ShellType.PowerShell)
@@ -173,13 +173,13 @@ public sealed partial class ShellSession
 
             // Encode as UTF-16LE Base64 for -EncodedCommand; avoids all quoting issues.
             string encodedHook = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(hookScript));
-            return $"\"{exePath}\" -NoLogo -NoExit -EncodedCommand {encodedHook}";
+            return $"{FormatWin32QuotedArgument(exePath)} -NoLogo -NoExit -EncodedCommand {encodedHook}";
         }
 
         if (_shellType == ShellType.NuShell)
         {
             string exePath = ShellDiscoveryService.ResolveExecutable("nu.exe") ?? "nu.exe";
-            return $"\"{exePath}\"";
+            return FormatWin32QuotedArgument(exePath);
         }
 
         if (_shellType == ShellType.WSL)
@@ -192,19 +192,20 @@ public sealed partial class ShellSession
             {
                 return BuildWslCommandLine(exePath, workingDir);
             }
-            return $"\"{exePath}\"";
+            return FormatWin32QuotedArgument(exePath);
         }
 
         var cmdPath = ShellDiscoveryService.ResolveExecutable("cmd.exe") ??
                       Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
         if (!File.Exists(cmdPath)) cmdPath = "cmd.exe";
-        return $"\"{cmdPath}\" /K \"chcp 65001 >nul\"";
+        return $"{FormatWin32QuotedArgument(cmdPath)} /K \"chcp 65001 >nul\"";
     }
 
     internal static string BuildWslCommandLine(string executable, string workingDir, string? extraArgs = null)
     {
+        var quotedExe = FormatWin32QuotedArgument(executable);
         var quotedDir = FormatWin32QuotedArgument(Path.TrimEndingDirectorySeparator(workingDir));
-        return $"\"{executable}\" --cd {quotedDir}{extraArgs}";
+        return $"{quotedExe} --cd {quotedDir}{extraArgs}";
     }
 
     /// <summary>

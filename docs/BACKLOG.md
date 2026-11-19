@@ -106,9 +106,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/SingleInstanceService.cs`
 - **Summary**: Single `ReadAsync` call can truncate payloads; `NamedPipeClientStream` omits `PipeOptions.CurrentUserOnly`; `Dispose()` disposes `_cts` before `_serverTask` exits.
 
-#### `[BL-MED-003]` Resolve Built-In System Shells from `System32` First & Quote Executables with `FormatWin32QuotedArgument`
+#### `[BL-MED-003]` Resolve Built-In System Shells from `System32` First & Quote Executables with `FormatWin32QuotedArgument` — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (resolved built-in system shells from Windows System directories before qualified `PATH` entries in `ShellDiscoveryService.ResolveExecutable` and quoted all shell executables with `FormatWin32QuotedArgument` in `ShellSession.Process.cs`)
 - **Scope**: `Services/ShellDiscoveryService.cs`, `Services/ShellSession.Process.cs`
 - **Summary**: `ResolveExecutable` searches `PATH` before `System32` for system binaries (`cmd.exe`, `wsl.exe`, `powershell.exe`), and `GenerateShellCommandLine` wraps executables with naive `"{exePath}"` instead of `FormatWin32QuotedArgument`.
 
