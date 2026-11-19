@@ -220,6 +220,9 @@ public partial class LocalizationService
         ["Status_Breadcrumb_Insert_Tooltip"] = "Inserir caminho: {0}",
         ["Status_Breadcrumb_PickAndNavigate_Tooltip"] = "Selecionar pasta e mudar...",
         ["Status_Breadcrumb_PickAndInsert_Tooltip"] = "Selecionar pasta e inserir caminho...",
-        ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navegação indisponível enquanto um processo está em execução"
+        ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navegação indisponível enquanto um processo está em execução",
+
+        // Multi-Window Title Prefix (REQ-TAB-026)
+        ["Window_Secondary_Title_Prefix"] = "[Janela {0} ⧉] "
     };
 }

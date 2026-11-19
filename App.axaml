@@ -28,6 +28,7 @@
                     <SolidColorBrush x:Key="AppBorderHover">#32354A</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextPrimary">#FFFFFF</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextSecondary">#C2C8E0</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextTertiary">#8A90AD</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextMuted">#626880</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextDimmed">#7E849E</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextKbd">#A9B1D6</SolidColorBrush>
@@ -35,6 +36,7 @@
                     <SolidColorBrush x:Key="AppAccentHover">#89B4FA</SolidColorBrush>
                     <SolidColorBrush x:Key="AppSuccess">#9ECE6A</SolidColorBrush>
                     <SolidColorBrush x:Key="AppDanger">#F7768E</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDangerSubtle">#26F7768E</SolidColorBrush>
                     <SolidColorBrush x:Key="AppModalOverlay">#55000000</SolidColorBrush>
 
                     <!-- SvcSystems.UI.Terminal Dark Xterm Color Palette -->
@@ -69,6 +71,7 @@
                     <SolidColorBrush x:Key="AppBorderHover">#A6B0C8</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextPrimary">#1A1D2B</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextSecondary">#2E3348</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppTextTertiary">#68708A</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextMuted">#757D96</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextDimmed">#5A627B</SolidColorBrush>
                     <SolidColorBrush x:Key="AppTextKbd">#383D54</SolidColorBrush>
@@ -76,6 +79,7 @@
                     <SolidColorBrush x:Key="AppAccentHover">#1D4ED8</SolidColorBrush>
                     <SolidColorBrush x:Key="AppSuccess">#16A34A</SolidColorBrush>
                     <SolidColorBrush x:Key="AppDanger">#DC2626</SolidColorBrush>
+                    <SolidColorBrush x:Key="AppDangerSubtle">#20DC2626</SolidColorBrush>
                     <SolidColorBrush x:Key="AppModalOverlay">#33000000</SolidColorBrush>
 
                     <!-- SvcSystems.UI.Terminal Light Xterm Color Palette -->

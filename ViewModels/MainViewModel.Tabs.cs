@@ -36,7 +36,9 @@ public partial class MainViewModel
     {
         get
         {
-            var prefix = IsPrimary ? "" : $"[Fenster {WindowNumber} ⧉] ";
+            var prefix = IsPrimary
+                ? ""
+                : string.Format(_localizationService["Window_Secondary_Title_Prefix"], WindowNumber);
             if (SelectedTab == null) return $"{prefix}MultiShell";
 
             var rawTitle = SelectedTab.HasCustomTitle
