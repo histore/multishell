@@ -206,9 +206,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Views/MainWindow.Keyboard.cs`, `Views/MainWindow.axaml`
 - **Summary**: Update `TryHandleFunctionKeyDown` (`Key.F4`) and `TryHandleTabManagementKeyDown` (`Key.W or Key.F4`) in `MainWindow.Keyboard.cs` to invoke `CloseActivePaneOrTab()` instead of `CloseSelectedTab()`, preventing `Ctrl+Shift+W` / `Ctrl+Shift+F4` from destroying the entire tab when multiple split panes are open (`REQ-UI-006`).
 
-#### `[BL-HIGH-010]` (`REV2-HIGH-003`) Implement Documented `Ctrl+Shift+K` (Clear Terminal Buffer) Shortcut in Keyboard Routing
+#### `[BL-HIGH-010]` (`REV2-HIGH-003`) Implement Documented `Ctrl+Shift+K` (Clear Terminal Buffer) Shortcut in Keyboard Routing — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (added `ClearActiveTabBufferCommand` to `MainViewModel.Panes.cs`, wired `Ctrl+Shift+K` in `MainWindow.Keyboard.cs` (`TryHandleCtrlShiftActionKeyDown`) and `MainWindow.axaml`, and added unit test in `SplitPaneTreeTests`)
 - **Scope**: `Views/MainWindow.Keyboard.cs`, `Views/Dialogs/HelpModalView.axaml`, `ViewModels/Panes/TerminalPaneViewModel.cs`
 - **Summary**: Handle `Key.K` in `MainWindow.Keyboard.cs` (`TryHandleCtrlShiftActionKeyDown`) to invoke `SelectedTab.ActivePane?.ClearBuffer()` (fallback `SelectedTab.ClearBuffer()`), matching the `Ctrl+Shift+K` shortcut documented in `HelpModalView.axaml`.
 

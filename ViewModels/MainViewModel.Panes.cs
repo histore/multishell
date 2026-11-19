@@ -29,6 +29,9 @@ public partial class MainViewModel
     public void SplitActiveTabRight() => SelectedTab?.SplitRight();
 
     [RelayCommand]
+    public void ClearActiveTabBuffer() => SelectedTab?.ClearBuffer();
+
+    [RelayCommand]
     public void SplitActiveTabDown() => SelectedTab?.SplitDown();
 
     [RelayCommand]

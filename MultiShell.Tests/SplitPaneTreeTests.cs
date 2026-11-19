@@ -431,4 +431,24 @@ public class SplitPaneTreeTests
         Assert.Equal(@"C:\Repo\Two", tab.Title);
         Assert.Contains(@"C:\Repo\Two", tab.DirectoryHistory);
     }
+
+    [Fact]
+    public void ClearBuffer_WhenSecondSplitPaneIsActive_ClearsOnlyActivePaneTerminalModel()
+    {
+        var session1 = new TestSession();
+        var session2 = new TestSession();
+        using var tab = new TerminalTabViewModel(session1);
+        tab.SessionFactory = (_, _) => session2;
+
+        tab.TerminalModel.Feed("Pane1 Retained Text");
+        var pane2 = tab.SplitActivePane(PaneSplitDirection.Vertical);
+        pane2.TerminalModel.Feed("Pane2 Cleared Text");
+
+        tab.ClearBuffer();
+
+        var line1 = ((SvcSystems.UI.Terminal.TerminalControlModel)tab.TerminalModel.NativeModel).Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        var line2 = ((SvcSystems.UI.Terminal.TerminalControlModel)pane2.TerminalModel.NativeModel).Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
+        Assert.Contains("Pane1 Retained Text", line1);
+        Assert.DoesNotContain("Pane2 Cleared Text", line2);
+    }
 }
