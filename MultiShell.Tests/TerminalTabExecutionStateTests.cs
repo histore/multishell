@@ -308,14 +308,18 @@ public class TerminalTabExecutionStateTests
     public void LongRunningCommand_FiresCommandExecutionCompleted()
     {
         var session = new MockPowerShellSession("Tab1");
-        using var tab = new TerminalTabViewModel(session);
-        tab.LongRunningThreshold = TimeSpan.FromMilliseconds(50);
+        var timeProvider = new ManualTimeProvider();
+        using var tab = new TerminalTabViewModel(session)
+        {
+            TimeProvider = timeProvider,
+            LongRunningThreshold = TimeSpan.FromMilliseconds(50)
+        };
 
         CommandExecutionResult? receivedResult = null;
         tab.CommandExecutionCompleted += (_, res) => receivedResult = res;
 
         tab.MarkCommandStarted("long_task");
-        System.Threading.Thread.Sleep(80);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(80));
         session.SimulateCommandCompleted(0);
 
         Assert.NotNull(receivedResult);
@@ -328,13 +332,18 @@ public class TerminalTabExecutionStateTests
     public void ShortRunningCommand_DoesNotFireCommandExecutionCompleted()
     {
         var session = new MockPowerShellSession("Tab1");
-        using var tab = new TerminalTabViewModel(session);
-        tab.LongRunningThreshold = TimeSpan.FromSeconds(10);
+        var timeProvider = new ManualTimeProvider();
+        using var tab = new TerminalTabViewModel(session)
+        {
+            TimeProvider = timeProvider,
+            LongRunningThreshold = TimeSpan.FromSeconds(10)
+        };
 
         bool fired = false;
         tab.CommandExecutionCompleted += (_, _) => fired = true;
 
         tab.MarkCommandStarted("quick_task");
+        timeProvider.Advance(TimeSpan.FromSeconds(2));
         session.SimulateCommandCompleted(0);
 
         Assert.False(fired);
@@ -344,7 +353,7 @@ public class TerminalTabExecutionStateTests
     public void MainViewModel_NotifiesToast_WhenTabIsInactive()
     {
         var mockToast = new MockToastNotificationService();
-        var mainVm = new MainViewModel(
+        using var mainVm = new MainViewModel(
             new MockShellProcessService(),
             new MockTabStatePersistenceService(),
             new ThemeService(),
@@ -358,9 +367,11 @@ public class TerminalTabExecutionStateTests
         var tab2 = mainVm.Tabs[1];
         mainVm.SelectedTab = tab2; // tab1 is now in the background!
 
-        tab1.LongRunningThreshold = TimeSpan.FromMilliseconds(10);
+        var timeProvider = new ManualTimeProvider();
+        tab1.TimeProvider = timeProvider;
+        tab1.LongRunningThreshold = TimeSpan.FromSeconds(10);
         tab1.MarkCommandStarted("docker build");
-        System.Threading.Thread.Sleep(20);
+        timeProvider.Advance(TimeSpan.FromSeconds(12));
         tab1.OnSessionCommandCompleted(0);
 
         Assert.Single(mockToast.Notifications);
@@ -372,7 +383,7 @@ public class TerminalTabExecutionStateTests
     public void MainViewModel_DoesNotNotifyToast_WhenTabIsActiveAndWindowIsActive()
     {
         var mockToast = new MockToastNotificationService();
-        var mainVm = new MainViewModel(
+        using var mainVm = new MainViewModel(
             new MockShellProcessService(),
             new MockTabStatePersistenceService(),
             new ThemeService(),
@@ -385,12 +396,25 @@ public class TerminalTabExecutionStateTests
         mainVm.SelectedTab = activeTab;
         mainVm.IsWindowInactive = false;
 
-        activeTab.LongRunningThreshold = TimeSpan.FromMilliseconds(10);
+        var timeProvider = new ManualTimeProvider();
+        activeTab.TimeProvider = timeProvider;
+        activeTab.LongRunningThreshold = TimeSpan.FromSeconds(10);
         activeTab.MarkCommandStarted("dotnet run");
-        System.Threading.Thread.Sleep(20);
+        timeProvider.Advance(TimeSpan.FromSeconds(12));
         activeTab.OnSessionCommandCompleted(0);
 
         Assert.Empty(mockToast.Notifications);
+    }
+
+    private sealed class ManualTimeProvider : TimeProvider
+    {
+        private long _timestamp = 1_000_000;
+
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp() => _timestamp;
+
+        public void Advance(TimeSpan delta) => _timestamp += delta.Ticks;
     }
 
     [Fact]

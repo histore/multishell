@@ -170,9 +170,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/LocalizationService.*.cs`, `installer.iss`
 - **Summary**: Prune or wire unused i18n keys, align localized modifier names (`Shift`/`Umschalt`, `Mayús`, `Maj`, `Maiusc`), and add Italian/Portuguese languages to `installer.iss`.
 
-#### `[BL-LOW-004]` Replace Timing-Sensitive `Thread.Sleep` / `Task.Delay` in Tests & Expand `ShellSession` Test Coverage
+#### `[BL-LOW-004]` Replace Timing-Sensitive `Thread.Sleep` / `Task.Delay` in Tests & Expand `ShellSession` Test Coverage — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (injected `TimeProvider` into `TerminalTabViewModel` execution timing, replaced `Thread.Sleep`/`Task.Delay` flakiness in execution-state/persistence/history tests with `ManualTimeProvider` and `TaskCompletionSource`, and expanded `PowerShellSessionTests` for OSC 7, split multi-byte UTF-8 + ESC-free fast-path, and `CMD`/`NuShell`/`PowerShell`/`WSL`/custom command-line generation)
 - **Scope**: `MultiShell.Tests/TerminalTabExecutionStateTests.cs`, `MultiShell.Tests/MainViewModelTabTests.ProfilesAndPersistence.cs`, `MultiShell.Tests/SharedDirectoryHistoryIntegrationTests.cs`, `MultiShell.Tests/PowerShellSessionTests.cs`
 - **Summary**: Replace fragile wall-clock sleeps with deterministic clock/completion signals and add tests for OSC 7/9;9, split UTF-8 streams, and CMD/NuShell/custom profile command-line generation.
 

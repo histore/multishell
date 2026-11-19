@@ -99,8 +99,6 @@ public partial class MainViewModelTabTests
         session.TriggerCommandExecuted("Get-ChildItem");
         session.TriggerCommandExecuted("git status");
 
-        // Allow async save task
-        await Task.Delay(50);
         mainVm.SaveCurrentStateSynchronously();
 
         // Assert
@@ -128,8 +126,6 @@ public partial class MainViewModelTabTests
         var tab2 = mainVm.Tabs[1];
         mainVm.CloseTab(tab2);
 
-        // Allow save
-        await Task.Delay(50);
         mainVm.SaveCurrentStateSynchronously();
 
         // Assert - Saved state now only contains tab 1
@@ -492,13 +488,18 @@ public partial class MainViewModelTabTests
 
     private sealed class CountingPersistenceService : ITabStatePersistenceService
     {
+        private readonly System.Threading.Tasks.TaskCompletionSource _firstSaveCompleted =
+            new(System.Threading.Tasks.TaskCreationOptions.RunContinuationsAsynchronously);
+
         public int SaveCount { get; private set; }
         public WorkspaceState? LastState { get; private set; }
+        public System.Threading.Tasks.Task FirstSaveTask => _firstSaveCompleted.Task;
 
         public Task SaveStateAsync(WorkspaceState state, System.Threading.CancellationToken cancellationToken = default)
         {
             SaveCount++;
             LastState = state;
+            _firstSaveCompleted.TrySetResult();
             return Task.CompletedTask;
         }
 
@@ -521,7 +522,7 @@ public partial class MainViewModelTabTests
         mainVm.AddNewTab();
         mainVm.TriggerSaveState();
 
-        await Task.Delay(250);
+        await persistenceService.FirstSaveTask.WaitAsync(TimeSpan.FromSeconds(3));
 
         Assert.Equal(1, persistenceService.SaveCount);
         Assert.NotNull(persistenceService.LastState);

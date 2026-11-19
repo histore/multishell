@@ -171,7 +171,6 @@ public class SharedDirectoryHistoryIntegrationTests
         // Act 2 - Visit a new directory and save synchronously
         var session = processService.CreatedSessions[^1];
         session.TriggerDirectoryChange(@"C:\repo\folder4");
-        await Task.Delay(50);
         mainVm.SaveCurrentStateSynchronously();
 
         // Assert - Saved state contains updated shared directories with folder4 at the end

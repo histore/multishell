@@ -268,11 +268,73 @@ public class PowerShellSessionTests
             customExecutable: @"C:\tools\nu""shell\.exe",
             customArguments: "--login");
 
-        var method = typeof(ShellSession).GetMethod("GenerateShellCommandLine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        Assert.NotNull(method);
-
-        var cmdLine = (string?)method.Invoke(session, new object?[] { null });
+        var cmdLine = session.GenerateShellCommandLine(null);
         Assert.Equal("\"C:\\tools\\nu\\\"shell\\.exe\" --login", cmdLine);
+    }
+
+    [Fact]
+    public void CheckForOscSequences_ParsesOsc7UriUnescaped_AndSuppressesDuplicateUpdates()
+    {
+        using var session = new ShellSession("Osc7");
+        var updates = new System.Collections.Generic.List<string>();
+        session.WorkingDirectoryChanged += dir => updates.Add(dir);
+
+        session.CheckForOscSequences("\x1b]7;file://localhost/C:/Projects/My%20App\x1b\\"u8.ToArray());
+        session.CheckForOscSequences("\x1b]7;file://localhost/c:/projects/my%20app\x07"u8.ToArray());
+        session.CheckForOscSequences("\x1b]9;9;\"C:/PROJECTS/MY APP\"\x07"u8.ToArray());
+
+        Assert.Single(updates);
+        Assert.Equal("C:/Projects/My App", updates[0]);
+        Assert.Equal("C:/Projects/My App", session.WorkingDirectory);
+    }
+
+    [Fact]
+    public void CheckForOscSequences_HandlesEscFastPathAndSplitMultiByteUtf8AcrossChunks()
+    {
+        using var session = new ShellSession("SplitUtf8");
+        string? observedDir = null;
+        session.WorkingDirectoryChanged += dir => observedDir = dir;
+
+        // ESC-free plain text exercises the fast-path before OSC arrives
+        session.CheckForOscSequences("plain terminal output without escape sequences\r\n"u8.ToArray());
+        Assert.Null(observedDir);
+
+        // Split a 3-byte UTF-8 sequence ("€" = E2 82 AC) inside an OSC 9;9 path across two reads
+        byte[] fullOsc = System.Text.Encoding.UTF8.GetBytes("\x1b]9;9;\"C:\\€uro\\Dir\"\x07");
+        int splitIndex = Array.IndexOf(fullOsc, (byte)0x82);
+        Assert.True(splitIndex > 0);
+
+        session.CheckForOscSequences(fullOsc[..splitIndex]);
+        Assert.Null(observedDir);
+
+        session.CheckForOscSequences(fullOsc[splitIndex..]);
+        Assert.Equal(@"C:\€uro\Dir", observedDir);
+    }
+
+    [Fact]
+    public void GenerateShellCommandLine_BuildsExpectedCommandsForShellTypesAndCustomProfiles()
+    {
+        using var cmdSession = new ShellSession("Cmd", shellType: ShellType.CMD);
+        Assert.Contains("/K \"chcp 65001 >nul\"", cmdSession.GenerateShellCommandLine(null));
+
+        using var nuSession = new ShellSession("Nu", shellType: ShellType.NuShell);
+        Assert.Contains("nu.exe", nuSession.GenerateShellCommandLine(null), StringComparison.OrdinalIgnoreCase);
+
+        using var psSession = new ShellSession("PS", shellType: ShellType.PowerShell);
+        var psCmd = psSession.GenerateShellCommandLine(null);
+        Assert.Contains("-NoLogo -NoExit -EncodedCommand ", psCmd);
+
+        using var wslWithDir = new ShellSession("WslDir", shellType: ShellType.WSL);
+        Assert.Contains("--cd \"C:\\Projects\\Repo\"", wslWithDir.GenerateShellCommandLine(@"C:\Projects\Repo\"));
+
+        using var wslNoDir = new ShellSession("WslNoDir", shellType: ShellType.WSL);
+        Assert.DoesNotContain("--cd", wslNoDir.GenerateShellCommandLine(null));
+
+        using var customWslAutoCd = new ShellSession("CustomWsl", shellType: ShellType.WSL, customExecutable: "wsl.exe", customArguments: "-d Ubuntu");
+        Assert.Equal("\"wsl.exe\" --cd \"C:\\Work\" -d Ubuntu", customWslAutoCd.GenerateShellCommandLine(@"C:\Work"));
+
+        using var customWslExplicitCd = new ShellSession("CustomWslCd", shellType: ShellType.WSL, customExecutable: "wsl.exe", customArguments: "-d Ubuntu --cd ~");
+        Assert.Equal("\"wsl.exe\" -d Ubuntu --cd ~", customWslExplicitCd.GenerateShellCommandLine(@"C:\Work"));
     }
 }
 
