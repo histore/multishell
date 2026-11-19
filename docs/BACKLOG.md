@@ -324,9 +324,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/LocalizationService.*.cs`, `Views/Dialogs/HelpModalView.axaml`
 - **Summary**: Update `Drawer_Hint` and `Help_Feature_1` in all 6 languages to reflect `Click/Shift+Enter Insert | Enter/Right-Click Execute`, and add the implemented Split-Pane and Tab-Undock shortcuts to `HelpModalView.axaml`.
 
-#### `[BL-LOW-010]` (`REV2-LOW-004`) Cancel Active Profile Edit on `Escape` Before Closing `ProfilesModal`
+#### `[BL-LOW-010]` (`REV2-LOW-004`) Cancel Active Profile Edit on `Escape` Before Closing `ProfilesModal` — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `TryHandleEscapeKeyDown()` in `MainWindow.Keyboard.cs` to call `pvm.CancelEditProfile()` when `pvm.IsEditingProfile` is true before closing `ProfilesModal` on subsequent `Escape`)
 - **Scope**: `Views/MainWindow.Keyboard.cs`
 - **Summary**: In `TryHandleEscapeKeyDown()`, when `ProfilesModal` is visible and `IsEditingProfile` is `true`, invoke `CancelEditProfile()` instead of immediately closing the entire modal.
 

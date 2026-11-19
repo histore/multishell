@@ -187,7 +187,18 @@ public partial class MainWindow
         }
         if (HelpModal?.IsVisible == true) { HideHelpModal(); return true; }
         if (AboutModal?.IsVisible == true) { HideAboutModal(); return true; }
-        if (ProfilesModal?.IsVisible == true && DataContext is MainViewModel pvm) { pvm.CloseProfilesModal(); return true; }
+        if (ProfilesModal?.IsVisible == true && DataContext is MainViewModel pvm)
+        {
+            if (pvm.IsEditingProfile)
+            {
+                pvm.CancelEditProfile();
+            }
+            else
+            {
+                pvm.CloseProfilesModal();
+            }
+            return true;
+        }
         if (HistoryDrawer?.IsDrawerOpen == true) { HideHistoryDrawerAndFocusTerminal(); return true; }
         if (DataContext is MainViewModel tvm && tvm.SelectedTab != null &&
             (tvm.SelectedTab.ActivePane?.IsSearchOpen ?? tvm.SelectedTab.IsSearchOpen))
