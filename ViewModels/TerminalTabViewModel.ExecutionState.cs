@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MultiShell.Models;
 using MultiShell.Services;
@@ -152,16 +153,23 @@ public partial class TerminalTabViewModel
     /// </summary>
     public void MarkCommandStarted(string command)
     {
-        if (string.IsNullOrWhiteSpace(command)) return;
+        if (_isDisposed || string.IsNullOrWhiteSpace(command)) return;
 
-        LastExecutedCommand = command.Trim();
-        _commandStartTimestamp = Stopwatch.GetTimestamp();
-        LastExitCode = null;
-        OutputActivityOpacity = 1.0;
-        IsOutputActive = true;
-        ExecutionState = ProcessExecutionState.Running;
+        var trimmed = command.Trim();
+        Interlocked.Exchange(ref _commandStartTimestamp, Stopwatch.GetTimestamp());
 
-        RestartCooldownTimer();
+        _dispatcherService.RunOnUi(() =>
+        {
+            if (_isDisposed) return;
+
+            LastExecutedCommand = trimmed;
+            LastExitCode = null;
+            OutputActivityOpacity = 1.0;
+            IsOutputActive = true;
+            ExecutionState = ProcessExecutionState.Running;
+
+            RestartCooldownTimer();
+        });
     }
 
     /// <summary>
@@ -169,28 +177,35 @@ public partial class TerminalTabViewModel
     /// </summary>
     public void OnSessionCommandCompleted(int exitCode)
     {
-        var duration = _commandStartTimestamp > 0
-            ? Stopwatch.GetElapsedTime(_commandStartTimestamp)
+        if (_isDisposed) return;
+
+        var startTimestamp = Interlocked.Exchange(ref _commandStartTimestamp, 0);
+        var duration = startTimestamp > 0
+            ? Stopwatch.GetElapsedTime(startTimestamp)
             : TimeSpan.Zero;
 
-        _commandStartTimestamp = 0;
-        LastExecutionDuration = duration;
-        LastExitCode = exitCode;
-        ExecutionState = exitCode != 0 ? ProcessExecutionState.Failed : ProcessExecutionState.Success;
-        OutputActivityOpacity = 1.0;
-        IsOutputActive = false;
-
-        _activityCooldownTimer?.Stop();
-
-        if (duration >= LongRunningThreshold)
+        _dispatcherService.RunOnUi(() =>
         {
-            var result = new CommandExecutionResult(
-                LastExecutedCommand ?? Title,
-                exitCode,
-                duration,
-                ExecutionState);
-            CommandExecutionCompleted?.Invoke(this, result);
-        }
+            if (_isDisposed) return;
+
+            LastExecutionDuration = duration;
+            LastExitCode = exitCode;
+            ExecutionState = exitCode != 0 ? ProcessExecutionState.Failed : ProcessExecutionState.Success;
+            OutputActivityOpacity = 1.0;
+            IsOutputActive = false;
+
+            _activityCooldownTimer?.Stop();
+
+            if (duration >= LongRunningThreshold)
+            {
+                var result = new CommandExecutionResult(
+                    LastExecutedCommand ?? Title,
+                    exitCode,
+                    duration,
+                    ExecutionState);
+                CommandExecutionCompleted?.Invoke(this, result);
+            }
+        });
     }
 
     /// <summary>

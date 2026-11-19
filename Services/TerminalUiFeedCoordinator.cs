@@ -15,7 +15,7 @@ public sealed class TerminalUiFeedCoordinator : IDisposable
     private readonly StringBuilder _pendingUiFeedBuffer;
     private readonly Lock _pendingUiFeedLock = new();
     private bool _isUiFeedScheduled;
-    private bool _isDisposed;
+    private volatile bool _isDisposed;
 
     public TerminalUiFeedCoordinator(StringBuilder? pendingBuffer = null)
     {
@@ -48,9 +48,28 @@ public sealed class TerminalUiFeedCoordinator : IDisposable
 
         if (dispatcherService.CheckAccess())
         {
+            string batchText;
+            lock (_pendingUiFeedLock)
+            {
+                if (_isDisposed) return;
+
+                if (_pendingUiFeedBuffer.Length > 0)
+                {
+                    _pendingUiFeedBuffer.Append(textToFeed);
+                    batchText = _pendingUiFeedBuffer.ToString();
+                    _pendingUiFeedBuffer.Clear();
+                    TrimPendingBufferCapacityLocked();
+                    _isUiFeedScheduled = false;
+                }
+                else
+                {
+                    batchText = textToFeed;
+                }
+            }
+
             if (!_isDisposed)
             {
-                terminalModel.Feed(textToFeed);
+                terminalModel.Feed(batchText);
             }
         }
         else
@@ -81,17 +100,21 @@ public sealed class TerminalUiFeedCoordinator : IDisposable
 
             batchText = _pendingUiFeedBuffer.ToString();
             _pendingUiFeedBuffer.Clear();
-
-            // Prevent StringBuilder from holding huge memory capacity permanently after massive output bursts
-            if (_pendingUiFeedBuffer.Capacity > 65536)
-            {
-                _pendingUiFeedBuffer.Capacity = 4096;
-            }
+            TrimPendingBufferCapacityLocked();
         }
 
         if (!_isDisposed)
         {
             terminalModel.Feed(batchText);
+        }
+    }
+
+    private void TrimPendingBufferCapacityLocked()
+    {
+        // Prevent StringBuilder from holding huge memory capacity permanently after massive output bursts
+        if (_pendingUiFeedBuffer.Capacity > 65536)
+        {
+            _pendingUiFeedBuffer.Capacity = 4096;
         }
     }
 
