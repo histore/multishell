@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using MultiShell.Services;
 using Xunit;
 
@@ -135,6 +136,12 @@ public class LinkDetectionHelperTests
     [InlineData("shortcut.lnk")]
     [InlineData("batch.cmd")]
     [InlineData("payload.vbs")]
+    [InlineData("link.url")]
+    [InlineData("help.chm")]
+    [InlineData("exploit.scf")]
+    [InlineData("runner.py")]
+    [InlineData("package.msix")]
+    [InlineData("disk.iso")]
     public void OpenTarget_DangerousScriptOrExecutable_OpensInNotepad(string fileName)
     {
         // Arrange
@@ -174,8 +181,14 @@ public class LinkDetectionHelperTests
     [Theory]
     [InlineData(@"\\evil-server\share\file.txt", false)]
     [InlineData(@"\\192.168.1.100\payload.ps1", false)]
+    [InlineData(@"//evil-server/share/file.txt", false)]
+    [InlineData(@"\/evil-server\share\file.txt", false)]
+    [InlineData(@"/\evil-server/share/file.txt", false)]
+    [InlineData(@"\\?\UNC\evil-server\share\file.txt", false)]
     [InlineData(@"\\wsl$\Ubuntu\etc\hosts", true)]
+    [InlineData(@"//wsl$/Ubuntu/etc/hosts", true)]
     [InlineData(@"\\wsl.localhost\Debian\home", true)]
+    [InlineData(@"//wsl.localhost/Debian/home", true)]
     [InlineData(@"C:\Projects\app\main.cs", true)]
     [InlineData(@"./relative/path.txt", true)]
     public void IsSafeLocalPath_DistinguishesBetweenLocalAndRemoteUnc(string path, bool expectedSafe)
@@ -185,5 +198,62 @@ public class LinkDetectionHelperTests
 
         // Assert
         Assert.Equal(expectedSafe, isSafe);
+    }
+
+    [Fact]
+    public void TryResolveFilePath_PrefersTabWorkingDirectoryOverProcessCurrentDirectory()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var hostFile = Directory.GetFiles(Environment.CurrentDirectory).FirstOrDefault();
+        Assert.NotNull(hostFile);
+
+        var fileName = Path.GetFileName(hostFile!);
+        var tabFile = Path.Combine(tempDir, fileName);
+        File.WriteAllText(tabFile, "tab copy");
+
+        try
+        {
+            var resolved = LinkDetectionHelper.TryResolveFilePath(fileName, tempDir, out var fullPath);
+            Assert.True(resolved);
+            Assert.Equal(Path.GetFullPath(tabFile), fullPath);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void OpenTarget_LocalFileUri_ResolvesSafelyAndBlocksRemoteFileUri()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var scriptFile = Path.Combine(tempDir, "demo.ps1");
+        File.WriteAllText(scriptFile, "Write-Host hi");
+
+        ProcessStartInfo? capturedPsi = null;
+        LinkDetectionHelper.ProcessLauncher = psi =>
+        {
+            capturedPsi = psi;
+            return true;
+        };
+
+        try
+        {
+            var fileUri = new Uri(scriptFile).AbsoluteUri;
+            Assert.True(LinkDetectionHelper.OpenTarget(fileUri));
+            Assert.NotNull(capturedPsi);
+            Assert.EndsWith("notepad.exe", capturedPsi!.FileName, StringComparison.OrdinalIgnoreCase);
+
+            capturedPsi = null;
+            Assert.False(LinkDetectionHelper.OpenTarget("file://evil-server/share/payload.exe"));
+            Assert.Null(capturedPsi);
+        }
+        finally
+        {
+            LinkDetectionHelper.ProcessLauncher = null;
+            Directory.Delete(tempDir, recursive: true);
+        }
     }
 }

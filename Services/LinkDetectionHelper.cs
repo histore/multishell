@@ -34,7 +34,11 @@ public static class LinkDetectionHelper
         ".exe", ".bat", ".cmd", ".vbs", ".js", ".msi", ".com", ".scr", ".pif",
         ".ps1", ".psm1", ".psd1", ".hta", ".wsf", ".wsh", ".vbe", ".jse",
         ".reg", ".lnk", ".jar", ".cpl", ".msc", ".inf", ".application", ".appref-ms",
-        ".scrobj", ".sct"
+        ".scrobj", ".sct", ".url", ".scf", ".chm", ".py", ".pyw", ".appx", ".msix",
+        ".appxbundle", ".msixbundle", ".iso", ".vhd", ".vhdx", ".img",
+        ".settingcontent-ms", ".library-ms", ".search-ms", ".jnlp",
+        ".msh", ".msh1", ".msh2", ".mshxml", ".msh1xml", ".msh2xml",
+        ".docm", ".xlsm", ".pptm"
     };
 
     internal static Func<ProcessStartInfo, bool>? ProcessLauncher { get; set; }
@@ -152,11 +156,18 @@ public static class LinkDetectionHelper
     public static bool IsSafeLocalPath(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return false;
-        if (path.StartsWith(@"\\", StringComparison.Ordinal))
+
+        var trimmed = path.Trim();
+        // Normalize forward/mixed UNC prefixes (e.g. //server/share, \/server/share, /\server/share)
+        if (trimmed.Length >= 2 &&
+            (trimmed[0] == '\\' || trimmed[0] == '/') &&
+            (trimmed[1] == '\\' || trimmed[1] == '/'))
         {
-            // Allow local WSL UNC network paths: \\wsl$\ or \\wsl.localhost\
-            if (path.StartsWith(@"\\wsl$\", StringComparison.OrdinalIgnoreCase) ||
-                path.StartsWith(@"\\wsl.localhost\", StringComparison.OrdinalIgnoreCase))
+            var normalized = trimmed.Replace('/', '\\');
+
+            // Allow only local WSL UNC paths: \\wsl$\ or \\wsl.localhost\
+            if (normalized.StartsWith(@"\\wsl$\", StringComparison.OrdinalIgnoreCase) ||
+                normalized.StartsWith(@"\\wsl.localhost\", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -187,29 +198,31 @@ public static class LinkDetectionHelper
 
         try
         {
-            // 1. Direct path check (absolute or relative to current process)
-            if (File.Exists(cleanPath) || Directory.Exists(cleanPath))
-            {
-                resolvedPath = Path.GetFullPath(cleanPath);
-                CacheResolution(cacheKey, true, resolvedPath, now);
-                return true;
-            }
+            bool isRooted = Path.IsPathRooted(cleanPath);
 
-            // 2. Relative to tab working directory
-            if (!string.IsNullOrWhiteSpace(workingDirectory) && Directory.Exists(workingDirectory))
+            // 1. For relative paths, prefer resolving against the active tab's working directory first
+            if (!isRooted && !string.IsNullOrWhiteSpace(workingDirectory) && IsSafeLocalPath(workingDirectory) && Directory.Exists(workingDirectory))
             {
                 var combined = Path.Combine(workingDirectory, cleanPath);
-                if (File.Exists(combined) || Directory.Exists(combined))
+                if (IsSafeLocalPath(combined) && (File.Exists(combined) || Directory.Exists(combined)))
                 {
                     resolvedPath = Path.GetFullPath(combined);
                     CacheResolution(cacheKey, true, resolvedPath, now);
                     return true;
                 }
             }
+
+            // 2. Direct path check (rooted path, or fallback relative to current process when no tab CWD matched)
+            if (File.Exists(cleanPath) || Directory.Exists(cleanPath))
+            {
+                resolvedPath = Path.GetFullPath(cleanPath);
+                CacheResolution(cacheKey, true, resolvedPath, now);
+                return true;
+            }
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException)
         {
-            // Path contains invalid characters or security restriction
+            System.Diagnostics.Debug.WriteLine($"[LinkDetectionHelper.TryResolveFilePath] Resolution failed for '{cleanPath}': {ex.Message}");
         }
 
         CacheResolution(cacheKey, false, string.Empty, now);
@@ -261,15 +274,27 @@ public static class LinkDetectionHelper
 
         try
         {
-            // 1. Web URL
-            if (Uri.TryCreate(target, UriKind.Absolute, out var uri) &&
-                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeFtp))
+            // 1. Web URL or safe local file:// URI
+            if (Uri.TryCreate(target, UriKind.Absolute, out var uri))
             {
-                return StartProcess(new ProcessStartInfo
+                if (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeFtp)
                 {
-                    FileName = target,
-                    UseShellExecute = true
-                });
+                    return StartProcess(new ProcessStartInfo
+                    {
+                        FileName = target,
+                        UseShellExecute = true
+                    });
+                }
+
+                if (uri.Scheme == Uri.UriSchemeFile && uri.IsFile)
+                {
+                    var localPath = uri.LocalPath;
+                    if (IsSafeLocalPath(localPath) && TryResolveFilePath(localPath, workingDirectory, out var resolvedFileUriPath))
+                    {
+                        return OpenResolvedLocalPath(resolvedFileUriPath);
+                    }
+                    return false;
+                }
             }
 
             // 2. Local File / Directory Path
@@ -291,8 +316,9 @@ public static class LinkDetectionHelper
 
             return false;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception or InvalidOperationException or UnauthorizedAccessException or UriFormatException or ArgumentException)
         {
+            System.Diagnostics.Debug.WriteLine($"[LinkDetectionHelper.OpenTarget] Failed to open '{target}': {ex.Message}");
             return false;
         }
     }

@@ -48,9 +48,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 
 ### High
 
-#### `[BL-HIGH-001]` Harden Link Detection (UNC `//` Bypass, Tab CWD Priority, `file://`, Blocklist) & Bracketed Paste Sanitization
+#### `[BL-HIGH-001]` Harden Link Detection (UNC `//` Bypass, Tab CWD Priority, `file://`, Blocklist) & Bracketed Paste Sanitization — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (blocked forward/mixed-slash UNC prefixes in `IsSafeLocalPath`, prioritized tab `workingDirectory` for relative paths, added safe `file://` URI handling, expanded `ExecutableExtensions`, and sanitized bracketed paste breakout markers in `TerminalPaneViewModel.PasteText`)
 - **Scope**: `Services/LinkDetectionHelper.cs`, `ViewModels/Panes/TerminalPaneViewModel.cs`
 - **Summary**: (1) `IsSafeLocalPath` only checks `\\`, allowing forward-slash `//server/share` UNC paths to trigger outbound SMB/NetNTLM leaks; (2) `TerminalPaneViewModel.PasteText` embeds raw clipboard text into `\x1b[200~...\x1b[201~` without stripping `\x1b[201~` (bracketed paste breakout); (3) `TryResolveFilePath` resolves relative paths against the host process CWD before the tab's `workingDirectory`; (4) dangerous ShellExecute extensions (`.url`, `.chm`, `.scf`, `.py`, `.pyw`, `.msix`, `.appx`, `.iso`, `.vhd`, `.settingcontent-ms`, `.library-ms`) are missing from `ExecutableExtensions`, and `file://` URLs detected by `ExtractAllLinks` silently fail in `OpenTarget`.
 

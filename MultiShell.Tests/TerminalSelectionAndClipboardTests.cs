@@ -302,6 +302,24 @@ public partial class TerminalSelectionAndClipboardTests
     }
 
     [Fact]
+    public void PasteText_WhenBracketedPasteModeActive_SanitizesEmbeddedEscapeBreakoutSequences()
+    {
+        var session = new TestSession();
+        using var tabVm = new TerminalTabViewModel(session);
+        var paneVm = tabVm.ActivePane!;
+
+        var nativeModel = (SvcSystems.UI.Terminal.TerminalControlModel)paneVm.TerminalModel.NativeModel;
+        nativeModel.Terminal.Feed("\x1b[?2004h");
+        Assert.True(paneVm.TerminalModel.BracketedPasteMode);
+
+        paneVm.PasteText("safe\x1b[201~evil\r\x1b[200~tail\u009b201~end");
+
+        Assert.Single(session.SentPayloads);
+        var sentString = System.Text.Encoding.UTF8.GetString(session.SentPayloads[0]);
+        Assert.Equal("\x1b[200~safeevil\rtailend\x1b[201~", sentString);
+    }
+
+    [Fact]
     public void PasteText_WhenBracketedPasteModeInactive_SendsRawPayload()
     {
         var session = new TestSession();
