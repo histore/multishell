@@ -65,13 +65,25 @@ public class ShellDiscoveryService : IShellDiscoveryService
 
     public static string? ResolveExecutable(string name)
     {
-        // 1. Check PATH
+        if (string.IsNullOrWhiteSpace(name)) return null;
+
+        // 1. Resolve built-in Windows system binaries from System32 first to prevent PATH spoofing
+        var systemMatch = ResolveBuiltInSystemExecutable(name);
+        if (systemMatch != null) return systemMatch;
+
+        // 2. Check qualified PATH directories
         var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
         foreach (var dir in pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
         {
+            var trimmedDir = dir.Trim('"', ' ');
+            if (string.IsNullOrWhiteSpace(trimmedDir) || !Path.IsPathFullyQualified(trimmedDir))
+            {
+                continue;
+            }
+
             try
             {
-                var candidate = Path.Combine(dir.Trim('"', ' '), name);
+                var candidate = Path.Combine(trimmedDir, name);
                 if (File.Exists(candidate)) return candidate;
             }
             catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException or UnauthorizedAccessException or IOException)
@@ -80,7 +92,22 @@ public class ShellDiscoveryService : IShellDiscoveryService
             }
         }
 
-        // 2. Standard Windows System paths
+        // 3. Common user install locations (Scoop, WinGet, Cargo)
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (name.Equals("nu.exe", StringComparison.OrdinalIgnoreCase))
+        {
+            var cargoNu = Path.Combine(userProfile, ".cargo", "bin", "nu.exe");
+            if (File.Exists(cargoNu)) return cargoNu;
+
+            var scoopNu = Path.Combine(userProfile, "scoop", "shims", "nu.exe");
+            if (File.Exists(scoopNu)) return scoopNu;
+        }
+
+        return null;
+    }
+
+    private static string? ResolveBuiltInSystemExecutable(string name)
+    {
         var winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
         var sysDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
 
@@ -100,17 +127,6 @@ public class ShellDiscoveryService : IShellDiscoveryService
         {
             var wsl = Path.Combine(sysDir, "wsl.exe");
             if (File.Exists(wsl)) return wsl;
-        }
-
-        // 3. Common user install locations (Scoop, WinGet, Cargo)
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (name.Equals("nu.exe", StringComparison.OrdinalIgnoreCase))
-        {
-            var cargoNu = Path.Combine(userProfile, ".cargo", "bin", "nu.exe");
-            if (File.Exists(cargoNu)) return cargoNu;
-
-            var scoopNu = Path.Combine(userProfile, "scoop", "shims", "nu.exe");
-            if (File.Exists(scoopNu)) return scoopNu;
         }
 
         return null;

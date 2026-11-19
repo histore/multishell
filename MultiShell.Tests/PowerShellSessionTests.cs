@@ -258,5 +258,21 @@ public class PowerShellSessionTests
         Assert.Equal(@"C:\Projects\MultiShell", observedDir);
         Assert.True(nestedCheckSucceeded);
     }
+
+    [Fact]
+    public void GenerateShellCommandLine_CustomExecutableWithEmbeddedQuotes_UsesWin32Escaping()
+    {
+        using var session = new ShellSession(
+            "CustomEscaped",
+            shellType: ShellType.NuShell,
+            customExecutable: @"C:\tools\nu""shell\.exe",
+            customArguments: "--login");
+
+        var method = typeof(ShellSession).GetMethod("GenerateShellCommandLine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(method);
+
+        var cmdLine = (string?)method.Invoke(session, new object?[] { null });
+        Assert.Equal("\"C:\\tools\\nu\\\"shell\\.exe\" --login", cmdLine);
+    }
 }
 

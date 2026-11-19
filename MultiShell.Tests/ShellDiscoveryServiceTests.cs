@@ -62,4 +62,31 @@ public class ShellDiscoveryServiceTests
         Assert.NotNull(cmd);
         Assert.Equal("Eingabeaufforderung (CMD)", cmd.DisplayName);
     }
+
+    [Fact]
+    public void ResolveExecutable_PrefersSystem32OverSpoofedPathEntryForBuiltInShells()
+    {
+        if (!System.OperatingSystem.IsWindows()) return;
+
+        var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"multishell_path_spoof_{System.Guid.NewGuid():N}");
+        System.IO.Directory.CreateDirectory(tempDir);
+        var spoofedCmd = System.IO.Path.Combine(tempDir, "cmd.exe");
+        System.IO.File.WriteAllText(spoofedCmd, "spoof");
+
+        var originalPath = System.Environment.GetEnvironmentVariable("PATH");
+        try
+        {
+            System.Environment.SetEnvironmentVariable("PATH", $"{tempDir};{originalPath}");
+
+            var resolvedCmd = ShellDiscoveryService.ResolveExecutable("cmd.exe");
+            Assert.NotNull(resolvedCmd);
+            Assert.NotEqual(spoofedCmd, resolvedCmd, System.StringComparer.OrdinalIgnoreCase);
+            Assert.StartsWith(System.Environment.GetFolderPath(System.Environment.SpecialFolder.System), resolvedCmd!, System.StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            System.Environment.SetEnvironmentVariable("PATH", originalPath);
+            System.IO.Directory.Delete(tempDir, recursive: true);
+        }
+    }
 }
