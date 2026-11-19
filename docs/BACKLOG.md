@@ -187,3 +187,157 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Status**: `DONE` (updated `CreateNewTab`/`AddNewTabWithProfile` in `MainViewModel.Tabs.cs` to increment monotonic `++_tabCounter`, cached `_zoomedPaneNode` in `TerminalTabViewModel.Panes.cs` updated via `OnActivePaneChanged`/`OnIsZoomedChanged`, and added regression tests in `MainViewModelTabTests` and `SplitPaneTreeTests`)
 - **Scope**: `ViewModels/MainViewModel.Tabs.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`
 - **Summary**: Increment `_tabCounter` in `CreateNewTab`/`AddNewTabWithProfile` to avoid duplicate default titles after closing tabs, and cache the zoomed `LeafPaneNodeViewModel` instead of allocating on every getter read.
+
+---
+
+## General Codebase Review Findings — Wave 2 (v0.28.0 Baseline)
+
+### High
+
+#### `[BL-HIGH-008]` (`REV2-HIGH-001`) Propagate Split-Pane (2nd+ Pane) Session Events & User Input to `TerminalTabViewModel`
+- **Criticality**: `High`
+- **Status**: `OPEN`
+- **Scope**: `ViewModels/Panes/TerminalPaneViewModel.cs`, `ViewModels/Panes/TerminalPaneViewModel.Streaming.cs`, `ViewModels/TerminalTabViewModel.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`
+- **Summary**: Forward `WorkingDirectoryChanged`, `CommandExecuted`, `CommandCompleted`, and `UserInput` (`TrackInputBuffer`) from secondary split panes to `TerminalTabViewModel` so directory breadcrumbs, path color stripes, command/directory history, execution state, and long-running command toast notifications work across all split panes.
+
+#### `[BL-HIGH-009]` (`REV2-HIGH-002`) Route `Ctrl+Shift+W` & `Ctrl+Shift+F4` Tunnel Handlers to `CloseActivePaneOrTab()` Instead of `CloseSelectedTab()`
+- **Criticality**: `High`
+- **Status**: `OPEN`
+- **Scope**: `Views/MainWindow.Keyboard.cs`, `Views/MainWindow.axaml`
+- **Summary**: Update `TryHandleFunctionKeyDown` (`Key.F4`) and `TryHandleTabManagementKeyDown` (`Key.W or Key.F4`) in `MainWindow.Keyboard.cs` to invoke `CloseActivePaneOrTab()` instead of `CloseSelectedTab()`, preventing `Ctrl+Shift+W` / `Ctrl+Shift+F4` from destroying the entire tab when multiple split panes are open (`REQ-UI-006`).
+
+#### `[BL-HIGH-010]` (`REV2-HIGH-003`) Implement Documented `Ctrl+Shift+K` (Clear Terminal Buffer) Shortcut in Keyboard Routing
+- **Criticality**: `High`
+- **Status**: `OPEN`
+- **Scope**: `Views/MainWindow.Keyboard.cs`, `Views/Dialogs/HelpModalView.axaml`, `ViewModels/Panes/TerminalPaneViewModel.cs`
+- **Summary**: Handle `Key.K` in `MainWindow.Keyboard.cs` (`TryHandleCtrlShiftActionKeyDown`) to invoke `SelectedTab.ActivePane?.ClearBuffer()` (fallback `SelectedTab.ClearBuffer()`), matching the `Ctrl+Shift+K` shortcut documented in `HelpModalView.axaml`.
+
+#### `[BL-HIGH-011]` (`REV2-HIGH-004`) Prevent ConPTY Pipe Full Deadlock & UI-Thread Stall During `ShellSession.Dispose()`
+- **Criticality**: `High`
+- **Status**: `OPEN`
+- **Scope**: `Services/ShellSession.cs`, `Services/ShellSession.Streams.cs`
+- **Summary**: Terminate the child process tree or close/drain the output pipe before calling `ClosePseudoConsole`, and avoid blocking the UI thread if `conhost.exe` flushes pending VT teardown output into a full 4 KB anonymous pipe after `PumpOutput` stops.
+
+#### `[BL-HIGH-012]` (`REV2-HIGH-005`) Preserve MultiShell Prompt Hook & UTF-8 Initialization for Profile-Launched and Custom PowerShell/CMD Sessions
+- **Criticality**: `High`
+- **Status**: `OPEN`
+- **Scope**: `Services/ShellSession.Process.cs`, `Services/TerminalProfileService.cs`
+- **Summary**: Ensure `GenerateShellCommandLine` appends `-NoExit -EncodedCommand {encodedHook}` for `ShellType.PowerShell` (unless custom arguments already specify `-Command`/`-EncodedCommand`/`-File`) and `/K "chcp 65001 >nul"` for `ShellType.CMD` even when `_customExecutable` is provided via terminal profiles.
+
+#### `[BL-HIGH-013]` (`REV2-HIGH-006`) Clear `_oscBuffer` After Non-OSC Escape Sequences to Preserve the ESC Fast-Path in `ShellSession.Streams.cs`
+- **Criticality**: `High`
+- **Status**: `OPEN`
+- **Scope**: `Services/ShellSession.Streams.cs`
+- **Summary**: Clear `_oscBuffer` after `ProcessOscMatches` when no incomplete `\x1b]` OSC prefix remains at the end of the buffer, and narrow the initial fast-path check to `\x1b]` (or trailing `\x1b`), preventing ordinary CSI color/cursor sequences from permanently disabling the fast-path.
+
+#### `[BL-HIGH-014]` (`REV2-HIGH-007`) Fix Invalid `<property>` Trimmer Element in `ILLink.Descriptors.xml` & Sync `CHANGELOG.md` / `.arch-sync.json`
+- **Criticality**: `High`
+- **Status**: `OPEN`
+- **Scope**: `ILLink.Descriptors.xml`, `CHANGELOG.md`, `docs/architecture/.arch-sync.json`
+- **Summary**: Replace the unsupported `<property name="TrackingMode" />` element under `XTerm.Input.MouseTracker` in `ILLink.Descriptors.xml` with `<method name="get_TrackingMode" />` / `<method name="set_TrackingMode" />` (or `preserve="all"`), document releases `v0.27.0`..`v0.28.0` in `CHANGELOG.md`, and advance `docs/architecture/.arch-sync.json`.
+
+### Medium
+
+#### `[BL-MED-010]` (`REV2-MED-001`) Preserve Leading `/` in POSIX / WSL OSC 7 Working Directory Paths
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `Services/ShellSession.Streams.cs`, `Services/PathNormalizer.cs`
+- **Summary**: Capture the leading `/` in `GetOsc7Regex()` and only strip it when followed by a Windows drive letter (`/[A-Za-z]:`), preventing Linux/WSL OSC 7 paths (`file://ubuntu/home/user`) from losing their leading slash and resolving as relative Windows paths.
+
+#### `[BL-MED-011]` (`REV2-MED-002`) Prevent Secondary Window Re-Entrancy During Primary Shutdown & Persist State on Satellite Close
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `Services/WindowCoordinatorService.cs`, `Views/MainWindow.axaml.cs`
+- **Summary**: Mark secondary windows as closing in `_closingWindows` before firing `WindowCloseRequested` during primary window shutdown (and tab dock-back/transfer) so active satellite tabs are not archived into `ClosedTabs`, and trigger `primary.TriggerSaveState()` when a user closes a secondary window.
+
+#### `[BL-MED-012]` (`REV2-MED-003`) Propagate App & Terminal Theme Changes Across Coordinated Multi-Window Instances
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `Services/IThemeService.cs`, `Services/ThemeService.cs`, `ViewModels/MainViewModel.cs`, `ViewModels/MainViewModel.Settings.cs`
+- **Summary**: Add `AppThemeChanged` and `TerminalThemeChanged` events to `IThemeService` / `ThemeService` and subscribe in `MainViewModel` (unsubscribing in `Dispose()`) so theme toggles propagate immediately to all open satellite windows and their tabs.
+
+#### `[BL-MED-013]` (`REV2-MED-004`) Synchronize In-Terminal Search State & `Escape` Routing When Switching Active Split Panes
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `ViewModels/TerminalTabViewModel.Panes.cs`, `ViewModels/TerminalTabViewModel.Search.cs`, `Views/MainWindow.Keyboard.cs`
+- **Summary**: Call `SyncSearchStateFromPane(pane)` inside `TerminalTabViewModel.SetActivePane(pane)` and ensure `TryHandleEscapeKeyDown()` does not swallow `Escape` keys in an active pane whose search overlay is closed.
+
+#### `[BL-MED-014]` (`REV2-MED-005`) Sync Mouse `GridSplitter` Drag Changes Back to `SplitPaneNodeViewModel.SplitRatio`
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `Views/SplitPaneContainerControl.cs`, `ViewModels/Panes/SplitPaneNodeViewModel.cs`
+- **Summary**: Update `split.SplitRatio` from the actual grid column/row star proportions when a mouse `GridSplitter` drag completes in `SplitPaneContainerControl`, preserving manual mouse resizes across subsequent splits, zoom toggles, and keyboard resizes.
+
+#### `[BL-MED-015]` (`REV2-MED-006`) Validate `effectiveWorkingDir` Before `GenerateShellCommandLine` & Handle Immediate Process Exit
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `Services/ShellSession.Process.cs`, `Services/ShellSession.cs`
+- **Summary**: Resolve `effectiveWorkingDir` fallback before building the shell command line (preventing `wsl.exe --cd` from receiving a deleted Windows directory), update `WorkingDirectory` on fallback, and reset `_isRunning = false` + raise `Exited` if the child process exits before `Process.GetProcessById`.
+
+#### `[BL-MED-016]` (`REV2-MED-007`) Enforce Credential Masking Inside `PathCommandHistoryService` & Fix Single-Quote Regex in `ShellCommandFilter`
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `Services/PathCommandHistoryService.cs`, `Services/ShellCommandFilter.cs`
+- **Summary**: Call `ShellCommandFilter.SanitizeCommandForHistory` directly inside `PathCommandHistoryService.RecordCommand` and `ImportCommandsForPath`, fix the unclosed single-quote branch (`'[^']*'`) in `ShellCommandFilter`, and migrate its regexes to `[GeneratedRegex]`.
+
+#### `[BL-MED-017]` (`REV2-MED-008`) Guard `PathNormalizer` & `StartupPathResolver` Against Unsafe Remote UNC / SMB Paths
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `Services/PathNormalizer.cs`, `Services/StartupPathResolver.cs`
+- **Summary**: Tighten `path.StartsWith(@"\\wsl")` in `PathNormalizer.DirectoryExistsOrNonWindows` to only allow `\\wsl$\` and `\\wsl.localhost\`, and guard `Directory.Exists`/`File.Exists` in `PathNormalizer` and `StartupPathResolver` with `LinkDetectionHelper.IsSafeLocalPath`.
+
+#### `[BL-MED-018]` (`REV2-MED-009`) Isolate `MainViewModelTests` From Real `%LOCALAPPDATA%\MultiShell\tabs_state.json` & Dispose ViewModels
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `MultiShell.Tests/MainViewModelTests.cs`
+- **Summary**: Replace default `new TabStatePersistenceService()` and `new ShellProcessService()` usages in `MainViewModelTests` with isolated temporary persistence paths, mock process services, and `using` disposal so unit tests never read or overwrite the user's real `tabs_state.json`.
+
+#### `[BL-MED-019]` (`REV2-MED-010`) Localize Default `"Custom Terminal"` Profile Name & Refresh Built-In Profile Names on Language Change
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `ViewModels/MainViewModel.Profiles.cs`, `Services/TerminalProfileService.cs`, `Services/LocalizationService.*.cs`
+- **Summary**: Replace hardcoded `"Custom Terminal"` in `MainViewModel.StartNewProfile()` with a localized resource key across all 6 languages and refresh unmodified built-in profile display names when `LanguageChanged` fires.
+
+#### `[BL-MED-020]` (`REV2-MED-011`) Fail CI on Vulnerable NuGet Packages & Synchronize Architecture/Requirements Module Docs
+- **Criticality**: `Medium`
+- **Status**: `OPEN`
+- **Scope**: `.github/workflows/ci.yml`, `MultiShell.Tests/MultiShell.Tests.csproj`, `docs/architecture/modules/*.md`, `docs/requirements/modules/*.md`, `README.md`
+- **Summary**: Fail the CI security audit step when `dotnet list package --vulnerable` outputs vulnerable packages, enable `NuGetAudit` in `MultiShell.Tests.csproj`, and align module architecture docs, requirements traceability test paths/ACs, and `README.md` with the current implementation.
+
+### Low
+
+#### `[BL-LOW-007]` (`REV2-LOW-001`) Replace Hardcoded Dark Theme Colors in `TerminalPaneView`, `SplitPaneContainerControl` & `MainWindow` Edge Fades
+- **Criticality**: `Low`
+- **Status**: `OPEN`
+- **Scope**: `Views/TerminalPaneView.axaml`, `ViewModels/Panes/TerminalPaneViewModel.cs`, `Views/SplitPaneContainerControl.cs`, `Views/MainWindow.axaml`, `App.axaml`
+- **Summary**: Use theme-aware dynamic resources for `MiniHeader` background (`#D9161822`), inactive pane border/splitter brushes (`#252836`), and tab bar scroll edge fades (`#B30C0D12`) so Light theme renders cleanly.
+
+#### `[BL-LOW-008]` (`REV2-LOW-002`) Select Newest Entry (Index `0`) Instead of Oldest Entry When Switching Tabs or Clearing Filter in `HistoryDrawerView`
+- **Criticality**: `Low`
+- **Status**: `OPEN`
+- **Scope**: `Views/Dialogs/HistoryDrawerView.axaml.cs`, `Views/Dialogs/HistoryDrawerView.Keyboard.cs`
+- **Summary**: Because history collections are sorted descending (`OrderByDescending(x => x.LastUsedAt)`), select index `0` (`selectFirstItem: true, selectLastItem: false`) when switching history tabs or clearing filter text.
+
+#### `[BL-LOW-009]` (`REV2-LOW-003`) Align `Drawer_Hint` / `Help_Feature_1` Shortcut Descriptions & Add Split-Pane / Undock Shortcuts to Help Modal
+- **Criticality**: `Low`
+- **Status**: `OPEN`
+- **Scope**: `Services/LocalizationService.*.cs`, `Views/Dialogs/HelpModalView.axaml`
+- **Summary**: Update `Drawer_Hint` and `Help_Feature_1` in all 6 languages to reflect `Click/Shift+Enter Insert | Enter/Right-Click Execute`, and add the implemented Split-Pane and Tab-Undock shortcuts to `HelpModalView.axaml`.
+
+#### `[BL-LOW-010]` (`REV2-LOW-004`) Cancel Active Profile Edit on `Escape` Before Closing `ProfilesModal`
+- **Criticality**: `Low`
+- **Status**: `OPEN`
+- **Scope**: `Views/MainWindow.Keyboard.cs`
+- **Summary**: In `TryHandleEscapeKeyDown()`, when `ProfilesModal` is visible and `IsEditingProfile` is `true`, invoke `CancelEditProfile()` instead of immediately closing the entire modal.
+
+#### `[BL-LOW-011]` (`REV2-LOW-005`) Validate `file://` Links in `LinkDetectionHelper.ExtractAllLinks` & Strip MSBuild `(line,col)` Suffixes
+- **Criticality**: `Low`
+- **Status**: `OPEN`
+- **Scope**: `Services/LinkDetectionHelper.cs`
+- **Summary**: Verify `IsSafeLocalPath` and `TryResolveFilePath` before highlighting `file://` URIs in `ExtractAllLinks`, and extend `StripLineNumberSuffix` to strip trailing `(line,col)` / `(line)` compiler diagnostic suffixes.
+
+#### `[BL-LOW-012]` (`REV2-LOW-006`) Use `ImmutableSolidColorBrush` in `ThemeService`, Assert Terminal Buffer Contents in Streaming Tests & Test i18n Placeholder Parity
+- **Criticality**: `Low`
+- **Status**: `OPEN`
+- **Scope**: `Services/ThemeService.cs`, `MultiShell.Tests/TerminalTabViewModelTests.TerminalInput.cs`, `MultiShell.Tests/LocalizationServiceTests.cs`
+- **Summary**: Replace static mutable `SolidColorBrush` instances in `ThemeService` with `ImmutableSolidColorBrush`, assert actual terminal screen buffer text (and absence of `\uFFFD`) in the 6 fragmented UTF-8/OSC/CSI tests, and add a unit test verifying format placeholder (`{0}`, `{1}`) parity across all 6 languages.
