@@ -33,6 +33,8 @@
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
     <TrimmerRootDescriptor Include="ILLink.Descriptors.xml" />
+    <None Include="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Compile Remove="MultiShell.Tests\**" />
     <EmbeddedResource Remove="MultiShell.Tests\**" />
     <None Remove="MultiShell.Tests\**" />
