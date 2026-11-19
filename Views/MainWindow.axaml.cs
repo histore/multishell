@@ -15,6 +15,7 @@ namespace MultiShell.Views;
 
 public partial class MainWindow : Window
 {
+    private MainViewModel? _subscribedMainVm;
 
     public MainWindow()
     {
@@ -175,26 +176,15 @@ public partial class MainWindow : Window
 
         DataContextChanged += (_, _) =>
         {
+            DetachMainViewModelListeners();
+
             if (DataContext is MainViewModel vm)
             {
+                _subscribedMainVm = vm;
                 vm.FolderPickerHandler = ShowFolderPickerForBreadcrumbAsync;
                 AttachTabRenameListeners(vm);
-                vm.PropertyChanged += (_, args) =>
-                {
-                    if (args.PropertyName == nameof(MainViewModel.SelectedTab))
-                    {
-                        ScrollSelectedTabIntoView();
-                        FocusActiveTerminal();
-                    }
-                };
-                vm.Tabs.CollectionChanged += (_, _) =>
-                {
-                    Dispatcher.UIThread.Post(() =>
-                    {
-                        UpdateTabOverflowIndicators();
-                        ScrollSelectedTabIntoView();
-                    }, DispatcherPriority.Loaded);
-                };
+                vm.PropertyChanged += OnMainViewModelPropertyChanged;
+                vm.Tabs.CollectionChanged += OnMainViewModelTabsCollectionChanged;
             }
         };
 
@@ -212,12 +202,46 @@ public partial class MainWindow : Window
 
         Closed += (_, _) =>
         {
+            DetachMainViewModelListeners();
+
             if (DataContext is MainViewModel vm)
             {
                 vm.WindowCoordinator.UnregisterWindow(vm);
                 vm.Dispose();
             }
         };
+    }
+
+    private void OnMainViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(MainViewModel.SelectedTab))
+        {
+            ScrollSelectedTabIntoView();
+            FocusActiveTerminal();
+        }
+    }
+
+    private void OnMainViewModelTabsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            UpdateTabOverflowIndicators();
+            ScrollSelectedTabIntoView();
+        }, DispatcherPriority.Loaded);
+    }
+
+    private void DetachMainViewModelListeners()
+    {
+        if (_subscribedMainVm == null) return;
+
+        _subscribedMainVm.PropertyChanged -= OnMainViewModelPropertyChanged;
+        _subscribedMainVm.Tabs.CollectionChanged -= OnMainViewModelTabsCollectionChanged;
+        DetachTabRenameListeners(_subscribedMainVm);
+        if (_subscribedMainVm.FolderPickerHandler == ShowFolderPickerForBreadcrumbAsync)
+        {
+            _subscribedMainVm.FolderPickerHandler = null;
+        }
+        _subscribedMainVm = null;
     }
 
     public void ShowHelpModal()

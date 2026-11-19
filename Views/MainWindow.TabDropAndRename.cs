@@ -243,15 +243,19 @@ public partial class MainWindow
         }
     }
 
+    private System.Collections.Specialized.NotifyCollectionChangedEventHandler? _tabRenameCollectionChangedHandler;
+
     internal void AttachTabRenameListeners(MainViewModel vm)
     {
+        DetachTabRenameListeners(vm);
+
         foreach (var tab in vm.Tabs)
         {
             tab.FocusRenameBoxRequested -= FocusTabRenameBox;
             tab.FocusRenameBoxRequested += FocusTabRenameBox;
         }
 
-        vm.Tabs.CollectionChanged += (s, e) =>
+        _tabRenameCollectionChangedHandler = (s, e) =>
         {
             if (e.OldItems != null)
             {
@@ -270,5 +274,21 @@ public partial class MainWindow
                 }
             }
         };
+
+        vm.Tabs.CollectionChanged += _tabRenameCollectionChangedHandler;
+    }
+
+    internal void DetachTabRenameListeners(MainViewModel vm)
+    {
+        if (_tabRenameCollectionChangedHandler != null)
+        {
+            vm.Tabs.CollectionChanged -= _tabRenameCollectionChangedHandler;
+            _tabRenameCollectionChangedHandler = null;
+        }
+
+        foreach (var tab in vm.Tabs)
+        {
+            tab.FocusRenameBoxRequested -= FocusTabRenameBox;
+        }
     }
 }

@@ -19,6 +19,7 @@ public class SplitPaneContainerControl : ContentControl
         AvaloniaProperty.Register<SplitPaneContainerControl, IPaneNodeViewModel?>(nameof(RootNode));
 
     private readonly Dictionary<TerminalPaneViewModel, TerminalPaneView> _viewCache = new();
+    private readonly List<(SplitPaneNodeViewModel Node, System.ComponentModel.PropertyChangedEventHandler Handler)> _splitRatioSubscriptions = new();
     private TerminalTabViewModel? _currentTabVm;
 
     public IPaneNodeViewModel? RootNode
@@ -38,32 +39,59 @@ public class SplitPaneContainerControl : ContentControl
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
+        SubscribeCurrentTabVm();
+        RebuildVisualTree();
+    }
 
-        if (_currentTabVm != null)
-        {
-            _currentTabVm.LayoutChanged -= OnTabViewModelLayoutChanged;
-            _currentTabVm = null;
-        }
-
-        if (DataContext is TerminalTabViewModel tabVm)
-        {
-            _currentTabVm = tabVm;
-            _currentTabVm.LayoutChanged += OnTabViewModelLayoutChanged;
-        }
-
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        SubscribeCurrentTabVm();
         RebuildVisualTree();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
+        UnsubscribeCurrentTabVm();
+        UnsubscribeSplitNodes();
+    }
 
+    private void SubscribeCurrentTabVm()
+    {
+        var nextVm = DataContext as TerminalTabViewModel;
+        if (ReferenceEquals(_currentTabVm, nextVm)) return;
+
+        UnsubscribeCurrentTabVm();
+
+        if (nextVm != null)
+        {
+            _currentTabVm = nextVm;
+            _currentTabVm.LayoutChanged += OnTabViewModelLayoutChanged;
+        }
+    }
+
+    private void UnsubscribeCurrentTabVm()
+    {
         if (_currentTabVm != null)
         {
             _currentTabVm.LayoutChanged -= OnTabViewModelLayoutChanged;
             _currentTabVm = null;
         }
     }
+
+    private void UnsubscribeSplitNodes()
+    {
+        foreach (var (node, handler) in _splitRatioSubscriptions)
+        {
+            node.PropertyChanged -= handler;
+        }
+        _splitRatioSubscriptions.Clear();
+    }
+
+    internal int ActiveSplitSubscriptionCount => _splitRatioSubscriptions.Count;
+    internal bool IsSubscribedToTabLayout => _currentTabVm != null;
+    internal int CachedViewCount => _viewCache.Count;
 
     private void OnTabViewModelLayoutChanged()
     {
@@ -72,6 +100,7 @@ public class SplitPaneContainerControl : ContentControl
 
     public void RebuildVisualTree()
     {
+        UnsubscribeSplitNodes();
         var root = _currentTabVm?.DisplayRootNode ?? RootNode;
         CleanupViewCache();
         Content = BuildNode(root);
@@ -97,6 +126,10 @@ public class SplitPaneContainerControl : ContentControl
 
         if (activePanes == null)
         {
+            foreach (var view in _viewCache.Values)
+            {
+                view.DataContext = null;
+            }
             _viewCache.Clear();
             return;
         }
@@ -114,7 +147,10 @@ public class SplitPaneContainerControl : ContentControl
 
         foreach (var key in toRemove)
         {
-            _viewCache.Remove(key);
+            if (_viewCache.Remove(key, out var evictedView))
+            {
+                evictedView.DataContext = null;
+            }
         }
     }
 
@@ -187,7 +223,7 @@ public class SplitPaneContainerControl : ContentControl
         Cursor = new Cursor(isVertical ? StandardCursorType.SizeWestEast : StandardCursorType.SizeNorthSouth)
     };
 
-    private static void ConfigureVerticalSplitGrid(Grid grid, SplitPaneNodeViewModel split, Control first, GridSplitter splitter, Control second)
+    private void ConfigureVerticalSplitGrid(Grid grid, SplitPaneNodeViewModel split, Control first, GridSplitter splitter, Control second)
     {
         var col1 = new ColumnDefinition(new GridLength(split.SplitRatio, GridUnitType.Star));
         var colSplitter = new ColumnDefinition(GridLength.Auto);
@@ -201,15 +237,17 @@ public class SplitPaneContainerControl : ContentControl
         Grid.SetColumn(splitter, 1);
         Grid.SetColumn(second, 2);
 
-        split.PropertyChanged += (_, args) =>
+        System.ComponentModel.PropertyChangedEventHandler handler = (_, args) =>
         {
             if (args.PropertyName != nameof(SplitPaneNodeViewModel.SplitRatio)) return;
             col1.Width = new GridLength(split.SplitRatio, GridUnitType.Star);
             col2.Width = new GridLength(1.0 - split.SplitRatio, GridUnitType.Star);
         };
+        split.PropertyChanged += handler;
+        _splitRatioSubscriptions.Add((split, handler));
     }
 
-    private static void ConfigureHorizontalSplitGrid(Grid grid, SplitPaneNodeViewModel split, Control first, GridSplitter splitter, Control second)
+    private void ConfigureHorizontalSplitGrid(Grid grid, SplitPaneNodeViewModel split, Control first, GridSplitter splitter, Control second)
     {
         var row1 = new RowDefinition(new GridLength(split.SplitRatio, GridUnitType.Star));
         var rowSplitter = new RowDefinition(GridLength.Auto);
@@ -223,11 +261,13 @@ public class SplitPaneContainerControl : ContentControl
         Grid.SetRow(splitter, 1);
         Grid.SetRow(second, 2);
 
-        split.PropertyChanged += (_, args) =>
+        System.ComponentModel.PropertyChangedEventHandler handler = (_, args) =>
         {
             if (args.PropertyName != nameof(SplitPaneNodeViewModel.SplitRatio)) return;
             row1.Height = new GridLength(split.SplitRatio, GridUnitType.Star);
             row2.Height = new GridLength(1.0 - split.SplitRatio, GridUnitType.Star);
         };
+        split.PropertyChanged += handler;
+        _splitRatioSubscriptions.Add((split, handler));
     }
 }

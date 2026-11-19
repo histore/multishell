@@ -1,4 +1,5 @@
 using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -83,13 +84,36 @@ public partial class HistoryDrawerView : UserControl
         }
     }
 
-    private void ResubscribeTabEvents()
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ResubscribeTabEvents();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        UnsubscribeAllTabEvents();
+    }
+
+    private void UnsubscribeAllTabEvents()
     {
         if (_subscribedMainViewModel != null)
         {
             _subscribedMainViewModel.PropertyChanged -= OnMainViewModelPropertyChanged;
             _subscribedMainViewModel = null;
         }
+
+        if (_subscribedTab != null)
+        {
+            _subscribedTab.FocusAndSelectHistorySearchRequested -= OnFocusAndSelectHistorySearchRequested;
+            _subscribedTab = null;
+        }
+    }
+
+    private void ResubscribeTabEvents()
+    {
+        UnsubscribeAllTabEvents();
 
         if (DataContext is MainViewModel vm)
         {
