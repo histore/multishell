@@ -1,6 +1,7 @@
 using System;
 using Avalonia;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 
 namespace MultiShell.Services;
@@ -10,12 +11,12 @@ namespace MultiShell.Services;
 /// </summary>
 public class ThemeService : IThemeService
 {
-    private static readonly SolidColorBrush DarkTerminalBackground = new(Color.Parse("#0E0F15"));
-    private static readonly SolidColorBrush LightTerminalBackground = new(Color.Parse("#F8F9FC"));
-    private static readonly SolidColorBrush DarkTerminalCaret = new(Color.Parse("#7AA2F7"));
-    private static readonly SolidColorBrush LightTerminalCaret = new(Color.Parse("#2563EB"));
+    private static readonly ImmutableSolidColorBrush DarkTerminalBackground = new(Color.Parse("#0E0F15"));
+    private static readonly ImmutableSolidColorBrush LightTerminalBackground = new(Color.Parse("#F8F9FC"));
+    private static readonly ImmutableSolidColorBrush DarkTerminalCaret = new(Color.Parse("#7AA2F7"));
+    private static readonly ImmutableSolidColorBrush LightTerminalCaret = new(Color.Parse("#2563EB"));
 
-    private static readonly SolidColorBrush[] DarkTerminalPalette =
+    private static readonly ImmutableSolidColorBrush[] DarkTerminalPalette =
     [
         new(Color.Parse("#0E0F15")), // 0: Dark Background
         new(Color.Parse("#F7768E")), // 1: Red
@@ -35,7 +36,7 @@ public class ThemeService : IThemeService
         new(Color.Parse("#FFFFFF"))  // 15: Bright White
     ];
 
-    private static readonly SolidColorBrush[] LightTerminalPalette =
+    private static readonly ImmutableSolidColorBrush[] LightTerminalPalette =
     [
         new(Color.Parse("#F8F9FC")), // 0: Light Background
         new(Color.Parse("#D32F2F")), // 1: Red

@@ -360,4 +360,39 @@ public class LocalizationServiceTests
             Assert.True(extraInLang.Count == 0, $"Language '{code}' has unexpected extra keys: {string.Join(", ", extraInLang)}");
         }
     }
+
+    [Fact]
+    public void LocalizationService_AllLanguageDictionaries_HaveIdenticalFormatPlaceholders()
+    {
+        var languages = new Dictionary<string, IReadOnlyDictionary<string, string>>
+        {
+            ["de"] = LocalizationService.GermanStrings,
+            ["fr"] = LocalizationService.FrenchStrings,
+            ["es"] = LocalizationService.SpanishStrings,
+            ["it"] = LocalizationService.ItalianStrings,
+            ["pt"] = LocalizationService.PortugueseStrings
+        };
+
+        var placeholderRegex = new System.Text.RegularExpressions.Regex(@"\{[^}]+\}");
+
+        foreach (var (key, enValue) in LocalizationService.EnglishStrings)
+        {
+            var expectedPlaceholders = placeholderRegex.Matches(enValue)
+                .Select(m => m.Value)
+                .OrderBy(p => p, StringComparer.Ordinal)
+                .ToArray();
+
+            foreach (var (code, dict) in languages)
+            {
+                var actualPlaceholders = placeholderRegex.Matches(dict[key])
+                    .Select(m => m.Value)
+                    .OrderBy(p => p, StringComparer.Ordinal)
+                    .ToArray();
+
+                Assert.True(
+                    expectedPlaceholders.SequenceEqual(actualPlaceholders, StringComparer.Ordinal),
+                    $"Language '{code}' key '{key}' has mismatched placeholders: expected [{string.Join(", ", expectedPlaceholders)}], got [{string.Join(", ", actualPlaceholders)}]");
+            }
+        }
+    }
 }
