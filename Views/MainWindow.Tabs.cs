@@ -23,6 +23,7 @@ public partial class MainWindow
     private bool _isDragging;
     private double _tabWheelAccumulator;
     private DispatcherTimer? _dragScrollTimer;
+    private EventHandler? _dragScrollTickHandler;
     private double _dragScrollDelta;
 
     private static bool IsVisualOrChildOf(Visual? visual, Visual? target)
@@ -51,8 +52,10 @@ public partial class MainWindow
         {
             Interval = TimeSpan.FromMilliseconds(250)
         };
-        _dragScrollTimer.Tick += (_, _) =>
+        _dragScrollTickHandler = (_, _) =>
         {
+            if (_dragScrollTimer == null) return;
+
             if (isInitialTick)
             {
                 isInitialTick = false;
@@ -71,6 +74,7 @@ public partial class MainWindow
                 }
             }
         };
+        _dragScrollTimer.Tick += _dragScrollTickHandler;
         _dragScrollTimer.Start();
     }
 
@@ -79,6 +83,11 @@ public partial class MainWindow
         if (_dragScrollTimer != null)
         {
             _dragScrollTimer.Stop();
+            if (_dragScrollTickHandler != null)
+            {
+                _dragScrollTimer.Tick -= _dragScrollTickHandler;
+                _dragScrollTickHandler = null;
+            }
             _dragScrollTimer = null;
         }
     }
@@ -244,7 +253,14 @@ public partial class MainWindow
             var pressedEvent = _lastPointerPressedEvent;
             if (tabToDrag != null && pressedEvent != null && DataContext is MainViewModel currentVm)
             {
-                await ExecuteTabDragAsync(tabToDrag, pressedEvent, currentVm);
+                try
+                {
+                    await ExecuteTabDragAsync(tabToDrag, pressedEvent, currentVm);
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or System.Runtime.InteropServices.COMException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MainWindow.Tabs] Tab drag operation failed: {ex.Message}");
+                }
             }
         }
     }

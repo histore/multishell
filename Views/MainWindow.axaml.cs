@@ -202,6 +202,7 @@ public partial class MainWindow : Window
 
         Closed += (_, _) =>
         {
+            StopDragScrollTimer();
             DetachMainViewModelListeners();
 
             if (DataContext is MainViewModel vm)
@@ -360,14 +361,21 @@ public partial class MainWindow : Window
             }
         }
 
-        var results = await topLevel.StorageProvider.OpenFilePickerAsync(options);
-        if (results.Count > 0)
+        try
         {
-            var path = results[0].TryGetLocalPath();
-            if (!string.IsNullOrWhiteSpace(path))
+            var results = await topLevel.StorageProvider.OpenFilePickerAsync(options);
+            if (results.Count > 0)
             {
-                vm.EditingExecutablePath = path;
+                var path = results[0].TryGetLocalPath();
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    vm.EditingExecutablePath = path;
+                }
             }
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow.BrowseExecutablePathAsync] File picker failed: {ex.Message}");
         }
     }
 
@@ -404,14 +412,21 @@ public partial class MainWindow : Window
             }
         }
 
-        var results = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
-        if (results.Count > 0)
+        try
         {
-            var path = results[0].TryGetLocalPath();
-            if (!string.IsNullOrWhiteSpace(path))
+            var results = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
+            if (results.Count > 0)
             {
-                vm.EditingWorkingDirectory = path;
+                var path = results[0].TryGetLocalPath();
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    vm.EditingWorkingDirectory = path;
+                }
             }
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow.BrowseWorkingDirectoryAsync] Folder picker failed: {ex.Message}");
         }
     }
 

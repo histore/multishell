@@ -26,6 +26,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
     public static TabDragTransfer? CurrentTabDrag { get; set; }
 
     private readonly List<ICoordinatedWindow> _windows = new();
+    private readonly HashSet<ICoordinatedWindow> _closingWindows = new();
     private readonly Lock _lock = new();
 
     public IReadOnlyList<ICoordinatedWindow> Windows
@@ -87,6 +88,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         lock (_lock)
         {
             _windows.Remove(viewModel);
+            _closingWindows.Remove(viewModel);
         }
     }
 
@@ -130,6 +132,17 @@ public class WindowCoordinatorService : IWindowCoordinatorService
 
     public Task CloseWindowAsync(ICoordinatedWindow viewModel)
     {
+        if (viewModel == null) return Task.CompletedTask;
+
+        // Guard against re-entrancy (e.g. CloseWindowAsync -> window.Close() -> Window.Closing -> CloseWindowAsync)
+        lock (_lock)
+        {
+            if (!_closingWindows.Add(viewModel))
+            {
+                return Task.CompletedTask;
+            }
+        }
+
         if (viewModel.IsPrimary)
         {
             // Close all secondary satellite windows
