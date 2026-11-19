@@ -194,9 +194,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 
 ### High
 
-#### `[BL-HIGH-008]` (`REV2-HIGH-001`) Propagate Split-Pane (2nd+ Pane) Session Events & User Input to `TerminalTabViewModel`
+#### `[BL-HIGH-008]` (`REV2-HIGH-001`) Propagate Split-Pane (2nd+ Pane) Session Events & User Input to `TerminalTabViewModel` — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (forwarded `WorkingDirectoryChanged`, `CommandExecuted`, `CommandCompleted`, output activity pulses, and `SendInput` input buffer tracking from `TerminalPaneViewModel` to `TerminalTabViewModel`, synchronized `Title` and path-bound command history on pane focus switch, and added regression test in `SplitPaneTreeTests`)
 - **Scope**: `ViewModels/Panes/TerminalPaneViewModel.cs`, `ViewModels/Panes/TerminalPaneViewModel.Streaming.cs`, `ViewModels/TerminalTabViewModel.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`
 - **Summary**: Forward `WorkingDirectoryChanged`, `CommandExecuted`, `CommandCompleted`, and `UserInput` (`TrackInputBuffer`) from secondary split panes to `TerminalTabViewModel` so directory breadcrumbs, path color stripes, command/directory history, execution state, and long-running command toast notifications work across all split panes.
 

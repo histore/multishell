@@ -105,10 +105,12 @@ public partial class TerminalTabViewModel
 
         ActivePane = pane;
 
-        // Synchronize tab working directory and title from newly focused pane
+        // Synchronize tab working directory, title, and path-bound command history from newly focused pane
         if (!string.IsNullOrWhiteSpace(pane.WorkingDirectory))
         {
             WorkingDirectory = pane.WorkingDirectory;
+            Title = pane.WorkingDirectory;
+            SyncCommandHistoryFromPath();
         }
 
         OnPropertyChanged(nameof(IsRunning));

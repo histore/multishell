@@ -82,7 +82,7 @@ public partial class TerminalTabViewModel
         _session.Send(bytes);
     }
 
-    private void TrackInputBuffer(byte[] bytes)
+    internal void TrackInputBuffer(byte[] bytes, TerminalPaneViewModel? sourcePane = null)
     {
         if (bytes.Length == 0 || bytes[0] == 0x1B) return;
 
@@ -101,14 +101,14 @@ public partial class TerminalTabViewModel
         {
             foreach (var ch in chars)
             {
-                ProcessInputBufferChar(ch);
+                ProcessInputBufferChar(ch, sourcePane);
             }
         }
 
         UpdateDraftCommandState();
     }
 
-    private void ProcessInputBufferChar(char ch)
+    private void ProcessInputBufferChar(char ch, TerminalPaneViewModel? sourcePane = null)
     {
         if (ch == '\x03') // Ctrl+C -> cancel line
         {
@@ -122,7 +122,7 @@ public partial class TerminalTabViewModel
             _previousWasCr = true;
             string executedCommand = _inputLineBuffer.ToString().Trim();
             _inputLineBuffer.Clear();
-            RecordExecutedInputCommand(executedCommand);
+            RecordExecutedInputCommand(executedCommand, sourcePane);
             return;
         }
 
@@ -157,16 +157,29 @@ public partial class TerminalTabViewModel
         }
     }
 
-    private void RecordExecutedInputCommand(string executedCommand)
+    private void RecordExecutedInputCommand(string executedCommand, TerminalPaneViewModel? sourcePane = null)
     {
         if (string.IsNullOrWhiteSpace(executedCommand)) return;
 
+        var pane = sourcePane ?? ActivePane;
+        var effectiveDir = !string.IsNullOrWhiteSpace(pane?.WorkingDirectory)
+            ? pane.WorkingDirectory
+            : WorkingDirectory;
+        var effectiveShellType = pane?.ShellType ?? ShellType;
+
         MarkCommandStarted(executedCommand);
-        _pendingCommandDirectory = WorkingDirectory;
-        if (ShellType != ShellType.PowerShell)
+        _pendingCommandDirectory = effectiveDir;
+        if (effectiveShellType != ShellType.PowerShell)
         {
-            OnSessionCommandExecuted(executedCommand);
-            CheckForDirectoryChangeCommand(executedCommand);
+            if (pane != null && !ReferenceEquals(TerminalModel, pane.TerminalModel))
+            {
+                HandlePaneCommandExecuted(pane, executedCommand);
+            }
+            else
+            {
+                OnSessionCommandExecuted(executedCommand);
+            }
+            CheckForDirectoryChangeCommand(executedCommand, pane);
         }
     }
 

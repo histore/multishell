@@ -14,6 +14,10 @@ public partial class TerminalPaneViewModel
         if (_isDisposed || data.IsEmpty) return;
 
         PulseOutputActivity();
+        if (IsActive)
+        {
+            Tab.PulseOutputActivity();
+        }
         _uiFeedCoordinator.ProcessAndFeed(data.Span, IsDarkTerminalTheme, Session, TerminalModel, _dispatcherService);
     }
 
@@ -72,6 +76,11 @@ public partial class TerminalPaneViewModel
             Title = newDir;
             DirectoryChanged?.Invoke(this, newDir);
         });
+
+        if (!ReferenceEquals(Tab.TerminalModel, TerminalModel))
+        {
+            Tab.HandlePaneWorkingDirectoryChanged(this, newDir);
+        }
     }
 
     private void OnSessionCommandExecuted(string cmd)
@@ -84,6 +93,11 @@ public partial class TerminalPaneViewModel
             IsExecuting = true;
             UpdateExecutionStatusBadge("● ", "Process_Activity_Active", "Active");
         });
+
+        if (!ReferenceEquals(Tab.TerminalModel, TerminalModel))
+        {
+            Tab.HandlePaneCommandExecuted(this, cmd);
+        }
     }
 
     private void UpdateExecutionStatusBadge(string symbol, string locKey, string fallback)
@@ -111,5 +125,10 @@ public partial class TerminalPaneViewModel
             ExecutionStatusBadge = null;
             FloatingHudBadge = null;
         });
+
+        if (!ReferenceEquals(Tab.TerminalModel, TerminalModel))
+        {
+            Tab.OnSessionCommandCompleted(exitCode);
+        }
     }
 }
