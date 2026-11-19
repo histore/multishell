@@ -208,6 +208,10 @@ public partial class MainWindow : Window
             if (DataContext is MainViewModel vm)
             {
                 vm.WindowCoordinator.UnregisterWindow(vm);
+                if (!vm.IsPrimary && vm.WindowCoordinator.PrimaryWindow is MainViewModel primaryVm)
+                {
+                    primaryVm.TriggerSaveState();
+                }
                 vm.Dispose();
             }
         };

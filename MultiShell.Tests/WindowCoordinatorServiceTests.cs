@@ -276,12 +276,21 @@ public class WindowCoordinatorServiceTests
         coordinator.ApplicationShutdownRequested += (_, _) => shutdownRequested = true;
 
         ICoordinatedWindow? closedSecondary = null;
-        coordinator.WindowCloseRequested += (_, args) => closedSecondary = args.ViewModel;
+        int closeEventCount = 0;
+        coordinator.WindowCloseRequested += (_, args) =>
+        {
+            closeEventCount++;
+            closedSecondary = args.ViewModel;
+            // Simulate UI Window.Closing handler re-entering CloseWindowAsync for the secondary window
+            _ = coordinator.CloseWindowAsync(args.ViewModel);
+        };
 
         await coordinator.CloseWindowAsync(primary);
 
         Assert.True(shutdownRequested);
         Assert.Same(secondary, closedSecondary);
+        Assert.Equal(1, closeEventCount);
+        Assert.Empty(primary.ClosedTabs);
     }
 
     [Fact]
