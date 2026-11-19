@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using MultiShell.Models;
 
@@ -11,7 +12,10 @@ namespace MultiShell.ViewModels;
 /// </summary>
 public partial class MainViewModel
 {
+    private const int SaveStateDebounceDelayMs = 120;
     private Task? _initTask;
+    private CancellationTokenSource? _saveDebounceCts;
+    private readonly Lock _saveDebounceLock = new();
 
     /// <summary>
     /// Loads persisted workspace state once and restores tabs, settings, history, and secondary windows.
@@ -245,7 +249,8 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Persists the current workspace state asynchronously via the primary window anchor.
+    /// Persists the current workspace state asynchronously via the primary window anchor,
+    /// coalescing rapid consecutive triggers with a short debounce window.
     /// </summary>
     public void TriggerSaveState()
     {
@@ -258,8 +263,59 @@ public partial class MainViewModel
             return;
         }
 
-        var workspaceState = BuildWorkspaceState();
-        _ = _persistenceService.SaveStateAsync(workspaceState);
+        CancellationToken token;
+        lock (_saveDebounceLock)
+        {
+            if (_isDisposed) return;
+            _saveDebounceCts?.Cancel();
+            _saveDebounceCts?.Dispose();
+            _saveDebounceCts = new CancellationTokenSource();
+            token = _saveDebounceCts.Token;
+        }
+
+        _ = SaveStateDebouncedAsync(token);
+    }
+
+    private async Task SaveStateDebouncedAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(SaveStateDebounceDelayMs, cancellationToken).ConfigureAwait(false);
+            if (_isDisposed || cancellationToken.IsCancellationRequested) return;
+
+            WorkspaceState? snapshot = null;
+            await _dispatcherService.InvokeAsync(() =>
+            {
+                if (!_isDisposed && !cancellationToken.IsCancellationRequested)
+                {
+                    snapshot = BuildWorkspaceState();
+                }
+                return Task.CompletedTask;
+            }).ConfigureAwait(false);
+
+            if (snapshot != null && !_isDisposed && !cancellationToken.IsCancellationRequested)
+            {
+                await _persistenceService.SaveStateAsync(snapshot, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer TriggerSaveState() or synchronous shutdown save
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or InvalidOperationException or ObjectDisposedException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainViewModel.Persistence] Debounced save failed: {ex.Message}");
+        }
+    }
+
+    internal void CancelPendingDebouncedSave()
+    {
+        lock (_saveDebounceLock)
+        {
+            _saveDebounceCts?.Cancel();
+            _saveDebounceCts?.Dispose();
+            _saveDebounceCts = null;
+        }
     }
 
     /// <summary>
@@ -268,6 +324,8 @@ public partial class MainViewModel
     public void SaveCurrentStateSynchronously()
     {
         if (_isDisposed || !_isInitialized || !IsPrimary) return;
+
+        CancelPendingDebouncedSave();
 
         // Prune non-existent paths for command history on application exit per REQ-HIST-003
         _pathCommandHistoryService.PruneNonExistentPaths();
@@ -279,8 +337,9 @@ public partial class MainViewModel
             Task.Run(async () => await _persistenceService.SaveStateAsync(workspaceState).ConfigureAwait(false))
                 .Wait(TimeSpan.FromSeconds(2));
         }
-        catch
+        catch (Exception ex) when (ex is AggregateException or OperationCanceledException or System.IO.IOException or UnauthorizedAccessException)
         {
+            System.Diagnostics.Debug.WriteLine($"[MainViewModel.Persistence] Synchronous exit save failed: {ex.Message}");
         }
     }
 }

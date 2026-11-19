@@ -300,5 +300,38 @@ public class TabStatePersistenceServiceTests : IDisposable
         Assert.Equal("SatelliteTab", loaded.SecondaryWindows[0].Tabs[0].Title);
         Assert.Equal(@"C:\satellite", loaded.SecondaryWindows[0].Tabs[0].WorkingDirectory);
     }
+
+    [Fact]
+    public async Task SaveStateAsync_ConcurrentSaves_NeverLeaveTempFilesOrThrow()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"multishell_concurrent_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var targetFile = Path.Combine(tempDir, "tabs_state.json");
+
+        try
+        {
+            var serviceA = new TabStatePersistenceService(targetFile);
+            var serviceB = new TabStatePersistenceService(targetFile);
+
+            var tasks = Enumerable.Range(0, 12).Select(i =>
+            {
+                var svc = i % 2 == 0 ? serviceA : serviceB;
+                var state = new WorkspaceState(new List<TabState> { new($"Tab {i}", @"C:\work") }, 0);
+                return svc.SaveStateAsync(state);
+            });
+
+            await Task.WhenAll(tasks);
+
+            Assert.True(File.Exists(targetFile));
+            Assert.Empty(Directory.GetFiles(tempDir, "*.tmp"));
+            var loaded = await serviceA.LoadStateAsync();
+            Assert.NotNull(loaded);
+            Assert.Single(loaded!.Tabs);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
 }
 

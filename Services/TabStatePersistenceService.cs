@@ -35,22 +35,14 @@ public class TabStatePersistenceService : ITabStatePersistenceService
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var directory = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
             var json = JsonSerializer.Serialize(state, MultiShellJsonSerializerContext.Default.WorkspaceState);
-            var tempPath = _filePath + ".tmp";
-            await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);
-            File.Move(tempPath, _filePath, overwrite: true);
+            await AtomicFileHelper.WriteAllTextAtomicAsync(_filePath, json, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
             throw;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or NotSupportedException)
         {
             System.Diagnostics.Debug.WriteLine($"Failed to save tab state: {ex.Message}");
         }

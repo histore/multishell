@@ -94,9 +94,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 
 ### Medium
 
-#### `[BL-MED-001]` Multi-Instance Persistence Temp-File Collisions, Save Debouncing & Async Load Error Handling
+#### `[BL-MED-001]` Multi-Instance Persistence Temp-File Collisions, Save Debouncing & Async Load Error Handling — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (extracted `AtomicFileHelper` with GUID-unique `.tmp` files and cleanup, added 120ms save debouncing with shutdown cancellation in `MainViewModel.Persistence.cs`, and added semaphore-guarded JSON/IO error handling in `TerminalProfileService.LoadProfilesAsync`)
 - **Scope**: `Services/TabStatePersistenceService.cs`, `Services/TerminalProfileService.cs`, `ViewModels/MainViewModel.Persistence.cs`
 - **Summary**: Fixed `.tmp` filenames collide under `--multi-instance`; rapid `TriggerSaveState()` calls lack debouncing and can overwrite newer snapshots out of order; `TerminalProfileService.LoadProfilesAsync` lacks JSON/IO `try/catch` handling.
 

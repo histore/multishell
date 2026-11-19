@@ -326,6 +326,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         if (_isDisposed) return;
         _isDisposed = true;
 
+        CancelPendingDebouncedSave();
         _terminalProfileService.ProfilesChanged -= ReloadProfiles;
         _localizationService.LanguageChanged -= _languageChangedHandler;
         _fontSizeService.AppFontSizeLevelChanged -= _appFontSizeLevelChangedHandler;
