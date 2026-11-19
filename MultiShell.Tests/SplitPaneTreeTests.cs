@@ -481,4 +481,24 @@ public class SplitPaneTreeTests
         Assert.True(tab.IsSearchOpen);
         Assert.Equal("error", tab.SearchQuery);
     }
+
+    [Fact]
+    public void TryComputeUpdatedSplitRatio_ComputesAndClampsRatioFromActualSizesOrStars()
+    {
+        var starHalf = new Avalonia.Controls.GridLength(0.5, Avalonia.Controls.GridUnitType.Star);
+        Assert.True(MultiShell.Views.SplitPaneContainerControl.TryComputeUpdatedSplitRatio(
+            starHalf, 300, starHalf, 700, out double actualRatio));
+        Assert.Equal(0.3, actualRatio, 3);
+
+        Assert.True(MultiShell.Views.SplitPaneContainerControl.TryComputeUpdatedSplitRatio(
+            new Avalonia.Controls.GridLength(3, Avalonia.Controls.GridUnitType.Star), 0,
+            new Avalonia.Controls.GridLength(1, Avalonia.Controls.GridUnitType.Star), 0,
+            out double starRatio));
+        Assert.Equal(0.75, starRatio, 3);
+
+        // Extreme ratios must clamp between 0.1 and 0.9
+        Assert.True(MultiShell.Views.SplitPaneContainerControl.TryComputeUpdatedSplitRatio(
+            starHalf, 10, starHalf, 990, out double clampedLow));
+        Assert.Equal(0.1, clampedLow, 3);
+    }
 }

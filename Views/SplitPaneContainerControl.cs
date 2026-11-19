@@ -237,9 +237,26 @@ public class SplitPaneContainerControl : ContentControl
         Grid.SetColumn(splitter, 1);
         Grid.SetColumn(second, 2);
 
+        bool isSyncingFromDrag = false;
+        splitter.DragCompleted += (_, _) =>
+        {
+            if (TryComputeUpdatedSplitRatio(col1.Width, col1.ActualWidth, col2.Width, col2.ActualWidth, out double newRatio))
+            {
+                isSyncingFromDrag = true;
+                try
+                {
+                    split.SplitRatio = newRatio;
+                }
+                finally
+                {
+                    isSyncingFromDrag = false;
+                }
+            }
+        };
+
         System.ComponentModel.PropertyChangedEventHandler handler = (_, args) =>
         {
-            if (args.PropertyName != nameof(SplitPaneNodeViewModel.SplitRatio)) return;
+            if (isSyncingFromDrag || args.PropertyName != nameof(SplitPaneNodeViewModel.SplitRatio)) return;
             col1.Width = new GridLength(split.SplitRatio, GridUnitType.Star);
             col2.Width = new GridLength(1.0 - split.SplitRatio, GridUnitType.Star);
         };
@@ -261,13 +278,58 @@ public class SplitPaneContainerControl : ContentControl
         Grid.SetRow(splitter, 1);
         Grid.SetRow(second, 2);
 
+        bool isSyncingFromDrag = false;
+        splitter.DragCompleted += (_, _) =>
+        {
+            if (TryComputeUpdatedSplitRatio(row1.Height, row1.ActualHeight, row2.Height, row2.ActualHeight, out double newRatio))
+            {
+                isSyncingFromDrag = true;
+                try
+                {
+                    split.SplitRatio = newRatio;
+                }
+                finally
+                {
+                    isSyncingFromDrag = false;
+                }
+            }
+        };
+
         System.ComponentModel.PropertyChangedEventHandler handler = (_, args) =>
         {
-            if (args.PropertyName != nameof(SplitPaneNodeViewModel.SplitRatio)) return;
+            if (isSyncingFromDrag || args.PropertyName != nameof(SplitPaneNodeViewModel.SplitRatio)) return;
             row1.Height = new GridLength(split.SplitRatio, GridUnitType.Star);
             row2.Height = new GridLength(1.0 - split.SplitRatio, GridUnitType.Star);
         };
         split.PropertyChanged += handler;
         _splitRatioSubscriptions.Add((split, handler));
+    }
+
+    internal static bool TryComputeUpdatedSplitRatio(
+        GridLength firstLength,
+        double firstActual,
+        GridLength secondLength,
+        double secondActual,
+        out double updatedRatio)
+    {
+        double totalActual = firstActual + secondActual;
+        if (firstActual > 0 && secondActual > 0 && totalActual > 0)
+        {
+            updatedRatio = Math.Clamp(firstActual / totalActual, 0.1, 0.9);
+            return true;
+        }
+
+        if (firstLength.IsStar && secondLength.IsStar)
+        {
+            double totalStars = firstLength.Value + secondLength.Value;
+            if (totalStars > 0)
+            {
+                updatedRatio = Math.Clamp(firstLength.Value / totalStars, 0.1, 0.9);
+                return true;
+            }
+        }
+
+        updatedRatio = 0.5;
+        return false;
     }
 }

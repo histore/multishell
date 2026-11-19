@@ -262,9 +262,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `ViewModels/TerminalTabViewModel.Panes.cs`, `ViewModels/TerminalTabViewModel.Search.cs`, `Views/MainWindow.Keyboard.cs`
 - **Summary**: Call `SyncSearchStateFromPane(pane)` inside `TerminalTabViewModel.SetActivePane(pane)` and ensure `TryHandleEscapeKeyDown()` does not swallow `Escape` keys in an active pane whose search overlay is closed.
 
-#### `[BL-MED-014]` (`REV2-MED-005`) Sync Mouse `GridSplitter` Drag Changes Back to `SplitPaneNodeViewModel.SplitRatio`
+#### `[BL-MED-014]` (`REV2-MED-005`) Sync Mouse `GridSplitter` Drag Changes Back to `SplitPaneNodeViewModel.SplitRatio` — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (subscribed to `splitter.DragCompleted` in `ConfigureVerticalSplitGrid` and `ConfigureHorizontalSplitGrid` in `SplitPaneContainerControl.cs` to sync `split.SplitRatio` via `TryComputeUpdatedSplitRatio`, with unit test in `SplitPaneTreeTests`)
 - **Scope**: `Views/SplitPaneContainerControl.cs`, `ViewModels/Panes/SplitPaneNodeViewModel.cs`
 - **Summary**: Update `split.SplitRatio` from the actual grid column/row star proportions when a mouse `GridSplitter` drag completes in `SplitPaneContainerControl`, preserving manual mouse resizes across subsequent splits, zoom toggles, and keyboard resizes.
 
