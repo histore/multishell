@@ -244,9 +244,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/ShellSession.Streams.cs`, `Services/PathNormalizer.cs`
 - **Summary**: Capture the leading `/` in `GetOsc7Regex()` and only strip it when followed by a Windows drive letter (`/[A-Za-z]:`), preventing Linux/WSL OSC 7 paths (`file://ubuntu/home/user`) from losing their leading slash and resolving as relative Windows paths.
 
-#### `[BL-MED-011]` (`REV2-MED-002`) Prevent Secondary Window Re-Entrancy During Primary Shutdown & Persist State on Satellite Close
+#### `[BL-MED-011]` (`REV2-MED-002`) Prevent Secondary Window Re-Entrancy During Primary Shutdown & Persist State on Satellite Close — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (added all secondary windows to `_closingWindows` under `_lock` before raising `WindowCloseRequested` during primary window shutdown, routed empty secondary window closures in `DockBackTabAsync`/`TransferTab` through `CloseWindowAsync`, and triggered `TriggerSaveState()` on primary when archiving tabs or unregistering a closed satellite window)
 - **Scope**: `Services/WindowCoordinatorService.cs`, `Views/MainWindow.axaml.cs`
 - **Summary**: Mark secondary windows as closing in `_closingWindows` before firing `WindowCloseRequested` during primary window shutdown (and tab dock-back/transfer) so active satellite tabs are not archived into `ClosedTabs`, and trigger `primary.TriggerSaveState()` when a user closes a secondary window.
 

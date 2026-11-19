@@ -121,10 +121,10 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         // 2. Attach tab to primary window
         primary.AttachTab(tab);
 
-        // 3. If source secondary window has no remaining tabs, request closing it
+        // 3. If source secondary window has no remaining tabs, request closing it via CloseWindowAsync (idempotent via _closingWindows)
         if (sourceWindow.TabCount == 0)
         {
-            WindowCloseRequested?.Invoke(this, new WindowCloseRequestedEventArgs(sourceWindow));
+            return CloseWindowAsync(sourceWindow);
         }
 
         return Task.CompletedTask;
@@ -134,6 +134,8 @@ public class WindowCoordinatorService : IWindowCoordinatorService
     {
         if (viewModel == null) return Task.CompletedTask;
 
+        List<ICoordinatedWindow>? secondariesToClose = null;
+
         // Guard against re-entrancy (e.g. CloseWindowAsync -> window.Close() -> Window.Closing -> CloseWindowAsync)
         lock (_lock)
         {
@@ -141,15 +143,26 @@ public class WindowCoordinatorService : IWindowCoordinatorService
             {
                 return Task.CompletedTask;
             }
+
+            if (viewModel.IsPrimary)
+            {
+                secondariesToClose = _windows.Where(w => !w.IsPrimary).ToList();
+                foreach (var sec in secondariesToClose)
+                {
+                    _closingWindows.Add(sec);
+                }
+            }
         }
 
         if (viewModel.IsPrimary)
         {
-            // Close all secondary satellite windows
-            var secondaries = Windows.Where(w => !w.IsPrimary).ToList();
-            foreach (var sec in secondaries)
+            // Close all secondary satellite windows without archiving their active tabs into ClosedTabs
+            if (secondariesToClose != null)
             {
-                WindowCloseRequested?.Invoke(this, new WindowCloseRequestedEventArgs(sec));
+                foreach (var sec in secondariesToClose)
+                {
+                    WindowCloseRequested?.Invoke(this, new WindowCloseRequestedEventArgs(sec));
+                }
             }
 
             // Signal global application shutdown
@@ -192,7 +205,7 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         // 3. If source was a secondary satellite window with no remaining tabs, request closing it
         if (!sourceWindow.IsPrimary && sourceWindow.TabCount == 0)
         {
-            WindowCloseRequested?.Invoke(this, new WindowCloseRequestedEventArgs(sourceWindow));
+            _ = CloseWindowAsync(sourceWindow);
         }
     }
 }

@@ -105,6 +105,7 @@ public partial class MainViewModel
     public void PushClosedTabState(TabState closedTabState)
     {
         PushClosedTab(ClosedTabItemViewModel.FromTabState(closedTabState));
+        TriggerSaveState();
     }
 
     public WindowWorkspaceState ExportWorkspaceState()
