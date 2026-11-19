@@ -10,7 +10,7 @@ Models/
 ├── CommandExecutionResult.cs          # Execution exit code and duration model (REQ-TERM-012)
 ├── PaneNavigationDirection.cs         # Left, Right, Up, Down directional focus (REQ-UI-006)
 ├── PaneSplitDirection.cs              # Vertical and Horizontal split orientation (REQ-UI-006)
-├── PathBreadcrumbSegment.cs           # Interactive status bar breadcrumb segment (REQ-TERM-013)
+├── PathBreadcrumbSegment.cs           # Interactive status bar breadcrumb segment (REQ-UI-010)
 ├── PathColorStripe.cs                 # Deterministic folder path color stripe model (REQ-TAB-025)
 └── ProcessExecutionState.cs           # Idle, Running, Succeeded, Failed state enum (REQ-TERM-012)
 
@@ -21,7 +21,14 @@ Services/
 ├── PathColorCodingService.cs          # Deterministic folder color coding with Padovan scaling
 ├── IToastNotificationService.cs       # Platform toast notification contract (REQ-TERM-012)
 ├── WindowsToastNotificationService.cs # Native Windows toast notification dispatcher
-├── PathBreadcrumbParser.cs            # Breadcrumb segment extraction from directory paths (REQ-TERM-013)
+├── PathBreadcrumbParser.cs            # Breadcrumb segment extraction from directory paths (REQ-UI-010)
+├── IDispatcherService.cs              # UI-thread marshaling & timer abstraction (BL-ARCH-001)
+├── AvaloniaDispatcherService.cs       # Avalonia Dispatcher.UIThread adapter
+├── ITerminalModelAdapter.cs           # Terminal model & factory abstraction (BL-ARCH-001)
+├── AvaloniaTerminalModelAdapter.cs    # SvcSystems.UI.Terminal model adapter
+├── TerminalUiFeedCoordinator.cs       # Shared ANSI streaming, OSC color & batched UI feed (BL-QUAL-003)
+├── UiServiceDefaults.cs               # Composition-root defaults for ViewModels (BL-MED-007)
+├── UiFrameworkInfo.cs                 # UI framework metadata & hex color validation
 ├── KeyboardStateHelper.cs             # Native Windows keyboard state reader (CapsLock, etc.)
 └── FileBrowserHelper.cs               # Platform-native file manager launcher (Windows Explorer, Finder, xdg-open)
 
@@ -92,7 +99,7 @@ Views/
 To avoid monolithic classes, `MainViewModel` is divided across functional partial files:
 * **`MainViewModel.cs`**:
   * Root properties: active tab reference, window title resolution, status indicators.
-  * Dependency injection constructor accepting services (`IPowerShellProcessService`, `ITerminalProfileService`, `IThemeService`, `ILocalizationService`, `ITabStatePersistenceService`, `IFontSizeService`, `IPathCommandHistoryService`, `IDirectoryHistoryService`, `IPathColorCodingService`).
+  * Dependency injection constructor accepting services (`IShellProcessService`, `ITerminalProfileService`, `IThemeService`, `ILocalizationService`, `ITabStatePersistenceService`, `IFontSizeService`, `IPathCommandHistoryService`, `IDirectoryHistoryService`, `IPathColorCodingService`, `IToastNotificationService`, `IWindowCoordinatorService`, `IDispatcherService`, `ITerminalModelFactory`).
   * Manages path command history lifecycle: migrates legacy tab command histories on load and invokes `_pathCommandHistoryService.PruneNonExistentPaths()` prior to saving state on application shutdown.
 * **`MainViewModel.Tabs.cs`**:
   * Manages `ObservableCollection<TerminalTabViewModel> Tabs` and implements `ICoordinatedWindow` for multi-window orchestration (`REQ-TAB-026`).
@@ -123,7 +130,7 @@ Backs an individual terminal tab instance and coordinates multiple split panes v
   * Binary tree split operations (`SplitVerticalCommand`, `SplitHorizontalCommand`, `CloseActivePaneCommand`, `ToggleZoomCommand`).
   * Directional pane focus navigation (`NavigatePane`) and tree traversal.
   * Handles auto-collapse on pane shell exit.
-* **`TerminalTabViewModel.ExecutionState.cs` (`REQ-TERM-012`, `REQ-TERM-013`)**:
+* **`TerminalTabViewModel.ExecutionState.cs` (`REQ-TERM-012`, `REQ-UI-010`)**:
   * Tracks shell process execution states (`ProcessExecutionState`: `Idle`, `Running`, `Succeeded`, `Failed`).
   * Dynamic status indicator glyphs, activity timer, and tooltips displaying last exit code and command execution duration.
   * Native desktop toast notifications (`IToastNotificationService` / `WindowsToastNotificationService`) for long-running commands (>= 10s) completing while the tab or window is in the background.
@@ -183,7 +190,7 @@ Backs an individual terminal tab instance and coordinates multiple split panes v
   * Drag-and-drop surface (`TerminalContentArea`): dropping folders or files navigates the active terminal (or containing folder for files), and holding `Shift` opens a new tab.
 * **Bottom Status Bar**:
   * Left: Process execution status glyph and live activity text (`SelectedTab.ExecutionStatusGlyph`, `SelectedTab.ProcessActivityText`).
-  * Center: Interactive Path Breadcrumbs (`REQ-TERM-013`, `SelectedTab.PathBreadcrumbs`). Clicking any ancestor breadcrumb navigates the active shell (`cd <path>`). Clicking the current folder segment or dropdown opens a native folder picker dialog (`ShowFolderPickerForBreadcrumbAsync`).
+  * Center: Interactive Path Breadcrumbs (`REQ-UI-010`, `SelectedTab.PathBreadcrumbs`). Clicking any ancestor breadcrumb navigates the active shell (`cd <path>`). Clicking the current folder segment or dropdown opens a native folder picker dialog (`ShowFolderPickerForBreadcrumbAsync`).
   * Right: Maximized Pane restore button (`SelectedTab.ToggleZoomCommand`), Caps Lock amber badge (`KeyboardStateHelper`), Insert/Overwrite mode indicator, UTF-8 codepage badge, and active Shell Type badge.
 * **Left Slide-out History Drawer**:
   * Animated panel displaying searchable command and directory history.

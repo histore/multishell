@@ -219,7 +219,7 @@ docs/requirements/modules/
 | `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide (`F1`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-003` | About Dialog & Technology Information | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
-| `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-UI-004` | 7-Level Font Size Settings for App and Terminal | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Wheel Shortcuts | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-007` | Windows 11 Acrylic & Mica Window Backdrop Effects | [`docs/requirements/modules/theming-and-styling.md`](docs/requirements/modules/theming-and-styling.md) | `BACKLOG` |
@@ -231,6 +231,7 @@ docs/requirements/modules/
 | `REQ-AI-001` | Context-Aware AI Command Generator & Auto-Suggest | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `BACKLOG` |
 | `REQ-LNC-001` | Launcher Search & Item Filtering | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `DEPRECATED` |
 | `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `DEPRECATED` |
+| `REQ-UI-010` | Interactive Status Bar Path Breadcrumbs & Folder Picker | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-HIST-005` | Global Panel Actions, Commands & Snippets Integration | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `BACKLOG` |
 | `REQ-TAB-026` | Detachable Window Undocking & Redocking for Multi-Monitor Workflows | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-TERM-012` | Long-Running Process Completion Desktop & Tab Notifications | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |

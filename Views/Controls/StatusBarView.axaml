@@ -45,7 +45,7 @@
                         Margin="10,0"
                         VerticalAlignment="Center" />
 
-                <!-- Center: Interactive Path Breadcrumbs (REQ-TERM-013) -->
+                <!-- Center: Interactive Path Breadcrumbs (REQ-UI-010) -->
                 <ScrollViewer Grid.Column="2"
                               HorizontalScrollBarVisibility="Hidden"
                               VerticalScrollBarVisibility="Disabled"

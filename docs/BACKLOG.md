@@ -142,9 +142,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/SingleInstanceService.cs`, `Services/LinkDetectionHelper.cs`, `Services/FileBrowserHelper.cs`, `Services/KeyboardStateHelper.cs`, `Services/PathNormalizer.cs`, `Services/ShellDirectoryChangeDetector.cs`, `Services/StartupPathResolver.cs`, `ViewModels/MainViewModel.cs`, `ViewModels/MainViewModel.Persistence.cs`, `ViewModels/MainViewModel.Tabs.cs`, `Program.cs`
 - **Summary**: Follow up on `BL-QUAL-001` by narrowing remaining bare `catch` blocks to targeted exception filters with `Debug.WriteLine` diagnostics.
 
-#### `[BL-MED-009]` Synchronize Architecture Specs, `.arch-sync.json`, and Resolve `REQ-TERM-013` / `REQ-UI-004` Drift
+#### `[BL-MED-009]` Synchronize Architecture Specs, `.arch-sync.json`, and Resolve `REQ-TERM-013` / `REQ-UI-004` Drift — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `ARCHITECTURE.md`, `presentation.md`, `terminal-session.md`, and `.arch-sync.json`; registered Status Bar Breadcrumbs as `REQ-UI-010` to eliminate the `REQ-TERM-013` collision; aligned `REQ-UI-004` to 7 font levels)
 - **Scope**: `docs/architecture/.arch-sync.json`, `ARCHITECTURE.md`, `docs/architecture/modules/*.md`, `REQUIREMENTS.md`, `docs/requirements/modules/*.md`
 - **Summary**: `.arch-sync.json` is 7 commits behind `HEAD`; `REQ-TERM-013` collides between Scrollback Export (`REQUIREMENTS.md`) and Status Bar Breadcrumbs (production code); `REQ-UI-004` states 5 font levels instead of 7.
 

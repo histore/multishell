@@ -330,7 +330,7 @@ This document defines the functional and non-functional requirements specific to
 
 ---
 
-### `[REQ-UI-004]` 5-Level Font Size Settings for App and Terminal
+### `[REQ-UI-004]` 7-Level Font Size Settings for App and Terminal
 
 - **Status**: `IMPLEMENTED`
 - **Type**: `UI/UX`
@@ -338,10 +338,10 @@ This document defines the functional and non-functional requirements specific to
 
 #### User Story
 > **As a** user,  
-> **I want** to adjust the font size of both the application UI and the terminal independently across 5 distinct levels, with persistent storage across sessions.
+> **I want** to adjust the font size of both the application UI and the terminal independently across 7 distinct levels, with persistent storage across sessions.
 
 #### Acceptance Criteria (Given-When-Then)
-- [x] **AC-1**: 5 selectable levels (1 to 5) for App Font Size (0.85x to 1.25x) and Terminal Font Size (9.5pt to 16.5pt).
+- [x] **AC-1**: 7 selectable levels (1 to 7; default level 4) for App Font Size (`0.80x` to `1.30x`) and Terminal Font Size (`10.0pt` to `21.0pt`).
 - [x] **AC-2**: Preferences are loaded and restored from `WorkspaceState`.
 
 #### Traceability & Verification
@@ -563,11 +563,34 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide (`F1`) | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-003` | About Dialog & Technology Information | UI/UX | IMPLEMENTED | `v0.1.0` |
-| `REQ-UI-004` | 5-Level Font Size Settings for App and Terminal | UI/UX | IMPLEMENTED | `v0.1.0` |
+| `REQ-UI-004` | 7-Level Font Size Settings for App and Terminal | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Wheel Shortcuts | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-008` | Empty State Welcome & Profile Selector Dashboard | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits) | Functional | IMPLEMENTED | `v1.1.0` |
+| `REQ-UI-010` | Interactive Status Bar Path Breadcrumbs & Folder Picker | UI/UX | IMPLEMENTED | `v1.2.0` |
 | `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | Functional | DEPRECATED | `v1.2.0` |
 | `REQ-AI-001` | Context-Aware AI Command Generator & Auto-Suggest | Functional | BACKLOG | `v1.3.0` |
 | `REQ-LNC-001` | Launcher Search & Item Filtering | Functional | DEPRECATED | `v1.3.0` |
 | `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | Functional | DEPRECATED | `v1.2.0` |
+
+---
+
+### `[REQ-UI-010]` Interactive Status Bar Path Breadcrumbs & Folder Picker
+
+- **Status**: `IMPLEMENTED`
+- **Type**: `UI/UX`
+- **Target Release**: `v1.2.0`
+
+#### User Story
+> **As a** user,  
+> **I want** clickable directory breadcrumb segments in the status bar with a native folder picker on the current directory segment,  
+> **so that** I can quickly navigate to ancestor directories or insert folder paths into draft commands.
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: **Given** a valid Windows, UNC, or POSIX working directory, **When** rendered in the status bar, **Then** `PathBreadcrumbParser` splits the path into interactive segments with localized tooltips.
+- [x] **AC-2**: **When** clicking an ancestor segment while idle and without a draft command, **Then** the active shell changes directory (`cd` / `Set-Location`); if a draft command is present, the path is inserted instead.
+- [x] **AC-3**: **When** a command is actively running, **Then** ancestor navigation segments are disabled while the current segment opens the native folder picker to insert a path.
+
+#### Traceability & Verification
+- **Architecture Contract**: `docs/architecture/modules/presentation.md`
+- **Test Suite**: `MultiShell.Tests/StatusBreadcrumbNavigationTests.cs`

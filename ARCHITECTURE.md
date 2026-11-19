@@ -9,7 +9,7 @@ For the comprehensive system architecture specification and subsystem diagrams, 
 MultiShell strictly adheres to **Clean Architecture** and **MVVM** principles:
 
 - **Domain Layer (`Models/`)**: Core immutable entities, value objects, and serialization records (`TabState`, `TerminalProfile`, `LanguageOption`, `PathColorStripe`, `ShellType`) with zero external service or presentation dependencies.
-- **Services Layer (`Services/`)**: Application contracts and infrastructure implementations (`ShellSession` for ConPTY Win32 pipes, `TerminalProfileService`, `ThemeService`, `LocalizationService`, `TabStatePersistenceService`, `FuzzySearchService`, `PathCommandHistoryService`, `DirectoryHistoryService`, `PathColorCodingService`, `PathNormalizer`, `ShellCommandFilter`, `AnsiStreamProcessor`, `ShellDirectoryChangeDetector`).
+- **Services Layer (`Services/`)**: Application contracts and infrastructure implementations (`ShellSession` for ConPTY Win32 pipes, `ShellDiscoveryService`, `ShellProcessService`, `TerminalProfileService`, `ThemeService`, `FontSizeService`, `LocalizationService`, `TabStatePersistenceService`, `AtomicFileHelper`, `FuzzySearchService`, `PathCommandHistoryService`, `DirectoryHistoryService`, `PathColorCodingService`, `PathBreadcrumbParser`, `PathNormalizer`, `ShellCommandFilter`, `AnsiStreamProcessor`, `TerminalUiFeedCoordinator`, `ShellDirectoryChangeDetector`, `WindowCoordinatorService`, `SingleInstanceService`, `WindowsToastNotificationService`, `AvaloniaDispatcherService`, `AvaloniaTerminalModelAdapter`, `UiServiceDefaults`, `UiFrameworkInfo`).
 - **Presentation Layer (`ViewModels/` & `Views/`)**: Reactive view models (`MainViewModel`, `TerminalTabViewModel`) using `CommunityToolkit.Mvvm`, decoupled from Avalonia UI controls, and XAML views using compiled bindings (`x:DataType`) and modularized dialog views (`TabSwitcherOverlayView`, `HistoryDrawerView`).
 - **Automated Test Suite (`MultiShell.Tests/`)**: Comprehensive xUnit tests adhering to the AAA pattern.
 
@@ -23,7 +23,7 @@ MultiShell strictly adheres to **Clean Architecture** and **MVVM** principles:
 
 ## Cross-Cutting Concerns
 - **Concurrency & ConPTY Streaming**: Asynchronous ConPTY stdout/stderr reading with stateful UTF-8 chunk decoding (`Decoder.GetChars`), dedicated `AnsiStreamProcessor` ANSI/VT sequence buffering, and real-time OSC 7/9/133 shell integration sequence parsing.
-- **Process Codepage & Fonts**: Process-wide UTF-8 manifest ([`app.manifest`](app.manifest)), console codepage 65001, and cross-platform monospace font fallback chain (`Cascadia Code NF`, `Cascadia Mono NF`, etc.).
+- **Process Codepage & Fonts**: Process-wide UTF-8 manifest ([`app.manifest`](app.manifest)), console codepage 65001, and embedded `FiraCode Nerd Font Mono` with system monospace fallback chain (`Cascadia Code NF`, `CascadiaMono NF`, `Consolas`, `DejaVu Sans Mono`, etc.).
 - **Atomic Persistence**: Thread-safe atomic JSON workspace persistence (`%LOCALAPPDATA%/MultiShell/tabs_state.json`) with safe temporary swap files.
 - **Single-Instance & CLI Parameters**: Cross-process argument forwarding via asynchronous Named Pipes (`MultiShell_IPC_Pipe`) synchronized with a system Mutex (`Local\MultiShell_SingleInstance_Mutex`). Automatically resolves folder or file paths to working directories and focuses the existing window.
 

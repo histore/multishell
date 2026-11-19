@@ -25,13 +25,16 @@ The Terminal Session module encapsulates low-level operating system process mana
   * Concrete factory constructing `ShellSession` instances with initial buffer dimensions and environment configurations.
 * **[`ShellDiscoveryService`](../../../Services/ShellDiscoveryService.cs)**:
   * Auto-discovers PowerShell 7 (`pwsh.exe`), Windows PowerShell (`powershell.exe`), Command Prompt (`cmd.exe`), WSL distributions (`wsl.exe`), and NuShell (`nu.exe`).
+* **[`TerminalUiFeedCoordinator`](../../../Services/TerminalUiFeedCoordinator.cs)** & **[`ITerminalModelAdapter`](../../../Services/ITerminalModelAdapter.cs)**:
+  * Coordinates `AnsiStreamProcessor` UTF-8/VT chunk sanitization, OSC 10/11 theme color query responses, and coalesced UI-thread `ITerminalModelAdapter.Feed(...)` batching shared across tabs and split panes.
 
 ## 3. Data Flow & Streaming Sequence
 
 ```mermaid
 sequenceDiagram
-    participant UI as TerminalTabView (Avalonia)
-    participant VM as TerminalTabViewModel
+    participant UI as TerminalPaneView (Avalonia)
+    participant VM as TerminalPaneViewModel / TabVM
+    participant FC as TerminalUiFeedCoordinator
     participant SS as ShellSession (ConPTY)
     participant Pipe as Named/Anonymous Pipe
     participant Shell as pwsh.exe / wsl.exe
@@ -43,13 +46,13 @@ sequenceDiagram
 
     Shell->>Pipe: Shell Output Buffer (VT/ANSI/OSC)
     Pipe->>SS: Read from OutPipe (stdout)
-    SS->>SS: CheckForOscSequences (OSC 7 / 9;9 / 133;E)
+    SS->>SS: CheckForOscSequences (OSC 7 / 9;9 / 133;E / 133;D)
     opt OSC Sequence Detected
-        SS-->>VM: WorkingDirectoryChanged / CommandExecuted
+        SS-->>VM: WorkingDirectoryChanged / CommandExecuted / CommandCompleted
     end
     SS->>VM: DataReceived (raw chunk bytes)
-    VM->>VM: Stateful UTF-8 Decoder (Decoder.GetChars)
-    VM->>UI: TerminalModel.Feed(decodedText)
+    VM->>FC: ProcessAndFeed(span, isDarkTheme, session, adapter, dispatcher)
+    FC->>UI: ITerminalModelAdapter.Feed(sanitizedBatch)
 ```
 
 ## 4. Key Implementation Details & Invariants

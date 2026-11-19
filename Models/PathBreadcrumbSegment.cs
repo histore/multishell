@@ -1,7 +1,7 @@
 namespace MultiShell.Models;
 
 /// <summary>
-/// Represents an interactive segment within a directory path breadcrumb bar (REQ-TERM-013).
+/// Represents an interactive segment within a directory path breadcrumb bar (REQ-UI-010).
 /// </summary>
 /// <param name="Name">The display label of the segment (e.g. "C:", "projekte", "multishell").</param>
 /// <param name="FullPath">The cumulative full path up to and including this segment.</param>

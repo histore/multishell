@@ -74,7 +74,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     private Func<string?, Task<string?>>? _folderPickerHandler;
 
     /// <summary>
-    /// Gets or sets the UI folder picker handler used by terminal status bar breadcrumbs (REQ-TERM-013).
+    /// Gets or sets the UI folder picker handler used by terminal status bar breadcrumbs (REQ-UI-010).
     /// </summary>
     public Func<string?, Task<string?>>? FolderPickerHandler
     {
