@@ -154,8 +154,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
             };
             System.Diagnostics.Process.Start(psi);
         }
-        catch
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
         {
+            System.Diagnostics.Debug.WriteLine($"[MainViewModel.OpenGitHubUrl] Browser launch failed: {ex.Message}");
         }
     }
 

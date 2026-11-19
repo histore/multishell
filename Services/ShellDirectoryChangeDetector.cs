@@ -109,9 +109,10 @@ public static class ShellDirectoryChangeDetector
                 }
             }
         }
-        catch
+        catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException or UnauthorizedAccessException or IOException or System.Security.SecurityException)
         {
             // Ignore path resolution errors
+            System.Diagnostics.Debug.WriteLine($"[ShellDirectoryChangeDetector] Resolution failed for '{targetPath}': {ex.Message}");
         }
 
         return false;

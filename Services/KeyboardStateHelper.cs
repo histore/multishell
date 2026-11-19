@@ -26,8 +26,9 @@ public static partial class KeyboardStateHelper
             }
             return false;
         }
-        catch
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or PlatformNotSupportedException)
         {
+            System.Diagnostics.Debug.WriteLine($"[KeyboardStateHelper.QueryCapsLockState] Native key query failed: {ex.Message}");
             return false;
         }
     }

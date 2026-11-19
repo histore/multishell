@@ -32,8 +32,9 @@ public class StartupPathResolver : IStartupPathResolver
                 ? Path.GetFullPath(trimmed)
                 : Path.GetFullPath(Path.Combine(baseDir, trimmed));
         }
-        catch
+        catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException or UnauthorizedAccessException or IOException or System.Security.SecurityException)
         {
+            System.Diagnostics.Debug.WriteLine($"[StartupPathResolver.ResolveWorkingDirectory] Failed for '{inputPath}': {ex.Message}");
             return null;
         }
 
@@ -57,9 +58,10 @@ public class StartupPathResolver : IStartupPathResolver
                 return parentDir;
             }
         }
-        catch
+        catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException or UnauthorizedAccessException or IOException or System.Security.SecurityException)
         {
             // Ignore invalid path syntax
+            System.Diagnostics.Debug.WriteLine($"[StartupPathResolver.ResolveWorkingDirectory] Parent dir check failed: {ex.Message}");
         }
 
         return null;
