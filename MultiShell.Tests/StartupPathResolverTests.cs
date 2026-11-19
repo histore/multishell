@@ -166,4 +166,17 @@ public class StartupPathResolverTests
         Assert.Null(_resolver.ResolveFromArgs(Array.Empty<string>()));
         Assert.Null(_resolver.ResolveFromArgs(new[] { "--flag", "-x" }));
     }
+
+    [Fact]
+    public void PathNormalizer_AndStartupPathResolver_RejectRemoteUncAndAllowWslLocalPaths()
+    {
+        Assert.False(PathNormalizer.DirectoryExistsOrNonWindows(@"\\192.168.1.50\share\folder"));
+        Assert.False(PathNormalizer.DirectoryExistsOrNonWindows(@"\\wsl-evil\share\folder"));
+        Assert.True(PathNormalizer.DirectoryExistsOrNonWindows(@"\\wsl$\Ubuntu\home\user"));
+        Assert.True(PathNormalizer.DirectoryExistsOrNonWindows(@"\\wsl.localhost\Ubuntu\home\user"));
+        Assert.True(PathNormalizer.DirectoryExistsOrNonWindows("/home/user/repo"));
+
+        Assert.Null(_resolver.ResolveWorkingDirectory(@"\\192.168.1.50\share\folder"));
+        Assert.Null(_resolver.ResolveWorkingDirectory(@"\\wsl-evil\share\folder"));
+    }
 }

@@ -16,7 +16,7 @@ public class StartupPathResolver : IStartupPathResolver
         }
 
         var trimmed = inputPath.Trim().Trim('"', '\'');
-        if (string.IsNullOrWhiteSpace(trimmed))
+        if (string.IsNullOrWhiteSpace(trimmed) || !LinkDetectionHelper.IsSafeLocalPath(trimmed))
         {
             return null;
         }
@@ -24,7 +24,9 @@ public class StartupPathResolver : IStartupPathResolver
         string fullPath;
         try
         {
-            var baseDir = !string.IsNullOrWhiteSpace(baseDirectory) && Directory.Exists(baseDirectory)
+            var baseDir = !string.IsNullOrWhiteSpace(baseDirectory) &&
+                          LinkDetectionHelper.IsSafeLocalPath(baseDirectory) &&
+                          Directory.Exists(baseDirectory)
                 ? baseDirectory
                 : Environment.CurrentDirectory;
 
@@ -35,6 +37,11 @@ public class StartupPathResolver : IStartupPathResolver
         catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException or UnauthorizedAccessException or IOException or System.Security.SecurityException)
         {
             System.Diagnostics.Debug.WriteLine($"[StartupPathResolver.ResolveWorkingDirectory] Failed for '{inputPath}': {ex.Message}");
+            return null;
+        }
+
+        if (!LinkDetectionHelper.IsSafeLocalPath(fullPath))
+        {
             return null;
         }
 
