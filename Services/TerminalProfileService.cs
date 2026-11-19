@@ -187,22 +187,36 @@ public class TerminalProfileService : ITerminalProfileService
 
     public async Task LoadProfilesAsync(CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(_filePath))
-        {
-            return;
-        }
-
+        bool loaded = false;
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (!File.Exists(_filePath))
+            {
+                return;
+            }
+
             var json = await File.ReadAllTextAsync(_filePath, cancellationToken).ConfigureAwait(false);
-            TryApplyLoadedProfiles(json);
+            loaded = TryApplyLoadedProfiles(json);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or NotSupportedException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TerminalProfileService.LoadProfilesAsync] Failed to load profiles from '{_filePath}': {ex.Message}");
+            return;
         }
         finally
         {
             _semaphore.Release();
         }
-        ProfilesChanged?.Invoke();
+
+        if (loaded)
+        {
+            ProfilesChanged?.Invoke();
+        }
     }
 
     public static string GetDefaultWorkingDirectory()
@@ -281,12 +295,6 @@ public class TerminalProfileService : ITerminalProfileService
     {
         try
         {
-            var directory = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
             List<TerminalProfile> copy;
             lock (_profilesLock)
             {
@@ -294,15 +302,13 @@ public class TerminalProfileService : ITerminalProfileService
             }
 
             var json = JsonSerializer.Serialize(copy, MultiShellJsonSerializerContext.Default.ListTerminalProfile);
-            var tempPath = _filePath + ".tmp";
-            await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);
-            File.Move(tempPath, _filePath, overwrite: true);
+            await AtomicFileHelper.WriteAllTextAtomicAsync(_filePath, json, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
             throw;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or NotSupportedException)
         {
             System.Diagnostics.Debug.WriteLine($"Failed to save terminal profiles: {ex.Message}");
         }

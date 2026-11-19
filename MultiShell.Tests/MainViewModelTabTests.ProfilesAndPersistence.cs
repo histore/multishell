@@ -489,5 +489,43 @@ public partial class MainViewModelTabTests
         Assert.False(mainVm.Tabs[0].IsDarkTerminalTheme);
         Assert.False(mainVm.Tabs[0].Panes[0].IsDarkTerminalTheme);
     }
+
+    private sealed class CountingPersistenceService : ITabStatePersistenceService
+    {
+        public int SaveCount { get; private set; }
+        public WorkspaceState? LastState { get; private set; }
+
+        public Task SaveStateAsync(WorkspaceState state, System.Threading.CancellationToken cancellationToken = default)
+        {
+            SaveCount++;
+            LastState = state;
+            return Task.CompletedTask;
+        }
+
+        public Task<WorkspaceState?> LoadStateAsync(System.Threading.CancellationToken cancellationToken = default) =>
+            Task.FromResult<WorkspaceState?>(null);
+    }
+
+    [Fact]
+    public async Task TriggerSaveState_CoalescesRapidBurstIntoSingleDebouncedSave()
+    {
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new CountingPersistenceService();
+        using var mainVm = new MainViewModel(processService, persistenceService, new ThemeService(), new LocalizationService(), new FontSizeService());
+        await mainVm.InitializeWorkspaceAsync();
+
+        // Burst of 5 rapid TriggerSaveState operations
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        mainVm.AddNewTab();
+        mainVm.TriggerSaveState();
+
+        await Task.Delay(250);
+
+        Assert.Equal(1, persistenceService.SaveCount);
+        Assert.NotNull(persistenceService.LastState);
+        Assert.Equal(5, persistenceService.LastState!.Tabs.Count);
+    }
 }
 

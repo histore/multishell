@@ -246,4 +246,19 @@ public class TerminalProfileServiceTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.LoadProfilesAsync(cts.Token));
     }
+
+    [Fact]
+    public async Task LoadProfilesAsync_WhenJsonIsCorrupt_HandlesErrorGracefullyAndPreservesDefaults()
+    {
+        await File.WriteAllTextAsync(_tempFile, "{ invalid json !!!");
+        var service = new TerminalProfileService(_tempFile);
+        bool profilesChangedFired = false;
+        service.ProfilesChanged += () => profilesChangedFired = true;
+
+        var ex = await Record.ExceptionAsync(() => service.LoadProfilesAsync());
+
+        Assert.Null(ex);
+        Assert.False(profilesChangedFired);
+        Assert.NotEmpty(service.GetProfiles());
+    }
 }
