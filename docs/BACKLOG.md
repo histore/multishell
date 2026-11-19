@@ -250,9 +250,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/WindowCoordinatorService.cs`, `Views/MainWindow.axaml.cs`
 - **Summary**: Mark secondary windows as closing in `_closingWindows` before firing `WindowCloseRequested` during primary window shutdown (and tab dock-back/transfer) so active satellite tabs are not archived into `ClosedTabs`, and trigger `primary.TriggerSaveState()` when a user closes a secondary window.
 
-#### `[BL-MED-012]` (`REV2-MED-003`) Propagate App & Terminal Theme Changes Across Coordinated Multi-Window Instances
+#### `[BL-MED-012]` (`REV2-MED-003`) Propagate App & Terminal Theme Changes Across Coordinated Multi-Window Instances — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (added `AppThemeChanged` and `TerminalThemeChanged` events to `IThemeService` and `ThemeService`, subscribed in `MainViewModel` with unsubscription in `Dispose()`, and added multi-window theme propagation test in `WindowCoordinatorServiceTests`)
 - **Scope**: `Services/IThemeService.cs`, `Services/ThemeService.cs`, `ViewModels/MainViewModel.cs`, `ViewModels/MainViewModel.Settings.cs`
 - **Summary**: Add `AppThemeChanged` and `TerminalThemeChanged` events to `IThemeService` / `ThemeService` and subscribe in `MainViewModel` (unsubscribing in `Dispose()`) so theme toggles propagate immediately to all open satellite windows and their tabs.
 

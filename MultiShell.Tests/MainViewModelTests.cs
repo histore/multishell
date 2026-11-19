@@ -98,11 +98,23 @@ public class MainViewModelTests
     {
         public bool IsDarkAppTheme { get; private set; } = true;
         public bool IsDarkTerminalTheme { get; private set; } = true;
+        public event Action<bool>? AppThemeChanged;
+        public event Action<bool>? TerminalThemeChanged;
 
-        public void SetAppTheme(bool isDark) => IsDarkAppTheme = isDark;
-        public void SetTerminalTheme(bool isDark) => IsDarkTerminalTheme = isDark;
-        public void ToggleAppTheme() => IsDarkAppTheme = !IsDarkAppTheme;
-        public void ToggleTerminalTheme() => IsDarkTerminalTheme = !IsDarkTerminalTheme;
+        public void SetAppTheme(bool isDark)
+        {
+            IsDarkAppTheme = isDark;
+            AppThemeChanged?.Invoke(isDark);
+        }
+
+        public void SetTerminalTheme(bool isDark)
+        {
+            IsDarkTerminalTheme = isDark;
+            TerminalThemeChanged?.Invoke(isDark);
+        }
+
+        public void ToggleAppTheme() => SetAppTheme(!IsDarkAppTheme);
+        public void ToggleTerminalTheme() => SetTerminalTheme(!IsDarkTerminalTheme);
     }
 
     [Fact]
