@@ -256,9 +256,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/IThemeService.cs`, `Services/ThemeService.cs`, `ViewModels/MainViewModel.cs`, `ViewModels/MainViewModel.Settings.cs`
 - **Summary**: Add `AppThemeChanged` and `TerminalThemeChanged` events to `IThemeService` / `ThemeService` and subscribe in `MainViewModel` (unsubscribing in `Dispose()`) so theme toggles propagate immediately to all open satellite windows and their tabs.
 
-#### `[BL-MED-013]` (`REV2-MED-004`) Synchronize In-Terminal Search State & `Escape` Routing When Switching Active Split Panes
+#### `[BL-MED-013]` (`REV2-MED-004`) Synchronize In-Terminal Search State & `Escape` Routing When Switching Active Split Panes — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (called `SyncSearchStateFromPane(pane)` in `TerminalTabViewModel.SetActivePane`, updated `F3` and `Escape` checks in `MainWindow.Keyboard.cs` to evaluate `ActivePane?.IsSearchOpen ?? SelectedTab.IsSearchOpen`, and added regression test in `SplitPaneTreeTests`)
 - **Scope**: `ViewModels/TerminalTabViewModel.Panes.cs`, `ViewModels/TerminalTabViewModel.Search.cs`, `Views/MainWindow.Keyboard.cs`
 - **Summary**: Call `SyncSearchStateFromPane(pane)` inside `TerminalTabViewModel.SetActivePane(pane)` and ensure `TryHandleEscapeKeyDown()` does not swallow `Escape` keys in an active pane whose search overlay is closed.
 
