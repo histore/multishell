@@ -32,9 +32,10 @@ sealed partial class Program
                 singleInstanceService.SendArgsToFirstInstanceAsync(args, Environment.CurrentDirectory)
                     .GetAwaiter().GetResult();
             }
-            catch
+            catch (Exception ex) when (ex is System.IO.IOException or TimeoutException or OperationCanceledException or UnauthorizedAccessException or InvalidOperationException)
             {
                 // Fallback: ignore pipe send exceptions on early client exit
+                System.Diagnostics.Debug.WriteLine($"[Program.Main] Pipe send failed: {ex.Message}");
             }
             return;
         }

@@ -136,9 +136,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Views/MainWindow.axaml.cs`, `Services/ThemeService.cs`, `Services/UiFrameworkInfo.cs`, `ViewModels/MainViewModel.cs`, `ViewModels/TerminalTabViewModel.cs`, `ViewModels/Panes/TerminalPaneViewModel.cs`
 - **Summary**: Replace legacy `[DllImport]` in `MainWindow.axaml.cs:466` with `[LibraryImport]`; move `Avalonia*` singleton fallbacks and `avares://` font URIs out of ViewModels into composition root / UI layer; decouple `ThemeService` from direct `Dispatcher.UIThread` calls.
 
-#### `[BL-MED-008]` Replace Remaining 20 Bare `catch` Blocks Across `Services/`, `ViewModels/`, and `Program.cs`
+#### `[BL-MED-008]` Replace Remaining 20 Bare `catch` Blocks Across `Services/`, `ViewModels/`, and `Program.cs` — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (narrowed all remaining bare `catch` blocks across `FileBrowserHelper`, `KeyboardStateHelper`, `PathNormalizer`, `ShellDirectoryChangeDetector`, `StartupPathResolver`, `SingleInstanceService`, `LinkDetectionHelper`, `MainViewModel`, and `Program.cs` to targeted exception filters with `Debug.WriteLine` diagnostics; kept only the rethrowing `catch { ... throw; }` cleanup in `ShellSession.Start`)
 - **Scope**: `Services/SingleInstanceService.cs`, `Services/LinkDetectionHelper.cs`, `Services/FileBrowserHelper.cs`, `Services/KeyboardStateHelper.cs`, `Services/PathNormalizer.cs`, `Services/ShellDirectoryChangeDetector.cs`, `Services/StartupPathResolver.cs`, `ViewModels/MainViewModel.cs`, `ViewModels/MainViewModel.Persistence.cs`, `ViewModels/MainViewModel.Tabs.cs`, `Program.cs`
 - **Summary**: Follow up on `BL-QUAL-001` by narrowing remaining bare `catch` blocks to targeted exception filters with `Debug.WriteLine` diagnostics.
 

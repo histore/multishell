@@ -218,8 +218,9 @@ public partial class MainViewModel
         {
             tab.Dispose();
         }
-        catch
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or System.IO.IOException or ObjectDisposedException or NotSupportedException)
         {
+            System.Diagnostics.Debug.WriteLine($"[MainViewModel.CloseTab] Tab disposal failed: {ex.Message}");
             return;
         }
 

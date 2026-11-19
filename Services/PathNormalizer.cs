@@ -49,8 +49,9 @@ public static class PathNormalizer
             }
             return fullPath;
         }
-        catch
+        catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException or UnauthorizedAccessException or System.Security.SecurityException)
         {
+            System.Diagnostics.Debug.WriteLine($"[PathNormalizer.Normalize] Normalization failed for '{path}': {ex.Message}");
             return trimmed.TrimEnd('\\', '/');
         }
     }

@@ -41,8 +41,9 @@ public static class FileBrowserHelper
 
             return false;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         {
+            System.Diagnostics.Debug.WriteLine($"[FileBrowserHelper.OpenInFileBrowser] Failed to open '{path}': {ex.Message}");
             return false;
         }
     }
@@ -64,9 +65,10 @@ public static class FileBrowserHelper
                     return Path.TrimEndingDirectorySeparator(full);
                 }
             }
-            catch
+            catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException or UnauthorizedAccessException or IOException or System.Security.SecurityException)
             {
                 // Fall back to user profile on path format errors
+                System.Diagnostics.Debug.WriteLine($"[FileBrowserHelper.ResolveTargetPath] Invalid path '{path}': {ex.Message}");
             }
         }
 
