@@ -224,9 +224,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/ShellSession.Process.cs`, `Services/TerminalProfileService.cs`
 - **Summary**: Ensure `GenerateShellCommandLine` appends `-NoExit -EncodedCommand {encodedHook}` for `ShellType.PowerShell` (unless custom arguments already specify `-Command`/`-EncodedCommand`/`-File`) and `/K "chcp 65001 >nul"` for `ShellType.CMD` even when `_customExecutable` is provided via terminal profiles.
 
-#### `[BL-HIGH-013]` (`REV2-HIGH-006`) Clear `_oscBuffer` After Non-OSC Escape Sequences to Preserve the ESC Fast-Path in `ShellSession.Streams.cs`
+#### `[BL-HIGH-013]` (`REV2-HIGH-006`) Clear `_oscBuffer` After Non-OSC Escape Sequences to Preserve the ESC Fast-Path in `ShellSession.Streams.cs` — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (narrowed initial fast-path in `ProcessOscBufferLocked` to `\x1b]` or trailing `\x1b` and added `TrimCompletedOscBuffer`/`FindUnterminatedOscStartIndex` so completed or non-OSC chunks clear `_oscBuffer` immediately, with regression test in `PowerShellSessionTests`)
 - **Scope**: `Services/ShellSession.Streams.cs`
 - **Summary**: Clear `_oscBuffer` after `ProcessOscMatches` when no incomplete `\x1b]` OSC prefix remains at the end of the buffer, and narrow the initial fast-path check to `\x1b]` (or trailing `\x1b`), preventing ordinary CSI color/cursor sequences from permanently disabling the fast-path.
 

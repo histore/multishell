@@ -309,6 +309,13 @@ public class PowerShellSessionTests
 
         session.CheckForOscSequences(fullOsc[splitIndex..]);
         Assert.Equal(@"C:\€uro\Dir", observedDir);
+
+        // Non-OSC CSI color sequences and trailing text must not leave stale data in _oscBuffer
+        // and split ESC + ']' introducer across two chunks must still be reassembled cleanly.
+        session.CheckForOscSequences("\x1b[32mGreen output\x1b[0m\r\n"u8.ToArray());
+        session.CheckForOscSequences("plain chunk after CSI\r\n\x1b"u8.ToArray());
+        session.CheckForOscSequences("]9;9;\"C:\\AfterSplitEsc\"\x07trailing plain text"u8.ToArray());
+        Assert.Equal(@"C:\AfterSplitEsc", observedDir);
     }
 
     [Fact]
