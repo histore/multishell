@@ -348,4 +348,29 @@ public class PathCommandHistoryServiceTests : IDisposable
         Assert.Contains("cmdA", service.GetHistory(dirA));
         Assert.Contains("cmdB", service.GetHistory(dirB));
     }
+
+    [Fact]
+    public void RecordCommand_EvictingOldestCommand_PrunesGlobalOnlyWhenUnusedElsewhere()
+    {
+        var service = new PathCommandHistoryService();
+        var dirA = Path.Combine(_testTempDir, "dirA");
+        var dirB = Path.Combine(_testTempDir, "dirB");
+        Directory.CreateDirectory(dirA);
+        Directory.CreateDirectory(dirB);
+
+        // Shared command also present in dirB must survive eviction from dirA
+        service.RecordCommand(dirB, "shared-cmd");
+        service.RecordCommand(dirA, "shared-cmd");
+        service.RecordCommand(dirA, "evicted-only-a");
+
+        for (int i = 1; i <= PathCommandHistoryService.MaxHistoryPerPath; i++)
+        {
+            service.RecordCommand(dirA, $"fill-{i}");
+        }
+
+        var allCommands = service.GetAllCommands();
+        Assert.DoesNotContain("evicted-only-a", allCommands);
+        Assert.Contains("shared-cmd", allCommands);
+        Assert.Equal(PathCommandHistoryService.MaxHistoryPerPath + 1, allCommands.Count);
+    }
 }
