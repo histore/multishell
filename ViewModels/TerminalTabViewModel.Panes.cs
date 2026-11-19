@@ -25,10 +25,31 @@ public partial class TerminalTabViewModel
     [NotifyPropertyChangedFor(nameof(DisplayRootNode))]
     private TerminalPaneViewModel _activePane = null!;
 
+    private LeafPaneNodeViewModel? _zoomedPaneNode;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayRootNode))]
     [NotifyPropertyChangedFor(nameof(DisplayTitle))]
     private bool _isZoomed;
+
+    partial void OnActivePaneChanged(TerminalPaneViewModel value) => RefreshZoomedPaneNode();
+
+    partial void OnIsZoomedChanged(bool value) => RefreshZoomedPaneNode();
+
+    private void RefreshZoomedPaneNode()
+    {
+        if (IsZoomed && ActivePane != null)
+        {
+            if (_zoomedPaneNode == null || !ReferenceEquals(_zoomedPaneNode.Pane, ActivePane))
+            {
+                _zoomedPaneNode = new LeafPaneNodeViewModel(ActivePane);
+            }
+        }
+        else
+        {
+            _zoomedPaneNode = null;
+        }
+    }
 
     /// <summary>
     /// Raised whenever the split pane tree structure, count, or zoom state changes (REQ-UI-006).
@@ -49,8 +70,8 @@ public partial class TerminalTabViewModel
     /// Gets the node tree to be rendered by the UI: either the single zoomed pane or the complete split tree.
     /// </summary>
     public IPaneNodeViewModel DisplayRootNode =>
-        IsZoomed && ActivePane != null
-            ? new LeafPaneNodeViewModel(ActivePane)
+        IsZoomed && _zoomedPaneNode != null
+            ? _zoomedPaneNode
             : RootPaneNode;
 
     /// <summary>

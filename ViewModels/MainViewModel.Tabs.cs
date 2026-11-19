@@ -86,7 +86,7 @@ public partial class MainViewModel
     {
         if (profileVm == null) return;
         DefaultShellType = profileVm.ShellType;
-        int nextId = Tabs.Count + 1;
+        int nextId = ++_tabCounter;
         var title = $"{profileVm.IconTag} {nextId}";
         var workingDir = profileVm.WorkingDirectory;
         var session = _shellProcessService.CreateSession(title, workingDir, profileVm.ShellType, profileVm.ExecutablePath, profileVm.Arguments);
@@ -160,7 +160,7 @@ public partial class MainViewModel
 
     private TerminalTabViewModel CreateNewTab(string? workingDirectory = null, ShellType shellType = ShellType.PowerShell)
     {
-        int nextId = Tabs.Count + 1;
+        int nextId = ++_tabCounter;
         var title = GetDefaultTitle(shellType, nextId);
 
         var (targetDir, customExe, customArgs) = ResolveProfileLaunchParameters(shellType, workingDirectory);

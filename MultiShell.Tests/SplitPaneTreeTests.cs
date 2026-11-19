@@ -365,4 +365,30 @@ public class SplitPaneTreeTests
         var line1 = ((SvcSystems.UI.Terminal.TerminalControlModel)tab.TerminalModel.NativeModel).Terminal.Buffer.GetLine(0)?.TranslateToString(true) ?? string.Empty;
         Assert.DoesNotContain("Second Pane", line1);
     }
+
+    [Fact]
+    public void DisplayRootNode_WhenZoomed_CachesLeafNodeAndUpdatesOnActivePaneChange()
+    {
+        var session1 = new TestSession();
+        var session2 = new TestSession();
+        using var tab = new TerminalTabViewModel(session1);
+        tab.SessionFactory = (_, _) => session2;
+
+        var pane2 = tab.SplitActivePane(PaneSplitDirection.Vertical);
+        tab.ToggleZoom();
+
+        var firstZoomNode = tab.DisplayRootNode;
+        Assert.Same(firstZoomNode, tab.DisplayRootNode);
+        var firstLeaf = Assert.IsType<LeafPaneNodeViewModel>(firstZoomNode);
+        Assert.Same(pane2, firstLeaf.Pane);
+
+        tab.FocusNextPane();
+        var switchedZoomNode = tab.DisplayRootNode;
+        Assert.NotSame(firstZoomNode, switchedZoomNode);
+        var switchedLeaf = Assert.IsType<LeafPaneNodeViewModel>(switchedZoomNode);
+        Assert.Same(tab.Panes[0], switchedLeaf.Pane);
+
+        tab.ToggleZoom();
+        Assert.Same(tab.RootPaneNode, tab.DisplayRootNode);
+    }
 }
