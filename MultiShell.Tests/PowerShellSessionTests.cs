@@ -335,6 +335,19 @@ public class PowerShellSessionTests
 
         using var customWslExplicitCd = new ShellSession("CustomWslCd", shellType: ShellType.WSL, customExecutable: "wsl.exe", customArguments: "-d Ubuntu --cd ~");
         Assert.Equal("\"wsl.exe\" -d Ubuntu --cd ~", customWslExplicitCd.GenerateShellCommandLine(@"C:\Work"));
+
+        // Profile-launched PowerShell with customExecutable and "-NoLogo" must still inject the OSC prompt hook
+        using var profilePs = new ShellSession("ProfilePS", shellType: ShellType.PowerShell, customExecutable: "pwsh.exe", customArguments: "-NoLogo -NoProfile");
+        var profilePsCmd = profilePs.GenerateShellCommandLine(null);
+        Assert.StartsWith("\"pwsh.exe\" -NoProfile -NoLogo -NoExit -EncodedCommand ", profilePsCmd);
+
+        // Explicit -Command in customArguments must be preserved without appending -EncodedCommand
+        using var explicitPs = new ShellSession("ExplicitPS", shellType: ShellType.PowerShell, customExecutable: "pwsh.exe", customArguments: "-NoLogo -Command Get-Date");
+        Assert.Equal("\"pwsh.exe\" -NoLogo -Command Get-Date", explicitPs.GenerateShellCommandLine(null));
+
+        // Profile-launched CMD with customExecutable and null arguments must still inject UTF-8 chcp initialization
+        using var profileCmd = new ShellSession("ProfileCmd", shellType: ShellType.CMD, customExecutable: "cmd.exe", customArguments: null);
+        Assert.Equal("\"cmd.exe\" /K \"chcp 65001 >nul\"", profileCmd.GenerateShellCommandLine(null));
     }
 }
 

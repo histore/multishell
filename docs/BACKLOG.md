@@ -218,9 +218,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/ShellSession.cs`, `Services/ShellSession.Streams.cs`
 - **Summary**: Terminate the child process tree or close/drain the output pipe before calling `ClosePseudoConsole`, and avoid blocking the UI thread if `conhost.exe` flushes pending VT teardown output into a full 4 KB anonymous pipe after `PumpOutput` stops.
 
-#### `[BL-HIGH-012]` (`REV2-HIGH-005`) Preserve MultiShell Prompt Hook & UTF-8 Initialization for Profile-Launched and Custom PowerShell/CMD Sessions
+#### `[BL-HIGH-012]` (`REV2-HIGH-005`) Preserve MultiShell Prompt Hook & UTF-8 Initialization for Profile-Launched and Custom PowerShell/CMD Sessions — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (updated `ShellSession.GenerateShellCommandLine` so `ShellType.PowerShell` with `_customExecutable` still appends `-NoLogo -NoExit -EncodedCommand {encodedHook}` unless an explicit `-Command`/`-EncodedCommand`/`-File` argument is present, and `ShellType.CMD` with `_customExecutable` and no custom arguments still appends `/K "chcp 65001 >nul"`, with regression tests in `PowerShellSessionTests`)
 - **Scope**: `Services/ShellSession.Process.cs`, `Services/TerminalProfileService.cs`
 - **Summary**: Ensure `GenerateShellCommandLine` appends `-NoExit -EncodedCommand {encodedHook}` for `ShellType.PowerShell` (unless custom arguments already specify `-Command`/`-EncodedCommand`/`-File`) and `/K "chcp 65001 >nul"` for `ShellType.CMD` even when `_customExecutable` is provided via terminal profiles.
 
