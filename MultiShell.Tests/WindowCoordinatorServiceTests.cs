@@ -209,6 +209,60 @@ public class WindowCoordinatorServiceTests
     }
 
     [Fact]
+    public async Task CloseWindowAsync_SecondaryWindowCalledTwice_ArchivesTabsOnlyOnce()
+    {
+        var coordinator = new WindowCoordinatorService();
+        using var primary = CreateTestViewModel(coordinator);
+        coordinator.RegisterWindow(primary);
+
+        var tab = primary.Tabs[0];
+        var secondary = (MainViewModel)await coordinator.UndockTabAsync(primary, tab);
+
+        int closeRequestedCount = 0;
+        coordinator.WindowCloseRequested += (_, _) => closeRequestedCount++;
+
+        // Simulate re-entrancy: CloseWindowAsync command triggers Window.Close -> Window.Closing -> CloseWindowAsync
+        await coordinator.CloseWindowAsync(secondary);
+        await coordinator.CloseWindowAsync(secondary);
+
+        Assert.Equal(1, closeRequestedCount);
+        Assert.Single(primary.ClosedTabs);
+        secondary.Dispose();
+    }
+
+    private sealed class TrackingDispatcherService : IDispatcherService
+    {
+        public int RunOnUiCount { get; private set; }
+        public bool IsAvailable => true;
+        public bool CheckAccess() => true;
+        public void Post(Action action) => action();
+        public void RunOnUi(Action action) { RunOnUiCount++; action(); }
+        public Task InvokeAsync(Func<Task> action) => action();
+        public IDispatcherTimer? CreateTimer(TimeSpan interval, Action tickHandler) => null;
+    }
+
+    [Fact]
+    public void CreateSatelliteViewModel_ForwardsCustomDispatcherAndTerminalModelFactory()
+    {
+        var coordinator = new WindowCoordinatorService();
+        var customDispatcher = new TrackingDispatcherService();
+        using var primary = new MainViewModel(
+            new MockShellProcessService(),
+            new MockTabStatePersistenceService(),
+            new MockThemeService(),
+            new LocalizationService("en"),
+            new FontSizeService(),
+            windowCoordinator: coordinator,
+            dispatcherService: customDispatcher);
+
+        using var satellite = primary.CreateSatelliteViewModel();
+        var countBefore = customDispatcher.RunOnUiCount;
+        satellite.AddNewTab();
+
+        Assert.True(customDispatcher.RunOnUiCount > countBefore);
+    }
+
+    [Fact]
     public async Task CloseWindowAsync_PrimaryWindow_SignalsApplicationShutdownAndClosesSecondaries()
     {
         var coordinator = new WindowCoordinatorService();

@@ -97,7 +97,7 @@ public partial class MainWindow
         var text = TerminalTabViewModel.CleanSelectedTerminalText(rawText);
         if (!string.IsNullOrEmpty(text) && Clipboard != null)
         {
-            _ = Clipboard.SetTextAsync(text);
+            _ = SetClipboardTextSafeAsync(text);
             pane.TerminalModel.ClearSelection();
         }
         e.Handled = true;
@@ -297,6 +297,10 @@ public partial class MainWindow
                 }
             }
         }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] File picker failed: {ex.Message}");
+        }
         finally
         {
             FocusActiveTerminal();
@@ -348,6 +352,10 @@ public partial class MainWindow
                 }
             }
         }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] Folder picker failed: {ex.Message}");
+        }
         finally
         {
             FocusActiveTerminal();
@@ -362,13 +370,33 @@ public partial class MainWindow
         }
     }
 
+    private async Task SetClipboardTextSafeAsync(string text)
+    {
+        if (Clipboard == null) return;
+        try
+        {
+            await Clipboard.SetTextAsync(text);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or System.Runtime.InteropServices.COMException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] Clipboard copy failed: {ex.Message}");
+        }
+    }
+
     private async Task PasteToPaneAsync(TerminalPaneViewModel pane)
     {
         if (Clipboard == null || !pane.IsRunning) return;
-        var text = await Clipboard.TryGetTextAsync();
-        if (!string.IsNullOrEmpty(text))
+        try
         {
-            pane.PasteText(text);
+            var text = await Clipboard.TryGetTextAsync();
+            if (!string.IsNullOrEmpty(text))
+            {
+                pane.PasteText(text);
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or System.Runtime.InteropServices.COMException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] Clipboard paste failed: {ex.Message}");
         }
     }
 }

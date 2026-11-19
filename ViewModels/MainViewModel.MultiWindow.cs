@@ -86,9 +86,12 @@ public partial class MainViewModel
 
     ICoordinatedWindow ICoordinatedWindow.CreateSatelliteWindow() => CreateSatelliteViewModel();
 
+    private bool _tabsArchived;
+
     public void ArchiveTabsTo(ICoordinatedWindow targetWindow)
     {
-        if (targetWindow == null) return;
+        if (targetWindow == null || _tabsArchived) return;
+        _tabsArchived = true;
 
         foreach (var tab in Tabs.ToList())
         {
@@ -133,7 +136,9 @@ public partial class MainViewModel
             _pathColorCodingService,
             _toastNotificationService,
             windowCoordinator: _windowCoordinator,
-            isSatellite: true);
+            isSatellite: true,
+            dispatcherService: _dispatcherService,
+            terminalModelFactory: _terminalModelFactory);
     }
 
     /// <summary>

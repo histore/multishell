@@ -72,9 +72,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Views/SplitPaneContainerControl.cs`, `Views/MainWindow.axaml.cs`, `Views/MainWindow.TabDropAndRename.cs`, `Views/Dialogs/HistoryDrawerView.axaml.cs`
 - **Summary**: (1) `SplitPaneContainerControl` unsubscribes `LayoutChanged` in `OnDetachedFromVisualTree` without re-subscribing in `OnAttachedToVisualTree`; (2) `ConfigureVerticalSplitGrid`/`ConfigureHorizontalSplitGrid` accumulate anonymous `split.PropertyChanged` handlers on every `RebuildVisualTree()`; (3) `CleanupViewCache()` evicts `TerminalPaneView` instances without clearing `DataContext = null`; (4) `MainWindow` and `HistoryDrawerView` do not unsubscribe VM/tab event handlers on detach/close.
 
-#### `[BL-HIGH-005]` Guard `async void` Handlers, Prevent Duplicate Satellite Tab Archiving & Forward DI in Satellite Windows
+#### `[BL-HIGH-005]` Guard `async void` Handlers, Prevent Duplicate Satellite Tab Archiving & Forward DI in Satellite Windows — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (wrapped picker/drag/clipboard async handlers with targeted exception filters, cleaned up `_dragScrollTimer` on `Closed`, added re-entrancy protection in `WindowCoordinatorService.CloseWindowAsync` and `MainViewModel.ArchiveTabsTo`, and forwarded `_dispatcherService` + `_terminalModelFactory` in `CreateSatelliteViewModel()`)
 - **Scope**: `Views/MainWindow.axaml.cs`, `Views/MainWindow.Tabs.cs`, `Views/MainWindow.Keyboard.cs`, `ViewModels/MainViewModel.MultiWindow.cs`, `Services/WindowCoordinatorService.cs`
 - **Summary**: (1) Unhandled exceptions in `async void` handlers (`BrowseExecutableRequested`, `BrowseWorkingDirRequested`, `OnTabsPointerMoved`) and fire-and-forget picker/clipboard calls can crash the app; (2) closing a satellite window via `CloseWindowAsync` triggers `ArchiveTabsTo(primary)` twice (once in `CloseWindowAsync`, again in `MainWindow.Closing`), duplicating closed tabs; (3) `CreateSatelliteViewModel()` omits `_dispatcherService` and `_terminalModelFactory`.
 
