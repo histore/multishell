@@ -168,7 +168,15 @@ public sealed partial class ShellSession : IShellSession
     private async Task WaitForExitAsync(CancellationToken ct)
     {
         var process = _process;
-        if (process == null) return;
+        if (process == null)
+        {
+            if (Volatile.Read(ref _disposed) == 0)
+            {
+                _isRunning = false;
+                Exited?.Invoke(-1);
+            }
+            return;
+        }
         try
         {
             await process.WaitForExitAsync(ct).ConfigureAwait(false);

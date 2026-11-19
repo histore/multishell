@@ -41,7 +41,14 @@ public sealed partial class ShellSession
             startupInfo.StartupInfo.cb = Marshal.SizeOf<StartupInfoEx>();
             startupInfo.lpAttributeList = attributeList;
 
-            var rawCommandLine = GenerateShellCommandLine(workingDir);
+            var (effectiveWorkingDir, shellWorkingDir) = ResolveEffectiveWorkingDirectories(workingDir);
+            if (!string.IsNullOrWhiteSpace(effectiveWorkingDir) &&
+                (string.IsNullOrWhiteSpace(workingDir) || !workingDir.StartsWith('/')))
+            {
+                WorkingDirectory = effectiveWorkingDir;
+            }
+
+            var rawCommandLine = GenerateShellCommandLine(shellWorkingDir);
             commandLine = Marshal.StringToHGlobalUni(rawCommandLine);
 
             var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -67,16 +74,6 @@ public sealed partial class ShellSession
             environmentBlock = Marshal.StringToHGlobalUni(envString);
 
             var creationFlags = NativeMethods.EXTENDED_STARTUPINFO_PRESENT | NativeMethods.CREATE_UNICODE_ENVIRONMENT;
-
-            string? effectiveWorkingDir = workingDir;
-            if (!string.IsNullOrWhiteSpace(effectiveWorkingDir) && !Directory.Exists(effectiveWorkingDir))
-            {
-                effectiveWorkingDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                if (string.IsNullOrWhiteSpace(effectiveWorkingDir) || !Directory.Exists(effectiveWorkingDir))
-                {
-                    effectiveWorkingDir = Environment.CurrentDirectory;
-                }
-            }
 
             if (!NativeMethods.CreateProcess(null, commandLine, IntPtr.Zero, IntPtr.Zero, false, (uint)creationFlags, environmentBlock, effectiveWorkingDir, ref startupInfo, out var processInfo))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -108,6 +105,37 @@ public sealed partial class ShellSession
             if (commandLine != IntPtr.Zero) Marshal.FreeHGlobal(commandLine);
             if (environmentBlock != IntPtr.Zero) Marshal.FreeHGlobal(environmentBlock);
         }
+    }
+
+    internal static (string? Win32WorkingDir, string? ShellWorkingDir) ResolveEffectiveWorkingDirectories(string? workingDir)
+    {
+        if (string.IsNullOrWhiteSpace(workingDir))
+        {
+            return (null, null);
+        }
+
+        if (workingDir.StartsWith('/'))
+        {
+            return (GetFallbackLocalDirectory(), workingDir);
+        }
+
+        if (Directory.Exists(workingDir))
+        {
+            return (workingDir, workingDir);
+        }
+
+        var fallback = GetFallbackLocalDirectory();
+        return (fallback, fallback);
+    }
+
+    private static string GetFallbackLocalDirectory()
+    {
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrWhiteSpace(userProfile) && Directory.Exists(userProfile))
+        {
+            return userProfile;
+        }
+        return Environment.CurrentDirectory;
     }
 
     internal string GenerateShellCommandLine(string? workingDir)

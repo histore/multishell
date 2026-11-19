@@ -268,9 +268,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Views/SplitPaneContainerControl.cs`, `ViewModels/Panes/SplitPaneNodeViewModel.cs`
 - **Summary**: Update `split.SplitRatio` from the actual grid column/row star proportions when a mouse `GridSplitter` drag completes in `SplitPaneContainerControl`, preserving manual mouse resizes across subsequent splits, zoom toggles, and keyboard resizes.
 
-#### `[BL-MED-015]` (`REV2-MED-006`) Validate `effectiveWorkingDir` Before `GenerateShellCommandLine` & Handle Immediate Process Exit
+#### `[BL-MED-015]` (`REV2-MED-006`) Validate `effectiveWorkingDir` Before `GenerateShellCommandLine` & Handle Immediate Process Exit — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (added `ResolveEffectiveWorkingDirectories` in `ShellSession.Process.cs` to validate/fallback deleted Windows working directories before calling `GenerateShellCommandLine` while preserving POSIX paths for `wsl.exe --cd`, updated `WorkingDirectory` on fallback, and updated `WaitForExitAsync` in `ShellSession.cs` to reset `_isRunning = false` and invoke `Exited(-1)` when `_process == null`)
 - **Scope**: `Services/ShellSession.Process.cs`, `Services/ShellSession.cs`
 - **Summary**: Resolve `effectiveWorkingDir` fallback before building the shell command line (preventing `wsl.exe --cd` from receiving a deleted Windows directory), update `WorkingDirectory` on fallback, and reset `_isRunning = false` + raise `Exited` if the child process exits before `Process.GetProcessById`.
 
