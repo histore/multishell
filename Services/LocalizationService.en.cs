@@ -142,6 +142,7 @@ public partial class LocalizationService
         ["Profiles_Field_ShellType"] = "Shell Emulation Type",
         ["Profiles_Edit_Title"] = "Edit Profile",
         ["Profiles_Create_Title"] = "Create New Profile",
+        ["Profiles_Default_CustomName"] = "Custom Terminal",
 
         // Empty State Welcome Dashboard (REQ-UI-008)
         ["EmptyState_Title"] = "No Active Terminal Tabs",

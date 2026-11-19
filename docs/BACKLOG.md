@@ -292,9 +292,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `MultiShell.Tests/MainViewModelTests.cs`
 - **Summary**: Replace default `new TabStatePersistenceService()` and `new ShellProcessService()` usages in `MainViewModelTests` with isolated temporary persistence paths, mock process services, and `using` disposal so unit tests never read or overwrite the user's real `tabs_state.json`.
 
-#### `[BL-MED-019]` (`REV2-MED-010`) Localize Default `"Custom Terminal"` Profile Name & Refresh Built-In Profile Names on Language Change
+#### `[BL-MED-019]` (`REV2-MED-010`) Localize Default `"Custom Terminal"` Profile Name & Refresh Built-In Profile Names on Language Change — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (added `Profiles_Default_CustomName` to all 6 localization dictionaries, replaced hardcoded `"Custom Terminal"` in `MainViewModel.StartNewProfile()`, and subscribed `TerminalProfileService` to `ILocalizationService.LanguageChanged` to refresh the built-in CMD profile display name on runtime language changes)
 - **Scope**: `ViewModels/MainViewModel.Profiles.cs`, `Services/TerminalProfileService.cs`, `Services/LocalizationService.*.cs`
 - **Summary**: Replace hardcoded `"Custom Terminal"` in `MainViewModel.StartNewProfile()` with a localized resource key across all 6 languages and refresh unmodified built-in profile display names when `LanguageChanged` fires.
 
