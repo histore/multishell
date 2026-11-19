@@ -18,10 +18,10 @@ public static partial class LinkDetectionHelper
     [GeneratedRegex("""(?:[a-zA-Z]:[\\/]|\\\\)[^\s<>"'|?*]+(?::\d+(?::\d+)?)?""")]
     private static partial Regex GetWindowsAbsolutePathRegex();
 
-    [GeneratedRegex("""(?:\.{1,2}[\\/]|[a-zA-Z0-9_\-\.]+[\\/])*[a-zA-Z0-9_\-\.]+\.[a-zA-Z0-9]{1,8}(?::\d+(?::\d+)?)?""")]
+    [GeneratedRegex("""(?:\.{1,2}[\\/]|[a-zA-Z0-9_\-\.]+[\\/])*[a-zA-Z0-9_\-\.]+\.[a-zA-Z0-9]{1,8}(?::\d+(?::\d+)?|\(\d+(?:,\d+)?\))?""")]
     private static partial Regex GetRelativePathOrFileNameRegex();
 
-    [GeneratedRegex(@"^(.*?)(?::\d+)+$")]
+    [GeneratedRegex(@"^(.*?)(?:(?::\d+)+|\(\d+(?:,\d+)?\)?)$")]
     private static partial Regex GetLineNumberSuffixRegex();
 
     private static readonly char[] TrailingPunctuation = ['.', ',', ';', ':', '!', '?', ')', ']', '>', '"', '\''];
@@ -88,16 +88,25 @@ public static partial class LinkDetectionHelper
 
         var results = new List<DetectedLink>();
 
-        // 1. Scan for Web URLs
+        // 1. Scan for Web URLs and verified local file:// URIs
         var urlMatches = GetUrlRegex().Matches(lineText);
         foreach (Match match in urlMatches)
         {
             var raw = match.Value;
             var clean = CleanTrailingPunctuation(raw);
-            if (clean.Length > 0 && Uri.TryCreate(clean, UriKind.Absolute, out var uri) &&
-                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeFtp || uri.Scheme == Uri.UriSchemeFile))
+            if (clean.Length > 0 && Uri.TryCreate(clean, UriKind.Absolute, out var uri))
             {
-                results.Add(new DetectedLink(clean, clean, IsUrl: true, match.Index, clean.Length));
+                if (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeFtp)
+                {
+                    results.Add(new DetectedLink(clean, clean, IsUrl: true, match.Index, clean.Length));
+                }
+                else if (uri.Scheme == Uri.UriSchemeFile &&
+                         uri.IsFile &&
+                         IsSafeLocalPath(uri.LocalPath) &&
+                         TryResolveFilePath(uri.LocalPath, workingDirectory, out var resolvedFileUrlPath))
+                {
+                    results.Add(new DetectedLink(clean, resolvedFileUrlPath, IsUrl: false, match.Index, clean.Length));
+                }
             }
         }
 

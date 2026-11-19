@@ -330,9 +330,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Views/MainWindow.Keyboard.cs`
 - **Summary**: In `TryHandleEscapeKeyDown()`, when `ProfilesModal` is visible and `IsEditingProfile` is `true`, invoke `CancelEditProfile()` instead of immediately closing the entire modal.
 
-#### `[BL-LOW-011]` (`REV2-LOW-005`) Validate `file://` Links in `LinkDetectionHelper.ExtractAllLinks` & Strip MSBuild `(line,col)` Suffixes
+#### `[BL-LOW-011]` (`REV2-LOW-005`) Validate `file://` Links in `LinkDetectionHelper.ExtractAllLinks` & Strip MSBuild `(line,col)` Suffixes — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (validated `file://` URIs in `LinkDetectionHelper.ExtractAllLinks` with `IsSafeLocalPath` and `TryResolveFilePath`, extended `GetLineNumberSuffixRegex()` and `GetRelativePathOrFileNameRegex()` to support MSBuild `(line,col)` diagnostic suffixes, and added unit tests in `LinkDetectionHelperTests`)
 - **Scope**: `Services/LinkDetectionHelper.cs`
 - **Summary**: Verify `IsSafeLocalPath` and `TryResolveFilePath` before highlighting `file://` URIs in `ExtractAllLinks`, and extend `StripLineNumberSuffix` to strip trailing `(line,col)` / `(line)` compiler diagnostic suffixes.
 
