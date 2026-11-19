@@ -143,23 +143,40 @@ public class PathCommandHistoryService : IPathCommandHistoryService
                 _pathHistories[normalizedPath] = list;
             }
 
-            // Remove existing instance to push this entry to the newest position (MRU)
-            list.Remove(command);
-            list.Add(command);
-
-            _globalCommands.Remove(command);
-            _globalCommands.Add(command);
-            _commandTimestamps[command] = GetMonotonicTimestamp();
-
-            // Cap at MaxHistoryPerPath (FIFO pruning: oldest entries are removed first)
-            while (list.Count > MaxHistoryPerPath)
-            {
-                list.RemoveAt(0);
-            }
+            AppendCommandLocked(list, command);
         }
 
         // Notify subscribers outside lock to avoid deadlocks
         HistoryChangedForPath?.Invoke(normalizedPath);
+    }
+
+    private void AppendCommandLocked(List<string> list, string command)
+    {
+        // Remove existing instance to push this entry to the newest position (MRU)
+        list.Remove(command);
+        list.Add(command);
+
+        _globalCommands.Remove(command);
+        _globalCommands.Add(command);
+        _commandTimestamps[command] = GetMonotonicTimestamp();
+
+        // Cap at MaxHistoryPerPath (FIFO pruning: oldest entries are removed first)
+        while (list.Count > MaxHistoryPerPath)
+        {
+            var evicted = list[0];
+            list.RemoveAt(0);
+            RemoveFromGlobalIfUnusedLocked(evicted);
+        }
+    }
+
+    private void RemoveFromGlobalIfUnusedLocked(string command)
+    {
+        bool stillInUse = _pathHistories.Values.Any(l => l.Contains(command));
+        if (!stillInUse)
+        {
+            _globalCommands.Remove(command);
+            _commandTimestamps.Remove(command);
+        }
     }
 
     /// <inheritdoc />
@@ -208,12 +225,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
 
             if (removed)
             {
-                bool stillInUse = _pathHistories.Values.Any(l => l.Contains(command));
-                if (!stillInUse)
-                {
-                    _globalCommands.Remove(command);
-                    _commandTimestamps.Remove(command);
-                }
+                RemoveFromGlobalIfUnusedLocked(command);
             }
         }
 
@@ -329,17 +341,7 @@ public class PathCommandHistoryService : IPathCommandHistoryService
                 continue;
             }
 
-            list.Remove(cmd);
-            list.Add(cmd);
-
-            _globalCommands.Remove(cmd);
-            _globalCommands.Add(cmd);
-            _commandTimestamps[cmd] = GetMonotonicTimestamp();
-
-            while (list.Count > MaxHistoryPerPath)
-            {
-                list.RemoveAt(0);
-            }
+            AppendCommandLocked(list, cmd);
         }
     }
 }

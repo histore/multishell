@@ -112,9 +112,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/ShellDiscoveryService.cs`, `Services/ShellSession.Process.cs`
 - **Summary**: `ResolveExecutable` searches `PATH` before `System32` for system binaries (`cmd.exe`, `wsl.exe`, `powershell.exe`), and `GenerateShellCommandLine` wraps executables with naive `"{exePath}"` instead of `FormatWin32QuotedArgument`.
 
-#### `[BL-MED-004]` Prune Evicted Global Commands in `PathCommandHistoryService`
+#### `[BL-MED-004]` Prune Evicted Global Commands in `PathCommandHistoryService` — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (extracted `AppendCommandLocked` and `RemoveFromGlobalIfUnusedLocked` so FIFO eviction beyond `MaxHistoryPerPath` prunes orphaned entries from `_globalCommands` and `_commandTimestamps`)
 - **Scope**: `Services/PathCommandHistoryService.cs`
 - **Summary**: Evicting entries exceeding `MaxHistoryPerPath` never prunes `_globalCommands` or `_commandTimestamps`, allowing unbounded growth and stale global history entries.
 
