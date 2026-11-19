@@ -152,9 +152,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 
 ### Low
 
-#### `[BL-LOW-001]` Migrate Hot-Path Regexes to `[GeneratedRegex]` & Add ESC Fast-Path in `ShellSession.Streams`
+#### `[BL-LOW-001]` Migrate Hot-Path Regexes to `[GeneratedRegex]` & Add ESC Fast-Path in `ShellSession.Streams` — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (migrated hot-path regexes in `ShellSession.Streams`, `AnsiStreamProcessor`, and `LinkDetectionHelper` to `[GeneratedRegex]`, added an ESC-free fast-path in `ProcessOscBufferLocked`, and verified `_lastExecutedCommand` was already removed in `BL-HIGH-002`)
 - **Scope**: `Services/ShellSession.Streams.cs`, `Services/AnsiStreamProcessor.cs`, `Services/LinkDetectionHelper.cs`, `Services/ShellSession.cs`
 - **Summary**: Replace `RegexOptions.Compiled` with NativeAOT-friendly `[GeneratedRegex]`, skip `_oscBuffer.ToString()` / regex scans when chunks contain no `0x1B` byte, and remove dead `_lastExecutedCommand` field.
 

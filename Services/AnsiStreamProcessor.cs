@@ -11,10 +11,13 @@ namespace MultiShell.Services;
 /// Handles stateful UTF-8 chunk decoding, ANSI/VT100 escape sequence buffering,
 /// unsupported OSC sequence sanitization, and terminal OSC 10/11 color query parsing.
 /// </summary>
-public sealed class AnsiStreamProcessor
+public sealed partial class AnsiStreamProcessor
 {
-    private static readonly Regex OscSequenceRegex = new(@"\x1b\][^\x1b\x07]*(\x1b\\|\x07)", RegexOptions.Compiled);
-    private static readonly Regex OscColorQueryRegex = new(@"\x1b\](10|11);\?(\x07|\x1b\\)", RegexOptions.Compiled);
+    [GeneratedRegex(@"\x1b\][^\x1b\x07]*(\x1b\\|\x07)")]
+    private static partial Regex GetOscSequenceRegex();
+
+    [GeneratedRegex(@"\x1b\](10|11);\?(\x07|\x1b\\)")]
+    private static partial Regex GetOscColorQueryRegex();
 
     private readonly Decoder _outputDecoder = Encoding.UTF8.GetDecoder();
     private readonly StringBuilder _streamBuffer = new();
@@ -89,7 +92,7 @@ public sealed class AnsiStreamProcessor
     {
         if (string.IsNullOrEmpty(text) || !text.Contains("\x1b]")) return;
 
-        var matches = OscColorQueryRegex.Matches(text);
+        var matches = GetOscColorQueryRegex().Matches(text);
         if (matches.Count == 0) return;
 
         foreach (Match match in matches)
@@ -116,7 +119,7 @@ public sealed class AnsiStreamProcessor
     public static string SanitizeTerminalText(string text)
     {
         if (string.IsNullOrEmpty(text)) return text;
-        return OscSequenceRegex.Replace(text, string.Empty);
+        return GetOscSequenceRegex().Replace(text, string.Empty);
     }
 
     /// <summary>

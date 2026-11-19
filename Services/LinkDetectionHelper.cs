@@ -10,19 +10,19 @@ namespace MultiShell.Services;
 /// Service for detecting, extracting, and launching Web URLs and local file paths from terminal text.
 /// Supports absolute Windows/Linux paths, relative paths against active working directories, and line-number suffixes.
 /// </summary>
-public static class LinkDetectionHelper
+public static partial class LinkDetectionHelper
 {
-    private static readonly Regex UrlRegex = new(
-        """(?:https?|ftp|file)://[^\s<>"'\(\)\[\]\{\}]+""",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    [GeneratedRegex("""(?:https?|ftp|file)://[^\s<>"'\(\)\[\]\{\}]+""", RegexOptions.IgnoreCase)]
+    private static partial Regex GetUrlRegex();
 
-    private static readonly Regex WindowsAbsolutePathRegex = new(
-        """(?:[a-zA-Z]:[\\/]|\\\\)[^\s<>"'|?*]+(?::\d+(?::\d+)?)?""",
-        RegexOptions.Compiled);
+    [GeneratedRegex("""(?:[a-zA-Z]:[\\/]|\\\\)[^\s<>"'|?*]+(?::\d+(?::\d+)?)?""")]
+    private static partial Regex GetWindowsAbsolutePathRegex();
 
-    private static readonly Regex RelativePathOrFileNameRegex = new(
-        """(?:\.{1,2}[\\/]|[a-zA-Z0-9_\-\.]+[\\/])*[a-zA-Z0-9_\-\.]+\.[a-zA-Z0-9]{1,8}(?::\d+(?::\d+)?)?""",
-        RegexOptions.Compiled);
+    [GeneratedRegex("""(?:\.{1,2}[\\/]|[a-zA-Z0-9_\-\.]+[\\/])*[a-zA-Z0-9_\-\.]+\.[a-zA-Z0-9]{1,8}(?::\d+(?::\d+)?)?""")]
+    private static partial Regex GetRelativePathOrFileNameRegex();
+
+    [GeneratedRegex(@"^(.*?)(?::\d+)+$")]
+    private static partial Regex GetLineNumberSuffixRegex();
 
     private static readonly char[] TrailingPunctuation = ['.', ',', ';', ':', '!', '?', ')', ']', '>', '"', '\''];
 
@@ -89,7 +89,7 @@ public static class LinkDetectionHelper
         var results = new List<DetectedLink>();
 
         // 1. Scan for Web URLs
-        var urlMatches = UrlRegex.Matches(lineText);
+        var urlMatches = GetUrlRegex().Matches(lineText);
         foreach (Match match in urlMatches)
         {
             var raw = match.Value;
@@ -102,7 +102,7 @@ public static class LinkDetectionHelper
         }
 
         // 2. Scan for Absolute Windows Paths
-        var absMatches = WindowsAbsolutePathRegex.Matches(lineText);
+        var absMatches = GetWindowsAbsolutePathRegex().Matches(lineText);
         foreach (Match match in absMatches)
         {
             var raw = match.Value;
@@ -118,7 +118,7 @@ public static class LinkDetectionHelper
         }
 
         // 3. Scan for Relative Paths and File Names
-        var relMatches = RelativePathOrFileNameRegex.Matches(lineText);
+        var relMatches = GetRelativePathOrFileNameRegex().Matches(lineText);
         foreach (Match match in relMatches)
         {
             var raw = match.Value;
@@ -245,7 +245,7 @@ public static class LinkDetectionHelper
     {
         if (string.IsNullOrEmpty(path)) return path;
 
-        var match = Regex.Match(path, @"^(.*?)(?::\d+)+$");
+        var match = GetLineNumberSuffixRegex().Match(path);
         if (match.Success)
         {
             return match.Groups[1].Value;
