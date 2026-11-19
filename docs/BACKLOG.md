@@ -78,9 +78,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Views/MainWindow.axaml.cs`, `Views/MainWindow.Tabs.cs`, `Views/MainWindow.Keyboard.cs`, `ViewModels/MainViewModel.MultiWindow.cs`, `Services/WindowCoordinatorService.cs`
 - **Summary**: (1) Unhandled exceptions in `async void` handlers (`BrowseExecutableRequested`, `BrowseWorkingDirRequested`, `OnTabsPointerMoved`) and fire-and-forget picker/clipboard calls can crash the app; (2) closing a satellite window via `CloseWindowAsync` triggers `ArchiveTabsTo(primary)` twice (once in `CloseWindowAsync`, again in `MainWindow.Closing`), duplicating closed tabs; (3) `CreateSatelliteViewModel()` omits `_dispatcherService` and `_terminalModelFactory`.
 
-#### `[BL-HIGH-006]` Protect Private `SvcSystems.UI.Terminal` Reflection Under NativeAOT Trimming
+#### `[BL-HIGH-006]` Protect Private `SvcSystems.UI.Terminal` Reflection Under NativeAOT Trimming — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (added `ILLink.Descriptors.xml` registered via `TrimmerRootDescriptor`, annotated reflection sites with `[DynamicDependency]`, and added `TerminalReflectionAotContractTests` to verify exact types and members)
 - **Scope**: `Services/AvaloniaTerminalModelAdapter.cs`, `Views/TerminalPaneView.axaml.cs`, `Views/TerminalPaneView.Links.cs`
 - **Summary**: Private reflection against `SvcSystems.UI.Terminal` (`_mouseTracker`, `TrackingMode`, `FallbackXtermPalette`, `ClearFormattedTextCache`, `_formattedTextCache`, `_surface`, `_consoleTextSize`) is unguarded against NativeAOT trimming (`IL2075` suppressed without `[DynamicDependency]`), risking silent runtime regressions in Release AOT builds.
 

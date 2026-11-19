@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using SvcSystems.UI.Terminal;
 
@@ -98,7 +99,9 @@ public sealed class AvaloniaTerminalModelAdapter : ITerminalModelAdapter
     public void Feed(string text) => Model.Feed(text);
 
     /// <inheritdoc />
-    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Safe reflection on terminal engine internal mouse tracker with null-safety.")]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.NonPublicFields, "XTerm.Terminal", "XTerm.NET")]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties, "XTerm.Input.MouseTracker", "XTerm.NET")]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Preserved via DynamicDependency and ILLink.Descriptors.xml for NativeAOT safety (BL-HIGH-006).")]
     public void SuppressMouseTracking()
     {
         try
