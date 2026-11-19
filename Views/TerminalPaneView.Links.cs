@@ -242,7 +242,8 @@ public partial class TerminalPaneView
         }
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Reflection access for Link Detection")]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.NonPublicFields, typeof(TerminalControl))]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Preserved via DynamicDependency and ILLink.Descriptors.xml for NativeAOT safety (BL-HIGH-006).")]
     public static bool TryGetTerminalWordOrLine(
         TerminalControl terminal,
         TerminalPaneViewModel vm,

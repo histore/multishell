@@ -1,0 +1,16 @@
+<linker>
+  <!-- Preserves private members accessed via reflection under NativeAOT trimming (BL-HIGH-006) -->
+  <assembly fullname="SvcSystems.UI.Terminal">
+    <type fullname="SvcSystems.UI.Terminal.TerminalControl" preserve="fields">
+      <method name="ClearFormattedTextCache" />
+    </type>
+  </assembly>
+  <assembly fullname="XTerm.NET">
+    <type fullname="XTerm.Terminal">
+      <field name="_mouseTracker" />
+    </type>
+    <type fullname="XTerm.Input.MouseTracker">
+      <property name="TrackingMode" />
+    </type>
+  </assembly>
+</linker>

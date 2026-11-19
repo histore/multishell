@@ -268,6 +268,10 @@ public partial class TerminalPaneView : UserControl
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields |
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods,
+        typeof(TerminalControl))]
     private void ApplyTerminalTheme(bool isDark, TerminalPaneViewModel vm)
     {
         var palette = isDark ? DarkPalette : LightPalette;
