@@ -91,54 +91,56 @@ public partial class TerminalTabViewModel
 
     public void RefreshFilteredCommands()
     {
-        lock (_commandHistoryLock)
-        {
-            var historyWithTimestamps = _pathCommandHistoryService.GetHistoryWithTimestamps(WorkingDirectory);
-            var timestampMap = new Dictionary<string, DateTime>(StringComparer.Ordinal);
-            foreach (var (cmd, time) in historyWithTimestamps)
-            {
-                if (!timestampMap.ContainsKey(cmd))
-                {
-                    timestampMap[cmd] = time;
-                }
-            }
-
-            var snapshot = CommandHistory.ToArray();
-            var results = string.IsNullOrWhiteSpace(CommandFilterQuery)
-                ? snapshot
-                : _fuzzySearchService.FilterAndRank(
-                    snapshot,
-                    CommandFilterQuery,
-                    x => x,
-                    x => timestampMap.TryGetValue(x, out var t) ? t : DateTime.MinValue,
-                    secondaryDescending: true).ToArray();
-
-            SyncCollection(FilteredCommandHistory, results);
-        }
+        RefreshFilteredStringHistory(
+            _commandHistoryLock,
+            CommandHistory,
+            FilteredCommandHistory,
+            CommandFilterQuery,
+            () => _pathCommandHistoryService.GetHistoryWithTimestamps(WorkingDirectory),
+            StringComparer.Ordinal);
     }
 
     public void RefreshFilteredDirectories()
     {
-        lock (_directoryHistoryLock)
+        RefreshFilteredStringHistory(
+            _directoryHistoryLock,
+            DirectoryHistory,
+            FilteredDirectoryHistory,
+            DirectoryFilterQuery,
+            () => _directoryHistoryService.GetHistoryWithTimestamps(),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private void RefreshFilteredStringHistory(
+        System.Threading.Lock syncLock,
+        ObservableCollection<string> source,
+        ObservableCollection<string> target,
+        string filterQuery,
+        Func<IEnumerable<(string Item, DateTime LastUsedAt)>> getTimestampedEntries,
+        StringComparer keyComparer)
+    {
+        lock (syncLock)
         {
-            var historyWithTimestamps = _directoryHistoryService.GetHistoryWithTimestamps();
-            var timestampMap = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (dir, time) in historyWithTimestamps)
+            var timestampMap = new Dictionary<string, DateTime>(keyComparer);
+            foreach (var (item, time) in getTimestampedEntries())
             {
-                timestampMap[dir] = time;
+                if (!timestampMap.ContainsKey(item))
+                {
+                    timestampMap[item] = time;
+                }
             }
 
-            var snapshot = DirectoryHistory.ToArray();
-            var results = string.IsNullOrWhiteSpace(DirectoryFilterQuery)
+            var snapshot = source.ToArray();
+            var results = string.IsNullOrWhiteSpace(filterQuery)
                 ? snapshot
                 : _fuzzySearchService.FilterAndRank(
                     snapshot,
-                    DirectoryFilterQuery,
+                    filterQuery,
                     x => x,
                     x => timestampMap.TryGetValue(x, out var t) ? t : DateTime.MinValue,
                     secondaryDescending: true).ToArray();
 
-            SyncCollection(FilteredDirectoryHistory, results);
+            SyncCollection(target, results);
         }
     }
 

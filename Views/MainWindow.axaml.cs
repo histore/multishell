@@ -324,58 +324,29 @@ public partial class MainWindow : Window
     {
         if (DataContext is not MainViewModel vm) return;
 
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.StorageProvider == null) return;
-
-        var options = new FilePickerOpenOptions
+        var filter = new List<FilePickerFileType>
         {
-            Title = vm.Loc["Profiles_Browse_Exe_Title"],
-            AllowMultiple = false,
-            FileTypeFilter = new List<FilePickerFileType>
+            new(vm.Loc["Profiles_Browse_Exe_Filter"])
             {
-                new(vm.Loc["Profiles_Browse_Exe_Filter"])
-                {
-                    Patterns = new[] { "*.exe", "*.cmd", "*.bat", "*.*" }
-                },
-                FilePickerFileTypes.All
-            }
+                Patterns = new[] { "*.exe", "*.cmd", "*.bat", "*.*" }
+            },
+            FilePickerFileTypes.All
         };
 
-        if (!string.IsNullOrWhiteSpace(vm.EditingExecutablePath))
-        {
-            try
-            {
-                var dir = System.IO.Path.GetDirectoryName(vm.EditingExecutablePath);
-                if (!string.IsNullOrEmpty(dir) && System.IO.Directory.Exists(dir))
-                {
-                    var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(dir);
-                    if (folder != null)
-                    {
-                        options.SuggestedStartLocation = folder;
-                    }
-                }
-            }
-            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MainWindow] StorageProvider suggested folder lookup failed: {ex.Message}");
-            }
-        }
+        var initialDir = !string.IsNullOrWhiteSpace(vm.EditingExecutablePath)
+            ? System.IO.Path.GetDirectoryName(vm.EditingExecutablePath)
+            : null;
 
-        try
+        var path = await StoragePickerHelper.PickSingleFileAsync(
+            this,
+            vm.Loc["Profiles_Browse_Exe_Title"],
+            initialDir,
+            filter,
+            nameof(MainWindow));
+
+        if (!string.IsNullOrWhiteSpace(path))
         {
-            var results = await topLevel.StorageProvider.OpenFilePickerAsync(options);
-            if (results.Count > 0)
-            {
-                var path = results[0].TryGetLocalPath();
-                if (!string.IsNullOrWhiteSpace(path))
-                {
-                    vm.EditingExecutablePath = path;
-                }
-            }
-        }
-        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.COMException)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow.BrowseExecutablePathAsync] File picker failed: {ex.Message}");
+            vm.EditingExecutablePath = path;
         }
     }
 
@@ -383,102 +354,29 @@ public partial class MainWindow : Window
     {
         if (DataContext is not MainViewModel vm) return;
 
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.StorageProvider == null) return;
+        var path = await StoragePickerHelper.PickSingleFolderAsync(
+            this,
+            vm.Loc["Profiles_Browse_Dir_Title"],
+            vm.EditingWorkingDirectory,
+            nameof(MainWindow));
 
-        var options = new FolderPickerOpenOptions
+        if (!string.IsNullOrWhiteSpace(path))
         {
-            Title = vm.Loc["Profiles_Browse_Dir_Title"],
-            AllowMultiple = false
-        };
-
-        var initialDir = !string.IsNullOrWhiteSpace(vm.EditingWorkingDirectory)
-            ? vm.EditingWorkingDirectory
-            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        if (!string.IsNullOrWhiteSpace(initialDir) && System.IO.Directory.Exists(initialDir))
-        {
-            try
-            {
-                var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(initialDir);
-                if (folder != null)
-                {
-                    options.SuggestedStartLocation = folder;
-                }
-            }
-            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MainWindow] StorageProvider suggested folder lookup failed: {ex.Message}");
-            }
-        }
-
-        try
-        {
-            var results = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
-            if (results.Count > 0)
-            {
-                var path = results[0].TryGetLocalPath();
-                if (!string.IsNullOrWhiteSpace(path))
-                {
-                    vm.EditingWorkingDirectory = path;
-                }
-            }
-        }
-        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.COMException)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow.BrowseWorkingDirectoryAsync] Folder picker failed: {ex.Message}");
+            vm.EditingWorkingDirectory = path;
         }
     }
 
     private async Task<string?> ShowFolderPickerForBreadcrumbAsync(string? initialDirectory)
     {
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.StorageProvider == null) return null;
-
-        var options = new FolderPickerOpenOptions
-        {
-            AllowMultiple = false,
-            Title = (DataContext as MainViewModel)?.Loc["Dialog_PickFolder_Title"] ?? "Select Folder"
-        };
-
-        var startDir = !string.IsNullOrWhiteSpace(initialDirectory) && System.IO.Directory.Exists(initialDirectory)
-            ? initialDirectory
-            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        if (!string.IsNullOrWhiteSpace(startDir) && System.IO.Directory.Exists(startDir))
-        {
-            try
-            {
-                var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(startDir);
-                if (folder != null)
-                {
-                    options.SuggestedStartLocation = folder;
-                }
-            }
-            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MainWindow] StorageProvider suggested folder lookup failed: {ex.Message}");
-            }
-        }
-
         try
         {
-            var results = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
-            if (results.Count > 0)
-            {
-                return results[0].TryGetLocalPath();
-            }
-        }
-        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow] StorageProvider folder picker failed: {ex.Message}");
+            var title = (DataContext as MainViewModel)?.Loc["Dialog_PickFolder_Title"] ?? "Select Folder";
+            return await StoragePickerHelper.PickSingleFolderAsync(this, title, initialDirectory, nameof(MainWindow));
         }
         finally
         {
             FocusActiveTerminal();
         }
-
-        return null;
     }
 
     /// <summary>

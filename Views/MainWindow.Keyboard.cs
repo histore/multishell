@@ -254,107 +254,36 @@ public partial class MainWindow
 
     private async Task PickAndInsertFileAsync()
     {
-        if (DataContext is not MainViewModel vm || vm.SelectedTab == null) return;
-
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.StorageProvider == null) return;
-
-        var options = new FilePickerOpenOptions
-        {
-            Title = vm.Loc["Dialog_PickFile_Title"],
-            AllowMultiple = false
-        };
-
-        var initialDir = !string.IsNullOrWhiteSpace(vm.SelectedTab.WorkingDirectory)
-            ? vm.SelectedTab.WorkingDirectory
-            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        if (!string.IsNullOrWhiteSpace(initialDir) && System.IO.Directory.Exists(initialDir))
-        {
-            try
-            {
-                var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(initialDir);
-                if (folder != null)
-                {
-                    options.SuggestedStartLocation = folder;
-                }
-            }
-            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] StorageProvider suggested folder lookup failed: {ex.Message}");
-            }
-        }
-
-        try
-        {
-            var results = await topLevel.StorageProvider.OpenFilePickerAsync(options);
-            if (results.Count > 0)
-            {
-                var path = results[0].TryGetLocalPath();
-                if (!string.IsNullOrWhiteSpace(path))
-                {
-                    vm.SelectedTab.InsertPath(path);
-                }
-            }
-        }
-        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.COMException)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] File picker failed: {ex.Message}");
-        }
-        finally
-        {
-            FocusActiveTerminal();
-        }
+        await PickAndInsertPathAsync(isFolder: false);
     }
 
     private async Task PickAndInsertFolderAsync()
     {
+        await PickAndInsertPathAsync(isFolder: true);
+    }
+
+    private async Task PickAndInsertPathAsync(bool isFolder)
+    {
         if (DataContext is not MainViewModel vm || vm.SelectedTab == null) return;
-
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.StorageProvider == null) return;
-
-        var options = new FolderPickerOpenOptions
-        {
-            Title = vm.Loc["Dialog_PickFolder_Title"],
-            AllowMultiple = false
-        };
-
-        var initialDir = !string.IsNullOrWhiteSpace(vm.SelectedTab.WorkingDirectory)
-            ? vm.SelectedTab.WorkingDirectory
-            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        if (!string.IsNullOrWhiteSpace(initialDir) && System.IO.Directory.Exists(initialDir))
-        {
-            try
-            {
-                var folder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(initialDir);
-                if (folder != null)
-                {
-                    options.SuggestedStartLocation = folder;
-                }
-            }
-            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] StorageProvider suggested folder lookup failed: {ex.Message}");
-            }
-        }
 
         try
         {
-            var results = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
-            if (results.Count > 0)
+            string? path = isFolder
+                ? await StoragePickerHelper.PickSingleFolderAsync(
+                    this,
+                    vm.Loc["Dialog_PickFolder_Title"],
+                    vm.SelectedTab.WorkingDirectory,
+                    "MainWindow.Keyboard")
+                : await StoragePickerHelper.PickSingleFileAsync(
+                    this,
+                    vm.Loc["Dialog_PickFile_Title"],
+                    vm.SelectedTab.WorkingDirectory,
+                    logContext: "MainWindow.Keyboard");
+
+            if (!string.IsNullOrWhiteSpace(path))
             {
-                var path = results[0].TryGetLocalPath();
-                if (!string.IsNullOrWhiteSpace(path))
-                {
-                    vm.SelectedTab.InsertPath(path);
-                }
+                vm.SelectedTab.InsertPath(path);
             }
-        }
-        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.COMException)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] Folder picker failed: {ex.Message}");
         }
         finally
         {
@@ -370,33 +299,12 @@ public partial class MainWindow
         }
     }
 
-    private async Task SetClipboardTextSafeAsync(string text)
-    {
-        if (Clipboard == null) return;
-        try
-        {
-            await Clipboard.SetTextAsync(text);
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or System.Runtime.InteropServices.COMException)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] Clipboard copy failed: {ex.Message}");
-        }
-    }
+    private Task SetClipboardTextSafeAsync(string text) =>
+        ClipboardHelper.TrySetTextAsync(Clipboard, text, "MainWindow.Keyboard");
 
-    private async Task PasteToPaneAsync(TerminalPaneViewModel pane)
-    {
-        if (Clipboard == null || !pane.IsRunning) return;
-        try
-        {
-            var text = await Clipboard.TryGetTextAsync();
-            if (!string.IsNullOrEmpty(text))
-            {
-                pane.PasteText(text);
-            }
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or System.Runtime.InteropServices.COMException)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow.Keyboard] Clipboard paste failed: {ex.Message}");
-        }
-    }
+    private Task PasteToPaneAsync(TerminalPaneViewModel pane) =>
+        ClipboardHelper.PasteToPaneAsync(
+            pane,
+            () => ClipboardHelper.TryGetTextAsync(Clipboard, "MainWindow.Keyboard"),
+            "MainWindow.Keyboard");
 }
