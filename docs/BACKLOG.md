@@ -286,9 +286,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/PathNormalizer.cs`, `Services/StartupPathResolver.cs`
 - **Summary**: Tighten `path.StartsWith(@"\\wsl")` in `PathNormalizer.DirectoryExistsOrNonWindows` to only allow `\\wsl$\` and `\\wsl.localhost\`, and guard `Directory.Exists`/`File.Exists` in `PathNormalizer` and `StartupPathResolver` with `LinkDetectionHelper.IsSafeLocalPath`.
 
-#### `[BL-MED-018]` (`REV2-MED-009`) Isolate `MainViewModelTests` From Real `%LOCALAPPDATA%\MultiShell\tabs_state.json` & Dispose ViewModels
+#### `[BL-MED-018]` (`REV2-MED-009`) Isolate `MainViewModelTests` From Real `%LOCALAPPDATA%\MultiShell\tabs_state.json` & Dispose ViewModels — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (replaced all real `ShellProcessService` and default-path `TabStatePersistenceService` constructions in `MainViewModelTests` with `CreateIsolatedViewModel` using `FakeShellProcessService`, temporary state files, and `using` disposal)
 - **Scope**: `MultiShell.Tests/MainViewModelTests.cs`
 - **Summary**: Replace default `new TabStatePersistenceService()` and `new ShellProcessService()` usages in `MainViewModelTests` with isolated temporary persistence paths, mock process services, and `using` disposal so unit tests never read or overwrite the user's real `tabs_state.json`.
 

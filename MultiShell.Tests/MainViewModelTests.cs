@@ -9,15 +9,61 @@ namespace MultiShell.Tests;
 
 public class MainViewModelTests
 {
-    private static MainViewModel CreateIsolatedViewModel(out string tempFile)
+    private sealed class FakeShellSession : IShellSession
+    {
+        public Guid SessionId { get; } = Guid.NewGuid();
+        public string Title { get; set; }
+        public string? WorkingDirectory { get; set; }
+        public ShellType ShellType { get; }
+        public bool IsRunning { get; private set; }
+
+#pragma warning disable CS0067
+        public event Action<ReadOnlyMemory<byte>>? DataReceived;
+        public event Action<int>? Exited;
+        public event Action<string>? WorkingDirectoryChanged;
+        public event Action<string>? CommandExecuted;
+        public event Action<int>? CommandCompleted;
+#pragma warning restore CS0067
+
+        public FakeShellSession(string title, string? workingDir, ShellType shellType)
+        {
+            Title = title;
+            WorkingDirectory = workingDir ?? Environment.CurrentDirectory;
+            ShellType = shellType;
+        }
+
+        public void Start() => IsRunning = true;
+        public void Send(byte[] input) { }
+        public void Resize(int cols, int rows) { }
+        public void Dispose() => IsRunning = false;
+    }
+
+    private sealed class FakeShellProcessService : IShellProcessService
+    {
+        public IShellSession CreateSession(
+            string title,
+            string? workingDirectory = null,
+            ShellType shellType = ShellType.PowerShell,
+            string? customExecutable = null,
+            string? customArguments = null) =>
+            new FakeShellSession(title, workingDirectory, shellType);
+    }
+
+    private static MainViewModel CreateIsolatedViewModel(
+        out string tempFile,
+        IThemeService? themeService = null,
+        ILocalizationService? localizationService = null,
+        IFontSizeService? fontSizeService = null,
+        bool isSatellite = false)
     {
         tempFile = Path.Combine(Path.GetTempPath(), $"multishell_test_{Guid.NewGuid():N}.json");
         return new MainViewModel(
-            new ShellProcessService(),
+            new FakeShellProcessService(),
             new TabStatePersistenceService(tempFile),
-            new MockThemeService(),
-            new LocalizationService(),
-            new FontSizeService());
+            themeService ?? new MockThemeService(),
+            localizationService ?? new LocalizationService(),
+            fontSizeService ?? new FontSizeService(),
+            isSatellite: isSatellite);
     }
 
     [Fact]
@@ -120,91 +166,85 @@ public class MainViewModelTests
     [Fact]
     public void ToggleAppTheme_SwitchesAppThemeIndependently()
     {
-        // Arrange
         var mockTheme = new MockThemeService();
-        using var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
+        using var vm = CreateIsolatedViewModel(out var tempFile, themeService: mockTheme);
+        try
+        {
+            Assert.True(vm.IsDarkAppTheme);
+            Assert.True(vm.IsDarkTerminalTheme);
 
-        Assert.True(vm.IsDarkAppTheme);
-        Assert.True(vm.IsDarkTerminalTheme);
+            vm.ToggleAppThemeCommand.Execute(null);
 
-        // Act
-        vm.ToggleAppThemeCommand.Execute(null);
-
-        // Assert: App theme is light, but Terminal remains dark
-        Assert.False(vm.IsDarkAppTheme);
-        Assert.False(mockTheme.IsDarkAppTheme);
-        Assert.True(vm.IsDarkTerminalTheme);
-        Assert.True(mockTheme.IsDarkTerminalTheme);
+            Assert.False(vm.IsDarkAppTheme);
+            Assert.False(mockTheme.IsDarkAppTheme);
+            Assert.True(vm.IsDarkTerminalTheme);
+            Assert.True(mockTheme.IsDarkTerminalTheme);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
     }
 
     [Fact]
     public void ToggleTerminalTheme_SwitchesTerminalThemeIndependently()
     {
-        // Arrange
         var mockTheme = new MockThemeService();
-        using var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
+        using var vm = CreateIsolatedViewModel(out var tempFile, themeService: mockTheme);
+        try
+        {
+            vm.ToggleTerminalThemeCommand.Execute(null);
 
-        // Act
-        vm.ToggleTerminalThemeCommand.Execute(null);
-
-        // Assert: Terminal is light, but App UI remains dark
-        Assert.True(vm.IsDarkAppTheme);
-        Assert.True(mockTheme.IsDarkAppTheme);
-        Assert.False(vm.IsDarkTerminalTheme);
-        Assert.False(mockTheme.IsDarkTerminalTheme);
+            Assert.True(vm.IsDarkAppTheme);
+            Assert.True(mockTheme.IsDarkAppTheme);
+            Assert.False(vm.IsDarkTerminalTheme);
+            Assert.False(mockTheme.IsDarkTerminalTheme);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
     }
 
     [Fact]
     public void SetThemes_UpdatesStatesExplicitly()
-
     {
-        // Arrange
-
         var mockTheme = new MockThemeService();
-        using var vm = new MainViewModel(new ShellProcessService(), new TabStatePersistenceService(), mockTheme);
+        using var vm = CreateIsolatedViewModel(out var tempFile, themeService: mockTheme);
+        try
+        {
+            vm.SetAppTheme(false);
+            vm.SetTerminalTheme(false);
 
-        // Act
-        vm.SetAppTheme(false);
-        vm.SetTerminalTheme(false);
+            Assert.False(vm.IsDarkAppTheme);
+            Assert.False(vm.IsDarkTerminalTheme);
 
-        // Assert
-        Assert.False(vm.IsDarkAppTheme);
-        Assert.False(vm.IsDarkTerminalTheme);
+            vm.SetAppTheme(true);
+            vm.SetTerminalTheme(true);
 
-        // Act
-        vm.SetAppTheme(true);
-        vm.SetTerminalTheme(true);
-
-        // Assert
-        Assert.True(vm.IsDarkAppTheme);
-        Assert.True(vm.IsDarkTerminalTheme);
+            Assert.True(vm.IsDarkAppTheme);
+            Assert.True(vm.IsDarkTerminalTheme);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
     }
 
     [Fact]
     public void SetFontSizeLevels_UpdatesValuesAndScales()
     {
-        // Arrange
-        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        using var vm = CreateIsolatedViewModel(out var tempFile, fontSizeService: new FontSizeService());
         try
         {
-            var fontSizeService = new FontSizeService();
-            using var vm = new MainViewModel(
-                new ShellProcessService(),
-                new TabStatePersistenceService(tempFile),
-                new MockThemeService(),
-                new LocalizationService(),
-                fontSizeService);
-
             Assert.Equal(4, vm.AppFontSizeLevel);
             Assert.Equal(4, vm.TerminalFontSizeLevel);
             Assert.Equal(1.0, vm.AppFontScale);
             Assert.Equal(14.0, vm.TerminalFontSize);
 
-            // Act - Set via command
             vm.SetAppFontSizeLevelCommand.Execute(7);
             vm.SetTerminalFontSizeLevelCommand.Execute(1);
 
-            // Assert
             Assert.Equal(7, vm.AppFontSizeLevel);
             Assert.Equal(1.30, vm.AppFontScale);
             Assert.Equal(1, vm.TerminalFontSizeLevel);
@@ -212,74 +252,45 @@ public class MainViewModelTests
         }
         finally
         {
-            if (File.Exists(tempFile))
-            {
-                File.Delete(tempFile);
-            }
+            if (File.Exists(tempFile)) File.Delete(tempFile);
         }
     }
 
     [Fact]
     public void IncreaseAndDecreaseFontSize_UpdatesLevelsWithinRange()
     {
-        // Arrange
-        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        using var vm = CreateIsolatedViewModel(out var tempFile, fontSizeService: new FontSizeService());
         try
         {
-            var fontSizeService = new FontSizeService();
-            using var vm = new MainViewModel(
-                new ShellProcessService(),
-                new TabStatePersistenceService(tempFile),
-                new MockThemeService(),
-                new LocalizationService(),
-                fontSizeService);
-
-            // Act: Increase
             vm.IncreaseAppFontSizeCommand.Execute(null);
             vm.IncreaseTerminalFontSizeCommand.Execute(null);
 
-            // Assert
             Assert.Equal(5, vm.AppFontSizeLevel);
             Assert.Equal(5, vm.TerminalFontSizeLevel);
 
-            // Act: Decrease
             vm.DecreaseAppFontSizeCommand.Execute(null);
             vm.DecreaseAppFontSizeCommand.Execute(null);
 
-            // Assert
             Assert.Equal(3, vm.AppFontSizeLevel);
         }
         finally
         {
-            if (File.Exists(tempFile))
-            {
-                File.Delete(tempFile);
-            }
+            if (File.Exists(tempFile)) File.Delete(tempFile);
         }
     }
 
     [Fact]
     public void ResetFontSizeLevels_ResetsBothLevelsToDefault()
     {
-        // Arrange
-        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 7);
+        using var vm = CreateIsolatedViewModel(out var tempFile, fontSizeService: fontSizeService);
         try
         {
-            var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 7);
-            using var vm = new MainViewModel(
-                new ShellProcessService(),
-                new TabStatePersistenceService(tempFile),
-                new MockThemeService(),
-                new LocalizationService(),
-                fontSizeService);
-
             Assert.Equal(1, vm.AppFontSizeLevel);
             Assert.Equal(7, vm.TerminalFontSizeLevel);
 
-            // Act
             vm.ResetFontSizeLevels();
 
-            // Assert
             Assert.Equal(4, vm.AppFontSizeLevel);
             Assert.Equal(4, vm.TerminalFontSizeLevel);
             Assert.Equal(14.0, vm.TerminalFontSize);
@@ -287,79 +298,53 @@ public class MainViewModelTests
         }
         finally
         {
-            if (File.Exists(tempFile))
-            {
-                File.Delete(tempFile);
-            }
+            if (File.Exists(tempFile)) File.Delete(tempFile);
         }
     }
 
     [Fact]
     public void ResetTerminalFontSize_ResetsOnlyTerminalLevelToDefault()
     {
-        // Arrange
-        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 7);
+        using var vm = CreateIsolatedViewModel(out var tempFile, fontSizeService: fontSizeService);
         try
         {
-            var fontSizeService = new FontSizeService(initialAppLevel: 1, initialTerminalLevel: 7);
-            using var vm = new MainViewModel(
-                new ShellProcessService(),
-                new TabStatePersistenceService(tempFile),
-                new MockThemeService(),
-                new LocalizationService(),
-                fontSizeService);
-
-            // Act
             vm.ResetTerminalFontSize();
 
-            // Assert
             Assert.Equal(1, vm.AppFontSizeLevel);
             Assert.Equal(4, vm.TerminalFontSizeLevel);
             Assert.Equal(14.0, vm.TerminalFontSize);
         }
         finally
         {
-            if (File.Exists(tempFile))
-            {
-                File.Delete(tempFile);
-            }
+            if (File.Exists(tempFile)) File.Delete(tempFile);
         }
     }
 
     [Fact]
     public void Dispose_UnsubscribesSharedServiceEvents()
     {
-        // Arrange
-        var tempFile = Path.Combine(Path.GetTempPath(), $"multishell_state_test_{Guid.NewGuid():N}.json");
+        var localizationService = new LocalizationService("en", isUserSelection: true);
+        var fontSizeService = new FontSizeService(initialAppLevel: 4, initialTerminalLevel: 4);
+        var vm = CreateIsolatedViewModel(
+            out var tempFile,
+            localizationService: localizationService,
+            fontSizeService: fontSizeService,
+            isSatellite: true);
         try
         {
-            var localizationService = new LocalizationService("en", isUserSelection: true);
-            var fontSizeService = new FontSizeService(initialAppLevel: 4, initialTerminalLevel: 4);
-            var vm = new MainViewModel(
-                new ShellProcessService(),
-                new TabStatePersistenceService(tempFile),
-                new MockThemeService(),
-                localizationService,
-                fontSizeService,
-                isSatellite: true);
-
-            // Act
             vm.Dispose();
             localizationService.SetLanguage("de", isUserSelection: true);
             fontSizeService.SetAppFontSizeLevel(6);
             fontSizeService.SetTerminalFontSizeLevel(7);
 
-            // Assert
             Assert.Equal("en", vm.CurrentLanguage);
             Assert.Equal(4, vm.AppFontSizeLevel);
             Assert.Equal(4, vm.TerminalFontSizeLevel);
         }
         finally
         {
-            if (File.Exists(tempFile))
-            {
-                File.Delete(tempFile);
-            }
+            if (File.Exists(tempFile)) File.Delete(tempFile);
         }
     }
 }
