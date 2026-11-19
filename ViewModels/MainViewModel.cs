@@ -35,6 +35,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     private readonly Action<string> _languageChangedHandler;
     private readonly Action<int> _appFontSizeLevelChangedHandler;
     private readonly Action<int> _terminalFontSizeLevelChangedHandler;
+    private readonly Action<bool> _appThemeChangedHandler;
+    private readonly Action<bool> _terminalThemeChangedHandler;
 
     /// <summary>
     /// Gets or sets whether the application window is currently inactive (unfocused) in the OS.
@@ -301,6 +303,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         };
         _fontSizeService.TerminalFontSizeLevelChanged += _terminalFontSizeLevelChangedHandler;
 
+        _appThemeChangedHandler = isDark =>
+        {
+            IsDarkAppTheme = isDark;
+        };
+        _themeService.AppThemeChanged += _appThemeChangedHandler;
+
+        _terminalThemeChangedHandler = isDark =>
+        {
+            IsDarkTerminalTheme = isDark;
+            foreach (var tab in Tabs)
+            {
+                tab.UpdateTheme(isDark);
+            }
+        };
+        _themeService.TerminalThemeChanged += _terminalThemeChangedHandler;
+
         ReloadProfiles();
         if (!isSatellite)
         {
@@ -332,6 +350,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         _localizationService.LanguageChanged -= _languageChangedHandler;
         _fontSizeService.AppFontSizeLevelChanged -= _appFontSizeLevelChangedHandler;
         _fontSizeService.TerminalFontSizeLevelChanged -= _terminalFontSizeLevelChangedHandler;
+        _themeService.AppThemeChanged -= _appThemeChangedHandler;
+        _themeService.TerminalThemeChanged -= _terminalThemeChangedHandler;
 
         var tabsToDispose = Tabs.ToArray();
         foreach (var tab in tabsToDispose)

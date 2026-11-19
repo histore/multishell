@@ -1,3 +1,5 @@
+using System;
+
 namespace MultiShell.Services;
 
 /// <summary>
@@ -5,6 +7,15 @@ namespace MultiShell.Services;
 /// </summary>
 public interface IThemeService
 {
+    /// <summary>
+    /// Raised when the application UI theme changes (parameter is <c>true</c> for dark, <c>false</c> for light).
+    /// </summary>
+    event Action<bool>? AppThemeChanged;
+
+    /// <summary>
+    /// Raised when the terminal shell theme changes (parameter is <c>true</c> for dark, <c>false</c> for light).
+    /// </summary>
+    event Action<bool>? TerminalThemeChanged;
     /// <summary>
     /// Gets a value indicating whether the application UI theme is dark.
     /// </summary>

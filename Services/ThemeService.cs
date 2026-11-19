@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -78,6 +79,10 @@ public class ThemeService : IThemeService
 
     public bool IsDarkTerminalTheme => _isDarkTerminalTheme;
 
+    public event Action<bool>? AppThemeChanged;
+
+    public event Action<bool>? TerminalThemeChanged;
+
     public void SetAppTheme(bool isDark)
     {
         _isDarkAppTheme = isDark;
@@ -89,6 +94,8 @@ public class ThemeService : IThemeService
                 Application.Current.RequestedThemeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
             }
         });
+
+        AppThemeChanged?.Invoke(isDark);
     }
 
     public void SetTerminalTheme(bool isDark)
@@ -109,6 +116,8 @@ public class ThemeService : IThemeService
                 }
             }
         });
+
+        TerminalThemeChanged?.Invoke(isDark);
     }
 
     public void ToggleAppTheme()

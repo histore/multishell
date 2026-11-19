@@ -51,14 +51,14 @@ public class WindowCoordinatorServiceTests
 
     private class MockThemeService : IThemeService
     {
-        public bool IsDarkAppTheme => true;
-        public bool IsDarkTerminalTheme => true;
-        public event Action<bool>? AppThemeChanged { add { } remove { } }
-        public event Action<bool>? TerminalThemeChanged { add { } remove { } }
-        public void SetAppTheme(bool isDark) { }
-        public void SetTerminalTheme(bool isDark) { }
-        public void ToggleAppTheme() { }
-        public void ToggleTerminalTheme() { }
+        public bool IsDarkAppTheme { get; private set; } = true;
+        public bool IsDarkTerminalTheme { get; private set; } = true;
+        public event Action<bool>? AppThemeChanged;
+        public event Action<bool>? TerminalThemeChanged;
+        public void SetAppTheme(bool isDark) { IsDarkAppTheme = isDark; AppThemeChanged?.Invoke(isDark); }
+        public void SetTerminalTheme(bool isDark) { IsDarkTerminalTheme = isDark; TerminalThemeChanged?.Invoke(isDark); }
+        public void ToggleAppTheme() => SetAppTheme(!IsDarkAppTheme);
+        public void ToggleTerminalTheme() => SetTerminalTheme(!IsDarkTerminalTheme);
     }
 
     private static MainViewModel CreateTestViewModel(IWindowCoordinatorService coordinator)
@@ -260,6 +260,30 @@ public class WindowCoordinatorServiceTests
         satellite.AddNewTab();
 
         Assert.True(customDispatcher.RunOnUiCount > countBefore);
+    }
+
+    [Fact]
+    public async Task ThemeChanges_InPrimaryWindow_PropagateToSatelliteWindowsAndTabs()
+    {
+        var coordinator = new WindowCoordinatorService();
+        using var primary = CreateTestViewModel(coordinator);
+        coordinator.RegisterWindow(primary);
+
+        primary.AddNewTab();
+        var secondary = (MainViewModel)await coordinator.UndockTabAsync(primary, primary.Tabs[1]);
+        using (secondary)
+        {
+            Assert.True(secondary.IsDarkAppTheme);
+            Assert.True(secondary.IsDarkTerminalTheme);
+            Assert.True(secondary.Tabs[0].IsDarkTerminalTheme);
+
+            primary.SetAppTheme(false);
+            primary.SetTerminalTheme(false);
+
+            Assert.False(secondary.IsDarkAppTheme);
+            Assert.False(secondary.IsDarkTerminalTheme);
+            Assert.False(secondary.Tabs[0].IsDarkTerminalTheme);
+        }
     }
 
     [Fact]
