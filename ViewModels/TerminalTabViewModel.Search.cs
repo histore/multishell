@@ -34,37 +34,55 @@ public partial class TerminalTabViewModel
     /// </summary>
     public event Action? FocusTerminalRequested;
 
+    private bool _isSyncingPaneSearch;
+
     /// <summary>
-    /// Opens the in-terminal search overlay and focuses the search input box (REQ-TERM-006).
+    /// Opens the in-terminal search overlay on the active pane and focuses the search input box (REQ-TERM-006).
     /// </summary>
     [RelayCommand]
     public void OpenSearch()
     {
-        IsSearchOpen = true;
-        if (TerminalModel.HasSelection && !string.IsNullOrWhiteSpace(TerminalModel.SelectedText))
+        if (ActivePane != null)
         {
-            SearchQuery = TerminalModel.SelectedText.Trim();
+            ActivePane.OpenSearch();
+            SyncSearchStateFromPane(ActivePane);
         }
-        else if (!string.IsNullOrEmpty(SearchQuery))
+        else
         {
-            ExecuteSearch(SearchQuery);
+            IsSearchOpen = true;
+            if (TerminalModel.HasSelection && !string.IsNullOrWhiteSpace(TerminalModel.SelectedText))
+            {
+                SearchQuery = TerminalModel.SelectedText.Trim();
+            }
+            else if (!string.IsNullOrEmpty(SearchQuery))
+            {
+                ExecuteSearch(SearchQuery);
+            }
         }
         FocusSearchBoxRequested?.Invoke();
     }
 
     /// <summary>
-    /// Closes the in-terminal search overlay, clears the search, and restores focus to terminal (REQ-TERM-006).
+    /// Closes the in-terminal search overlay on the active pane, clears the search, and restores focus to terminal (REQ-TERM-006).
     /// </summary>
     [RelayCommand]
     public void CloseSearch()
     {
-        IsSearchOpen = false;
-        SearchQuery = string.Empty;
-        TerminalModel.Search(string.Empty);
-        TerminalModel.ClearSelection();
-        SearchResultCount = 0;
-        CurrentSearchResultIndex = 0;
-        SearchMatchSummary = string.Empty;
+        if (ActivePane != null)
+        {
+            ActivePane.CloseSearch();
+            SyncSearchStateFromPane(ActivePane);
+        }
+        else
+        {
+            IsSearchOpen = false;
+            SearchQuery = string.Empty;
+            TerminalModel.Search(string.Empty);
+            TerminalModel.ClearSelection();
+            SearchResultCount = 0;
+            CurrentSearchResultIndex = 0;
+            SearchMatchSummary = string.Empty;
+        }
         FocusTerminalRequested?.Invoke();
     }
 
@@ -74,7 +92,8 @@ public partial class TerminalTabViewModel
     [RelayCommand]
     public void ToggleSearch()
     {
-        if (IsSearchOpen)
+        bool currentlyOpen = ActivePane?.IsSearchOpen ?? IsSearchOpen;
+        if (currentlyOpen)
         {
             CloseSearch();
         }
@@ -85,11 +104,18 @@ public partial class TerminalTabViewModel
     }
 
     /// <summary>
-    /// Selects and scrolls to the next matching search result (REQ-TERM-006).
+    /// Selects and scrolls to the next matching search result on the active pane (REQ-TERM-006).
     /// </summary>
     [RelayCommand]
     public void SearchNext()
     {
+        if (ActivePane != null)
+        {
+            ActivePane.SearchNext();
+            SyncSearchStateFromPane(ActivePane);
+            return;
+        }
+
         if (SearchResultCount > 0)
         {
             TerminalModel.SelectNextSearchResult();
@@ -99,11 +125,18 @@ public partial class TerminalTabViewModel
     }
 
     /// <summary>
-    /// Selects and scrolls to the previous matching search result (REQ-TERM-006).
+    /// Selects and scrolls to the previous matching search result on the active pane (REQ-TERM-006).
     /// </summary>
     [RelayCommand]
     public void SearchPrevious()
     {
+        if (ActivePane != null)
+        {
+            ActivePane.SearchPrevious();
+            SyncSearchStateFromPane(ActivePane);
+            return;
+        }
+
         if (SearchResultCount > 0)
         {
             TerminalModel.SelectPreviousSearchResult();
@@ -114,7 +147,33 @@ public partial class TerminalTabViewModel
 
     partial void OnSearchQueryChanged(string value)
     {
+        if (_isSyncingPaneSearch) return;
+
+        if (ActivePane != null)
+        {
+            ActivePane.SearchQuery = value;
+            SyncSearchStateFromPane(ActivePane);
+            return;
+        }
+
         ExecuteSearch(value);
+    }
+
+    private void SyncSearchStateFromPane(TerminalPaneViewModel pane)
+    {
+        _isSyncingPaneSearch = true;
+        try
+        {
+            IsSearchOpen = pane.IsSearchOpen;
+            SearchQuery = pane.SearchQuery;
+            SearchResultCount = pane.SearchResultCount;
+            CurrentSearchResultIndex = pane.CurrentSearchResultIndex;
+            SearchMatchSummary = pane.SearchMatchSummary;
+        }
+        finally
+        {
+            _isSyncingPaneSearch = false;
+        }
     }
 
     private void ExecuteSearch(string query)

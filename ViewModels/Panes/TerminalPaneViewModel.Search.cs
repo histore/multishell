@@ -66,10 +66,7 @@ public partial class TerminalPaneViewModel
 
     partial void OnSearchQueryChanged(string value)
     {
-        if (IsSearchOpen)
-        {
-            ExecuteSearch(value);
-        }
+        ExecuteSearch(value);
     }
 
     private void ExecuteSearch(string query)
@@ -90,15 +87,23 @@ public partial class TerminalPaneViewModel
         }
     }
 
-    private void UpdateSearchMatchSummary()
+    internal void UpdateSearchMatchSummary()
     {
-        if (string.IsNullOrEmpty(SearchQuery) || SearchResultCount == 0)
+        if (string.IsNullOrEmpty(SearchQuery))
         {
-            SearchMatchSummary = string.IsNullOrEmpty(SearchQuery) ? string.Empty : "0/0";
+            SearchMatchSummary = string.Empty;
+        }
+        else if (SearchResultCount == 0)
+        {
+            SearchMatchSummary = Tab.Loc != null
+                ? Tab.Loc["Search_Terminal_NoResults"]
+                : "No results";
         }
         else
         {
-            SearchMatchSummary = $"{CurrentSearchResultIndex + 1}/{SearchResultCount}";
+            SearchMatchSummary = Tab.Loc != null
+                ? string.Format(Tab.Loc["Search_Terminal_Matches"], CurrentSearchResultIndex + 1, SearchResultCount)
+                : $"{CurrentSearchResultIndex + 1}/{SearchResultCount}";
         }
     }
 }

@@ -163,6 +163,42 @@ public class TerminalSearchTests
         Assert.Equal("Keine Treffer", vm.SearchMatchSummary);
     }
 
+    [Fact]
+    public void OpenAndCloseSearch_DelegatesToActivePaneForUiOverlayVisibility()
+    {
+        var initialSession = new MockPowerShellSession("Initial");
+        var splitSession = new MockPowerShellSession("Split");
+        using var vm = new TerminalTabViewModel(initialSession, localizationService: _loc);
+        var splitPane = vm.SplitPane(vm.ActivePane, Models.PaneSplitDirection.Vertical, splitSession);
+
+        splitPane.TerminalModel.Feed("needle one needle two\r\n");
+
+        bool paneFocusBoxRequested = false;
+        bool paneFocusTerminalRequested = false;
+        splitPane.FocusSearchBoxRequested += () => paneFocusBoxRequested = true;
+        splitPane.FocusTerminalRequested += () => paneFocusTerminalRequested = true;
+
+        vm.OpenSearch();
+
+        Assert.True(splitPane.IsSearchOpen);
+        Assert.True(vm.IsSearchOpen);
+        Assert.True(paneFocusBoxRequested);
+
+        vm.SearchQuery = "needle";
+        Assert.Equal(2, splitPane.SearchResultCount);
+        Assert.Contains("1 of 2", splitPane.SearchMatchSummary);
+
+        vm.SearchNext();
+        Assert.Equal(1, splitPane.CurrentSearchResultIndex);
+        Assert.Contains("2 of 2", splitPane.SearchMatchSummary);
+
+        vm.CloseSearch();
+
+        Assert.False(splitPane.IsSearchOpen);
+        Assert.False(vm.IsSearchOpen);
+        Assert.True(paneFocusTerminalRequested);
+    }
+
     private class MockPowerShellSession : IShellSession
     {
         public Guid SessionId { get; } = Guid.NewGuid();

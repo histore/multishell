@@ -38,9 +38,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `ViewModels/TerminalTabViewModel.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`, `ViewModels/Panes/TerminalPaneViewModel.cs`, `ViewModels/Panes/TerminalPaneViewModel.Streaming.cs`
 - **Summary**: `TerminalTabViewModel` shares `_session` with its initial pane, causing three failures: (1) exiting the initial pane in a split tab closes the entire tab via `TerminalTabViewModel.OnSessionExited`, (2) manually closing the initial pane disposes the tab's shared `_session` while other panes remain open, and (3) `TerminalTabViewModel.Dispose()` skips `initialPane.Dispose()`, leaking `_silenceTimer`, `_uiFeedCoordinator`, and event subscriptions.
 
-#### `[BL-CRIT-002]` Fix In-Terminal Search (`Ctrl+Shift+F`, `Ctrl+Shift+F3`, `Escape`) Routing to Active Pane
+#### `[BL-CRIT-002]` Fix In-Terminal Search (`Ctrl+Shift+F`, `Ctrl+Shift+F3`, `Escape`) Routing to Active Pane — **DONE**
 - **Criticality**: `Critical`
-- **Status**: `OPEN`
+- **Status**: `DONE` (delegated `TerminalTabViewModel` search commands and query updates to `ActivePane`, localized `TerminalPaneViewModel.UpdateSearchMatchSummary`, and aligned `MainWindow.Keyboard.cs` search state checks with `ActivePane.IsSearchOpen`)
 - **Scope**: `Views/MainWindow.Keyboard.cs`, `ViewModels/TerminalTabViewModel.Search.cs`, `ViewModels/Panes/TerminalPaneViewModel.Search.cs`, `Views/TerminalPaneView.axaml`
 - **Summary**: `SearchOverlay` exists only in `TerminalPaneView.axaml` (bound to `TerminalPaneViewModel.IsSearchOpen`), but the window-level tunnel `KeyDown` handler in `MainWindow.Keyboard.cs` intercepts `Ctrl+Shift+F` / `Ctrl+Shift+F3` / `Escape` and calls `SelectedTab.OpenSearch()` / `SearchNext()` / `CloseSearch()` without delegating to `ActivePane`, preventing the search overlay from appearing.
 

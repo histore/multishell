@@ -67,6 +67,13 @@ public partial class TerminalTabViewModel
 
     private void OnLocalizationPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (_panes != null)
+        {
+            foreach (var pane in _panes)
+            {
+                pane.UpdateSearchMatchSummary();
+            }
+        }
         UpdateSearchMatchSummary();
         OnPropertyChanged(nameof(ExecutionStatusTooltip));
         OnPropertyChanged(nameof(ProcessActivityText));
