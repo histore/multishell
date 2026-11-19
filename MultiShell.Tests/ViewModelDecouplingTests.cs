@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using MultiShell.Models;
 using MultiShell.Services;
@@ -178,5 +179,27 @@ public class ViewModelDecouplingTests
 
         tab.Dispose();
         Assert.True(adapter.IsDisposed);
+    }
+
+    [Fact]
+    public void ViewModelsLayer_DoesNotDirectlyReferenceAvaloniaAssembliesOrTypes()
+    {
+        var vmAssembly = typeof(MainViewModel).Assembly;
+        var viewModelTypes = vmAssembly.GetTypes()
+            .Where(t => t.Namespace == "MultiShell.ViewModels" && !t.IsNestedPrivate)
+            .ToList();
+
+        Assert.NotEmpty(viewModelTypes);
+        foreach (var type in viewModelTypes)
+        {
+            foreach (var field in type.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static))
+            {
+                Assert.DoesNotContain("Avalonia", field.FieldType.Namespace ?? string.Empty, StringComparison.Ordinal);
+            }
+            foreach (var prop in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static))
+            {
+                Assert.DoesNotContain("Avalonia", prop.PropertyType.Namespace ?? string.Empty, StringComparison.Ordinal);
+            }
+        }
     }
 }

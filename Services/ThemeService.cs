@@ -54,37 +54,48 @@ public class ThemeService : IThemeService
         new(Color.Parse("#0A0B10"))  // 15: Bright Black / Dark Text
     ];
 
+    private readonly IDispatcherService _dispatcherService;
+    private bool _isDarkAppTheme = true;
     private bool _isDarkTerminalTheme = true;
 
-    public bool IsDarkAppTheme => Application.Current?.RequestedThemeVariant != ThemeVariant.Light;
+    public ThemeService() : this(null)
+    {
+    }
+
+    public ThemeService(IDispatcherService? dispatcherService)
+    {
+        _dispatcherService = dispatcherService ?? AvaloniaDispatcherService.Instance;
+        if (_dispatcherService.CheckAccess() && Application.Current != null)
+        {
+            _isDarkAppTheme = Application.Current.RequestedThemeVariant != ThemeVariant.Light;
+        }
+    }
+
+    public bool IsDarkAppTheme =>
+        _dispatcherService.CheckAccess() && Application.Current != null
+            ? Application.Current.RequestedThemeVariant != ThemeVariant.Light
+            : _isDarkAppTheme;
 
     public bool IsDarkTerminalTheme => _isDarkTerminalTheme;
 
     public void SetAppTheme(bool isDark)
     {
-        void Apply()
+        _isDarkAppTheme = isDark;
+
+        _dispatcherService.RunOnUi(() =>
         {
             if (Application.Current != null)
             {
                 Application.Current.RequestedThemeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
             }
-        }
-
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            Apply();
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(Apply);
-        }
+        });
     }
 
     public void SetTerminalTheme(bool isDark)
     {
         _isDarkTerminalTheme = isDark;
 
-        void Apply()
+        _dispatcherService.RunOnUi(() =>
         {
             if (Application.Current != null)
             {
@@ -97,17 +108,7 @@ public class ThemeService : IThemeService
                     Application.Current.Resources[$"SvcSystems.UI.TerminalColor{i}"] = palette[i];
                 }
             }
-        }
-
-
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            Apply();
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(Apply);
-        }
+        });
     }
 
     public void ToggleAppTheme()
