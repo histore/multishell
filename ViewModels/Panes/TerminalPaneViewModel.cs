@@ -219,23 +219,36 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// Pastes text into the terminal session, wrapping in Bracketed Paste Mode (VT 2004h)
     /// if requested by the active shell application (e.g. Copilot CLI, Readline, Vim, Node.js).
+    /// Strips embedded bracketed-paste end/start control markers to prevent escape breakout injection.
     /// </summary>
     public void PasteText(string text)
     {
         if (!Session.IsRunning || string.IsNullOrEmpty(text)) return;
 
         // In Bracketed Paste Mode (VT 2004h), wrap pasted text with ESC [ 200 ~ and ESC [ 201 ~.
-        // This informs the interactive CLI / TUI that the input is a single pasted payload
-        // and prevents characters from being dropped or prematurely submitted.
+        // Sanitize any embedded paste-end/start markers so untrusted clipboard text cannot break out
+        // of the bracketed paste envelope and execute arbitrary commands.
         if (TerminalModel.BracketedPasteMode)
         {
-            var bracketed = $"\x1b[200~{text}\x1b[201~";
+            var sanitized = SanitizeBracketedPastePayload(text);
+            var bracketed = $"\x1b[200~{sanitized}\x1b[201~";
             SendInput(Encoding.UTF8.GetBytes(bracketed));
         }
         else
         {
             SendInput(Encoding.UTF8.GetBytes(text));
         }
+    }
+
+    internal static string SanitizeBracketedPastePayload(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+
+        return text
+            .Replace("\x1b[201~", string.Empty, StringComparison.Ordinal)
+            .Replace("\x1b[200~", string.Empty, StringComparison.Ordinal)
+            .Replace("\u009b201~", string.Empty, StringComparison.Ordinal)
+            .Replace("\u009b200~", string.Empty, StringComparison.Ordinal);
     }
 
     /// <summary>
