@@ -144,6 +144,7 @@
                                  <TextBlock Text="{Binding Loc[Help_Feature_2]}" Foreground="{DynamicResource AppTextKbd}" FontSize="12" TextWrapping="Wrap" />
                                  <TextBlock Text="{Binding Loc[Help_Feature_3]}" Foreground="{DynamicResource AppTextKbd}" FontSize="12" TextWrapping="Wrap" />
                                  <TextBlock Text="{Binding Loc[Help_Feature_4]}" Foreground="{DynamicResource AppTextKbd}" FontSize="12" TextWrapping="Wrap" />
+                                 <TextBlock Text="{Binding Loc[Help_Feature_5]}" Foreground="{DynamicResource AppTextKbd}" FontSize="12" TextWrapping="Wrap" />
                              </StackPanel>
                          </Border>
                     </StackPanel>

@@ -155,6 +155,34 @@
         <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
     </Style>
 
+    <!-- Tab Menu & Flyout Item Button Style (BL-MED-005) -->
+    <Style Selector="Button.tabMenuItemBtn">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.tabMenuItemBtn:pointerover">
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}" />
+    </Style>
+    <Style Selector="Button.tabMenuItemBtn:pressed">
+        <Setter Property="Background" Value="{DynamicResource AppBorder}" />
+    </Style>
+    <Style Selector="Button.tabMenuItemBtn:disabled">
+        <Setter Property="Opacity" Value="0.45" />
+        <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+
     <!-- Tab Switcher ListBox Styles -->
     <Style Selector="ListBox.tabSwitcherListBox">
         <Setter Property="Background" Value="Transparent" />

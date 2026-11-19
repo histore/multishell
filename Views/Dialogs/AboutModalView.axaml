@@ -15,7 +15,7 @@
             <Grid RowDefinitions="Auto, Auto, Auto, Auto">
                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="4" Margin="0,0,0,14">
                     <Image Source="/Assets/multishell.png" Width="56" Height="56" Margin="0,0,0,4" HorizontalAlignment="Center" />
-                    <TextBlock Text="MultiShell" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding Loc[About_Modal_Title]}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimary}" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding Loc[About_Modal_Subtitle]}" FontSize="11" Foreground="{DynamicResource AppAccent}" HorizontalAlignment="Center" />
                 </StackPanel>
 

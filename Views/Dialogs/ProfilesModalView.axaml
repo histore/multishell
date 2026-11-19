@@ -136,10 +136,10 @@
                                     <StackPanel Grid.Column="1" Spacing="2" Margin="6,0,0,0">
                                         <TextBlock Text="{Binding Loc[Profiles_Field_ShellType]}" FontSize="11" Foreground="{DynamicResource AppTextSecondary}" />
                                         <ComboBox SelectedIndex="{Binding EditingShellType}" HorizontalAlignment="Stretch">
-                                            <ComboBoxItem Content="PowerShell" />
-                                            <ComboBoxItem Content="NuShell" />
-                                            <ComboBoxItem Content="WSL (Linux)" />
-                                            <ComboBoxItem Content="CMD" />
+                                            <ComboBoxItem Content="{Binding Loc[Shell_PowerShell]}" />
+                                            <ComboBoxItem Content="{Binding Loc[Shell_NuShell]}" />
+                                            <ComboBoxItem Content="{Binding Loc[Shell_WSL]}" />
+                                            <ComboBoxItem Content="{Binding Loc[Shell_CMD]}" />
                                         </ComboBox>
                                     </StackPanel>
                                 </Grid>

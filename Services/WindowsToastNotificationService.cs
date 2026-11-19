@@ -51,8 +51,9 @@ public sealed class WindowsToastNotificationService : IToastNotificationService
     {
         var successLabel = _localizationService?["Process_Activity_Success"] ?? "Success";
         var failedLabel = _localizationService?["Process_Activity_Failed"] ?? "Failed";
+        var failedWithExitCodeFormat = _localizationService?["Process_Notification_ExitCode"] ?? "{0} (Exit code {1})";
 
-        var (encodedScript, powerShellPath) = BuildToastInvocation(tabTitle, command, duration, exitCode, successLabel, failedLabel);
+        var (encodedScript, powerShellPath) = BuildToastInvocation(tabTitle, command, duration, exitCode, successLabel, failedLabel, failedWithExitCodeFormat);
 
         var psi = new ProcessStartInfo(powerShellPath, $"-NoProfile -NonInteractive -EncodedCommand {encodedScript}")
         {
@@ -76,9 +77,10 @@ public sealed class WindowsToastNotificationService : IToastNotificationService
         TimeSpan duration,
         int exitCode,
         string successLabel = "Success",
-        string failedLabel = "Failed")
+        string failedLabel = "Failed",
+        string failedWithExitCodeFormat = "{0} (Exit code {1})")
     {
-        var status = exitCode == 0 ? successLabel : $"{failedLabel} (Exit-Code {exitCode})";
+        var status = exitCode == 0 ? successLabel : string.Format(failedWithExitCodeFormat, failedLabel, exitCode);
         var truncatedCmd = command.Length > 60 ? command[..57] + "..." : command;
         var durationText = duration.TotalSeconds >= 60
             ? $"{(int)duration.TotalMinutes}m {duration.Seconds}s"

@@ -223,6 +223,12 @@ public partial class LocalizationService
         ["Status_Breadcrumb_Disabled_ProcessRunning_Tooltip"] = "Navegación no disponible mientras se ejecuta un proceso",
 
         // Multi-Window Title Prefix (REQ-TAB-026)
-        ["Window_Secondary_Title_Prefix"] = "[Ventana {0} ⧉] "
+        ["Window_Secondary_Title_Prefix"] = "[Ventana {0} ⧉] ",
+
+        // File Picker Filters & Terminal Lifecycle Notices
+        ["Profiles_Browse_Exe_Filter"] = "Ejecutables (*.exe, *.cmd, *.bat)",
+        ["Terminal_Start_Failed"] = "Error al iniciar la sesión de shell.",
+        ["Terminal_Process_Exited"] = "[Proceso finalizado con código {0}]",
+        ["Process_Notification_ExitCode"] = "{0} (Código de salida {1})"
     };
 }
