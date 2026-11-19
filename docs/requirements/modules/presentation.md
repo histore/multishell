@@ -159,7 +159,7 @@ This document defines the functional and non-functional requirements specific to
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/presentation.md`
-- **Test Suite**: `MultiShell.Tests/TabSwitcherTests.cs`
+- **Test Suite**: `MultiShell.Tests/MainViewModelTabTests.SwitcherAndCycling.cs`
 
 ---
 
@@ -244,7 +244,7 @@ This document defines the functional and non-functional requirements specific to
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/presentation.md`
-- **Test Suite**: `MultiShell.Tests/DragDropDirectoryResolverTests.cs`
+- **Test Suite**: `MultiShell.Tests/StartupPathResolverTests.cs`
 
 ---
 
@@ -363,7 +363,7 @@ This document defines the functional and non-functional requirements specific to
 #### Acceptance Criteria (Given-When-Then)
 - [x] **AC-1**: `Ctrl++` / `Ctrl+NumpadPlus` increments font size level.
 - [x] **AC-2**: `Ctrl+-` / `Ctrl+NumpadMinus` decrements font size level.
-- [x] **AC-3**: `Ctrl+0` / `Ctrl+Numpad0` resets to standard default Level 3.
+- [x] **AC-3**: `Ctrl+0` / `Ctrl+Numpad0` resets to standard default Level 4 (14pt).
 - [x] **AC-4**: `Ctrl+MouseWheel` over terminal zooms font size.
 
 #### Traceability & Verification
@@ -383,7 +383,7 @@ This document defines the functional and non-functional requirements specific to
 
 #### Acceptance Criteria (Given-When-Then)
 - [x] **AC-1**: When `Tabs.Count == 0`, the empty state dashboard displays logo, title, and quick-launch profile cards.
-- [x] **AC-2**: Clicking a profile card or pressing `Ctrl+T` opens a new tab and dismisses the dashboard.
+- [x] **AC-2**: Clicking a profile card or pressing `Ctrl+Shift+T` opens a new tab and dismisses the dashboard.
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/presentation.md`
@@ -504,13 +504,13 @@ This document defines the functional and non-functional requirements specific to
 > **and I want** a clear distinction between the Primary (Anchor) window and Secondary windows so that closing the Primary window cleanly saves and closes the entire workspace, while closing a Secondary window only closes that specific window.
 
 #### Acceptance Criteria (Given-When-Then)
-- [ ] **AC-1**: **Given** an open tab, **When** dragging the tab header beyond the MultiShell window boundary or selecting `Detach Tab` (`Ctrl+Shift+U`), **Then** a new independent MultiShell window spawns hosting that tab session without PTY restart.
-- [ ] **AC-2**: **When** dragging a detached tab back onto the tab bar of the primary window, **Then** it seamlessly re-integrates into the primary tab strip and closes the secondary window if it was its last tab.
-- [ ] **AC-3**: **When** clicking `[ ⇲ Zurück ins Hauptfenster ]` in a secondary window header, **Then** all its tabs merge back into the primary window and the secondary window closes.
-- [ ] **AC-4**: **When** closing a secondary window via `✕`, **Then** only that secondary window closes, its tabs are archived into `ClosedTabs`, and the primary window and other windows remain active.
-- [ ] **AC-5**: **When** closing the primary window via `✕` or `Alt+F4`, **Then** the entire multi-window workspace (positions, bounds, tabs of all windows) is atomar persisted to `tabs_state.json` and all windows close cleanly without leaving orphaned PTY handles.
-- [ ] **AC-6**: **When** launching MultiShell after closing the primary window, **Then** the full multi-window layout is restored across all monitors with original tab configurations.
-- [ ] **AC-7**: **Given** multi-window mode, **Then** secondary windows are visually distinguished via a header badge (`[Fenster 2 ⧉]`), quick dock-back button, and context-sensitive close button tooltips.
+- [x] **AC-1**: **Given** an open tab, **When** dragging the tab header beyond the MultiShell window boundary or selecting `Detach Tab` (`Ctrl+Shift+U`), **Then** a new independent MultiShell window spawns hosting that tab session without PTY restart.
+- [x] **AC-2**: **When** dragging a detached tab back onto the tab bar of the primary window, **Then** it seamlessly re-integrates into the primary tab strip and closes the secondary window if it was its last tab.
+- [x] **AC-3**: **When** clicking `[ ⇲ Zurück ins Hauptfenster ]` in a secondary window header, **Then** its active tab merges back into the primary window and the secondary window closes when no tabs remain.
+- [x] **AC-4**: **When** closing a secondary window via `✕`, **Then** only that secondary window closes, its tabs are archived into `ClosedTabs`, and the primary window and other windows remain active.
+- [x] **AC-5**: **When** closing the primary window via `✕` or `Alt+F4`, **Then** the entire multi-window workspace (primary and secondary window tab collections and active indices) is atomically persisted to `tabs_state.json` and all windows close cleanly without leaving orphaned PTY handles.
+- [x] **AC-6**: **When** launching MultiShell after closing the primary window, **Then** the multi-window workspace is restored with original tab configurations.
+- [x] **AC-7**: **Given** multi-window mode, **Then** secondary windows are visually distinguished via a header badge (`[Fenster 2 ⧉]`), quick dock-back button, and context-sensitive close button tooltips.
 
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/presentation.md`

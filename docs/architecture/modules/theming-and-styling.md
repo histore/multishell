@@ -42,5 +42,5 @@ MultiShell provides a modern, high-contrast visual experience optimized for deve
 ### 3.2 Font Fallback Hierarchy
 The application configures the following font priority to guarantee support for Powerline glyphs, developer icons (Nerd Fonts), and box-drawing characters:
 ```
-Cascadia Code NF, Cascadia Mono NF, Cascadia Code, Cascadia Mono, Consolas, Segoe UI Symbol, DejaVu Sans Mono, monospace
+avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, FiraCode Nerd Font Mono, Cascadia Code NF, Cascadia Mono NF, Cascadia Code, Cascadia Mono, Consolas, Segoe UI Symbol, DejaVu Sans Mono, monospace
 ```

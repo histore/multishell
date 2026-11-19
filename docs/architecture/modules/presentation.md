@@ -12,7 +12,7 @@ Models/
 ├── PaneSplitDirection.cs              # Vertical and Horizontal split orientation (REQ-UI-006)
 ├── PathBreadcrumbSegment.cs           # Interactive status bar breadcrumb segment (REQ-UI-010)
 ├── PathColorStripe.cs                 # Deterministic folder path color stripe model (REQ-TAB-025)
-└── ProcessExecutionState.cs           # Idle, Running, Succeeded, Failed state enum (REQ-TERM-012)
+└── ProcessExecutionState.cs           # Idle, Running, Success, Failed state enum (REQ-TERM-012)
 
 Services/
 ├── IWindowCoordinatorService.cs       # Multi-window coordination contracts (ICoordinatedWindow, ICoordinatedTab, REQ-TAB-026)
@@ -29,6 +29,7 @@ Services/
 ├── TerminalUiFeedCoordinator.cs       # Shared ANSI streaming, OSC color & batched UI feed (BL-QUAL-003)
 ├── UiServiceDefaults.cs               # Composition-root defaults for ViewModels (BL-MED-007)
 ├── UiFrameworkInfo.cs                 # UI framework metadata & hex color validation
+├── TerminalTextFormatter.cs           # Path middle-ellipsis truncation & clipboard text cleaning
 ├── KeyboardStateHelper.cs             # Native Windows keyboard state reader (CapsLock, etc.)
 └── FileBrowserHelper.cs               # Platform-native file manager launcher (Windows Explorer, Finder, xdg-open)
 
@@ -58,6 +59,7 @@ ViewModels/
 ├── TerminalTabViewModel.Streaming.cs  # Output batching & ANSI buffer streaming
 ├── TerminalTabViewModel.History.cs    # Path & directory history synchronization
 ├── TerminalTabViewModel.HistoryActions.cs # History command execution, insertion & deletion commands
+├── TerminalTabViewModel.Search.cs     # Tab-level search state & active-pane delegation (REQ-TERM-006)
 ├── TerminalTabViewModel.Renaming.cs   # Custom renaming & color palette tagging
 ├── ClosedTabItemViewModel.cs          # Reopenable closed tab history item
 └── TerminalProfileItemViewModel.cs    # Selectable profile item in UI
@@ -77,12 +79,21 @@ Views/
 ├── TerminalTabView.axaml              # Tab host containing SplitPaneContainerControl
 ├── TerminalTabView.axaml.cs           # SplitPaneContainerControl data binding
 ├── TerminalFocusHelper.cs             # Active terminal focus resolution & restoration
+├── FunctionKeyRouting.cs              # Terminal vs. app function key routing policy
+├── StoragePickerHelper.cs             # Shared Avalonia IStorageProvider file/folder picker helper (BL-LOW-005)
+├── ClipboardHelper.cs                 # Shared defensive clipboard read/write & paste helper (BL-LOW-005)
 ├── Controls/
 │   ├── SettingsMenuButton.axaml       # Settings flyout menu button (theme, language, font size, modals)
 │   ├── SettingsMenuButton.axaml.cs    # Settings menu navigation event bridge
 │   ├── StatusBarView.axaml            # Bottom status bar (process activity, breadcrumbs, zoom/caps/shell)
 │   └── StatusBarView.axaml.cs         # StatusBarView UserControl code-behind
-└── Dialogs/                           # Modal overlay & empty-state views (Profiles, About, HistoryDrawer, Welcome)
+└── Dialogs/                           # Modal overlay & empty-state views (Profiles, About, Help, HistoryDrawer, Welcome)
+    ├── AboutModalView.axaml           # About dialog layout
+    ├── AboutModalView.axaml.cs        # About dialog code-behind
+    ├── HelpModalView.axaml            # Keyboard shortcuts & help modal layout
+    ├── HelpModalView.axaml.cs         # Help modal code-behind
+    ├── ProfilesModalView.axaml        # Terminal profiles manager modal layout
+    ├── ProfilesModalView.axaml.cs     # Terminal profiles manager modal code-behind
     ├── HistoryDrawerView.axaml        # History Drawer overlay layout
     ├── HistoryDrawerView.axaml.cs     # Drawer open/toggle & filter selection sync
     ├── HistoryDrawerView.Keyboard.cs  # Drawer arrow navigation & tab cycling
@@ -131,7 +142,7 @@ Backs an individual terminal tab instance and coordinates multiple split panes v
   * Directional pane focus navigation (`NavigatePane`) and tree traversal.
   * Handles auto-collapse on pane shell exit.
 * **`TerminalTabViewModel.ExecutionState.cs` (`REQ-TERM-012`, `REQ-UI-010`)**:
-  * Tracks shell process execution states (`ProcessExecutionState`: `Idle`, `Running`, `Succeeded`, `Failed`).
+  * Tracks shell process execution states (`ProcessExecutionState`: `Idle`, `Running`, `Success`, `Failed`).
   * Dynamic status indicator glyphs, activity timer, and tooltips displaying last exit code and command execution duration.
   * Native desktop toast notifications (`IToastNotificationService` / `WindowsToastNotificationService`) for long-running commands (>= 10s) completing while the tab or window is in the background.
   * Parses interactive status bar breadcrumbs (`PathBreadcrumbs`) via `PathBreadcrumbParser`, disabling ancestor segments during active running commands to prevent illegal concurrent directory changes.
@@ -167,7 +178,7 @@ Backs an individual terminal tab instance and coordinates multiple split panes v
     * `SplitActivePane(direction)`: Replaces the target leaf with a new `SplitPaneNodeViewModel` containing the original leaf and a freshly spawned sibling leaf sharing the working directory.
     * `ClosePane(pane)`: Collapses the split node, lifting the surviving sibling up to replace the parent split node.
     * Auto-collapse on exit: When a shell session inside a pane terminates, `PaneExited` automatically removes the pane and collapses the parent split.
-    * Directional navigation: `NavigatePane(direction)` performs spatial geometry calculations across leaf bounding boxes to transfer focus seamlessly with `Alt+ArrowKeys` or `F6`/`Shift+F6`.
+    * Directional navigation: `NavigatePane(direction)` cycles focus across active split panes (`Left`/`Up` to previous pane, `Right`/`Down` to next pane) via `Alt+ArrowKeys` or `F6`/`Shift+F6`.
     * Zoom/Maximize: `ToggleZoom()` isolates the active leaf node in the visual tree without destroying the underlying binary tree state (`Alt+Shift+Z`).
 * **Zero-Reallocation Recursive View Host (`SplitPaneContainerControl.cs`)**:
   * Dynamically maps `SplitPaneNodeViewModel` to an Avalonia `Grid` with star row/column definitions and interactive `GridSplitter`.
