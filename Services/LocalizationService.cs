@@ -7,7 +7,7 @@ using MultiShell.Models;
 namespace MultiShell.Services;
 
 /// <summary>
-/// Implementation of <see cref="ILocalizationService"/> supporting DE, EN, FR, ES with system language detection and persistence.
+/// Implementation of <see cref="ILocalizationService"/> supporting DE, EN, FR, ES, IT, and PT with system language detection and persistence.
 /// </summary>
 public partial class LocalizationService : ILocalizationService
 {

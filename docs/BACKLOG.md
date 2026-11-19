@@ -164,9 +164,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/FileBrowserHelper.cs`, `ViewModels/MainViewModel.cs`, `Services/WindowsToastNotificationService.cs`
 - **Summary**: Wrap `Process.Start(...)` results in `using` and resolve unqualified `explorer.exe` via `%SystemRoot%`; either wire `onActivated` or simplify `IToastNotificationService` contract.
 
-#### `[BL-LOW-003]` Clean Up 18 Unused Localization Keys, Harmonize Modifier Names & Add IT/PT to `installer.iss`
+#### `[BL-LOW-003]` Clean Up 18 Unused Localization Keys, Harmonize Modifier Names & Add IT/PT to `installer.iss` — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (pruned the 16 remaining unused i18n keys across all 6 dictionaries—`About_Modal_Title` and `Help_Feature_5` were already wired in `BL-MED-005`—harmonized modifier names across DE/FR/ES/IT, updated `LocalizationService` doc comment, and added Italian/Portuguese + `0.0.1` fallback version to `installer.iss`)
 - **Scope**: `Services/LocalizationService.*.cs`, `installer.iss`
 - **Summary**: Prune or wire unused i18n keys, align localized modifier names (`Shift`/`Umschalt`, `Mayús`, `Maj`, `Maiusc`), and add Italian/Portuguese languages to `installer.iss`.
 

@@ -1,6 +1,6 @@
 ; Inno Setup Script for MultiShell
 #ifndef MyAppVersion
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.0.1"
 #endif
 
 #define MyAppName "MultiShell"
@@ -36,6 +36,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "german"; MessagesFile: "compiler:Languages\German.isl"
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
+Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
