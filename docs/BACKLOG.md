@@ -212,9 +212,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Views/MainWindow.Keyboard.cs`, `Views/Dialogs/HelpModalView.axaml`, `ViewModels/Panes/TerminalPaneViewModel.cs`
 - **Summary**: Handle `Key.K` in `MainWindow.Keyboard.cs` (`TryHandleCtrlShiftActionKeyDown`) to invoke `SelectedTab.ActivePane?.ClearBuffer()` (fallback `SelectedTab.ClearBuffer()`), matching the `Ctrl+Shift+K` shortcut documented in `HelpModalView.axaml`.
 
-#### `[BL-HIGH-011]` (`REV2-HIGH-004`) Prevent ConPTY Pipe Full Deadlock & UI-Thread Stall During `ShellSession.Dispose()`
+#### `[BL-HIGH-011]` (`REV2-HIGH-004`) Prevent ConPTY Pipe Full Deadlock & UI-Thread Stall During `ShellSession.Dispose()` — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (reordered `ShellSession.Dispose()` to detach `_pseudoConsole`, kill the child process tree, close input/output pipe handles so `conhost.exe` cannot block on a full 4 KB pipe buffer, and offload `ClosePseudoConsole` and `WaitForExit` to a background cleanup task)
 - **Scope**: `Services/ShellSession.cs`, `Services/ShellSession.Streams.cs`
 - **Summary**: Terminate the child process tree or close/drain the output pipe before calling `ClosePseudoConsole`, and avoid blocking the UI thread if `conhost.exe` flushes pending VT teardown output into a full 4 KB anonymous pipe after `PumpOutput` stops.
 

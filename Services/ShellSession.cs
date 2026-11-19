@@ -188,23 +188,16 @@ public sealed partial class ShellSession : IShellSession
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _isRunning = false;
 
-        try
-        {
-            _lifetimeCancellation?.Cancel();
-        }
-        catch (ObjectDisposedException) { }
-
-        // 1. Close ConPTY handle under _syncRoot so concurrent Resize() calls cannot use a freed handle
+        // 1. Detach ConPTY handle under _syncRoot so concurrent Resize() calls cannot use a freed handle
         WindowsPseudoConsoleSafeHandle? ptyToDispose;
         lock (_syncRoot)
         {
             ptyToDispose = _pseudoConsole;
             _pseudoConsole = null;
         }
-        ptyToDispose?.Dispose();
 
-        // 2. Kill the shell process tree immediately and offload brief exit wait + handle disposal
-        //    so closing tabs/windows never stalls the UI thread.
+        // 2. Kill the shell process tree before closing the pseudo-console or stopping pipe drainage
+        //    so a noisy child process cannot fill the 4 KB output pipe and deadlock ClosePseudoConsole.
         var processToCleanup = Interlocked.Exchange(ref _process, null);
         if (processToCleanup != null)
         {
@@ -216,25 +209,9 @@ public sealed partial class ShellSession : IShellSession
             {
                 System.Diagnostics.Debug.WriteLine($"[ShellSession.Dispose] Process termination ignored: {ex.Message}");
             }
-
-            _ = Task.Run(() =>
-            {
-                try
-                {
-                    processToCleanup.WaitForExit(500);
-                }
-                catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or NotSupportedException or ObjectDisposedException)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[ShellSession.Dispose] Background WaitForExit ignored: {ex.Message}");
-                }
-                finally
-                {
-                    processToCleanup.Dispose();
-                }
-            });
         }
 
-        // 3. Close input stream/handle under _inputWriteLock and remaining handles cleanly
+        // 3. Close input stream/handle under _inputWriteLock
         lock (_inputWriteLock)
         {
             _inputStream?.Dispose();
@@ -243,11 +220,50 @@ public sealed partial class ShellSession : IShellSession
             _inputWriteHandle = null;
         }
 
+        // 4. Cancel lifetime token and close output read handles so conhost.exe never blocks on a full pipe buffer
+        try
+        {
+            _lifetimeCancellation?.Cancel();
+        }
+        catch (ObjectDisposedException) { }
+
         _outputStream?.Dispose();
         _outputStream = null;
         _outputReadHandle?.Dispose();
         _outputReadHandle = null;
         _lifetimeCancellation?.Dispose();
         _lifetimeCancellation = null;
+
+        // 5. Offload ClosePseudoConsole and brief process exit wait so closing tabs/windows never stalls the UI thread
+        if (ptyToDispose != null || processToCleanup != null)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    ptyToDispose?.Dispose();
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or ObjectDisposedException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ShellSession.Dispose] PseudoConsole disposal ignored: {ex.Message}");
+                }
+
+                if (processToCleanup != null)
+                {
+                    try
+                    {
+                        processToCleanup.WaitForExit(500);
+                    }
+                    catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or NotSupportedException or ObjectDisposedException)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ShellSession.Dispose] Background WaitForExit ignored: {ex.Message}");
+                    }
+                    finally
+                    {
+                        processToCleanup.Dispose();
+                    }
+                }
+            });
+        }
     }
 }
