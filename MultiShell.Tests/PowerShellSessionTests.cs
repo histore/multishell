@@ -362,5 +362,20 @@ public class PowerShellSessionTests
         using var profileCmd = new ShellSession("ProfileCmd", shellType: ShellType.CMD, customExecutable: "cmd.exe", customArguments: null);
         Assert.Equal("\"cmd.exe\" /K \"chcp 65001 >nul\"", profileCmd.GenerateShellCommandLine(null));
     }
+
+    [Fact]
+    public void ResolveEffectiveWorkingDirectories_FallsBackForDeletedWindowsDir_AndPreservesPosixDirForWsl()
+    {
+        var deletedDir = Path.Combine(Path.GetTempPath(), $"nonexistent_multishell_{Guid.NewGuid():N}");
+        var (win32Fallback, shellFallback) = ShellSession.ResolveEffectiveWorkingDirectories(deletedDir);
+        Assert.NotNull(win32Fallback);
+        Assert.True(Directory.Exists(win32Fallback));
+        Assert.Equal(win32Fallback, shellFallback);
+
+        var (win32ForPosix, shellForPosix) = ShellSession.ResolveEffectiveWorkingDirectories("/home/user/project");
+        Assert.NotNull(win32ForPosix);
+        Assert.True(Directory.Exists(win32ForPosix));
+        Assert.Equal("/home/user/project", shellForPosix);
+    }
 }
 
