@@ -336,8 +336,8 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/LinkDetectionHelper.cs`
 - **Summary**: Verify `IsSafeLocalPath` and `TryResolveFilePath` before highlighting `file://` URIs in `ExtractAllLinks`, and extend `StripLineNumberSuffix` to strip trailing `(line,col)` / `(line)` compiler diagnostic suffixes.
 
-#### `[BL-LOW-012]` (`REV2-LOW-006`) Use `ImmutableSolidColorBrush` in `ThemeService`, Assert Terminal Buffer Contents in Streaming Tests & Test i18n Placeholder Parity
+#### `[BL-LOW-012]` (`REV2-LOW-006`) Use `ImmutableSolidColorBrush` in `ThemeService`, Assert Terminal Buffer Contents in Streaming Tests & Test i18n Placeholder Parity — **DONE**
 - **Criticality**: `Low`
-- **Status**: `OPEN`
+- **Status**: `DONE` (replaced static `SolidColorBrush` fields in `ThemeService.cs` with `ImmutableSolidColorBrush`, asserted rendered terminal buffer contents and absence of `\uFFFD` / stray escape tokens in the 6 fragmented streaming tests in `TerminalTabViewModelTests.TerminalInput.cs`, and added `LocalizationService_AllLanguageDictionaries_HaveIdenticalFormatPlaceholders` in `LocalizationServiceTests.cs`)
 - **Scope**: `Services/ThemeService.cs`, `MultiShell.Tests/TerminalTabViewModelTests.TerminalInput.cs`, `MultiShell.Tests/LocalizationServiceTests.cs`
 - **Summary**: Replace static mutable `SolidColorBrush` instances in `ThemeService` with `ImmutableSolidColorBrush`, assert actual terminal screen buffer text (and absence of `\uFFFD`) in the 6 fragmented UTF-8/OSC/CSI tests, and add a unit test verifying format placeholder (`{0}`, `{1}`) parity across all 6 languages.

@@ -246,8 +246,11 @@ public partial class TerminalTabViewModelTests
         }
 
         // Assert - The terminal model buffer must contain the original box drawing characters without replacement character \uFFFD
-        // We verify that TerminalModel received valid input
-        Assert.NotNull(vm.TerminalModel);
+        var rendered = ReadRenderedTerminalText(vm, 3);
+        Assert.DoesNotContain("\uFFFD", rendered);
+        Assert.Contains("┌───┐", rendered);
+        Assert.Contains("│ A │", rendered);
+        Assert.Contains("└───┘", rendered);
     }
 
     [Fact]
@@ -267,7 +270,9 @@ public partial class TerminalTabViewModelTests
             session.SimulateDataReceived(new[] { b });
         }
 
-        Assert.NotNull(vm.TerminalModel);
+        var rendered = ReadRenderedTerminalText(vm, 2);
+        Assert.DoesNotContain("\uFFFD", rendered);
+        Assert.Contains("Änderung für Größe & Überprüfung", rendered);
     }
 
     [Fact]
@@ -303,8 +308,10 @@ public partial class TerminalTabViewModelTests
         // Act
         session.SimulateDataReceived(bytes);
 
-        // Assert - Model received valid input
-        Assert.NotNull(vm.TerminalModel);
+        // Assert - Model received valid input without OSC artifacts
+        var rendered = ReadRenderedTerminalText(vm, 2);
+        Assert.Contains("1  Project Requirements & Status Catalog", rendered);
+        Assert.DoesNotContain("]8;;", rendered);
     }
 
     [Fact]
@@ -323,7 +330,9 @@ public partial class TerminalTabViewModelTests
         session.SimulateDataReceived(part2);
 
         // Assert
-        Assert.NotNull(vm.TerminalModel);
+        var rendered = ReadRenderedTerminalText(vm, 2);
+        Assert.Contains("Heading Title", rendered);
+        Assert.DoesNotContain("]8;;", rendered);
     }
 
     [Theory]
@@ -413,7 +422,9 @@ public partial class TerminalTabViewModelTests
         session.SimulateDataReceived(chunk2);
 
         // Assert
-        Assert.NotNull(vm.TerminalModel);
+        var rendered = ReadRenderedTerminalText(vm, 2);
+        Assert.Contains("Prefix │  Suggested command:", rendered);
+        Assert.DoesNotContain("200;50m", rendered);
     }
 
     [Fact]
@@ -433,7 +444,25 @@ public partial class TerminalTabViewModelTests
         session.SimulateDataReceived(chunk2);
 
         // Assert
-        Assert.NotNull(vm.TerminalModel);
+        var rendered = ReadRenderedTerminalText(vm, 3);
+        Assert.Contains("# Heading Title", rendered);
+        Assert.Contains("Paragraph text after heading", rendered);
+        Assert.DoesNotContain("0mParagraph", rendered);
+    }
+
+    private static string ReadRenderedTerminalText(TerminalTabViewModel vm, int lineCount)
+    {
+        var buffer = ((SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel).Terminal.Buffer;
+        var sb = new StringBuilder();
+        for (int i = 0; i < lineCount; i++)
+        {
+            var line = buffer.GetLine(buffer.YDisp + i)?.TranslateToString(true);
+            if (!string.IsNullOrEmpty(line))
+            {
+                sb.AppendLine(line);
+            }
+        }
+        return sb.ToString();
     }
 
     [Fact]
