@@ -79,6 +79,8 @@ public class LinkDetectionHelperTests
     [Theory]
     [InlineData("Program.cs:42", "Program.cs")]
     [InlineData("Services/Test.cs:100:5", "Services/Test.cs")]
+    [InlineData("Services/Test.cs(100,5)", "Services/Test.cs")]
+    [InlineData(@"C:\Repo\Program.cs(42,15", @"C:\Repo\Program.cs")]
     [InlineData(@"C:\Repo\File.txt", @"C:\Repo\File.txt")]
     public void StripLineNumberSuffix_StripsOffsetsCorrectly(string input, string expected)
     {
@@ -249,6 +251,13 @@ public class LinkDetectionHelperTests
             capturedPsi = null;
             Assert.False(LinkDetectionHelper.OpenTarget("file://evil-server/share/payload.exe"));
             Assert.Null(capturedPsi);
+
+            // ExtractAllLinks must highlight verified local file:// URIs and MSBuild (line,col) paths,
+            // while ignoring remote or non-existent file:// URIs.
+            Assert.Empty(LinkDetectionHelper.ExtractAllLinks("file://evil-server/share/payload.exe"));
+            Assert.Empty(LinkDetectionHelper.ExtractAllLinks("file:///C:/non_existent_multishell_file_12345.txt"));
+            Assert.Single(LinkDetectionHelper.ExtractAllLinks($"See {fileUri} for details"));
+            Assert.Single(LinkDetectionHelper.ExtractAllLinks($"{scriptFile}(12,4): warning CS0168"));
         }
         finally
         {
