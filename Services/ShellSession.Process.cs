@@ -16,6 +16,7 @@ public sealed partial class ShellSession
     private void StartProcessAttachedToPseudoConsole(WindowsPseudoConsoleSafeHandle pseudoConsole, string? workingDir)
     {
         IntPtr attributeList = IntPtr.Zero;
+        bool attributeListInitialized = false;
         IntPtr commandLine = IntPtr.Zero;
         IntPtr environmentBlock = IntPtr.Zero;
         SafeFileHandle? processHandle = null;
@@ -25,9 +26,13 @@ public sealed partial class ShellSession
         {
             var size = IntPtr.Zero;
             NativeMethods.InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref size);
+            if (size == IntPtr.Zero)
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+
             attributeList = Marshal.AllocHGlobal(size);
             if (!NativeMethods.InitializeProcThreadAttributeList(attributeList, 1, 0, ref size))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
+            attributeListInitialized = true;
 
             if (!NativeMethods.UpdateProcThreadAttribute(attributeList, 0, (IntPtr)NativeMethods.PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, pseudoConsole.DangerousGetHandle(), (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -78,13 +83,28 @@ public sealed partial class ShellSession
 
             processHandle = new SafeFileHandle(processInfo.hProcess, ownsHandle: true);
             threadHandle = new SafeFileHandle(processInfo.hThread, ownsHandle: true);
-            _process = Process.GetProcessById(processInfo.dwProcessId);
+            try
+            {
+                _process = Process.GetProcessById(processInfo.dwProcessId);
+            }
+            catch (ArgumentException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ShellSession.StartProcess] Child process {processInfo.dwProcessId} exited immediately: {ex.Message}");
+                _process = null;
+            }
         }
         finally
         {
             threadHandle?.Dispose();
             processHandle?.Dispose();
-            if (attributeList != IntPtr.Zero) { NativeMethods.DeleteProcThreadAttributeList(attributeList); Marshal.FreeHGlobal(attributeList); }
+            if (attributeList != IntPtr.Zero)
+            {
+                if (attributeListInitialized)
+                {
+                    NativeMethods.DeleteProcThreadAttributeList(attributeList);
+                }
+                Marshal.FreeHGlobal(attributeList);
+            }
             if (commandLine != IntPtr.Zero) Marshal.FreeHGlobal(commandLine);
             if (environmentBlock != IntPtr.Zero) Marshal.FreeHGlobal(environmentBlock);
         }

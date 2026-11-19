@@ -19,12 +19,12 @@ public sealed partial class ShellSession : IShellSession
     private FileStream? _outputStream;
     private Process? _process;
     private CancellationTokenSource? _lifetimeCancellation;
-    private bool _isDisposed;
+    private int _disposed;
+    private volatile bool _isRunning;
     private (int cols, int rows)? _lastResize;
     private readonly Lock _syncRoot = new();
     private readonly Lock _inputWriteLock = new();
     private readonly string? _initialWorkingDirectory;
-    private string? _lastExecutedCommand;
     private readonly ShellType _shellType;
     private readonly string? _customExecutable;
     private readonly string? _customArguments;
@@ -33,7 +33,7 @@ public sealed partial class ShellSession : IShellSession
     public string Title { get; }
     public string? WorkingDirectory { get; private set; }
     public ShellType ShellType => _shellType;
-    public bool IsRunning { get; private set; }
+    public bool IsRunning => _isRunning;
 
     public event Action<ReadOnlyMemory<byte>>? DataReceived;
     public event Action<int>? Exited;
@@ -66,7 +66,8 @@ public sealed partial class ShellSession : IShellSession
 
     public void Start()
     {
-        if (IsRunning) return;
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+        if (_isRunning) return;
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("ConPTY is only available on Windows.");
         if (!NativeMethods.CreatePipePair(out var inputReadHandle, out var inputWriteHandle)) throw new Win32Exception(Marshal.GetLastWin32Error());
         if (!NativeMethods.CreatePipePair(out var outputReadHandle, out var outputWriteHandle))
@@ -78,14 +79,16 @@ public sealed partial class ShellSession : IShellSession
 
         try
         {
+            // Transfer ownership of host-side pipe handles immediately so Dispose() always cleans them up on failure
+            _inputWriteHandle = inputWriteHandle;
+            _outputReadHandle = outputReadHandle;
+
             NativeMethods.ClearHandleInheritance(inputWriteHandle);
             NativeMethods.ClearHandleInheritance(outputReadHandle);
             var result = NativeMethods.CreatePseudoConsole(new Coord(120, 30), inputReadHandle.DangerousGetHandle(), outputWriteHandle.DangerousGetHandle(), 0, out var pseudoConsoleHandle);
             if (result != 0) Marshal.ThrowExceptionForHR(result);
 
             _pseudoConsole = new WindowsPseudoConsoleSafeHandle(pseudoConsoleHandle);
-            _inputWriteHandle = inputWriteHandle;
-            _outputReadHandle = outputReadHandle;
 
             inputReadHandle.Dispose();
             outputWriteHandle.Dispose();
@@ -96,7 +99,7 @@ public sealed partial class ShellSession : IShellSession
             _outputStream = new FileStream(_outputReadHandle, FileAccess.Read, 4096, isAsync: false);
             _lifetimeCancellation = new CancellationTokenSource();
 
-            IsRunning = true;
+            _isRunning = true;
             _ = Task.Run(() => PumpOutput(_outputStream, _lifetimeCancellation.Token));
             _ = WaitForExitAsync(_lifetimeCancellation.Token);
         }
@@ -111,11 +114,13 @@ public sealed partial class ShellSession : IShellSession
 
     public void Send(byte[] input)
     {
+        if (Volatile.Read(ref _disposed) != 0) return;
+
         try
         {
             lock (_inputWriteLock)
             {
-                if (_inputStream?.CanWrite != true) return;
+                if (Volatile.Read(ref _disposed) != 0 || _inputStream?.CanWrite != true) return;
                 _inputStream.Write(input, 0, input.Length);
                 _inputStream.Flush();
             }
@@ -128,55 +133,121 @@ public sealed partial class ShellSession : IShellSession
     {
         lock (_syncRoot)
         {
+            if (Volatile.Read(ref _disposed) != 0) return;
             cols = Math.Clamp(cols, 1, short.MaxValue);
             rows = Math.Clamp(rows, 1, short.MaxValue);
             if (_lastResize.HasValue && _lastResize.Value == (cols, rows)) return;
             _lastResize = (cols, rows);
-            if (_pseudoConsole == null || _pseudoConsole.IsClosed || _pseudoConsole.IsInvalid) return;
-            NativeMethods.ResizePseudoConsole(_pseudoConsole.DangerousGetHandle(), new Coord((short)cols, (short)rows));
+
+            var pty = _pseudoConsole;
+            if (pty == null || pty.IsClosed || pty.IsInvalid) return;
+
+            bool refAdded = false;
+            try
+            {
+                pty.DangerousAddRef(ref refAdded);
+                if (refAdded)
+                {
+                    NativeMethods.ResizePseudoConsole(pty.DangerousGetHandle(), new Coord((short)cols, (short)rows));
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // ConPTY handle was closed concurrently during shutdown
+            }
+            finally
+            {
+                if (refAdded)
+                {
+                    pty.DangerousRelease();
+                }
+            }
         }
     }
 
     private async Task WaitForExitAsync(CancellationToken ct)
     {
-        if (_process == null) return;
+        var process = _process;
+        if (process == null) return;
         try
         {
-            await _process.WaitForExitAsync(ct).ConfigureAwait(false);
-            int exitCode = _process.ExitCode;
-            IsRunning = false;
+            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            if (Volatile.Read(ref _disposed) != 0) return;
+            int exitCode = process.ExitCode;
+            _isRunning = false;
             Exited?.Invoke(exitCode);
         }
-        catch (OperationCanceledException) { }
+        catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException or InvalidOperationException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ShellSession.WaitForExitAsync] Exit wait ended: {ex.Message}");
+        }
     }
 
     public void Dispose()
     {
-        if (_isDisposed) return;
-        _isDisposed = true;
-        IsRunning = false;
-        _lifetimeCancellation?.Cancel();
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        _isRunning = false;
 
-        // 1. Close ConPTY handle first so that any pending Read on the output pipe breaks with EOF immediately
-        _pseudoConsole?.Dispose();
-
-        // 2. Kill the shell process tree and wait briefly for clean exit
         try
         {
-            _process?.Kill(entireProcessTree: true);
-            _process?.WaitForExit(500);
+            _lifetimeCancellation?.Cancel();
         }
-        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException or ObjectDisposedException)
+        catch (ObjectDisposedException) { }
+
+        // 1. Close ConPTY handle under _syncRoot so concurrent Resize() calls cannot use a freed handle
+        WindowsPseudoConsoleSafeHandle? ptyToDispose;
+        lock (_syncRoot)
         {
-            System.Diagnostics.Debug.WriteLine($"[ShellSession.Dispose] Process termination ignored: {ex.Message}");
+            ptyToDispose = _pseudoConsole;
+            _pseudoConsole = null;
+        }
+        ptyToDispose?.Dispose();
+
+        // 2. Kill the shell process tree immediately and offload brief exit wait + handle disposal
+        //    so closing tabs/windows never stalls the UI thread.
+        var processToCleanup = Interlocked.Exchange(ref _process, null);
+        if (processToCleanup != null)
+        {
+            try
+            {
+                processToCleanup.Kill(entireProcessTree: true);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or NotSupportedException or ObjectDisposedException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ShellSession.Dispose] Process termination ignored: {ex.Message}");
+            }
+
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    processToCleanup.WaitForExit(500);
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or NotSupportedException or ObjectDisposedException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ShellSession.Dispose] Background WaitForExit ignored: {ex.Message}");
+                }
+                finally
+                {
+                    processToCleanup.Dispose();
+                }
+            });
         }
 
-        // 3. Close streams and pipe handles cleanly
-        _inputStream?.Dispose();
+        // 3. Close input stream/handle under _inputWriteLock and remaining handles cleanly
+        lock (_inputWriteLock)
+        {
+            _inputStream?.Dispose();
+            _inputStream = null;
+            _inputWriteHandle?.Dispose();
+            _inputWriteHandle = null;
+        }
+
         _outputStream?.Dispose();
-        _inputWriteHandle?.Dispose();
+        _outputStream = null;
         _outputReadHandle?.Dispose();
-        _process?.Dispose();
+        _outputReadHandle = null;
         _lifetimeCancellation?.Dispose();
+        _lifetimeCancellation = null;
     }
 }

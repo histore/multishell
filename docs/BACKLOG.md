@@ -54,9 +54,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/LinkDetectionHelper.cs`, `ViewModels/Panes/TerminalPaneViewModel.cs`
 - **Summary**: (1) `IsSafeLocalPath` only checks `\\`, allowing forward-slash `//server/share` UNC paths to trigger outbound SMB/NetNTLM leaks; (2) `TerminalPaneViewModel.PasteText` embeds raw clipboard text into `\x1b[200~...\x1b[201~` without stripping `\x1b[201~` (bracketed paste breakout); (3) `TryResolveFilePath` resolves relative paths against the host process CWD before the tab's `workingDirectory`; (4) dangerous ShellExecute extensions (`.url`, `.chm`, `.scf`, `.py`, `.pyw`, `.msix`, `.appx`, `.iso`, `.vhd`, `.settingcontent-ms`, `.library-ms`) are missing from `ExecutableExtensions`, and `file://` URLs detected by `ExtractAllLinks` silently fail in `OpenTarget`.
 
-#### `[BL-HIGH-002]` Fix Win32 ConPTY Handle Leaks, Use-After-Close Races & Blocking Disposal in `ShellSession`
+#### `[BL-HIGH-002]` Fix Win32 ConPTY Handle Leaks, Use-After-Close Races & Blocking Disposal in `ShellSession` — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (transferred pipe handle ownership prior to `CreatePseudoConsole`, synchronized `_pseudoConsole` disposal with `Resize()` via `_syncRoot` + `DangerousAddRef`/`DangerousRelease`, guarded `DeleteProcThreadAttributeList` initialization, handled immediate-exit PID/WaitForExit races, offloaded `WaitForExit(500)` cleanup, and invoked OSC events outside `_oscBufferLock`)
 - **Scope**: `Services/ShellSession.cs`, `Services/ShellSession.Process.cs`, `Services/ShellSession.Streams.cs`
 - **Summary**: (1) `CreatePseudoConsole` failure leaks `inputWriteHandle` and `outputReadHandle`; (2) `Dispose()` releases `_pseudoConsole` and `_inputStream` without acquiring `_syncRoot` / `_inputWriteLock` or atomic disposal state, racing with `Resize()`; (3) `finally` calls `DeleteProcThreadAttributeList` even if initialization failed; (4) `Process.GetProcessById` races with immediate exit and `WaitForExitAsync` misses `ObjectDisposedException`; (5) synchronous `_process.WaitForExit(500)` can stall the UI thread; (6) OSC events are invoked while holding `_oscBufferLock`.
 
