@@ -108,9 +108,13 @@ public sealed partial class ShellSession
             int actualChars = _oscDecoder.GetChars(data, rentedChars, flush: false);
             if (actualChars <= 0) return;
 
-            // Fast-path: if no partial OSC buffer exists and the decoded chunk has no ESC byte,
-            // skip StringBuilder allocation and all 4 regex scans.
-            if (_oscBuffer.Length == 0 && rentedChars.AsSpan(0, actualChars).IndexOf('\x1b') < 0)
+            var decodedSpan = rentedChars.AsSpan(0, actualChars);
+
+            // Fast-path: if no partial OSC buffer exists and the decoded chunk contains neither an OSC introducer ("\x1b]")
+            // nor a trailing ESC byte that could start one on the next chunk, skip StringBuilder allocation and all 4 regex scans.
+            if (_oscBuffer.Length == 0 &&
+                decodedSpan.IndexOf("\x1b]", StringComparison.Ordinal) < 0 &&
+                decodedSpan[^1] != '\x1b')
             {
                 return;
             }
@@ -120,19 +124,62 @@ public sealed partial class ShellSession
             var currentBuffer = _oscBuffer.ToString();
             int lastProcessedIndex = ProcessOscMatches(currentBuffer, ref completedCodes, ref executedCommands, ref directoryUpdate);
 
-            if (lastProcessedIndex > 0)
-            {
-                _oscBuffer.Remove(0, lastProcessedIndex);
-            }
-            else if (_oscBuffer.Length > 8192)
-            {
-                _oscBuffer.Remove(0, 4096);
-            }
+            TrimCompletedOscBuffer(currentBuffer, lastProcessedIndex);
         }
         finally
         {
             ArrayPool<char>.Shared.Return(rentedChars);
         }
+    }
+
+    private void TrimCompletedOscBuffer(string currentBuffer, int lastProcessedIndex)
+    {
+        var remaining = currentBuffer.AsSpan(Math.Max(0, lastProcessedIndex));
+        int keepOffset = FindUnterminatedOscStartIndex(remaining);
+
+        if (keepOffset < 0)
+        {
+            _oscBuffer.Clear();
+            return;
+        }
+
+        var tailToKeep = remaining[keepOffset..];
+        if (tailToKeep.Length > 4096)
+        {
+            // Guard against unbounded growth on malformed/unterminated OSC sequences
+            _oscBuffer.Clear();
+            return;
+        }
+
+        int absoluteKeepIndex = Math.Max(0, lastProcessedIndex) + keepOffset;
+        if (absoluteKeepIndex > 0)
+        {
+            _oscBuffer.Remove(0, absoluteKeepIndex);
+        }
+    }
+
+    private static int FindUnterminatedOscStartIndex(ReadOnlySpan<char> span)
+    {
+        if (span.IsEmpty) return -1;
+
+        int lastOscIntro = span.LastIndexOf("\x1b]", StringComparison.Ordinal);
+        if (lastOscIntro >= 0)
+        {
+            var afterIntro = span[(lastOscIntro + 2)..];
+            bool hasBelTerminator = afterIntro.IndexOf('\x07') >= 0;
+            bool hasStTerminator = afterIntro.IndexOf("\x1b\\", StringComparison.Ordinal) >= 0;
+            if (!hasBelTerminator && !hasStTerminator)
+            {
+                return lastOscIntro;
+            }
+        }
+
+        if (span[^1] == '\x1b')
+        {
+            return span.Length - 1;
+        }
+
+        return -1;
     }
 
     private int ProcessOscMatches(
