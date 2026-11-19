@@ -303,29 +303,17 @@
                         <Border x:Name="LeftEdgeFade"
                                 HorizontalAlignment="Left"
                                 Width="20"
+                                Background="{DynamicResource AppHeaderLeftFadeBrush}"
                                 IsHitTestVisible="False"
-                                IsVisible="False">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
-                                    <GradientStop Offset="0.0" Color="#B30C0D12" />
-                                    <GradientStop Offset="1.0" Color="#000C0D12" />
-                                </LinearGradientBrush>
-                            </Border.Background>
-                        </Border>
+                                IsVisible="False" />
 
                         <!-- Right Edge Gradient Indicator -->
                         <Border x:Name="RightEdgeFade"
                                 HorizontalAlignment="Right"
                                 Width="20"
+                                Background="{DynamicResource AppHeaderRightFadeBrush}"
                                 IsHitTestVisible="False"
-                                IsVisible="False">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
-                                    <GradientStop Offset="0.0" Color="#000C0D12" />
-                                    <GradientStop Offset="1.0" Color="#B30C0D12" />
-                                </LinearGradientBrush>
-                            </Border.Background>
-                        </Border>
+                                IsVisible="False" />
                     </Grid>
 
                     <!-- Right Scroll Arrow Button (placed immediately left of Add Tab button) -->

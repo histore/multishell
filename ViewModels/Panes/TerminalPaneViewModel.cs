@@ -20,6 +20,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private const string LightTerminalCaret = "#2563EB";
     private const string ActiveBorderAccentBrush = "#3B82F6";
     private const string InactiveBorderSubtleBrush = "#252836";
+    private const string LightInactiveBorderSubtleBrush = "#CBD1E1";
 
     private readonly TerminalUiFeedCoordinator _uiFeedCoordinator = new();
     private readonly Lock _silenceTimerLock = new();
@@ -63,6 +64,7 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private bool _isActive;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(BorderBrush))]
     private bool _isDarkTerminalTheme = true;
 
     [ObservableProperty]
@@ -109,7 +111,9 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         ? TerminalTabViewModel.FormatMiddleEllipsis(WorkingDirectory, 24)
         : (!string.IsNullOrWhiteSpace(Title) ? Title : Session.Title);
 
-    public string BorderBrush => IsActive ? ((Tab.HasTabColor && Tab.TabColorBrush != null) ? Tab.TabColorBrush : ActiveBorderAccentBrush) : InactiveBorderSubtleBrush;
+    public string BorderBrush => IsActive
+        ? ((Tab.HasTabColor && Tab.TabColorBrush != null) ? Tab.TabColorBrush : ActiveBorderAccentBrush)
+        : (IsDarkTerminalTheme ? InactiveBorderSubtleBrush : LightInactiveBorderSubtleBrush);
     public double BorderThickness => IsActive ? 1.5 : 1.0;
 
     public event Action? FocusSearchBoxRequested;

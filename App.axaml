@@ -38,6 +38,14 @@
                     <SolidColorBrush x:Key="AppDanger">#F7768E</SolidColorBrush>
                     <SolidColorBrush x:Key="AppDangerSubtle">#26F7768E</SolidColorBrush>
                     <SolidColorBrush x:Key="AppModalOverlay">#55000000</SolidColorBrush>
+                    <LinearGradientBrush x:Key="AppHeaderLeftFadeBrush" StartPoint="0%,50%" EndPoint="100%,50%">
+                        <GradientStop Offset="0.0" Color="#B30C0D12" />
+                        <GradientStop Offset="1.0" Color="#000C0D12" />
+                    </LinearGradientBrush>
+                    <LinearGradientBrush x:Key="AppHeaderRightFadeBrush" StartPoint="0%,50%" EndPoint="100%,50%">
+                        <GradientStop Offset="0.0" Color="#000C0D12" />
+                        <GradientStop Offset="1.0" Color="#B30C0D12" />
+                    </LinearGradientBrush>
 
                     <!-- SvcSystems.UI.Terminal Dark Xterm Color Palette -->
                     <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor0">#0E0F15</SolidColorBrush>
@@ -81,6 +89,14 @@
                     <SolidColorBrush x:Key="AppDanger">#DC2626</SolidColorBrush>
                     <SolidColorBrush x:Key="AppDangerSubtle">#20DC2626</SolidColorBrush>
                     <SolidColorBrush x:Key="AppModalOverlay">#33000000</SolidColorBrush>
+                    <LinearGradientBrush x:Key="AppHeaderLeftFadeBrush" StartPoint="0%,50%" EndPoint="100%,50%">
+                        <GradientStop Offset="0.0" Color="#B3E2E5EE" />
+                        <GradientStop Offset="1.0" Color="#00E2E5EE" />
+                    </LinearGradientBrush>
+                    <LinearGradientBrush x:Key="AppHeaderRightFadeBrush" StartPoint="0%,50%" EndPoint="100%,50%">
+                        <GradientStop Offset="0.0" Color="#00E2E5EE" />
+                        <GradientStop Offset="1.0" Color="#B3E2E5EE" />
+                    </LinearGradientBrush>
 
                     <!-- SvcSystems.UI.Terminal Light Xterm Color Palette -->
                     <SolidColorBrush x:Key="SvcSystems.UI.TerminalColor0">#F8F9FC</SolidColorBrush>
