@@ -230,9 +230,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Services/ShellSession.Streams.cs`
 - **Summary**: Clear `_oscBuffer` after `ProcessOscMatches` when no incomplete `\x1b]` OSC prefix remains at the end of the buffer, and narrow the initial fast-path check to `\x1b]` (or trailing `\x1b`), preventing ordinary CSI color/cursor sequences from permanently disabling the fast-path.
 
-#### `[BL-HIGH-014]` (`REV2-HIGH-007`) Fix Invalid `<property>` Trimmer Element in `ILLink.Descriptors.xml` & Sync `CHANGELOG.md` / `.arch-sync.json`
+#### `[BL-HIGH-014]` (`REV2-HIGH-007`) Fix Invalid `<property>` Trimmer Element in `ILLink.Descriptors.xml` & Sync `CHANGELOG.md` / `.arch-sync.json` — **DONE**
 - **Criticality**: `High`
-- **Status**: `OPEN`
+- **Status**: `DONE` (replaced unsupported `<property name="TrackingMode" />` in `ILLink.Descriptors.xml` with `preserve="all"` and explicit `get_TrackingMode`/`set_TrackingMode` methods, documented releases `v0.27.0` through `v0.28.0` in `CHANGELOG.md`, and synchronized `docs/architecture/.arch-sync.json`)
 - **Scope**: `ILLink.Descriptors.xml`, `CHANGELOG.md`, `docs/architecture/.arch-sync.json`
 - **Summary**: Replace the unsupported `<property name="TrackingMode" />` element under `XTerm.Input.MouseTracker` in `ILLink.Descriptors.xml` with `<method name="get_TrackingMode" />` / `<method name="set_TrackingMode" />` (or `preserve="all"`), document releases `v0.27.0`..`v0.28.0` in `CHANGELOG.md`, and advance `docs/architecture/.arch-sync.json`.
 

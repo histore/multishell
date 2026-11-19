@@ -9,8 +9,9 @@
     <type fullname="XTerm.Terminal">
       <field name="_mouseTracker" />
     </type>
-    <type fullname="XTerm.Input.MouseTracker">
-      <property name="TrackingMode" />
+    <type fullname="XTerm.Input.MouseTracker" preserve="all">
+      <method name="get_TrackingMode" />
+      <method name="set_TrackingMode" />
     </type>
   </assembly>
 </linker>

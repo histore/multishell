@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.28.0] - 2026-11-19
+
+### Added
+- Add Italian (`it`) and Portuguese (`pt`) installer languages to `installer.iss` (`BL-LOW-003`).
+- Package `LICENSE` and `THIRD_PARTY_NOTICES.md` into build output and publish archives (`BL-MED-006`), and publish framework-dependent single-file zip archive in `release.yml` (`REQ-REL-003`, `BL-HIGH-007`).
+
+### Changed
+- Migrate all remaining Win32 P/Invoke declarations to `[LibraryImport]`, decouple `ThemeService`, and centralize UI service composition defaults (`BL-MED-007`).
+- Migrate hot-path OSC, ANSI, and URL regexes to source-generated `[GeneratedRegex]` and add an ESC-free fast-path in `ShellSession.Streams` (`BL-LOW-001`).
+- Extract shared `StoragePickerHelper` and `ClipboardHelper` in `Views/` and deduplicate string-history filtering in `TerminalTabViewModel.History.cs` (`BL-LOW-005`).
+
+### Fixed
+- Fix split-pane initial session lifecycle and disposal leak (`BL-CRIT-001`) and route in-terminal search overlay commands to the active split pane (`BL-CRIT-002`).
+- Fix `ShellSession` ConPTY handle leaks, disposal races, and locked OSC callback invocations (`BL-HIGH-002`), and marshal execution state updates to the UI thread (`BL-HIGH-003`).
+- Prevent event and visual-tree leaks across tab and split-pane re-attachment (`BL-HIGH-004`), guard `async void` UI handlers, prevent duplicate tab archiving, and forward satellite window DI dependencies (`BL-HIGH-005`).
+- Preserve reflected `SvcSystems.UI.Terminal` and `XTerm.NET` members for NativeAOT trimming (`BL-HIGH-006`) and define missing theme resources and localized secondary window titles (`BL-HIGH-007`).
+- Prevent persistence `.tmp` file collisions, debounce workspace saves, and guard async profile loading (`BL-MED-001`).
+- Prune evicted commands from global history (`BL-MED-004`), define `Button.tabMenuItemBtn` style, localize remaining UI strings (`BL-MED-005`), and replace bare catch blocks with targeted exception filters (`BL-MED-008`).
+- Dispose `Process.Start` handles, resolve `explorer.exe` via `%SystemRoot%` (`BL-LOW-002`), prune 16 unused i18n keys, and harmonize localized modifier names (`BL-LOW-003`).
+- Use monotonic `_tabCounter` for new tab titles and cache zoomed `LeafPaneNodeViewModel` in `DisplayRootNode` (`BL-LOW-006`).
+
+### Security
+- Harden UNC link validation, tab CWD priority, `file://` URI handling, and bracketed paste sanitization (`BL-HIGH-001`).
+- Harden `SingleInstanceService` named-pipe framing, client ACL/impersonation security, and shutdown ordering (`BL-MED-002`).
+- Prioritize `System32` for built-in shells and apply Win32 argument escaping to custom executables (`BL-MED-003`).
+
+## [v0.27.4] - 2026-11-13
+
+### Changed
+- Decouple ViewModels from Avalonia and `TerminalControlModel` via `IDispatcherService` and `ITerminalModelAdapter` (`BL-ARCH-001`).
+- Replace broad silent catch blocks with targeted exception filters (`BL-QUAL-001`), use `ProcessStartInfo.ArgumentList` in `LinkDetectionHelper` (`BL-QUAL-002`), and consolidate streaming/UI-feed buffering via `TerminalUiFeedCoordinator` (`BL-QUAL-003`).
+
+## [v0.27.3] - 2026-11-12
+
+### Fixed
+- Enforce UI-thread marshaling, timer reuse, and Win32 quote escaping across ViewModels and Services.
+
+## [v0.27.2] - 2026-11-12
+
+### Fixed
+- Fix event subscription leaks, WSL root directory quoting, and localized execution status badges.
+
+## [v0.27.1] - 2026-11-12
+
+### Changed
+- Decouple `PathColorCodingService` from Avalonia types, modularize ViewModels and Views under 500 lines, and enforce C# 13 `Lock` primitives.
+
+## [v0.27.0] - 2026-11-10
+
+### Added
+- Multi-window tab undocking (`Ctrl+Shift+U`), cross-window tab drag & drop, and primary/secondary window lifecycle coordination (`REQ-TAB-026`).
+
 ## [v0.26.1] - 2026-11-02
 
 ### Fixed
