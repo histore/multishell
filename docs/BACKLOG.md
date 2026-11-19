@@ -124,9 +124,9 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Scope**: `Styles/TabStyles.axaml`, `Views/MainWindow.axaml.cs`, `Views/Dialogs/ProfilesModalView.axaml`, `Views/Dialogs/AboutModalView.axaml`, `Views/Dialogs/HelpModalView.axaml`, `Views/Controls/SettingsMenuButton.axaml`, `ViewModels/TerminalTabViewModel.cs`, `Services/WindowsToastNotificationService.cs`
 - **Summary**: `Classes="tabMenuItemBtn"` is applied in 10 places without a matching style rule; hardcoded strings remain in file picker filters, shell type dropdowns, shortcut labels, and terminal error/exit notices.
 
-#### `[BL-MED-006]` Bundle `LICENSE` and `THIRD_PARTY_NOTICES.md` into Release Packages (OFL-1.1 Compliance)
+#### `[BL-MED-006]` Bundle `LICENSE` and `THIRD_PARTY_NOTICES.md` into Release Packages (OFL-1.1 Compliance) — **DONE**
 - **Criticality**: `Medium`
-- **Status**: `OPEN`
+- **Status**: `DONE` (configured `MultiShell.csproj` to copy `LICENSE` and `THIRD_PARTY_NOTICES.md` to build and publish outputs used by Inno Setup, Portable ZIP, and Framework-Dependent ZIP)
 - **Scope**: `.github/workflows/release.yml`, `installer.iss`, `MultiShell.csproj`
 - **Summary**: Published directories, portable ZIPs, and installed directories omit `LICENSE` and `THIRD_PARTY_NOTICES.md` despite bundling `FiraCodeNerdFontMono-Regular.ttf` (OFL-1.1).
 
