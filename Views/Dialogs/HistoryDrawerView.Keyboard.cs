@@ -128,17 +128,7 @@ public partial class HistoryDrawerView
         var next = (HistoryTabControl.SelectedIndex + delta + 3) % 3;
         HistoryTabControl.SelectedIndex = next;
 
-        var hasFilter = false;
-        if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-        {
-            hasFilter = next switch
-            {
-                1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-            };
-        }
-        FocusActiveHistoryList(selectLastItem: !hasFilter);
+        FocusActiveHistoryList(selectFirstItem: true, selectLastItem: false);
         e.Handled = true;
         return true;
     }
@@ -170,17 +160,7 @@ public partial class HistoryDrawerView
             int delta = e.Key == Key.Left ? -1 : 1;
             var next = (HistoryTabControl.SelectedIndex + delta + 3) % 3;
             HistoryTabControl.SelectedIndex = next;
-            var hasFilter = false;
-            if (DataContext is MainViewModel vm && vm.SelectedTab != null)
-            {
-                hasFilter = next switch
-                {
-                    1 => !string.IsNullOrWhiteSpace(vm.SelectedTab.DirectoryFilterQuery),
-                    2 => !string.IsNullOrWhiteSpace(vm.SelectedTab.GlobalFilterQuery),
-                    _ => !string.IsNullOrWhiteSpace(vm.SelectedTab.CommandFilterQuery)
-                };
-            }
-            FocusActiveHistoryList(selectLastItem: !hasFilter);
+            FocusActiveHistoryList(selectFirstItem: true, selectLastItem: false);
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)
