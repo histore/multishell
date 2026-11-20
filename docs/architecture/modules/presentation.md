@@ -31,6 +31,8 @@ Services/
 ├── UiFrameworkInfo.cs                 # UI framework metadata & hex color validation
 ├── TerminalTextFormatter.cs           # Path middle-ellipsis truncation & clipboard text cleaning
 ├── KeyboardStateHelper.cs             # Native Windows keyboard state reader (CapsLock, etc.)
+├── IPlatformService.cs                # Platform integration abstraction (CapsLock, foreground window, URL launch)
+├── WindowsPlatformService.cs          # Default Windows/cross-platform IPlatformService implementation
 └── FileBrowserHelper.cs               # Platform-native file manager launcher (Windows Explorer, Finder, xdg-open)
 
 ViewModels/

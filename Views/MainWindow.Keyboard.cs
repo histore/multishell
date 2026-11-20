@@ -15,20 +15,60 @@ public partial class MainWindow
     private bool IsAnyModalOpen()
         => HelpModal?.IsVisible == true || AboutModal?.IsVisible == true || ProfilesModal?.IsVisible == true;
 
+    private static bool IsWindowKeyBindingGesture(KeyEventArgs e)
+    {
+        var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+        var isCtrlShift = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == (KeyModifiers.Control | KeyModifiers.Shift);
+        if (!isAlt && isCtrlShift && e.Key is Key.T or Key.D or Key.U or Key.W or Key.F4 or Key.K)
+        {
+            return true;
+        }
+        var isAltShift = (e.KeyModifiers & (KeyModifiers.Alt | KeyModifiers.Shift)) == (KeyModifiers.Alt | KeyModifiers.Shift);
+        if (isAltShift && e.Key is Key.Right or Key.V or Key.Down or Key.H or Key.Z)
+        {
+            return true;
+        }
+        return e.Key == Key.F6;
+    }
+
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
         if (TryHandleTabSwitcherKeyDown(e)) return;
+        if (DataContext is MainViewModel switcherCheckVm && switcherCheckVm.IsTabSwitcherOpen)
+        {
+            if (IsWindowKeyBindingGesture(e)) e.Handled = true;
+            return;
+        }
+
         if (TryHandleActiveTabRenameKeyDown(e)) return;
+        if (DataContext is MainViewModel renameCheckVm && renameCheckVm.SelectedTab?.IsRenaming == true)
+        {
+            if (IsWindowKeyBindingGesture(e)) e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape && TryHandleEscapeKeyDown())
         {
             e.Handled = true;
             return;
         }
 
-        if (IsAnyModalOpen()) return;
+        if (IsAnyModalOpen())
+        {
+            if (IsWindowKeyBindingGesture(e)) e.Handled = true;
+            return;
+        }
+
+        if (HistoryDrawer?.IsDrawerOpen == true)
+        {
+            if (!HistoryDrawer.HandleKeyDown(e) && IsWindowKeyBindingGesture(e))
+            {
+                e.Handled = true;
+            }
+            return;
+        }
 
         if (TryHandleCtrlShiftActionKeyDown(e)) return;
-        if (HistoryDrawer?.IsDrawerOpen == true && HistoryDrawer.HandleKeyDown(e)) return;
         if (TryHandleFunctionKeyDown(e)) return;
 
         TryHandleTabManagementKeyDown(e);

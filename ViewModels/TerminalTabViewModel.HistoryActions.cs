@@ -16,12 +16,29 @@ public partial class TerminalTabViewModel
         if (string.IsNullOrWhiteSpace(command)) return;
 
         var clean = command.Trim();
-        MarkCommandStarted(clean);
-        _pendingCommandDirectory = WorkingDirectory;
-        if (ShellType != ShellType.PowerShell)
+        var pane = ActivePane;
+        var activeDir = !string.IsNullOrWhiteSpace(pane?.WorkingDirectory) ? pane.WorkingDirectory : WorkingDirectory;
+        var activeShell = pane?.ShellType ?? ShellType;
+        MarkCommandStarted(clean, pane);
+        if (pane != null)
         {
-            OnSessionCommandExecuted(clean);
-            CheckForDirectoryChangeCommand(clean);
+            pane.PendingCommandDirectory = activeDir;
+        }
+        if (pane == null || ReferenceEquals(pane, _initialPane))
+        {
+            _pendingCommandDirectory = activeDir;
+        }
+        if (activeShell != ShellType.PowerShell)
+        {
+            if (pane != null && !ReferenceEquals(pane, _initialPane))
+            {
+                HandlePaneCommandExecuted(pane, clean);
+            }
+            else
+            {
+                OnSessionCommandExecuted(clean);
+            }
+            CheckForDirectoryChangeCommand(clean, pane);
         }
 
         var commandWithEnter = clean.EndsWith('\r') || clean.EndsWith('\n') ? clean : clean + "\r";
@@ -49,9 +66,11 @@ public partial class TerminalTabViewModel
         if (string.IsNullOrWhiteSpace(directory)) return;
 
         string command = BuildDirectoryNavigationCommand(directory, appendSubmitNewline: true);
-        if (ShellType != ShellType.PowerShell)
+        var pane = ActivePane;
+        var activeShell = pane?.ShellType ?? ShellType;
+        if (activeShell != ShellType.PowerShell)
         {
-            CheckForDirectoryChangeCommand(command.Trim());
+            CheckForDirectoryChangeCommand(command.Trim(), pane);
         }
 
         ActiveSession.Send(Encoding.UTF8.GetBytes(command));

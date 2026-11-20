@@ -115,8 +115,11 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         {
             if (newVm != null)
             {
-                newVm.DetachTab(tab);
                 UnregisterWindow(newVm);
+                if (newVm is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
             }
             sourceWindow.AttachTab(tab);
             throw;

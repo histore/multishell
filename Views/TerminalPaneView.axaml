@@ -60,6 +60,7 @@
                     </Border.Transitions>
                     <StackPanel Orientation="Horizontal" Spacing="2">
                         <Button x:Name="MiniSplitVBtn"
+                                Focusable="False"
                                 Command="{Binding SplitVerticalCommand}"
                                 ToolTip.Tip="{Binding Tab.Loc[Pane_Split_Right]}"
                                 ToolTip.ShowDelay="150"
@@ -70,6 +71,7 @@
                             <TextBlock Text="◫" VerticalAlignment="Center" HorizontalAlignment="Center" />
                         </Button>
                         <Button x:Name="MiniSplitHBtn"
+                                Focusable="False"
                                 Command="{Binding SplitHorizontalCommand}"
                                 ToolTip.Tip="{Binding Tab.Loc[Pane_Split_Down]}"
                                 ToolTip.ShowDelay="150"
@@ -80,6 +82,7 @@
                             <TextBlock Text="▭" VerticalAlignment="Center" HorizontalAlignment="Center" />
                         </Button>
                         <Button x:Name="MiniZoomBtn"
+                                Focusable="False"
                                 Command="{Binding ToggleZoomCommand}"
                                 ToolTip.Tip="{Binding Tab.Loc[Pane_Zoom]}"
                                 ToolTip.ShowDelay="150"
@@ -93,6 +96,7 @@
                             </Panel>
                         </Button>
                         <Button x:Name="MiniCloseBtn"
+                                Focusable="False"
                                 Command="{Binding CloseCommand}"
                                 ToolTip.Tip="{Binding Tab.Loc[Pane_Close]}"
                                 ToolTip.ShowDelay="150"

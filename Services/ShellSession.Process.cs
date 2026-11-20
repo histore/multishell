@@ -144,7 +144,7 @@ public sealed partial class ShellSession
             _shellType is not (ShellType.PowerShell or ShellType.CMD))
         {
             var args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments}";
-            if (_shellType == ShellType.WSL && !string.IsNullOrWhiteSpace(workingDir) && !args.Contains("--cd"))
+            if (_shellType == ShellType.WSL && !string.IsNullOrWhiteSpace(workingDir) && !ContainsArgumentToken(args, "--cd"))
             {
                 return BuildWslCommandLine(_customExecutable, workingDir, args);
             }
@@ -233,7 +233,7 @@ public sealed partial class ShellSession
             if (!File.Exists(exePath)) exePath = "wsl.exe";
 
             string args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments.Trim()}";
-            if (!string.IsNullOrWhiteSpace(workingDir) && !args.Contains("--cd", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(workingDir) && !ContainsArgumentToken(args, "--cd"))
             {
                 return BuildWslCommandLine(exePath, workingDir, args);
             }
@@ -295,21 +295,44 @@ public sealed partial class ShellSession
         return filtered.Count > 0 ? " " + string.Join(' ', filtered) : string.Empty;
     }
 
+    private static bool ContainsArgumentToken(string commandLine, string targetToken)
+    {
+        foreach (var token in SplitCommandLineArguments(commandLine))
+        {
+            if (token.Equals(targetToken, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static System.Collections.Generic.List<string> SplitCommandLineArguments(string commandLine)
     {
         var tokens = new System.Collections.Generic.List<string>();
         var current = new System.Text.StringBuilder();
         bool inDoubleQuotes = false;
+        bool inSingleQuotes = false;
 
         for (int i = 0; i < commandLine.Length; i++)
         {
             char c = commandLine[i];
-            if (c == '"')
+            if (c == '\\' && inDoubleQuotes && i + 1 < commandLine.Length && commandLine[i + 1] == '"')
+            {
+                current.Append(c);
+                current.Append(commandLine[++i]);
+            }
+            else if (c == '"' && !inSingleQuotes)
             {
                 inDoubleQuotes = !inDoubleQuotes;
                 current.Append(c);
             }
-            else if (char.IsWhiteSpace(c) && !inDoubleQuotes)
+            else if (c == '\'' && !inDoubleQuotes)
+            {
+                inSingleQuotes = !inSingleQuotes;
+                current.Append(c);
+            }
+            else if (char.IsWhiteSpace(c) && !inDoubleQuotes && !inSingleQuotes)
             {
                 if (current.Length > 0)
                 {

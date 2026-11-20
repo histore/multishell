@@ -11,6 +11,7 @@ namespace MultiShell.ViewModels;
 public partial class TerminalTabViewModel
 {
     private readonly ObservableCollection<TerminalPaneViewModel> _panes = new();
+    private TerminalPaneViewModel? _initialPane;
 
     /// <summary>
     /// Gets the collection of all terminal panes currently open in this tab.
@@ -118,6 +119,7 @@ public partial class TerminalTabViewModel
             WorkingDirectory = pane.WorkingDirectory;
             Title = pane.WorkingDirectory;
             SyncCommandHistoryFromPath();
+            DirectoryChanged?.Invoke(this, pane.WorkingDirectory);
         }
 
         OnPropertyChanged(nameof(IsRunning));

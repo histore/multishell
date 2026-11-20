@@ -142,10 +142,11 @@ public sealed partial class ShellSession : IShellSession
             cols = Math.Clamp(cols, 1, short.MaxValue);
             rows = Math.Clamp(rows, 1, short.MaxValue);
             if (_lastResize.HasValue && _lastResize.Value == (cols, rows)) return;
-            _lastResize = (cols, rows);
 
             var pty = _pseudoConsole;
             if (pty == null || pty.IsClosed || pty.IsInvalid) return;
+
+            _lastResize = (cols, rows);
 
             bool refAdded = false;
             try

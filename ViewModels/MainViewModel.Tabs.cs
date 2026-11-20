@@ -325,6 +325,10 @@ public partial class MainViewModel
         else if (e.PropertyName == nameof(TerminalTabViewModel.WorkingDirectory))
         {
             UpdateTabPathColorStripes(tab);
+            if (tab == SelectedTab)
+            {
+                OnPropertyChanged(nameof(WindowTitle));
+            }
         }
     }
 

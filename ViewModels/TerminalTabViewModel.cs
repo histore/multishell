@@ -275,7 +275,9 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         TerminalModel.SearchStateChanged += _terminalModelSearchStateChangedHandler;
 
         Panes = new ReadOnlyObservableCollection<TerminalPaneViewModel>(_panes);
+        _uiFeedCoordinator = new TerminalUiFeedCoordinator(_pendingUiFeedBuffer);
         var initialPane = new TerminalPaneViewModel(this, session, IsDarkTerminalTheme, TerminalFontSize, TerminalFontFamily, TerminalModel, _dispatcherService, _terminalModelFactory);
+        _initialPane = initialPane;
         InitializeSplitPanes(initialPane);
 
         // Wire PTY output -> terminal rendering, directory tracking & command tracking
@@ -354,7 +356,8 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
     {
         if (_isDisposed || string.IsNullOrWhiteSpace(newDir)) return;
 
-        if (_panes.Count > 1 && !ReferenceEquals(_panes[0], ActivePane))
+        var initialPane = _initialPane;
+        if (initialPane != null && !ReferenceEquals(initialPane, ActivePane))
         {
             _dispatcherService.RunOnUi(() =>
             {
@@ -445,7 +448,10 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         {
             foreach (var pane in _panes.ToList())
             {
-                pane.Session.Dispose();
+                if (!ReferenceEquals(pane.Session, _session))
+                {
+                    pane.Session.Dispose();
+                }
             }
         }
         _session.Dispose();

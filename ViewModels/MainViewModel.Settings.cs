@@ -118,10 +118,6 @@ public partial class MainViewModel
     {
         IsDarkTerminalTheme = !IsDarkTerminalTheme;
         _themeService.SetTerminalTheme(IsDarkTerminalTheme);
-        foreach (var tab in Tabs)
-        {
-            tab.UpdateTheme(IsDarkTerminalTheme);
-        }
         TriggerSaveState();
     }
 
@@ -138,10 +134,6 @@ public partial class MainViewModel
     {
         IsDarkTerminalTheme = isDark;
         _themeService.SetTerminalTheme(isDark);
-        foreach (var tab in Tabs)
-        {
-            tab.UpdateTheme(isDark);
-        }
         TriggerSaveState();
     }
 

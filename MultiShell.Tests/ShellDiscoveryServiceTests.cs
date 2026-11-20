@@ -4,6 +4,12 @@ using Xunit;
 
 namespace MultiShell.Tests;
 
+[CollectionDefinition("EnvironmentPathTests", DisableParallelization = true)]
+public class EnvironmentPathTestsCollection
+{
+}
+
+[Collection("EnvironmentPathTests")]
 public class ShellDiscoveryServiceTests
 {
     [Fact]

@@ -201,7 +201,7 @@ public partial class TerminalTabViewModel
     /// Triggered when the shell session reports command completion (e.g. via OSC 133;D).
     /// </summary>
     public void OnSessionCommandCompleted(int exitCode)
-        => HandlePaneCommandCompleted(_panes.Count > 0 ? _panes[0] : null, exitCode);
+        => HandlePaneCommandCompleted(_initialPane, exitCode);
 
     internal void HandlePaneCommandCompleted(TerminalPaneViewModel? pane, int exitCode)
     {
@@ -331,6 +331,10 @@ public partial class TerminalTabViewModel
                     {
                         OutputActivityOpacity = 1.0;
                         IsOutputActive = false;
+                        if (ActivePane != null)
+                        {
+                            ActivePane.PaneIsOutputActive = false;
+                        }
                     }
                 });
         }
@@ -350,6 +354,10 @@ public partial class TerminalTabViewModel
         {
             OutputActivityOpacity = 1.0;
             IsOutputActive = false;
+            if (ActivePane != null)
+            {
+                ActivePane.PaneIsOutputActive = false;
+            }
         }
     }
 

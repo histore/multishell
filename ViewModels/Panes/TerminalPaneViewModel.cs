@@ -195,8 +195,8 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
             }
             catch (Exception ex) when (ex is System.IO.IOException or System.ComponentModel.Win32Exception or InvalidOperationException or ObjectDisposedException)
             {
-                // ConPTY startup handled gracefully
                 System.Diagnostics.Debug.WriteLine($"[TerminalPaneViewModel.StartSession] ConPTY startup error: {ex.Message}");
+                TerminalModel.Feed($"{Tab.Loc["Terminal_Start_Failed"]}\r\n{ex.Message}\r\n");
             }
         }
     }

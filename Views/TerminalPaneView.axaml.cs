@@ -94,14 +94,17 @@ public partial class TerminalPaneView : UserControl
 
         GotFocus += (_, e) =>
         {
-            if (DataContext is TerminalPaneViewModel vm && !vm.IsActive)
+            if (DataContext is TerminalPaneViewModel vm)
             {
-                vm.Focus();
-            }
+                if (!vm.IsActive)
+                {
+                    vm.Focus(focusTerminal: !IsInsideSearchOverlay(e.Source) && !vm.IsSearchOpen);
+                }
 
-            if (!IsInsideSearchOverlay(e.Source) && !ReferenceEquals(e.Source, Terminal))
-            {
-                Terminal.Focus();
+                if (!vm.IsSearchOpen && !IsInsideSearchOverlay(e.Source) && !ReferenceEquals(e.Source, Terminal))
+                {
+                    Terminal.Focus();
+                }
             }
         };
 
@@ -166,6 +169,10 @@ public partial class TerminalPaneView : UserControl
         {
             AttachViewModel(vm);
         }
+        else
+        {
+            Terminal.Model = null;
+        }
     }
 
     private void DetachViewModel()
@@ -216,7 +223,7 @@ public partial class TerminalPaneView : UserControl
                     ApplyTerminalTheme(vm.IsDarkTerminalTheme, vm);
                 });
             }
-            else if (args.PropertyName == nameof(TerminalPaneViewModel.IsActive) && vm.IsActive)
+            else if (args.PropertyName == nameof(TerminalPaneViewModel.IsActive) && vm.IsActive && !vm.IsSearchOpen)
             {
                 Dispatcher.UIThread.Post(() => Terminal.Focus());
             }
@@ -224,7 +231,7 @@ public partial class TerminalPaneView : UserControl
 
         vm.PropertyChanged += _propChangedHandler;
         vm.StartSession();
-        if (vm.IsActive)
+        if (vm.IsActive && !vm.IsSearchOpen)
         {
             Dispatcher.UIThread.Post(() => Terminal.Focus());
         }
