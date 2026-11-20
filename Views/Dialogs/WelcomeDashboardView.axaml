@@ -30,7 +30,7 @@
                             HorizontalAlignment="Center"
                             BoxShadow="0 4 16 0 #33000000">
                         <TextBlock Text="&gt;_"
-                                   FontFamily="Consolas, monospace"
+                                   FontFamily="{StaticResource AppMonoFontFamily}"
                                    FontSize="26"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource AppAccent}"
@@ -96,7 +96,7 @@
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding IconTag}"
-                                                           FontFamily="Consolas, monospace"
+                                                           FontFamily="{StaticResource AppMonoFontFamily}"
                                                            FontSize="11"
                                                            FontWeight="Bold"
                                                            Foreground="{DynamicResource AppAccent}"
@@ -187,7 +187,7 @@
                                                             HorizontalAlignment="Center"
                                                             VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding ShellIconTag}"
-                                                                   FontFamily="Consolas, monospace"
+                                                                   FontFamily="{StaticResource AppMonoFontFamily}"
                                                                    FontSize="10"
                                                                    FontWeight="Bold"
                                                                    Foreground="{DynamicResource AppAccent}"
@@ -228,7 +228,7 @@
 
                 <!-- Keyboard Shortcut Guide Hint -->
                 <TextBlock Text="{Binding Loc[EmptyState_ShortcutsHint]}"
-                           FontFamily="Consolas, monospace"
+                           FontFamily="{StaticResource AppMonoFontFamily}"
                            FontSize="11"
                            Foreground="{DynamicResource AppTextMuted}"
                            HorizontalAlignment="Center"

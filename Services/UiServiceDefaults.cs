@@ -7,7 +7,7 @@ namespace MultiShell.Services;
 public static class UiServiceDefaults
 {
     public const string DefaultTerminalFontFamily =
-        "avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace";
+        "avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, Microsoft YaHei UI, Yu Gothic UI, Malgun Gothic, Nirmala UI, Leelawadee UI, DejaVu Sans Mono, monospace";
 
     public static IDispatcherService DispatcherService { get; set; } = AvaloniaDispatcherService.Instance;
 

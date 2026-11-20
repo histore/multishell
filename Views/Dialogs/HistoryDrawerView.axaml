@@ -29,8 +29,8 @@
                 <Border Grid.Row="0" Background="{DynamicResource AppHeaderBackground}" BorderBrush="{DynamicResource AppBorderSubtle}" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
                     <Grid ColumnDefinitions="*, Auto">
                         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{Binding Loc[Drawer_Title]}" FontFamily="Consolas, Cascadia Code, monospace" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding Loc[Drawer_Hint]}" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[Drawer_Title]}" FontFamily="{StaticResource AppMonoFontFamily}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[Drawer_Hint]}" FontFamily="{StaticResource AppMonoFontFamily}" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
                         </StackPanel>
                         <Button Grid.Column="1"
                                 Content="✕"
@@ -89,14 +89,14 @@
                                                 <Grid ColumnDefinitions="Auto, *, Auto">
                                                     <TextBlock Grid.Column="0"
                                                                Text="> "
-                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               FontFamily="{StaticResource AppMonoFontFamily}"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppSuccess}"
                                                                Margin="0,0,4,0"
                                                                VerticalAlignment="Center" />
                                                     <TextBlock Grid.Column="1"
                                                                Text="{Binding}"
-                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               FontFamily="{StaticResource AppMonoFontFamily}"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppTextSecondary}"
                                                                TextWrapping="Wrap"
@@ -168,14 +168,14 @@
                                                 <Grid ColumnDefinitions="Auto, *, Auto">
                                                     <TextBlock Grid.Column="0"
                                                                Text="/ "
-                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               FontFamily="{StaticResource AppMonoFontFamily}"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppAccent}"
                                                                Margin="0,0,4,0"
                                                                VerticalAlignment="Center" />
                                                     <TextBlock Grid.Column="1"
                                                                Text="{Binding}"
-                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               FontFamily="{StaticResource AppMonoFontFamily}"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppTextSecondary}"
                                                                TextWrapping="Wrap"
@@ -254,21 +254,21 @@
                                                             BorderBrush="{DynamicResource AppBorder}"
                                                             BorderThickness="1">
                                                         <TextBlock Text="{Binding BadgeText}"
-                                                                   FontFamily="Consolas, Cascadia Code, monospace"
+                                                                   FontFamily="{StaticResource AppMonoFontFamily}"
                                                                    FontSize="9"
                                                                    FontWeight="Bold"
                                                                    Foreground="{DynamicResource AppTextMuted}" />
                                                     </Border>
                                                     <TextBlock Grid.Column="1"
                                                                Text="{Binding IconText}"
-                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               FontFamily="{StaticResource AppMonoFontFamily}"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppAccent}"
                                                                Margin="0,0,4,0"
                                                                VerticalAlignment="Center" />
                                                     <TextBlock Grid.Column="2"
                                                                Text="{Binding Text}"
-                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               FontFamily="{StaticResource AppMonoFontFamily}"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppTextSecondary}"
                                                                TextWrapping="Wrap"

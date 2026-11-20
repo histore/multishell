@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Media;
 using System;
 using System.Linq;
 using MultiShell.Services;
@@ -90,5 +91,21 @@ sealed partial class Program
             .WithDeveloperTools()
 #endif
             .WithInterFont()
+            .With(new FontManagerOptions
+            {
+                FontFallbacks =
+                [
+                    new FontFallback { FontFamily = new FontFamily("Segoe UI") },
+                    new FontFallback { FontFamily = new FontFamily("Segoe UI Symbol") },
+                    new FontFallback { FontFamily = new FontFamily("Segoe UI Emoji") },
+                    new FontFallback { FontFamily = new FontFamily("Microsoft YaHei UI") },
+                    new FontFallback { FontFamily = new FontFamily("Microsoft JhengHei UI") },
+                    new FontFallback { FontFamily = new FontFamily("Yu Gothic UI") },
+                    new FontFallback { FontFamily = new FontFamily("Malgun Gothic") },
+                    new FontFallback { FontFamily = new FontFamily("Leelawadee UI") },
+                    new FontFallback { FontFamily = new FontFamily("Nirmala UI") },
+                    new FontFallback { FontFamily = new FontFamily("avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono") }
+                ]
+            })
             .LogToTrace();
 }

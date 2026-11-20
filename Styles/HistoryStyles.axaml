@@ -14,7 +14,7 @@
         <Setter Property="Padding" Value="14,6" />
         <Setter Property="Margin" Value="0,0,4,0" />
         <Setter Property="CornerRadius" Value="4,4,0,0" />
-        <Setter Property="FontFamily" Value="Consolas, Cascadia Code, monospace" />
+        <Setter Property="FontFamily" Value="{StaticResource AppMonoFontFamily}" />
     </Style>
     <Style Selector="TabControl.historyTabs TabItem:selected">
         <Setter Property="Foreground" Value="{DynamicResource AppAccent}" />

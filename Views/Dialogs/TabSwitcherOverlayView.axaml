@@ -79,7 +79,7 @@
                                             Margin="0,0,10,0"
                                             VerticalAlignment="Center">
                                         <TextBlock Text="{Binding ShellIconTag}"
-                                                   FontFamily="Consolas, Cascadia Code, monospace"
+                                                   FontFamily="{StaticResource AppMonoFontFamily}"
                                                    FontSize="10"
                                                    FontWeight="Bold"
                                                    Foreground="{DynamicResource AppAccent}" />
@@ -105,14 +105,14 @@
                                                 </Border.Transitions>
                                                 <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding ExecutionStatusGlyph}"
-                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               FontFamily="{StaticResource AppMonoFontFamily}"
                                                                FontSize="8"
                                                                FontWeight="Bold"
                                                                Foreground="{Binding ExecutionStatusForeground}"
                                                                VerticalAlignment="Center" />
                                                     <TextBlock Text="{Binding LastExitCode}"
                                                                IsVisible="{Binding HasProcessError}"
-                                                               FontFamily="Consolas, Cascadia Code, monospace"
+                                                               FontFamily="{StaticResource AppMonoFontFamily}"
                                                                FontSize="8"
                                                                FontWeight="Bold"
                                                                Foreground="{Binding ExecutionStatusForeground}"
