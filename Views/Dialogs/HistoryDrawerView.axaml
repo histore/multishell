@@ -2,7 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MultiShell.ViewModels"
              x:Class="MultiShell.Views.Dialogs.HistoryDrawerView"
-             x:DataType="vm:MainViewModel">
+             x:DataType="vm:MainViewModel"
+             KeyboardNavigation.TabNavigation="Cycle">
 
     <!-- Centered History Overlay Panel with Backdrop (REQ-TAB-012) -->
     <Grid x:Name="HistoryDrawerGrid"

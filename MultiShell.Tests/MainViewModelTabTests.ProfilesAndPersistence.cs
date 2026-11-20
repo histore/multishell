@@ -528,5 +528,31 @@ public partial class MainViewModelTabTests
         Assert.NotNull(persistenceService.LastState);
         Assert.Equal(5, persistenceService.LastState!.Tabs.Count);
     }
+
+    [Fact]
+    public async Task SaveProfileAsync_WhenEditingBuiltInProfile_PreservesIsBuiltInFlag()
+    {
+        var tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"multishell_builtin_{Guid.NewGuid():N}.json");
+        using var profileService = new TerminalProfileService(tempPath);
+        using var mainVm = new MainViewModel(
+            new FakePowerShellProcessService(),
+            new FakeTabStatePersistenceService(),
+            new ThemeService(),
+            new LocalizationService(),
+            new FontSizeService(),
+            terminalProfileService: profileService);
+
+        var builtIn = mainVm.Profiles.First(p => p.IsBuiltIn);
+        mainVm.StartEditProfile(builtIn);
+        mainVm.EditingProfileName = "Updated BuiltIn";
+        await mainVm.SaveProfileAsync();
+
+        var updated = profileService.GetProfile(builtIn.Id);
+        Assert.NotNull(updated);
+        Assert.True(updated!.IsBuiltIn);
+        Assert.Equal("Updated BuiltIn", updated.Name);
+
+        if (System.IO.File.Exists(tempPath)) System.IO.File.Delete(tempPath);
+    }
 }
 

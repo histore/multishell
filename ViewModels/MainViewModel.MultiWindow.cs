@@ -139,7 +139,8 @@ public partial class MainViewModel
             windowCoordinator: _windowCoordinator,
             isSatellite: true,
             dispatcherService: _dispatcherService,
-            terminalModelFactory: _terminalModelFactory);
+            terminalModelFactory: _terminalModelFactory,
+            platformService: _platformService);
     }
 
     /// <summary>
@@ -148,6 +149,8 @@ public partial class MainViewModel
     [RelayCommand]
     public async Task UndockTabAsync(TerminalTabViewModel? tab = null)
     {
+        if (!IsPrimary && Tabs.Count <= 1) return;
+
         var targetTab = tab ?? SelectedTab;
         if (targetTab == null) return;
 

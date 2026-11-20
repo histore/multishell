@@ -30,9 +30,11 @@ public partial class MainViewModel
     private async Task DoInitializeWorkspaceAsync()
     {
         var state = await _persistenceService.LoadStateAsync();
-        ApplyRestoredSettingsAndHistories(state);
-
-        await RunOnUiThreadAsync(() => ApplyLoadedTabs(state));
+        await RunOnUiThreadAsync(() =>
+        {
+            ApplyRestoredSettingsAndHistories(state);
+            ApplyLoadedTabs(state);
+        });
 
         if (state?.SecondaryWindows is { Count: > 0 } && _windowCoordinator != null)
         {
@@ -191,7 +193,8 @@ public partial class MainViewModel
             ? GetDefaultTitle(tabState.ShellType, fallbackIndex)
             : tabState.Title;
 
-        var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType);
+        var (resolvedDir, customExe, customArgs) = ResolveProfileLaunchParameters(tabState.ShellType, tabState.WorkingDirectory);
+        var session = _shellProcessService.CreateSession(title, resolvedDir, tabState.ShellType, customExe, customArgs);
         var tabVm = new TerminalTabViewModel(
             session,
             pathCommandHistoryService: _pathCommandHistoryService,

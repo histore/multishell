@@ -135,7 +135,7 @@ dotnet run
 
 ## 🧪 Testing
 
-MultiShell includes a comprehensive xUnit test suite (680+ automated tests) covering MVVM ViewModels, Process services, Split-Pane binary trees, Localization, Dual-Theming, Fuzzy Search, and Workspace persistence:
+MultiShell includes a comprehensive xUnit test suite (812 automated test cases) covering MVVM ViewModels, Process services, Split-Pane binary trees, Localization, Dual-Theming, Fuzzy Search, and Workspace persistence:
 
 ```powershell
 dotnet test MultiShell.Tests/MultiShell.Tests.csproj

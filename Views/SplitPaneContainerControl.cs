@@ -22,6 +22,7 @@ public class SplitPaneContainerControl : ContentControl
     private readonly List<(SplitPaneNodeViewModel Node, System.ComponentModel.PropertyChangedEventHandler Handler)> _splitRatioSubscriptions = new();
     private TerminalTabViewModel? _currentTabVm;
     private bool _rebuildQueued;
+    private bool _isAttached;
 
     public IPaneNodeViewModel? RootNode
     {
@@ -33,7 +34,10 @@ public class SplitPaneContainerControl : ContentControl
     {
         RootNodeProperty.Changed.AddClassHandler<SplitPaneContainerControl>((control, e) =>
         {
-            control.RebuildVisualTree();
+            if (control._isAttached)
+            {
+                control.RebuildVisualTree();
+            }
         });
     }
 
@@ -41,12 +45,16 @@ public class SplitPaneContainerControl : ContentControl
     {
         base.OnDataContextChanged(e);
         SubscribeCurrentTabVm();
-        RebuildVisualTree();
+        if (_isAttached)
+        {
+            RebuildVisualTree();
+        }
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _isAttached = true;
         SubscribeCurrentTabVm();
         RebuildVisualTree();
     }
@@ -54,6 +62,7 @@ public class SplitPaneContainerControl : ContentControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
+        _isAttached = false;
         _rebuildQueued = false;
         UnsubscribeCurrentTabVm();
         UnsubscribeSplitNodes();
@@ -117,16 +126,25 @@ public class SplitPaneContainerControl : ContentControl
     public void RebuildVisualTree()
     {
         _rebuildQueued = false;
+        if (!_isAttached)
+        {
+            return;
+        }
+
         UnsubscribeSplitNodes();
         var root = _currentTabVm?.DisplayRootNode ?? RootNode;
         CleanupViewCache();
         Content = BuildNode(root);
 
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        if (IsEffectivelyVisible)
         {
-            var activeView = System.Linq.Enumerable.FirstOrDefault(_viewCache.Values, v => (v.DataContext as TerminalPaneViewModel)?.IsActive == true);
-            activeView?.FocusTerminal();
-        });
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                if (!_isAttached || !IsEffectivelyVisible) return;
+                var activeView = System.Linq.Enumerable.FirstOrDefault(_viewCache.Values, v => (v.DataContext as TerminalPaneViewModel)?.IsActive == true);
+                activeView?.FocusTerminal();
+            });
+        }
     }
 
     private void CleanupViewCache()
@@ -171,7 +189,7 @@ public class SplitPaneContainerControl : ContentControl
         }
     }
 
-    private Control BuildNode(IPaneNodeViewModel? node)
+    private Control? BuildNode(IPaneNodeViewModel? node)
     {
         if (node is LeafPaneNodeViewModel leaf)
         {
@@ -183,7 +201,7 @@ public class SplitPaneContainerControl : ContentControl
             return BuildSplitGrid(split);
         }
 
-        return new Panel();
+        return null;
     }
 
     private TerminalPaneView GetOrCreatePaneView(TerminalPaneViewModel pane)
@@ -210,8 +228,8 @@ public class SplitPaneContainerControl : ContentControl
     private Grid BuildSplitGrid(SplitPaneNodeViewModel split)
     {
         var grid = new Grid();
-        var first = BuildNode(split.FirstChild);
-        var second = BuildNode(split.SecondChild);
+        var first = BuildNode(split.FirstChild) ?? new Panel();
+        var second = BuildNode(split.SecondChild) ?? new Panel();
         bool isVertical = split.Orientation == PaneSplitDirection.Vertical;
         var splitter = CreateSplitSplitter(isVertical);
 

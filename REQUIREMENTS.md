@@ -217,7 +217,7 @@ docs/requirements/modules/
 | `REQ-HIST-004` | Shared Global Directory History across Tabs (MRU 100) | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `IMPLEMENTED` |
 | `REQ-CLI-001` | Startup Arguments & Single-Instance Tab Activation | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |
 | `REQ-UI-001` | Modern UI Theme, Header Toolbar & Visual Polish | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
-| `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide (`F1`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-UI-002` | Interactive Help & Keyboard Shortcuts Guide (`Ctrl+Shift+F1`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-003` | About Dialog & Technology Information | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-004` | 7-Level Font Size Settings for App and Terminal | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-UI-005` | Zoom & Font-Size Keyboard & Wheel Shortcuts | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |

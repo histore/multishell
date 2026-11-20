@@ -26,7 +26,7 @@ MultiShell integrates quick-access developer utilities directly into the termina
   * All active tabs currently in that directory immediately synchronize their `CommandHistory` and `FilteredCommandHistory`.
   * Switching working directories in a tab (`cd ...`) dynamically switches the tab's command history to the new path.
 * **Exit Pruning, Manual Deletion & Persistence**:
-  * Users can remove individual commands directly from the History Drawer via the delete action button (`DeleteCommandItemCommand`), invoking `_pathCommandHistoryService.RemoveCommand(path, command)`.
+  * Users can remove individual commands directly from the History Drawer via the delete action button (`DeleteCommandCommand`), invoking `_pathCommandHistoryService.RemoveCommand(path, command)`.
   * Upon application shutdown, `PruneNonExistentPaths()` validates all tracked paths with `Directory.Exists(path)` and purges entries for paths that no longer exist on disk.
   * Surviving path histories are persisted into `WorkspaceState.PathCommandHistory` in `tabs_state.json`.
 
@@ -36,7 +36,7 @@ MultiShell integrates quick-access developer utilities directly into the termina
   * Normalized filesystem directory paths are stored in chronological MRU order.
   * Automatically bounds directory history to a maximum of 100 entries using FIFO eviction for older items.
   * Preserves Most Recently Used (MRU) ordering without duplicates: visiting an existing path removes its previous occurrence and places it at the newest position.
-  * Users can remove individual directories directly from the History Drawer via `DeleteDirectoryItemCommand`, invoking `_directoryHistoryService.RemoveDirectory(path)`.
+  * Users can remove individual directories directly from the History Drawer via `DeleteDirectoryCommand`, invoking `_directoryHistoryService.RemoveDirectory(path)`.
   * On drawer open, non-existent directories are automatically pruned to keep the list clean.
 * **Live Multi-Tab Dynamic Synchronization**:
   * Fires `HistoryChanged` whenever a directory is visited, removed, or changed.
@@ -48,10 +48,10 @@ MultiShell integrates quick-access developer utilities directly into the termina
 * **Modular Implementation**:
   * `HistoryDrawerView.axaml.cs`: Lifecycle, toggle visibility, filter selection synchronization (`WireFilterSelectionSync`), and auto-select on open (`FocusActiveHistoryList`).
   * `HistoryDrawerView.Keyboard.cs`: Keyboard navigation (`Up`/`Down` item navigation, `Tab`/`Left`/`Right` tab cycling, `Escape` filter clearing/closing).
-  * `HistoryDrawerView.Actions.cs`: Item execution (`Enter` / Click), paste operations (`Shift+Enter` / Right-click), and item deletion (`DeleteCommandItemCommand`, `DeleteDirectoryItemCommand`) for Commands, Directories, and Global entries.
+  * `HistoryDrawerView.Actions.cs`: Item execution (`Enter` / Click), paste operations (`Shift+Enter` / Right-click), and item deletion (`DeleteCommandCommand`, `DeleteDirectoryCommand`) for Commands, Directories, and Global entries.
 * **Overlay Interaction**:
-  * Centered modal floating overlay with dark backdrop over the terminal workspace (`Margin="32"`, `MaxWidth="780"`, `MaxHeight="520"`).
-  * Toggled via `Ctrl+Shift` + middle mouse click (scroll wheel click) anywhere on the terminal surface or workspace, toolbar button, or dedicated keyboard shortcuts (`Ctrl+Shift+H` for Command History, `Ctrl+Shift+L` for Directory History).
+  * Centered modal floating overlay with dark backdrop over the terminal workspace (`Margin="32"`, `Width="700"`, `MaxWidth="800"`, `MaxHeight="540"`).
+  * Toggled via `Ctrl+Shift` + middle mouse click (scroll wheel click) anywhere on the terminal surface or workspace, toolbar button, or dedicated keyboard shortcuts (`Ctrl+Shift+H` for Command History, `Ctrl+Shift+L` for Directory History, `Ctrl+Shift+P` for Global History).
   * Dismissed by pressing `Escape`, clicking the header close button ("✕"), or clicking anywhere on the outer semi-transparent backdrop outside the dialog.
   * Displays three searchable tabs/sections (all sorted from newest to oldest, with default selection on the newest entry upon opening, and equal search score ties resolved by recency):
     * **Command History**: Commands executed in the current tab's active directory path, ordered from newest to oldest with recency tie-breaking on equal search scores. Includes inline delete button.

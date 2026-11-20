@@ -294,9 +294,9 @@ public partial class TerminalTabViewModel
     {
         if (_isDisposed || string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
 
-        var targetDir = _pendingCommandDirectory
+        var targetDir = pane.PendingCommandDirectory
             ?? (!string.IsNullOrWhiteSpace(pane.WorkingDirectory) ? pane.WorkingDirectory : WorkingDirectory);
-        _pendingCommandDirectory = null;
+        pane.PendingCommandDirectory = null;
 
         var sanitizedCommand = ShellCommandFilter.SanitizeCommandForHistory(command);
         _pathCommandHistoryService.RecordCommand(targetDir, sanitizedCommand);
@@ -306,7 +306,7 @@ public partial class TerminalTabViewModel
     {
         if (_isDisposed || string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
 
-        var initialPane = _panes.Count > 0 ? _panes[0] : null;
+        var initialPane = _initialPane;
         var targetDir = initialPane?.PendingCommandDirectory
             ?? _pendingCommandDirectory
             ?? (!string.IsNullOrWhiteSpace(initialPane?.WorkingDirectory) ? initialPane.WorkingDirectory : WorkingDirectory);

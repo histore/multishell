@@ -77,11 +77,15 @@ internal static class StoragePickerHelper
         string? initialDirectory,
         string logContext)
     {
-        var resolvedDir = !string.IsNullOrWhiteSpace(initialDirectory) && Directory.Exists(initialDirectory)
+        var resolvedDir = !string.IsNullOrWhiteSpace(initialDirectory) &&
+                          MultiShell.Services.LinkDetectionHelper.IsSafeLocalPath(initialDirectory) &&
+                          Directory.Exists(initialDirectory)
             ? initialDirectory
             : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-        if (string.IsNullOrWhiteSpace(resolvedDir) || !Directory.Exists(resolvedDir))
+        if (string.IsNullOrWhiteSpace(resolvedDir) ||
+            !MultiShell.Services.LinkDetectionHelper.IsSafeLocalPath(resolvedDir) ||
+            !Directory.Exists(resolvedDir))
         {
             return null;
         }

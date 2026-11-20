@@ -14,7 +14,7 @@ public partial class TerminalTabViewModel
     private TerminalUiFeedCoordinator? _uiFeedCoordinator;
     private bool _previousWasCr;
 
-    private TerminalUiFeedCoordinator UiFeedCoordinator => _uiFeedCoordinator ??= new TerminalUiFeedCoordinator(_pendingUiFeedBuffer);
+    private TerminalUiFeedCoordinator UiFeedCoordinator => _uiFeedCoordinator!;
 
     /// <summary>
     /// Indicates whether AltGr (Ctrl+Alt modifier) is currently pressed.
@@ -48,7 +48,8 @@ public partial class TerminalTabViewModel
     {
         if (_isDisposed || data.IsEmpty) return;
 
-        if (_panes.Count <= 1 || ReferenceEquals(_panes[0], ActivePane))
+        var initialPane = _initialPane;
+        if (initialPane == null || ReferenceEquals(initialPane, ActivePane))
         {
             PulseOutputActivity();
         }
@@ -80,7 +81,7 @@ public partial class TerminalTabViewModel
         }
 
         // Track user input line for live CommandHistory tracking
-        TrackInputBuffer(bytes);
+        TrackInputBuffer(bytes, _initialPane);
 
         _session.Send(bytes);
     }
@@ -180,7 +181,7 @@ public partial class TerminalTabViewModel
         {
             pane.PendingCommandDirectory = effectiveDir;
         }
-        if (pane == null || ReferenceEquals(pane, ActivePane))
+        if (pane == null || ReferenceEquals(pane, _initialPane))
         {
             _pendingCommandDirectory = effectiveDir;
         }

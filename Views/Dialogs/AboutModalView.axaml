@@ -2,7 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MultiShell.ViewModels"
              x:Class="MultiShell.Views.Dialogs.AboutModalView"
-             x:DataType="vm:MainViewModel">
+             x:DataType="vm:MainViewModel"
+             KeyboardNavigation.TabNavigation="Cycle">
     <Grid x:Name="AboutModalOverlay"
           HorizontalAlignment="Stretch"
           VerticalAlignment="Stretch"

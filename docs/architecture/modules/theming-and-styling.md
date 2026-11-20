@@ -25,7 +25,7 @@ MultiShell provides a modern, high-contrast visual experience optimized for deve
   * Terminal font size levels: `[10.0, 11.0, 12.5, 14.0, 16.0, 18.5, 21.0]` pt.
 * **APIs**:
   * `SetAppFontSizeLevel(int level)` / `SetTerminalFontSizeLevel(int level)`: Updates active levels with clamping to `[1, 7]`.
-  * `IncreaseAppFontSize()`, `DecreaseAppFontSize()`, `IncreaseTerminalFontSize()`, `DecreaseTerminalFontSize()`, `ResetLevels()`.
+  * `IncreaseAppFontSize()`, `DecreaseAppFontSize()`, `IncreaseTerminalFontSize()`, `DecreaseTerminalFontSize()`, `ResetLevels()` (exposed via `MainViewModel` commands delegating to `IFontSizeService`).
 * Triggers real-time font size update on all open `TerminalTabView` and `TerminalPaneView` instances.
 * Persists user font size level preferences across sessions in `WorkspaceState`.
 

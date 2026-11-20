@@ -20,9 +20,9 @@ MultiShell supports multiple concurrent shell profiles, including modern PowerSh
 ### 2.2 Contracts (`Services/`)
 * **[`ITerminalProfileService`](../../../Services/ITerminalProfileService.cs)**:
   * Exposes read-only list of available profiles and `ProfilesChanged` notifications.
-  * APIs: `GetProfiles()`, `GetProfile(Guid id)`, `AddProfileAsync(TerminalProfile profile)`, `UpdateProfileAsync(TerminalProfile profile)`, `DeleteProfileAsync(Guid id)`, `ResetToDefaultsAsync()`, `LoadProfilesAsync(CancellationToken cancellationToken = default)`.
+  * APIs: `GetProfiles()`, `GetProfile(Guid id)`, `AddProfileAsync(TerminalProfile profile)`, `UpdateProfileAsync(TerminalProfile profile)`, `DeleteProfileAsync(Guid id)`, `ResetToDefaultsAsync()`, `LoadProfilesAsync(CancellationToken cancellationToken = default)`, `GetDefaultWorkingDirectory()`.
 * **[`IShellDiscoveryService`](../../../Services/IShellDiscoveryService.cs)**:
-  * Probes file system standard directories (e.g., `%SystemRoot%\System32`, `%ProgramFiles%\PowerShell`), PATH environment variable, and installed binaries to detect available shells.
+  * Probes Windows System directories (`%SystemRoot%\System32`), `PATH` environment variable, and Scoop/Cargo user directories (`nu.exe`) to detect available shells.
 
 ## 3. Persistence & Default Profile Bootstrapping
 

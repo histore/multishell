@@ -38,7 +38,8 @@ public static partial class LinkDetectionHelper
         ".appxbundle", ".msixbundle", ".iso", ".vhd", ".vhdx", ".img",
         ".settingcontent-ms", ".library-ms", ".search-ms", ".jnlp",
         ".msh", ".msh1", ".msh2", ".mshxml", ".msh1xml", ".msh2xml",
-        ".docm", ".xlsm", ".pptm"
+        ".docm", ".xlsm", ".pptm",
+        ".diagcab", ".msp", ".msu", ".vsto", ".xll", ".xlam", ".wsc", ".ade", ".adp", ".sh"
     };
 
     internal static Func<ProcessStartInfo, bool>? ProcessLauncher { get; set; }

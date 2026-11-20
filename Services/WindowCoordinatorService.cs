@@ -70,13 +70,17 @@ public class WindowCoordinatorService : IWindowCoordinatorService
             else
             {
                 viewModel.IsPrimary = false;
-                int nextNumber = 2;
                 var usedNumbers = _windows.Select(w => w.WindowNumber).ToHashSet();
-                while (usedNumbers.Contains(nextNumber))
+                int candidate = viewModel.WindowNumber;
+                if (candidate <= 1 || usedNumbers.Contains(candidate))
                 {
-                    nextNumber++;
+                    candidate = 2;
+                    while (usedNumbers.Contains(candidate))
+                    {
+                        candidate++;
+                    }
                 }
-                viewModel.WindowNumber = nextNumber;
+                viewModel.WindowNumber = candidate;
             }
 
             _windows.Add(viewModel);
@@ -115,8 +119,17 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         {
             if (newVm != null)
             {
+                // Suppress CloseWindowAsync triggered by DetachTab on a failed/unopened satellite window
+                lock (_lock)
+                {
+                    _closingWindows.Add(newVm);
+                }
                 newVm.DetachTab(tab);
                 UnregisterWindow(newVm);
+                if (newVm is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
             }
             sourceWindow.AttachTab(tab);
             throw;

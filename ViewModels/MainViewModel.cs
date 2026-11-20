@@ -27,6 +27,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     private readonly IWindowCoordinatorService _windowCoordinator;
     private readonly IDispatcherService _dispatcherService;
     private readonly ITerminalModelFactory _terminalModelFactory;
+    private readonly IPlatformService _platformService;
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
@@ -70,7 +71,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     /// </summary>
     public void UpdateCapsLockState()
     {
-        IsCapsLockActive = WindowsPlatformService.Instance.QueryCapsLockState();
+        IsCapsLockActive = _platformService.QueryCapsLockState();
     }
 
     private Func<string?, Task<string?>>? _folderPickerHandler;
@@ -147,7 +148,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     [RelayCommand]
     public void OpenGitHubUrl()
     {
-        WindowsPlatformService.Instance.OpenUrl(GitHubUrl);
+        _platformService.OpenUrl(GitHubUrl);
     }
 
     private static string DetermineAppVersion()
@@ -211,7 +212,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         string? initialDirectory = null,
         bool isSatellite = false,
         IDispatcherService? dispatcherService = null,
-        ITerminalModelFactory? terminalModelFactory = null)
+        ITerminalModelFactory? terminalModelFactory = null,
+        IPlatformService? platformService = null)
     {
         _initialDirectory = initialDirectory;
         _shellProcessService = shellProcessService ?? throw new ArgumentNullException(nameof(shellProcessService));
@@ -229,6 +231,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         _windowCoordinator = windowCoordinator ?? WindowCoordinatorService.Instance;
         _dispatcherService = dispatcherService ?? UiServiceDefaults.DispatcherService;
         _terminalModelFactory = terminalModelFactory ?? UiServiceDefaults.TerminalModelFactory;
+        _platformService = platformService ?? WindowsPlatformService.Instance;
         _isDarkAppTheme = _themeService.IsDarkAppTheme;
         _isDarkTerminalTheme = _themeService.IsDarkTerminalTheme;
         _currentLanguage = _localizationService.CurrentLanguage;

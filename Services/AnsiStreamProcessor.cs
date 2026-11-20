@@ -13,7 +13,7 @@ namespace MultiShell.Services;
 /// </summary>
 public sealed partial class AnsiStreamProcessor
 {
-    [GeneratedRegex(@"\x1b\][^\x1b\x07]*(\x1b\\|\x07)")]
+    [GeneratedRegex(@"(\x1b\]|\u009d)[^\x07\u009c]*?(\x1b\\|\x07|\u009c)")]
     private static partial Regex GetOscSequenceRegex();
 
     [GeneratedRegex(@"\x1b\](10|11);\?(\x07|\x1b\\)")]
@@ -69,11 +69,18 @@ public sealed partial class AnsiStreamProcessor
                 // 3. Strip unsupported complete OSC sequences (e.g. OSC 133 / OSC 9;9 shell integration)
                 var textToFeed = SanitizeTerminalText(current);
 
-                // Safety boundary on stream buffer: flush remaining sanitized text rather than dropping
+                // Safety boundary on stream buffer: strip any trailing incomplete OSC prefix and flush
                 if (_streamBuffer.Length > 16384)
                 {
-                    textToFeed += SanitizeTerminalText(_streamBuffer.ToString());
+                    var overflow = _streamBuffer.ToString();
                     _streamBuffer.Clear();
+                    var oscIdx = overflow.LastIndexOf("\x1b]", StringComparison.Ordinal);
+                    if (oscIdx < 0) oscIdx = overflow.LastIndexOf('\u009d');
+                    if (oscIdx >= 0)
+                    {
+                        overflow = overflow[..oscIdx];
+                    }
+                    textToFeed += SanitizeTerminalText(overflow);
                 }
 
                 return string.IsNullOrEmpty(textToFeed) ? null : textToFeed;

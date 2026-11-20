@@ -72,6 +72,7 @@ public partial class MainViewModelTabTests
         Assert.NotNull(restoredTab);
         Assert.Equal(ShellType.WSL, restoredTab.ShellType);
         Assert.Equal(@"C:\projects\custom-workdir", restoredTab.WorkingDirectory);
+        Assert.Null(restoredTab.Session.CustomExecutable);
         Assert.Equal(2, restoredTab.CommandHistory.Count);
         Assert.Contains("git status", restoredTab.CommandHistory);
         Assert.Contains("dotnet build", restoredTab.CommandHistory);
