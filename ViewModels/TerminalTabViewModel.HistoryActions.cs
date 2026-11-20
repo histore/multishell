@@ -96,9 +96,9 @@ public partial class TerminalTabViewModel
         string baseCommand = ShellType switch
         {
             ShellType.CMD => $"cd /d \"{cleanDir}\"",
-            ShellType.WSL => $"cd \"{cleanDir.Replace("\"", "\\\"")}\"",
+            ShellType.WSL => $"cd \"{cleanDir.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("$", "\\$").Replace("`", "\\`")}\"",
             ShellType.NuShell => $"cd \"{cleanDir.Replace("\"", "\\\"")}\"",
-            _ => $"Set-Location -LiteralPath \"{cleanDir}\""
+            _ => $"Set-Location -LiteralPath \"{cleanDir.Replace("`", "``").Replace("\"", "`\"").Replace("$", "`$")}\""
         };
 
         if (!appendSubmitNewline)

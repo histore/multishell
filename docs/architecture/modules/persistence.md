@@ -16,7 +16,7 @@ The Workspace State Persistence module provides reliable, atomic serialization a
     * `DirectoryHistory`: List of visited directories.
     * `ShellType`: Shell executable type (`PowerShell`, `NuShell`, `WSL`, `CMD`).
 * **`WindowWorkspaceState`**:
-  * Immutable record capturing per-window snapshot (`WindowNumber`, `Tabs`, `SelectedIndex`).
+  * Immutable record capturing per-window snapshot (`WindowNumber`, `Tabs`, `SelectedIndex`, `Bounds`).
 * **`WorkspaceState`**:
   * Immutable record representing overall workspace state:
     * `Tabs`: List of `TabState` entries (primary window compatibility).
@@ -27,6 +27,7 @@ The Workspace State Persistence module provides reliable, atomic serialization a
     * `DefaultShellType`: Selected default launch shell type.
     * `ClosedTabs`: List of recently closed tabs available for restoration.
     * `PathCommandHistory`: Dictionary mapping normalized filesystem paths to lists of recent commands (`Dictionary<string, List<string>>`).
+    * `SharedDirectoryHistory`: List of recently visited directories shared across all tabs (`List<string>`).
     * `Version`: Schema version (`2` for multi-window persistence).
     * `PrimaryWindow` / `SecondaryWindows`: Structured `WindowWorkspaceState` snapshots for restoring primary and secondary satellite windows (`REQ-TAB-026`).
 

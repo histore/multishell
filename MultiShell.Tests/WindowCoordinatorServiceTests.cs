@@ -431,4 +431,23 @@ public class WindowCoordinatorServiceTests
         Assert.Same(tabToTransfer, primary.SelectedTab);
         Assert.Same(secondary, closedVm);
     }
+
+    [Fact]
+    public async Task UndockTabAsync_FromSecondaryWithSingleTab_DoesNothing()
+    {
+        var coordinator = new WindowCoordinatorService();
+        using var primary = CreateTestViewModel(coordinator);
+        coordinator.RegisterWindow(primary, isPrimary: true);
+
+        using var secondary = CreateTestViewModel(coordinator);
+        coordinator.RegisterWindow(secondary, isPrimary: false);
+
+        int openCount = 0;
+        coordinator.WindowOpenRequested += (_, _) => openCount++;
+
+        await secondary.UndockTabAsync(secondary.Tabs[0]);
+
+        Assert.Single(secondary.Tabs);
+        Assert.Equal(0, openCount);
+    }
 }

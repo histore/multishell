@@ -56,7 +56,7 @@ public partial class TerminalPaneViewModel
         if (_isDisposed) return;
         _dispatcherService.RunOnUi(() =>
         {
-            if (_isDisposed) return;
+            if (_isDisposed || !IsExecuting) return;
             PaneIsOutputActive = false;
             UpdateExecutionStatusBadge("○ ", "Process_Activity_Waiting", "Waiting for input");
         });

@@ -166,6 +166,9 @@ public partial class MainViewModel
             ? EditingWorkingDirectory.Trim()
             : _terminalProfileService.GetDefaultWorkingDirectory();
 
+        bool isBuiltIn = !IsCreatingNewProfile && EditingProfileId.HasValue &&
+                         (_terminalProfileService.GetProfile(EditingProfileId.Value)?.IsBuiltIn ?? false);
+
         var profile = new TerminalProfile(
             EditingProfileId ?? Guid.NewGuid(),
             EditingProfileName.Trim(),
@@ -174,7 +177,7 @@ public partial class MainViewModel
             workingDir,
             string.IsNullOrWhiteSpace(EditingIconTag) ? "PS" : EditingIconTag.Trim().ToUpperInvariant(),
             EditingShellType,
-            IsBuiltIn: false);
+            IsBuiltIn: isBuiltIn);
 
         if (IsCreatingNewProfile)
         {

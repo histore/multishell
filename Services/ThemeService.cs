@@ -122,9 +122,8 @@ public class ThemeService : IThemeService
                     Application.Current.Resources[$"SvcSystems.UI.TerminalColor{i}"] = palette[i];
                 }
             }
+            TerminalThemeChanged?.Invoke(isDark);
         });
-
-        TerminalThemeChanged?.Invoke(isDark);
     }
 
     public void ToggleAppTheme()
