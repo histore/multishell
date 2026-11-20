@@ -54,7 +54,8 @@ public partial class TerminalTabViewModel
     {
         if (string.IsNullOrWhiteSpace(command)) return;
 
-        var clean = command.Trim();
+        var clean = SanitizeSingleLineInputPayload(command.Trim());
+        if (string.IsNullOrWhiteSpace(clean)) return;
         var bytes = Encoding.UTF8.GetBytes(clean);
         TrackInputBuffer(bytes);
         ActiveSession.Send(bytes);
@@ -90,15 +91,34 @@ public partial class TerminalTabViewModel
         ActiveSession.Send(bytes);
     }
 
+    private static string SanitizeSingleLineInputPayload(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+
+        var sb = new StringBuilder(text.Length);
+        foreach (var ch in text)
+        {
+            if (ch is '\r' or '\n' or '\u0085' or '\u2028' or '\u2029')
+            {
+                continue;
+            }
+            if (!char.IsControl(ch))
+            {
+                sb.Append(ch);
+            }
+        }
+        return sb.ToString();
+    }
+
     private string BuildDirectoryNavigationCommand(string directory, bool appendSubmitNewline)
     {
-        var cleanDir = Path.TrimEndingDirectorySeparator(directory.Trim());
+        var cleanDir = Path.TrimEndingDirectorySeparator(SanitizeSingleLineInputPayload(directory.Trim()));
         string baseCommand = ShellType switch
         {
-            ShellType.CMD => $"cd /d \"{cleanDir}\"",
+            ShellType.CMD => $"cd /d \"{cleanDir.Replace("\"", string.Empty)}\"",
             ShellType.WSL => $"cd \"{cleanDir.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("$", "\\$").Replace("`", "\\`")}\"",
-            ShellType.NuShell => $"cd \"{cleanDir.Replace("\"", "\\\"")}\"",
-            _ => $"Set-Location -LiteralPath \"{cleanDir.Replace("`", "``").Replace("\"", "`\"").Replace("$", "`$")}\""
+            ShellType.NuShell => $"cd \"{cleanDir.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"",
+            _ => $"Set-Location -LiteralPath \"{EscapePowerShellDoubleQuoted(cleanDir)}\""
         };
 
         if (!appendSubmitNewline)
@@ -107,6 +127,17 @@ public partial class TerminalTabViewModel
         }
 
         return ShellType == ShellType.WSL ? baseCommand + "\n" : baseCommand + "\r";
+    }
+
+    private static string EscapePowerShellDoubleQuoted(string value)
+    {
+        return value
+            .Replace("`", "``")
+            .Replace("\"", "`\"")
+            .Replace("$", "`$")
+            .Replace("\u201C", "`\u201C")
+            .Replace("\u201D", "`\u201D")
+            .Replace("\u201E", "`\u201E");
     }
 
     [RelayCommand]
@@ -149,7 +180,8 @@ public partial class TerminalTabViewModel
     {
         if (string.IsNullOrWhiteSpace(path)) return;
 
-        var clean = path.Trim();
+        var clean = SanitizeSingleLineInputPayload(path.Trim());
+        if (string.IsNullOrWhiteSpace(clean)) return;
         var formatted = clean.Contains(' ') && !clean.StartsWith('"') && !clean.EndsWith('"')
             ? $"\"{clean}\""
             : clean;

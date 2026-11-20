@@ -45,8 +45,8 @@ public partial class MainViewModel
         ClosedTabs.Remove(closedItem);
 
         _tabCounter++;
-        var (customExe, customArgs, _) = ResolveProfileLaunchParameters(closedItem.ShellType, closedItem.Title);
-        var session = _shellProcessService.CreateSession(closedItem.Title, closedItem.WorkingDirectory, closedItem.ShellType, customExe, customArgs);
+        var (resolvedDir, customExe, customArgs) = ResolveProfileLaunchParameters(closedItem.ShellType, closedItem.WorkingDirectory);
+        var session = _shellProcessService.CreateSession(closedItem.Title, resolvedDir, closedItem.ShellType, customExe, customArgs);
         var tabVm = new TerminalTabViewModel(session, pathCommandHistoryService: _pathCommandHistoryService, directoryHistoryService: _directoryHistoryService, localizationService: _localizationService, dispatcherService: _dispatcherService, terminalModelFactory: _terminalModelFactory);
         tabVm.RestoreHistory(closedItem.CommandHistory, closedItem.DirectoryHistory);
         tabVm.CustomTitle = closedItem.CustomTitle;

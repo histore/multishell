@@ -76,7 +76,9 @@ public class ShellDiscoveryService : IShellDiscoveryService
         foreach (var dir in pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
         {
             var trimmedDir = dir.Trim('"', ' ');
-            if (string.IsNullOrWhiteSpace(trimmedDir) || !Path.IsPathFullyQualified(trimmedDir))
+            if (string.IsNullOrWhiteSpace(trimmedDir) ||
+                !Path.IsPathFullyQualified(trimmedDir) ||
+                !LinkDetectionHelper.IsSafeLocalPath(trimmedDir))
             {
                 continue;
             }
@@ -84,7 +86,7 @@ public class ShellDiscoveryService : IShellDiscoveryService
             try
             {
                 var candidate = Path.Combine(trimmedDir, name);
-                if (File.Exists(candidate)) return candidate;
+                if (LinkDetectionHelper.IsSafeLocalPath(candidate) && File.Exists(candidate)) return candidate;
             }
             catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException or UnauthorizedAccessException or IOException)
             {

@@ -49,4 +49,20 @@ public class AtomicFileHelperTests
         var state = KeyboardStateHelper.QueryCapsLockState();
         Assert.IsType<bool>(state);
     }
+
+    [Fact]
+    public void SanitizeBracketedPastePayload_StripsNestedAndLeadingZeroMarkersAndControlBytes()
+    {
+        var payload = "hello\x1b[20\x1b[201~1~\x1b[0201~\u009b0200~\x03\x15\x1bworld\n";
+        var sanitized = MultiShell.ViewModels.TerminalPaneViewModel.SanitizeBracketedPastePayload(payload);
+        Assert.Equal("helloworld\n", sanitized);
+    }
+
+    [Fact]
+    public void AnsiStreamProcessor_StripsOscWithEmbeddedEscapeAnd8BitC1()
+    {
+        var text = "ok\x1b]9;9;\"C:\\dir\x1bfoo\"\x07\u009d133;A\u009cdone";
+        var sanitized = AnsiStreamProcessor.SanitizeTerminalText(text);
+        Assert.Equal("okdone", sanitized);
+    }
 }

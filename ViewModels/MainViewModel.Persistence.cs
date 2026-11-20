@@ -193,8 +193,8 @@ public partial class MainViewModel
             ? GetDefaultTitle(tabState.ShellType, fallbackIndex)
             : tabState.Title;
 
-        var (customExe, customArgs, _) = ResolveProfileLaunchParameters(tabState.ShellType, title);
-        var session = _shellProcessService.CreateSession(title, tabState.WorkingDirectory, tabState.ShellType, customExe, customArgs);
+        var (resolvedDir, customExe, customArgs) = ResolveProfileLaunchParameters(tabState.ShellType, tabState.WorkingDirectory);
+        var session = _shellProcessService.CreateSession(title, resolvedDir, tabState.ShellType, customExe, customArgs);
         var tabVm = new TerminalTabViewModel(
             session,
             pathCommandHistoryService: _pathCommandHistoryService,

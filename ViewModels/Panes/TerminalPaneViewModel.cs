@@ -258,15 +258,37 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         }
     }
 
+    [System.Text.RegularExpressions.GeneratedRegex(@"(?:\x1b\[|\u009b)0*20[01]~")]
+    private static partial System.Text.RegularExpressions.Regex GetBracketedPasteMarkerRegex();
+
     internal static string SanitizeBracketedPastePayload(string text)
     {
         if (string.IsNullOrEmpty(text)) return text;
 
-        return text
-            .Replace("\x1b[201~", string.Empty, StringComparison.Ordinal)
-            .Replace("\x1b[200~", string.Empty, StringComparison.Ordinal)
-            .Replace("\u009b201~", string.Empty, StringComparison.Ordinal)
-            .Replace("\u009b200~", string.Empty, StringComparison.Ordinal);
+        // Iteratively strip any bracketed paste markers (including leading-zero CSI variants like ESC[0201~)
+        string current = text;
+        string previous;
+        do
+        {
+            previous = current;
+            current = GetBracketedPasteMarkerRegex().Replace(current, string.Empty);
+        }
+        while (!ReferenceEquals(current, previous) && !string.Equals(current, previous, StringComparison.Ordinal));
+
+        // Strip raw ESC, C1 controls (including 0x9B), DEL, and C0 controls except Tab/CR/LF
+        var sb = new StringBuilder(current.Length);
+        foreach (var ch in current)
+        {
+            if (ch == '\t' || ch == '\r' || ch == '\n')
+            {
+                sb.Append(ch);
+            }
+            else if (ch >= 0x20 && ch != 0x7F && (ch < 0x80 || ch > 0x9F))
+            {
+                sb.Append(ch);
+            }
+        }
+        return sb.ToString();
     }
 
     /// <summary>

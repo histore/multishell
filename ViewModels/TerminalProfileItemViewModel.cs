@@ -46,7 +46,8 @@ public partial class TerminalProfileItemViewModel : ObservableObject
         _iconTag = string.IsNullOrWhiteSpace(profile.IconTag) ? "PS" : profile.IconTag;
         _shellType = profile.ShellType;
         _isBuiltIn = profile.IsBuiltIn;
-        IsAvailable = File.Exists(profile.ExecutablePath) || ShellDiscoveryService.ResolveExecutable(profile.ExecutablePath) != null;
+        IsAvailable = (LinkDetectionHelper.IsSafeLocalPath(profile.ExecutablePath) && File.Exists(profile.ExecutablePath))
+            || ShellDiscoveryService.ResolveExecutable(profile.ExecutablePath) != null;
     }
 
     public TerminalProfile ToModel()

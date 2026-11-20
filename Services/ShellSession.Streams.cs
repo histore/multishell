@@ -255,7 +255,8 @@ public sealed partial class ShellSession
         try
         {
             var bytes = Convert.FromBase64String(base64);
-            var cmd = Encoding.UTF8.GetString(bytes).Trim();
+            var rawCmd = Encoding.UTF8.GetString(bytes);
+            var cmd = SanitizeOscControlCharacters(rawCmd).Trim();
             if (!string.IsNullOrWhiteSpace(cmd))
             {
                 command = cmd;
@@ -269,11 +270,38 @@ public sealed partial class ShellSession
         return false;
     }
 
+    private static string SanitizeOscControlCharacters(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+
+        var sb = new StringBuilder(value.Length);
+        foreach (var ch in value)
+        {
+            if (ch == '\r' || ch == '\n')
+            {
+                sb.Append(' ');
+            }
+            else if (!char.IsControl(ch))
+            {
+                sb.Append(ch);
+            }
+        }
+        return sb.ToString();
+    }
+
     private bool TryApplyDirectoryUpdate(string path)
     {
-        if (!string.IsNullOrWhiteSpace(path) && !string.Equals(WorkingDirectory, path, StringComparison.OrdinalIgnoreCase))
+        var sanitized = SanitizeOscControlCharacters(path).Trim();
+        if (string.IsNullOrWhiteSpace(sanitized)) return false;
+
+        if (!sanitized.StartsWith('/') && !LinkDetectionHelper.IsSafeLocalPath(sanitized))
         {
-            WorkingDirectory = path;
+            return false;
+        }
+
+        if (!string.Equals(WorkingDirectory, sanitized, StringComparison.OrdinalIgnoreCase))
+        {
+            WorkingDirectory = sanitized;
             return true;
         }
         return false;
