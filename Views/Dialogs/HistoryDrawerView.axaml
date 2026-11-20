@@ -24,14 +24,19 @@
                 BorderThickness="1"
                 CornerRadius="8"
                 BoxShadow="0 8 32 0 #88000000">
-            <Grid RowDefinitions="Auto, *">
+            <Grid RowDefinitions="Auto, *, Auto">
                 <!-- Drawer Header -->
                 <Border Grid.Row="0" Background="{DynamicResource AppHeaderBackground}" BorderBrush="{DynamicResource AppBorderSubtle}" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
                     <Grid ColumnDefinitions="*, Auto">
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{Binding Loc[Drawer_Title]}" FontFamily="{StaticResource AppMonoFontFamily}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding Loc[Drawer_Hint]}" FontFamily="{StaticResource AppMonoFontFamily}" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
-                        </StackPanel>
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding Loc[Drawer_Title]}"
+                                   FontFamily="{StaticResource AppMonoFontFamily}"
+                                   FontWeight="Bold"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource AppAccent}"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0" />
                         <Button Grid.Column="1"
                                 Content="✕"
                                 x:Name="CloseHistoryButton"
@@ -295,6 +300,24 @@
                         </Grid>
                     </TabItem>
                 </TabControl>
+
+                <!-- Drawer Footer (Shortcuts / Navigation Hint) -->
+                <Border Grid.Row="2"
+                        Background="{DynamicResource AppHeaderBackground}"
+                        BorderBrush="{DynamicResource AppBorderSubtle}"
+                        BorderThickness="0,1,0,0"
+                        CornerRadius="0,0,8,8"
+                        Padding="12,7">
+                    <TextBlock x:Name="DrawerHintTextBlock"
+                               Text="{Binding Loc[Drawer_Hint]}"
+                               FontFamily="{StaticResource AppMonoFontFamily}"
+                               FontSize="10"
+                               Foreground="{DynamicResource AppTextMuted}"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Border>
             </Grid>
         </Border>
     </Grid>

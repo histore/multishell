@@ -189,6 +189,8 @@
                            Text="{Binding TabSwitcherHintText}"
                            FontSize="10"
                            Foreground="{DynamicResource AppTextMuted}"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
                            HorizontalAlignment="Center" />
             </Grid>
         </Border>
