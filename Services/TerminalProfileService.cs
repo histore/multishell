@@ -132,6 +132,7 @@ public class TerminalProfileService : ITerminalProfileService, IDisposable
 
     public async Task AddProfileAsync(TerminalProfile profile, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         var normalized = NormalizeProfile(profile);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -151,6 +152,7 @@ public class TerminalProfileService : ITerminalProfileService, IDisposable
 
     public async Task UpdateProfileAsync(TerminalProfile profile, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         var normalized = NormalizeProfile(profile);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -174,6 +176,7 @@ public class TerminalProfileService : ITerminalProfileService, IDisposable
 
     public async Task<bool> DeleteProfileAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         bool removed = false;
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -205,6 +208,7 @@ public class TerminalProfileService : ITerminalProfileService, IDisposable
 
     public async Task ResetToDefaultsAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -220,6 +224,7 @@ public class TerminalProfileService : ITerminalProfileService, IDisposable
 
     public async Task LoadProfilesAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         bool loaded = false;
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try

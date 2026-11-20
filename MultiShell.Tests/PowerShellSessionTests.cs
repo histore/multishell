@@ -396,5 +396,19 @@ public class PowerShellSessionTests
         Assert.EndsWith(" --cd /tmp -d Ubuntu", wslCustomCdCmd);
         Assert.DoesNotContain(@"C:\Projects", wslCustomCdCmd);
     }
+
+    [Fact]
+    public void GenerateShellCommandLine_PreservesQuotedPowerShellArgumentsWithSpaces()
+    {
+        using var psSession = new ShellSession(
+            "QuotedPs",
+            shellType: ShellType.PowerShell,
+            customExecutable: "pwsh.exe",
+            customArguments: "-NoLogo -WorkingDirectory \"C:\\My Folder\"");
+
+        var cmd = psSession.GenerateShellCommandLine(null);
+        Assert.Contains("-WorkingDirectory \"C:\\My Folder\"", cmd);
+        Assert.Contains(" -NoLogo -NoExit -EncodedCommand ", cmd);
+    }
 }
 

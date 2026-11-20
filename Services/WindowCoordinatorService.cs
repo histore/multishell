@@ -97,17 +97,30 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         // 1. Detach tab from source window without disposing its running session (Zero PTY Restart)
         sourceWindow.DetachTab(tab);
 
-        // 2. Create secondary satellite ViewModel
-        var newVm = sourceWindow.CreateSatelliteWindow();
-        RegisterWindow(newVm, isPrimary: false);
+        ICoordinatedWindow? newVm = null;
+        try
+        {
+            // 2. Create secondary satellite ViewModel
+            newVm = sourceWindow.CreateSatelliteWindow();
+            RegisterWindow(newVm, isPrimary: false);
 
-        // 3. Attach tab to the new secondary window
-        newVm.AttachTab(tab);
+            // 3. Attach tab to the new secondary window
+            newVm.AttachTab(tab);
 
-        // 4. Request UI to open new window
-        WindowOpenRequested?.Invoke(this, new WindowOpenRequestedEventArgs(newVm, screenX, screenY));
-
-        return Task.FromResult(newVm);
+            // 4. Request UI to open new window
+            WindowOpenRequested?.Invoke(this, new WindowOpenRequestedEventArgs(newVm, screenX, screenY));
+            return Task.FromResult(newVm);
+        }
+        catch
+        {
+            if (newVm != null)
+            {
+                newVm.DetachTab(tab);
+                UnregisterWindow(newVm);
+            }
+            sourceWindow.AttachTab(tab);
+            throw;
+        }
     }
 
     public Task DockBackTabAsync(ICoordinatedWindow sourceWindow, ICoordinatedTab tab)

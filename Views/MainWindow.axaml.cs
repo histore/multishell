@@ -398,13 +398,9 @@ public partial class MainWindow : Window
         Focus();
 
         var handle = TryGetPlatformHandle()?.Handle;
-        if (handle.HasValue && handle.Value != IntPtr.Zero && OperatingSystem.IsWindows())
+        if (handle.HasValue)
         {
-            SetForegroundWindow(handle.Value);
+            MultiShell.Services.WindowsPlatformService.Instance.SetWindowForeground(handle.Value);
         }
     }
-
-    [System.Runtime.InteropServices.LibraryImport("user32.dll")]
-    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-    private static partial bool SetForegroundWindow(IntPtr hWnd);
 }

@@ -47,6 +47,11 @@ public interface ITerminalProfileService
     Task LoadProfilesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets the default working directory for newly created profiles.
+    /// </summary>
+    string GetDefaultWorkingDirectory() => TerminalProfileService.GetDefaultWorkingDirectory();
+
+    /// <summary>
     /// Event triggered when the profiles list is modified.
     /// </summary>
     event Action? ProfilesChanged;

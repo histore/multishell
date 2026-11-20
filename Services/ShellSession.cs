@@ -68,49 +68,52 @@ public sealed partial class ShellSession : IShellSession
 
     public void Start()
     {
-        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-        if (_isRunning) return;
-        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("ConPTY is only available on Windows.");
-        if (!NativeMethods.CreatePipePair(out var inputReadHandle, out var inputWriteHandle)) throw new Win32Exception(Marshal.GetLastWin32Error());
-        if (!NativeMethods.CreatePipePair(out var outputReadHandle, out var outputWriteHandle))
+        lock (_syncRoot)
         {
-            inputReadHandle.Dispose();
-            inputWriteHandle.Dispose();
-            throw new Win32Exception(Marshal.GetLastWin32Error());
-        }
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            if (_isRunning) return;
+            if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("ConPTY is only available on Windows.");
+            if (!NativeMethods.CreatePipePair(out var inputReadHandle, out var inputWriteHandle)) throw new Win32Exception(Marshal.GetLastWin32Error());
+            if (!NativeMethods.CreatePipePair(out var outputReadHandle, out var outputWriteHandle))
+            {
+                inputReadHandle.Dispose();
+                inputWriteHandle.Dispose();
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
 
-        try
-        {
-            // Transfer ownership of host-side pipe handles immediately so Dispose() always cleans them up on failure
-            _inputWriteHandle = inputWriteHandle;
-            _outputReadHandle = outputReadHandle;
+            try
+            {
+                // Transfer ownership of host-side pipe handles immediately so Dispose() always cleans them up on failure
+                _inputWriteHandle = inputWriteHandle;
+                _outputReadHandle = outputReadHandle;
 
-            NativeMethods.ClearHandleInheritance(inputWriteHandle);
-            NativeMethods.ClearHandleInheritance(outputReadHandle);
-            var result = NativeMethods.CreatePseudoConsole(new Coord(120, 30), inputReadHandle.DangerousGetHandle(), outputWriteHandle.DangerousGetHandle(), 0, out var pseudoConsoleHandle);
-            if (result != 0) Marshal.ThrowExceptionForHR(result);
+                NativeMethods.ClearHandleInheritance(inputWriteHandle);
+                NativeMethods.ClearHandleInheritance(outputReadHandle);
+                var result = NativeMethods.CreatePseudoConsole(new Coord(120, 30), inputReadHandle.DangerousGetHandle(), outputWriteHandle.DangerousGetHandle(), 0, out var pseudoConsoleHandle);
+                if (result != 0) Marshal.ThrowExceptionForHR(result);
 
-            _pseudoConsole = new WindowsPseudoConsoleSafeHandle(pseudoConsoleHandle);
+                _pseudoConsole = new WindowsPseudoConsoleSafeHandle(pseudoConsoleHandle);
 
-            inputReadHandle.Dispose();
-            outputWriteHandle.Dispose();
+                inputReadHandle.Dispose();
+                outputWriteHandle.Dispose();
 
-            StartProcessAttachedToPseudoConsole(_pseudoConsole, _initialWorkingDirectory);
+                StartProcessAttachedToPseudoConsole(_pseudoConsole, _initialWorkingDirectory);
 
-            _inputStream = new FileStream(_inputWriteHandle, FileAccess.Write, 4096, isAsync: false);
-            _outputStream = new FileStream(_outputReadHandle, FileAccess.Read, 4096, isAsync: false);
-            _lifetimeCancellation = new CancellationTokenSource();
+                _inputStream = new FileStream(_inputWriteHandle, FileAccess.Write, 4096, isAsync: false);
+                _outputStream = new FileStream(_outputReadHandle, FileAccess.Read, 4096, isAsync: false);
+                _lifetimeCancellation = new CancellationTokenSource();
 
-            _isRunning = true;
-            _ = Task.Run(() => PumpOutput(_outputStream, _lifetimeCancellation.Token));
-            _ = WaitForExitAsync(_lifetimeCancellation.Token);
-        }
-        catch
-        {
-            inputReadHandle.Dispose();
-            outputWriteHandle.Dispose();
-            Dispose();
-            throw;
+                _isRunning = true;
+                _ = Task.Run(() => PumpOutput(_outputStream, _lifetimeCancellation.Token));
+                _ = WaitForExitAsync(_lifetimeCancellation.Token);
+            }
+            catch
+            {
+                inputReadHandle.Dispose();
+                outputWriteHandle.Dispose();
+                Dispose();
+                throw;
+            }
         }
     }
 

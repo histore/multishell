@@ -21,6 +21,7 @@ public class SplitPaneContainerControl : ContentControl
     private readonly Dictionary<TerminalPaneViewModel, TerminalPaneView> _viewCache = new();
     private readonly List<(SplitPaneNodeViewModel Node, System.ComponentModel.PropertyChangedEventHandler Handler)> _splitRatioSubscriptions = new();
     private TerminalTabViewModel? _currentTabVm;
+    private bool _rebuildQueued;
 
     public IPaneNodeViewModel? RootNode
     {
@@ -53,8 +54,15 @@ public class SplitPaneContainerControl : ContentControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
+        _rebuildQueued = false;
         UnsubscribeCurrentTabVm();
         UnsubscribeSplitNodes();
+        Content = null;
+        foreach (var view in _viewCache.Values)
+        {
+            view.DataContext = null;
+        }
+        _viewCache.Clear();
     }
 
     private void SubscribeCurrentTabVm()
@@ -95,11 +103,20 @@ public class SplitPaneContainerControl : ContentControl
 
     private void OnTabViewModelLayoutChanged()
     {
-        Avalonia.Threading.Dispatcher.UIThread.Post(RebuildVisualTree);
+        _rebuildQueued = true;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            if (_rebuildQueued)
+            {
+                _rebuildQueued = false;
+                RebuildVisualTree();
+            }
+        });
     }
 
     public void RebuildVisualTree()
     {
+        _rebuildQueued = false;
         UnsubscribeSplitNodes();
         var root = _currentTabVm?.DisplayRootNode ?? RootNode;
         CleanupViewCache();

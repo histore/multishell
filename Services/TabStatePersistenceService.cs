@@ -33,6 +33,7 @@ public class TabStatePersistenceService : ITabStatePersistenceService, IDisposab
 
     public async Task SaveStateAsync(WorkspaceState state, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -55,6 +56,7 @@ public class TabStatePersistenceService : ITabStatePersistenceService, IDisposab
 
     public async Task<WorkspaceState?> LoadStateAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {

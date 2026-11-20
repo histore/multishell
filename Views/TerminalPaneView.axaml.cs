@@ -80,12 +80,13 @@ public partial class TerminalPaneView : UserControl
 
         PointerPressed += (_, e) =>
         {
+            bool insideSearchOverlay = IsInsideSearchOverlay(e.Source);
             if (DataContext is TerminalPaneViewModel vm)
             {
-                vm.Focus();
+                vm.Focus(focusTerminal: !insideSearchOverlay);
             }
 
-            if (!IsInsideSearchOverlay(e.Source))
+            if (!insideSearchOverlay)
             {
                 Terminal.Focus();
             }

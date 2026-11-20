@@ -10,7 +10,7 @@ MultiShell provides a modern, high-contrast visual experience optimized for deve
   * Decouples the application UI shell (title bar, tabs, menus, drawers) from terminal console surfaces:
     * `IsDarkAppTheme`: Active application UI theme state (`true` for Dark, `false` for Light).
     * `IsDarkTerminalTheme`: Active terminal emulator theme state (`true` for Dark, `false` for Light).
-  * **`SetAppTheme(bool isDark)`**: Updates application theme variant (`Application.Current.RequestedThemeVariant`).
+  * **`SetAppTheme(bool isDark)`**: Updates `IsDarkAppTheme`, dispatches `Application.Current.RequestedThemeVariant` via `IDispatcherService`, and raises `AppThemeChanged` on the UI thread.
   * **`SetTerminalTheme(bool isDark)`**: Updates terminal color palette brushes (`SvcSystems.UI.TerminalColor{0..15}`) and base terminal colors (Foreground, Background, Cursor, Selection).
   * **`ToggleAppTheme()`** / **`ToggleTerminalTheme()`**: Toggles UI or terminal themes independently between Dark and Light.
 * **Surface Invalidation & Cache Reset (`TerminalPaneView.ApplyTerminalTheme`)**:
@@ -40,7 +40,7 @@ MultiShell provides a modern, high-contrast visual experience optimized for deve
   * ConPTY output streams with 24-bit RGB escape codes (`\x1b[38;2;R;G;Bm`) are parsed directly by the terminal renderer.
 
 ### 3.2 Font Fallback Hierarchy
-The application configures the following font priority to guarantee support for Powerline glyphs, developer icons (Nerd Fonts), and box-drawing characters:
+The application configures the following font priority (`Services/UiServiceDefaults.cs`) to guarantee support for Powerline glyphs, developer icons (Nerd Fonts), and box-drawing characters:
 ```
-avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, FiraCode Nerd Font Mono, Cascadia Code NF, Cascadia Mono NF, Cascadia Code, Cascadia Mono, Consolas, Segoe UI Symbol, DejaVu Sans Mono, monospace
+avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Cascadia Code NF, CascadiaMono NF, CaskaydiaMono Nerd Font, Cascadia Mono, Cascadia Code, Consolas, Segoe UI Symbol, Segoe UI Emoji, DejaVu Sans Mono, monospace
 ```

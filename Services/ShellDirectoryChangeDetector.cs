@@ -71,7 +71,7 @@ public static class ShellDirectoryChangeDetector
             if (targetPath == "..")
             {
                 var parent = Directory.GetParent(currentWorkingDirectory)?.FullName;
-                if (!string.IsNullOrEmpty(parent) && Directory.Exists(parent))
+                if (!string.IsNullOrEmpty(parent) && LinkDetectionHelper.IsSafeLocalPath(parent) && Directory.Exists(parent))
                 {
                     resolvedDirectory = parent;
                     return true;
@@ -80,7 +80,7 @@ public static class ShellDirectoryChangeDetector
             else if (targetPath == "\\" || targetPath == "/")
             {
                 var root = Path.GetPathRoot(currentWorkingDirectory);
-                if (!string.IsNullOrEmpty(root) && Directory.Exists(root))
+                if (!string.IsNullOrEmpty(root) && LinkDetectionHelper.IsSafeLocalPath(root) && Directory.Exists(root))
                 {
                     resolvedDirectory = root;
                     return true;
@@ -93,7 +93,7 @@ public static class ShellDirectoryChangeDetector
             }
             else if (Path.IsPathRooted(targetPath))
             {
-                if (Directory.Exists(targetPath))
+                if (LinkDetectionHelper.IsSafeLocalPath(targetPath) && Directory.Exists(targetPath))
                 {
                     resolvedDirectory = Path.GetFullPath(targetPath);
                     return true;
@@ -102,7 +102,7 @@ public static class ShellDirectoryChangeDetector
             else
             {
                 var combined = Path.Combine(currentWorkingDirectory, targetPath);
-                if (Directory.Exists(combined))
+                if (LinkDetectionHelper.IsSafeLocalPath(combined) && Directory.Exists(combined))
                 {
                     resolvedDirectory = Path.GetFullPath(combined);
                     return true;

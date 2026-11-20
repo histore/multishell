@@ -420,17 +420,19 @@ public class TerminalTabExecutionStateTests
     [Fact]
     public void MainViewModel_UpdatesCapsLockState_WithoutException()
     {
-        var mainVm = new MainViewModel(
+        var tempProfilesPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"multishell_test_profiles_{Guid.NewGuid():N}.json");
+        using var profileService = new TerminalProfileService(tempProfilesPath);
+        using var mainVm = new MainViewModel(
             new MockShellProcessService(),
             new MockTabStatePersistenceService(),
             new ThemeService(),
             new LocalizationService(),
-            new FontSizeService());
+            new FontSizeService(),
+            terminalProfileService: profileService);
 
-        // Calling UpdateCapsLockState queries the helper safely
+        // Calling UpdateCapsLockState queries the helper safely and matches KeyboardStateHelper
         mainVm.UpdateCapsLockState();
-        // Verifies the property is a valid boolean
-        Assert.True(mainVm.IsCapsLockActive || !mainVm.IsCapsLockActive);
+        Assert.Equal(KeyboardStateHelper.QueryCapsLockState(), mainVm.IsCapsLockActive);
     }
 
     [Fact]

@@ -300,11 +300,14 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public void Focus()
+    public void Focus(bool focusTerminal = true)
     {
         Tab.SetActivePane(this);
         Activated?.Invoke(this);
-        FocusTerminalRequested?.Invoke();
+        if (focusTerminal)
+        {
+            FocusTerminalRequested?.Invoke();
+        }
     }
 
     public void PageUp()

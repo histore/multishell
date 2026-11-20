@@ -54,9 +54,16 @@ public class SingleInstanceService : ISingleInstanceService
         }
     }
 
+    private int _serverStarted;
+
     public void StartServer()
     {
-        if (!IsFirstInstance || _serverTask != null || Volatile.Read(ref _disposed) != 0)
+        if (!IsFirstInstance || Volatile.Read(ref _disposed) != 0)
+        {
+            return;
+        }
+
+        if (Interlocked.Exchange(ref _serverStarted, 1) != 0)
         {
             return;
         }
@@ -286,6 +293,15 @@ public class SingleInstanceService : ISingleInstanceService
         if (_serverTask == null || _serverTask.IsCompleted)
         {
             _cts.Dispose();
+        }
+        else
+        {
+            _ = _serverTask.ContinueWith(
+                static (_, state) => ((CancellationTokenSource)state!).Dispose(),
+                _cts,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
     }
 }

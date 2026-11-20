@@ -48,7 +48,10 @@ public partial class TerminalTabViewModel
     {
         if (_isDisposed || data.IsEmpty) return;
 
-        PulseOutputActivity();
+        if (_panes.Count <= 1 || ReferenceEquals(_panes[0], ActivePane))
+        {
+            PulseOutputActivity();
+        }
         UiFeedCoordinator.ProcessAndFeed(data.Span, IsDarkTerminalTheme, _session, TerminalModel, _dispatcherService);
     }
 

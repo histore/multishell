@@ -216,16 +216,15 @@ public partial class MainViewModel
 
         try
         {
+            if (!tab.TryStopSessions())
+            {
+                return;
+            }
             tab.Dispose();
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or System.IO.IOException or ObjectDisposedException or NotSupportedException)
         {
             System.Diagnostics.Debug.WriteLine($"[MainViewModel.CloseTab] Tab disposal failed: {ex.Message}");
-            return;
-        }
-
-        if (tab.IsRunning)
-        {
             return;
         }
 

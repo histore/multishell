@@ -101,9 +101,8 @@ public class ThemeService : IThemeService
             {
                 Application.Current.RequestedThemeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
             }
+            AppThemeChanged?.Invoke(isDark);
         });
-
-        AppThemeChanged?.Invoke(isDark);
     }
 
     public void SetTerminalTheme(bool isDark)
