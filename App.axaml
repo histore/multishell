@@ -10,6 +10,7 @@
 
     <Application.Resources>
         <ResourceDictionary>
+            <FontFamily x:Key="AppMonoFontFamily">Consolas, Cascadia Code, avares://MultiShell/Assets/Fonts#FiraCode Nerd Font Mono, Segoe UI Symbol, Segoe UI Emoji, Microsoft YaHei UI, Yu Gothic UI, Malgun Gothic, Nirmala UI, Leelawadee UI, monospace</FontFamily>
             <SolidColorBrush x:Key="TerminalSurfaceBackground">#0E0F15</SolidColorBrush>
             <SolidColorBrush x:Key="TerminalCaretBrush">#7AA2F7</SolidColorBrush>
 

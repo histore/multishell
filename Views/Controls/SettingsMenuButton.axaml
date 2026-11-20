@@ -54,7 +54,7 @@
                                     <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Language]}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource AppTextSecondary}" />
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding CurrentLanguageUpper}"
-                                                   FontFamily="Consolas, monospace"
+                                                   FontFamily="{StaticResource AppMonoFontFamily}"
                                                    FontSize="10"
                                                    FontWeight="Bold"
                                                    Foreground="{DynamicResource AppAccent}"
@@ -76,7 +76,7 @@
                                                         Padding="4,1"
                                                         MinWidth="26">
                                                     <TextBlock Text="{Binding UpperCode}"
-                                                               FontFamily="Consolas, monospace"
+                                                               FontFamily="{StaticResource AppMonoFontFamily}"
                                                                FontSize="9"
                                                                FontWeight="Bold"
                                                                HorizontalAlignment="Center"
@@ -100,7 +100,7 @@
                                 <Grid ColumnDefinitions="*, Auto">
                                     <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_App_FontSize]}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource AppTextSecondary}" />
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding AppFontSizeLevel, StringFormat='{}L{0}'}" FontSize="10" FontFamily="Consolas, monospace" FontWeight="Bold" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding AppFontSizeLevel, StringFormat='{}L{0}'}" FontSize="10" FontFamily="{StaticResource AppMonoFontFamily}" FontWeight="Bold" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Grid>
                                 <Border Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="4" Padding="2">
@@ -137,7 +137,7 @@
                                 <Grid ColumnDefinitions="*, Auto">
                                     <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Terminal_FontSize]}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource AppTextSecondary}" />
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding TerminalFontSize, StringFormat='{}{0:0.#} pt'}" FontSize="10" FontFamily="Consolas, monospace" FontWeight="Bold" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding TerminalFontSize, StringFormat='{}{0:0.#} pt'}" FontSize="10" FontFamily="{StaticResource AppMonoFontFamily}" FontWeight="Bold" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Grid>
                                 <Border Background="{DynamicResource AppSurfaceBackground}" BorderBrush="{DynamicResource AppBorder}" BorderThickness="1" CornerRadius="4" Padding="2">
@@ -186,7 +186,7 @@
                                 HorizontalAlignment="Stretch">
                             <Grid ColumnDefinitions="*, Auto">
                                 <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_Help_Title]}" FontSize="12" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="Ctrl+Shift+F1" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Ctrl+Shift+F1" FontFamily="{StaticResource AppMonoFontFamily}" FontSize="10" Foreground="{DynamicResource AppTextMuted}" VerticalAlignment="Center" />
                             </Grid>
                         </Button>
 
@@ -196,7 +196,7 @@
                                 HorizontalAlignment="Stretch">
                             <Grid ColumnDefinitions="*, Auto">
                                 <TextBlock Grid.Column="0" Text="{Binding Loc[Settings_About_Title]}" FontSize="12" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="{Binding AppVersion}" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding AppVersion}" FontFamily="{StaticResource AppMonoFontFamily}" FontSize="10" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center" />
                             </Grid>
                         </Button>
                     </StackPanel>

@@ -25,7 +25,7 @@
                             VerticalAlignment="Center"
                             ToolTip.Tip="{Binding SelectedTab.ExecutionStatusTooltip}">
                     <TextBlock Text="{Binding SelectedTab.ExecutionStatusGlyph}"
-                               FontFamily="Consolas, Cascadia Code, monospace"
+                               FontFamily="{StaticResource AppMonoFontFamily}"
                                FontSize="10"
                                FontWeight="Bold"
                                Foreground="{Binding SelectedTab.ExecutionStatusForeground}"
@@ -127,7 +127,7 @@
                             ToolTip.Tip="{Binding Loc[Status_CapsLock_Tooltip]}"
                             IsVisible="{Binding IsCapsLockActive}">
                         <TextBlock Text="CAPS"
-                                   FontFamily="Consolas, monospace"
+                                   FontFamily="{StaticResource AppMonoFontFamily}"
                                    FontSize="9"
                                    FontWeight="Bold"
                                    Foreground="#E0AF68"
@@ -135,7 +135,7 @@
                     </Border>
 
                     <TextBlock Text="UTF-8"
-                               FontFamily="Consolas, monospace"
+                               FontFamily="{StaticResource AppMonoFontFamily}"
                                FontSize="10"
                                Foreground="{DynamicResource AppTextDimmed}"
                                VerticalAlignment="Center" />
@@ -144,7 +144,7 @@
                             Padding="4,1"
                             VerticalAlignment="Center">
                         <TextBlock Text="{Binding SelectedTab.ShellIconTag}"
-                                   FontFamily="Consolas, Cascadia Code, monospace"
+                                   FontFamily="{StaticResource AppMonoFontFamily}"
                                    FontSize="9"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource AppAccent}"

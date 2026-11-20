@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -269,6 +270,68 @@ public class HistoryDrawerUiHeadlessTests
             // Assert: fakeDir was pruned when switching to global tab
             Assert.DoesNotContain(fakeDir, dirService.GetHistory());
             Assert.DoesNotContain(fakeDir, tab.DirectoryHistory);
+        });
+    }
+
+    [Theory]
+    [InlineData("de")]
+    [InlineData("en")]
+    [InlineData("fr")]
+    [InlineData("es")]
+    [InlineData("it")]
+    [InlineData("pt")]
+    public async Task HistoryDrawerView_HintText_DoesNotOverlapCloseButton_AcrossAllLanguages(string langCode)
+    {
+        await HeadlessTestSession.DispatchAsync(async () =>
+        {
+            var processService = new MockShellProcessService();
+            var persistenceService = new MockTabStatePersistenceService();
+            var loc = new LocalizationService(langCode, isUserSelection: true);
+            using var mainVm = new MainViewModel(
+                processService,
+                persistenceService,
+                new ThemeService(),
+                loc,
+                new FontSizeService());
+
+            await mainVm.InitializeWorkspaceAsync();
+
+            var view = new HistoryDrawerView
+            {
+                DataContext = mainVm
+            };
+
+            var window = new Window
+            {
+                Width = 900,
+                Height = 700,
+                Content = view
+            };
+
+            view.OpenOrToggleHistoryDrawer(0);
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            var closeButton = view.FindControl<Button>("CloseHistoryButton");
+            var hintText = view.FindControl<TextBlock>("DrawerHintTextBlock");
+
+            Assert.NotNull(closeButton);
+            Assert.NotNull(hintText);
+            Assert.Equal(Avalonia.Media.TextWrapping.Wrap, hintText.TextWrapping);
+
+            var closeOrigin = closeButton.TranslatePoint(new Point(0, 0), window);
+            var hintOrigin = hintText.TranslatePoint(new Point(0, 0), window);
+
+            Assert.NotNull(closeOrigin);
+            Assert.NotNull(hintOrigin);
+
+            var closeRect = new Rect(closeOrigin.Value, closeButton.Bounds.Size);
+            var hintRect = new Rect(hintOrigin.Value, hintText.Bounds.Size);
+
+            Assert.False(closeRect.Intersects(hintRect),
+                $"Drawer hint text ({hintRect}) overlapped close button ({closeRect}) for language '{langCode}'.");
+
+            window.Close();
         });
     }
 
