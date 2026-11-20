@@ -115,6 +115,12 @@ public class WindowCoordinatorService : IWindowCoordinatorService
         {
             if (newVm != null)
             {
+                // Suppress CloseWindowAsync triggered by DetachTab on a failed/unopened satellite window
+                lock (_lock)
+                {
+                    _closingWindows.Add(newVm);
+                }
+                newVm.DetachTab(tab);
                 UnregisterWindow(newVm);
                 if (newVm is IDisposable disposable)
                 {

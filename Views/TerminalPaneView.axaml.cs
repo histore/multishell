@@ -124,6 +124,11 @@ public partial class TerminalPaneView : UserControl
 
     public void FocusTerminal()
     {
+        if (DataContext is TerminalPaneViewModel vm && vm.IsSearchOpen)
+        {
+            _searchInputBox?.Focus();
+            return;
+        }
         Terminal.Focus();
     }
 

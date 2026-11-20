@@ -181,7 +181,7 @@ public partial class TerminalTabViewModel
         {
             pane.PendingCommandDirectory = effectiveDir;
         }
-        if (pane == null || ReferenceEquals(pane, ActivePane))
+        if (pane == null || ReferenceEquals(pane, _initialPane))
         {
             _pendingCommandDirectory = effectiveDir;
         }

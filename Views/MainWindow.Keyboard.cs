@@ -47,24 +47,37 @@ public partial class MainWindow
             return;
         }
 
-        if (e.Key == Key.Escape && TryHandleEscapeKeyDown())
-        {
-            e.Handled = true;
-            return;
-        }
-
         if (IsAnyModalOpen())
         {
+            if (e.Key == Key.Escape && TryHandleEscapeKeyDown())
+            {
+                e.Handled = true;
+                return;
+            }
             if (IsWindowKeyBindingGesture(e)) e.Handled = true;
             return;
         }
 
         if (HistoryDrawer?.IsDrawerOpen == true)
         {
+            var isCtrlShiftDrawerToggle =
+                (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Alt)) == (KeyModifiers.Control | KeyModifiers.Shift) &&
+                e.Key is Key.H or Key.L or Key.P;
+            if (isCtrlShiftDrawerToggle && TryHandleCtrlShiftActionKeyDown(e))
+            {
+                return;
+            }
+
             if (!HistoryDrawer.HandleKeyDown(e) && IsWindowKeyBindingGesture(e))
             {
                 e.Handled = true;
             }
+            return;
+        }
+
+        if (e.Key == Key.Escape && TryHandleEscapeKeyDown())
+        {
+            e.Handled = true;
             return;
         }
 
