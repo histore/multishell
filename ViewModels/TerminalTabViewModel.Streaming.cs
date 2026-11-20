@@ -97,63 +97,68 @@ public partial class TerminalTabViewModel
             return;
         }
 
-        lock (_inputLineBufferLock)
+        var pane = sourcePane ?? ActivePane;
+        var bufferLock = pane?.InputLineBufferLock ?? _inputLineBufferLock;
+        lock (bufferLock)
         {
             foreach (var ch in chars)
             {
-                ProcessInputBufferChar(ch, sourcePane);
+                ProcessInputBufferChar(ch, pane);
             }
         }
 
-        UpdateDraftCommandState();
+        UpdateDraftCommandState(pane);
     }
 
-    private void ProcessInputBufferChar(char ch, TerminalPaneViewModel? sourcePane = null)
+    private void ProcessInputBufferChar(char ch, TerminalPaneViewModel? pane)
     {
+        var buffer = pane?.InputLineBuffer ?? _inputLineBuffer;
+        bool previousWasCr = pane?.PreviousWasCr ?? _previousWasCr;
+
         if (ch == '\x03') // Ctrl+C -> cancel line
         {
-            _previousWasCr = false;
-            _inputLineBuffer.Clear();
+            if (pane != null) pane.PreviousWasCr = false; else _previousWasCr = false;
+            buffer.Clear();
             return;
         }
 
         if (ch == '\r') // Enter / Return: command execution
         {
-            _previousWasCr = true;
-            string executedCommand = _inputLineBuffer.ToString().Trim();
-            _inputLineBuffer.Clear();
-            RecordExecutedInputCommand(executedCommand, sourcePane);
+            if (pane != null) pane.PreviousWasCr = true; else _previousWasCr = true;
+            string executedCommand = buffer.ToString().Trim();
+            buffer.Clear();
+            RecordExecutedInputCommand(executedCommand, pane);
             return;
         }
 
         if (ch == '\n')
         {
-            if (_previousWasCr)
+            if (previousWasCr)
             {
                 // CRLF sequence - already executed on '\r'
-                _previousWasCr = false;
+                if (pane != null) pane.PreviousWasCr = false; else _previousWasCr = false;
                 return;
             }
 
             // Standalone linefeed (e.g. Shift+Enter / Ctrl+Enter multi-line script continuation)
-            _inputLineBuffer.Append('\n');
+            buffer.Append('\n');
             return;
         }
 
-        _previousWasCr = false;
+        if (pane != null) pane.PreviousWasCr = false; else _previousWasCr = false;
 
         if (ch == '\b' || ch == '\x7F') // Backspace
         {
-            if (_inputLineBuffer.Length > 0)
+            if (buffer.Length > 0)
             {
-                _inputLineBuffer.Length--;
+                buffer.Length--;
             }
             return;
         }
 
         if (!char.IsControl(ch))
         {
-            _inputLineBuffer.Append(ch);
+            buffer.Append(ch);
         }
     }
 
@@ -167,8 +172,15 @@ public partial class TerminalTabViewModel
             : WorkingDirectory;
         var effectiveShellType = pane?.ShellType ?? ShellType;
 
-        MarkCommandStarted(executedCommand);
-        _pendingCommandDirectory = effectiveDir;
+        MarkCommandStarted(executedCommand, pane);
+        if (pane != null)
+        {
+            pane.PendingCommandDirectory = effectiveDir;
+        }
+        if (pane == null || ReferenceEquals(pane, ActivePane))
+        {
+            _pendingCommandDirectory = effectiveDir;
+        }
         if (effectiveShellType != ShellType.PowerShell)
         {
             if (pane != null && !ReferenceEquals(TerminalModel, pane.TerminalModel))
@@ -186,15 +198,24 @@ public partial class TerminalTabViewModel
     /// <summary>
     /// Synchronizes the HasDraftCommand property with the current content of the terminal input line buffer.
     /// </summary>
-    internal void UpdateDraftCommandState()
+    internal void UpdateDraftCommandState(TerminalPaneViewModel? pane = null)
     {
+        var targetPane = pane ?? ActivePane;
+        var bufferLock = targetPane?.InputLineBufferLock ?? _inputLineBufferLock;
+        var buffer = targetPane?.InputLineBuffer ?? _inputLineBuffer;
+
         bool hasDraft;
-        lock (_inputLineBufferLock)
+        lock (bufferLock)
         {
-            hasDraft = _inputLineBuffer.Length > 0;
+            hasDraft = buffer.Length > 0;
         }
 
-        if (HasDraftCommand != hasDraft)
+        if (targetPane != null)
+        {
+            targetPane.HasDraftCommand = hasDraft;
+        }
+
+        if ((targetPane == null || ReferenceEquals(targetPane, ActivePane)) && HasDraftCommand != hasDraft)
         {
             _dispatcherService.RunOnUi(() => HasDraftCommand = hasDraft);
         }
@@ -205,11 +226,14 @@ public partial class TerminalTabViewModel
     /// </summary>
     internal void ClearInputLineBuffer()
     {
-        lock (_inputLineBufferLock)
+        var pane = ActivePane;
+        var bufferLock = pane?.InputLineBufferLock ?? _inputLineBufferLock;
+        var buffer = pane?.InputLineBuffer ?? _inputLineBuffer;
+        lock (bufferLock)
         {
-            _inputLineBuffer.Clear();
+            buffer.Clear();
         }
-        UpdateDraftCommandState();
+        UpdateDraftCommandState(pane);
     }
 
     private void OnTerminalSizeChanged(object? sender, (int Cols, int Rows) e)

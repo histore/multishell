@@ -222,7 +222,8 @@ public sealed partial class ShellSession
         if (_shellType == ShellType.NuShell)
         {
             string exePath = ShellDiscoveryService.ResolveExecutable("nu.exe") ?? "nu.exe";
-            return FormatWin32QuotedArgument(exePath);
+            string args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments.Trim()}";
+            return $"{FormatWin32QuotedArgument(exePath)}{args}";
         }
 
         if (_shellType == ShellType.WSL)
@@ -231,11 +232,12 @@ public sealed partial class ShellSession
                              Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
             if (!File.Exists(exePath)) exePath = "wsl.exe";
 
-            if (!string.IsNullOrWhiteSpace(workingDir))
+            string args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments.Trim()}";
+            if (!string.IsNullOrWhiteSpace(workingDir) && !args.Contains("--cd", StringComparison.OrdinalIgnoreCase))
             {
-                return BuildWslCommandLine(exePath, workingDir);
+                return BuildWslCommandLine(exePath, workingDir, args);
             }
-            return FormatWin32QuotedArgument(exePath);
+            return $"{FormatWin32QuotedArgument(exePath)}{args}";
         }
 
         string cmdPath;

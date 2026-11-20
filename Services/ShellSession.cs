@@ -33,6 +33,8 @@ public sealed partial class ShellSession : IShellSession
     public string Title { get; }
     public string? WorkingDirectory { get; private set; }
     public ShellType ShellType => _shellType;
+    public string? CustomExecutable => _customExecutable;
+    public string? CustomArguments => _customArguments;
     public bool IsRunning => _isRunning;
 
     public event Action<ReadOnlyMemory<byte>>? DataReceived;

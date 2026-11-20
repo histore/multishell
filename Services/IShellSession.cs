@@ -29,6 +29,16 @@ public interface IShellSession : IDisposable
     ShellType ShellType { get; }
 
     /// <summary>
+    /// Optional custom executable path configured for this session's profile.
+    /// </summary>
+    string? CustomExecutable => null;
+
+    /// <summary>
+    /// Optional custom startup arguments configured for this session's profile.
+    /// </summary>
+    string? CustomArguments => null;
+
+    /// <summary>
     /// Whether the underlying shell process is currently running.
     /// </summary>
     bool IsRunning { get; }

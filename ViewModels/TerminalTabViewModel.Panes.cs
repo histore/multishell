@@ -81,6 +81,11 @@ public partial class TerminalTabViewModel
     public Func<string?, ShellType, IShellSession>? SessionFactory { get; set; }
 
     /// <summary>
+    /// Optional profile-aware factory delegate used when splitting panes so custom executable and arguments are preserved.
+    /// </summary>
+    public Func<string?, ShellType, string?, string?, IShellSession>? ProfileSessionFactory { get; set; }
+
+    /// <summary>
     /// Initializes split pane tree tracking for the initial primary pane.
     /// </summary>
     private void InitializeSplitPanes(TerminalPaneViewModel initialPane)
@@ -105,6 +110,7 @@ public partial class TerminalTabViewModel
 
         ActivePane = pane;
         SyncSearchStateFromPane(pane);
+        SyncExecutionAndDraftStateFromPane(pane);
 
         // Synchronize tab working directory, title, and path-bound command history from newly focused pane
         if (!string.IsNullOrWhiteSpace(pane.WorkingDirectory))
@@ -358,6 +364,15 @@ public partial class TerminalTabViewModel
             ? sourcePane.WorkingDirectory
             : WorkingDirectory;
 
+        if (ProfileSessionFactory != null)
+        {
+            return ProfileSessionFactory(
+                targetDir,
+                sourcePane.ShellType,
+                sourcePane.Session.CustomExecutable,
+                sourcePane.Session.CustomArguments);
+        }
+
         if (SessionFactory != null)
         {
             return SessionFactory(targetDir, sourcePane.ShellType);
@@ -367,6 +382,8 @@ public partial class TerminalTabViewModel
         return new ShellSession(
             $"{sourcePane.Title} (Split)",
             targetDir,
-            sourcePane.ShellType);
+            sourcePane.ShellType,
+            sourcePane.Session.CustomExecutable,
+            sourcePane.Session.CustomArguments);
     }
 }

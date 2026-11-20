@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
@@ -26,7 +27,7 @@ public class ThemeService : IThemeService
         new(Color.Parse("#BB9AF7")), // 5: Magenta
         new(Color.Parse("#7DCFFF")), // 6: Cyan
         new(Color.Parse("#C0CAF5")), // 7: Foreground Text
-        new(Color.Parse("#414868")), // 8: Gray
+        new(Color.Parse("#565F89")), // 8: Bright Black / Muted Gray
         new(Color.Parse("#F7768E")), // 9: Bright Red
         new(Color.Parse("#9ECE6A")), // 10: Bright Green
         new(Color.Parse("#E0AF68")), // 11: Bright Yellow
@@ -79,6 +80,12 @@ public class ThemeService : IThemeService
             : _isDarkAppTheme;
 
     public bool IsDarkTerminalTheme => _isDarkTerminalTheme;
+
+    /// <summary>
+    /// Returns the shared 16-color ANSI terminal palette for the requested theme variant.
+    /// </summary>
+    public static IReadOnlyList<ImmutableSolidColorBrush> GetTerminalPalette(bool isDark)
+        => isDark ? DarkTerminalPalette : LightTerminalPalette;
 
     public event Action<bool>? AppThemeChanged;
 

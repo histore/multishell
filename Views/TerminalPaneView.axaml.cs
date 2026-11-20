@@ -9,6 +9,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using MultiShell.Services;
 using MultiShell.ViewModels;
 using SvcSystems.UI.Terminal;
 
@@ -16,46 +17,6 @@ namespace MultiShell.Views;
 
 public partial class TerminalPaneView : UserControl
 {
-    private static readonly SolidColorBrush[] DarkPalette =
-    [
-        new SolidColorBrush(Color.Parse("#0E0F15")), // 0: Dark Background
-        new SolidColorBrush(Color.Parse("#F7768E")), // 1: Red
-        new SolidColorBrush(Color.Parse("#9ECE6A")), // 2: Green
-        new SolidColorBrush(Color.Parse("#E0AF68")), // 3: Yellow
-        new SolidColorBrush(Color.Parse("#7AA2F7")), // 4: Blue
-        new SolidColorBrush(Color.Parse("#BB9AF7")), // 5: Magenta
-        new SolidColorBrush(Color.Parse("#7DCFFF")), // 6: Cyan
-        new SolidColorBrush(Color.Parse("#C0CAF5")), // 7: Light Foreground Text
-        new SolidColorBrush(Color.Parse("#565F89")), // 8: Bright Black / Muted
-        new SolidColorBrush(Color.Parse("#F7768E")), // 9: Bright Red
-        new SolidColorBrush(Color.Parse("#9ECE6A")), // 10: Bright Green
-        new SolidColorBrush(Color.Parse("#E0AF68")), // 11: Bright Yellow
-        new SolidColorBrush(Color.Parse("#7AA2F7")), // 12: Bright Blue
-        new SolidColorBrush(Color.Parse("#BB9AF7")), // 13: Bright Magenta
-        new SolidColorBrush(Color.Parse("#7DCFFF")), // 14: Bright Cyan
-        new SolidColorBrush(Color.Parse("#FFFFFF"))  // 15: Bright White
-    ];
-
-    private static readonly SolidColorBrush[] LightPalette =
-    [
-        new SolidColorBrush(Color.Parse("#F8F9FC")), // 0: Light Background
-        new SolidColorBrush(Color.Parse("#D32F2F")), // 1: Red
-        new SolidColorBrush(Color.Parse("#2E7D32")), // 2: Green
-        new SolidColorBrush(Color.Parse("#E65100")), // 3: Dark Yellow / Orange
-        new SolidColorBrush(Color.Parse("#1976D2")), // 4: Blue
-        new SolidColorBrush(Color.Parse("#7B1FA2")), // 5: Magenta
-        new SolidColorBrush(Color.Parse("#0097A7")), // 6: Cyan
-        new SolidColorBrush(Color.Parse("#1A1D2B")), // 7: Dark Foreground Text
-        new SolidColorBrush(Color.Parse("#757D96")), // 8: Gray
-        new SolidColorBrush(Color.Parse("#C62828")), // 9: Bright Red
-        new SolidColorBrush(Color.Parse("#1B5E20")), // 10: Bright Green
-        new SolidColorBrush(Color.Parse("#BF360C")), // 11: Bright Yellow
-        new SolidColorBrush(Color.Parse("#0D47A1")), // 12: Bright Blue
-        new SolidColorBrush(Color.Parse("#4A148C")), // 13: Bright Magenta
-        new SolidColorBrush(Color.Parse("#006064")), // 14: Bright Cyan
-        new SolidColorBrush(Color.Parse("#0A0B10"))  // 15: Bright Black / Dark Text
-    ];
-
     private PropertyChangedEventHandler? _propChangedHandler;
     private TerminalPaneViewModel? _currentVm;
     private Border? _miniHeader;
@@ -274,7 +235,7 @@ public partial class TerminalPaneView : UserControl
         typeof(TerminalControl))]
     private void ApplyTerminalTheme(bool isDark, TerminalPaneViewModel vm)
     {
-        var palette = isDark ? DarkPalette : LightPalette;
+        var palette = ThemeService.GetTerminalPalette(isDark);
 
         if (TerminalScope != null)
         {
@@ -287,7 +248,7 @@ public partial class TerminalPaneView : UserControl
             ? new SolidColorBrush(Color.FromArgb(120, 122, 162, 247))
             : new SolidColorBrush(Color.FromArgb(120, 25, 118, 210));
 
-        for (var i = 0; i < palette.Length; i++)
+        for (var i = 0; i < palette.Count; i++)
         {
             var key = $"SvcSystems.UI.TerminalColor{i}";
             Terminal.Resources[key] = palette[i];
@@ -302,9 +263,9 @@ public partial class TerminalPaneView : UserControl
             var fallbackField = typeof(TerminalControl).GetField("FallbackXtermPalette", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             if (fallbackField?.GetValue(null) is Brush[] fallbackArray)
             {
-                for (var i = 0; i < palette.Length && i < fallbackArray.Length; i++)
+                for (var i = 0; i < palette.Count && i < fallbackArray.Length; i++)
                 {
-                    fallbackArray[i] = palette[i];
+                    fallbackArray[i] = new SolidColorBrush(palette[i].Color);
                 }
             }
 

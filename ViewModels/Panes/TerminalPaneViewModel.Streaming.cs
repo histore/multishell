@@ -28,6 +28,7 @@ public partial class TerminalPaneViewModel
         _dispatcherService.RunOnUi(() =>
         {
             if (_isDisposed) return;
+            PaneIsOutputActive = true;
             if (!IsExecuting)
             {
                 IsExecuting = true;
@@ -56,6 +57,7 @@ public partial class TerminalPaneViewModel
         _dispatcherService.RunOnUi(() =>
         {
             if (_isDisposed) return;
+            PaneIsOutputActive = false;
             UpdateExecutionStatusBadge("○ ", "Process_Activity_Waiting", "Waiting for input");
         });
     }
@@ -128,7 +130,7 @@ public partial class TerminalPaneViewModel
 
         if (!ReferenceEquals(Tab.TerminalModel, TerminalModel))
         {
-            Tab.OnSessionCommandCompleted(exitCode);
+            Tab.HandlePaneCommandCompleted(this, exitCode);
         }
     }
 }

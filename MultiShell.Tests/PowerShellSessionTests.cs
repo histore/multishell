@@ -377,5 +377,24 @@ public class PowerShellSessionTests
         Assert.True(Directory.Exists(win32ForPosix));
         Assert.Equal("/home/user/project", shellForPosix);
     }
+
+    [Fact]
+    public void GenerateShellCommandLine_ForwardsCustomArgumentsForNuShellAndWslWithoutCustomExecutable()
+    {
+        using var nuSession = new ShellSession("NuArgs", shellType: ShellType.NuShell, customExecutable: null, customArguments: "--login");
+        var nuCmd = nuSession.GenerateShellCommandLine(null);
+        Assert.EndsWith(" --login", nuCmd);
+
+        using var wslSession = new ShellSession("WslArgs", shellType: ShellType.WSL, customExecutable: null, customArguments: "-d Ubuntu");
+        var wslCmd = wslSession.GenerateShellCommandLine(@"C:\Projects");
+        Assert.Contains("--cd \"C:\\Projects\"", wslCmd);
+        Assert.EndsWith(" -d Ubuntu", wslCmd);
+
+        // If customArguments already specifies --cd, do not duplicate --cd
+        using var wslCustomCd = new ShellSession("WslCustomCd", shellType: ShellType.WSL, customExecutable: null, customArguments: "--cd /tmp -d Ubuntu");
+        var wslCustomCdCmd = wslCustomCd.GenerateShellCommandLine(@"C:\Projects");
+        Assert.EndsWith(" --cd /tmp -d Ubuntu", wslCustomCdCmd);
+        Assert.DoesNotContain(@"C:\Projects", wslCustomCdCmd);
+    }
 }
 

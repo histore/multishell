@@ -341,3 +341,41 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Status**: `DONE` (replaced static `SolidColorBrush` fields in `ThemeService.cs` with `ImmutableSolidColorBrush`, asserted rendered terminal buffer contents and absence of `\uFFFD` / stray escape tokens in the 6 fragmented streaming tests in `TerminalTabViewModelTests.TerminalInput.cs`, and added `LocalizationService_AllLanguageDictionaries_HaveIdenticalFormatPlaceholders` in `LocalizationServiceTests.cs`)
 - **Scope**: `Services/ThemeService.cs`, `MultiShell.Tests/TerminalTabViewModelTests.TerminalInput.cs`, `MultiShell.Tests/LocalizationServiceTests.cs`
 - **Summary**: Replace static mutable `SolidColorBrush` instances in `ThemeService` with `ImmutableSolidColorBrush`, assert actual terminal screen buffer text (and absence of `\uFFFD`) in the 6 fragmented UTF-8/OSC/CSI tests, and add a unit test verifying format placeholder (`{0}`, `{1}`) parity across all 6 languages.
+
+---
+
+## General Codebase Review Findings — Wave 3 (2026-11-19)
+
+### Medium
+
+#### `[BL-MED-021]` (`REV-01`) Isolate Input Line Buffering & Synchronize Execution Status Per Split Pane — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (moved per-pane input line buffer, draft state, and execution status fields onto `TerminalPaneViewModel`, routed background pane completions via `HandlePaneCommandCompleted` without overwriting active pane status, synchronized execution/draft state in `SetActivePane`, and added regression test in `SplitPaneTreeTests`)
+- **Scope**: `ViewModels/TerminalTabViewModel.Streaming.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`, `ViewModels/TerminalTabViewModel.ExecutionState.cs`, `ViewModels/Panes/TerminalPaneViewModel.cs`, `ViewModels/Panes/TerminalPaneViewModel.Streaming.cs`
+- **Summary**: (1) All split panes in a tab currently funnel keystrokes into a single shared `_inputLineBuffer`, `_previousWasCr`, and `_pendingCommandDirectory` on `TerminalTabViewModel` via `Tab.TrackInputBuffer(input, this)`, interleaving partial draft commands when a user types across multiple panes before pressing Enter; (2) when an inactive background pane completes a command, `TerminalPaneViewModel.OnSessionCommandCompleted` overwrites the tab-level `ExecutionState` even if the active pane is still executing a command, and `SetActivePane(pane)` does not synchronize the tab status bar indicators (`ExecutionState`, `LastExitCode`, `IsOutputActive`, `HasDraftCommand`) with the newly focused pane.
+
+#### `[BL-MED-022]` (`REV-02`) Consolidate Duplicate Terminal Color Palettes & Align ANSI Color 8 (Bright Black) — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (aligned Dark ANSI color 8 to `#565F89` in `ThemeService`, exposed shared `ThemeService.GetTerminalPalette(bool)`, and removed duplicate `DarkPalette`/`LightPalette` arrays from `TerminalPaneView.axaml.cs`)
+- **Scope**: `Services/ThemeService.cs`, `Views/TerminalPaneView.axaml.cs`
+- **Summary**: `ThemeService` (`DarkTerminalPalette` / `LightTerminalPalette`) and `TerminalPaneView` (`DarkPalette` / `LightPalette`) define separate 16-color ANSI brush arrays with a color discrepancy at index 8 (Dark Bright Black / Gray is `#414868` in `ThemeService.cs` vs. `#565F89` in `TerminalPaneView.axaml.cs`). Consolidate the 16-color palettes into a single shared definition using `ImmutableSolidColorBrush` to eliminate duplication and ensure visual parity.
+
+#### `[BL-MED-023]` (`REV-03`) Forward Custom Profile Arguments for NuShell/WSL & Preserve Custom Profile Executable/Arguments When Splitting Panes — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (forwarded `_customArguments` for `ShellType.NuShell` and `ShellType.WSL` when `_customExecutable` is null in `ShellSession.GenerateShellCommandLine`, exposed `CustomExecutable`/`CustomArguments` on `IShellSession`/`ShellSession`, wired `ProfileSessionFactory` in `MainViewModel.Tabs.cs` and `TerminalTabViewModel.Panes.cs`, and added regression tests in `PowerShellSessionTests` and `SplitPaneTreeTests`)
+- **Scope**: `Services/ShellSession.Process.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`, `ViewModels/MainViewModel.Tabs.cs`
+- **Summary**: (1) In `ShellSession.GenerateShellCommandLine`, `_customArguments` is ignored for `ShellType.NuShell` and `ShellType.WSL` when `_customExecutable` is not set (e.g., when custom arguments are configured on a built-in or default-executable NuShell/WSL profile); (2) `TerminalTabViewModel.SessionFactory` (`(dir, shell)`) only forwards working directory and `ShellType` when splitting a pane (`CreateSessionForSplit`), dropping any custom profile `ExecutablePath` and `Arguments` from the source pane's session.
+
+### Low
+
+#### `[BL-LOW-013]` (`REV-04`) Implement `IDisposable` on `TerminalProfileService` & `TabStatePersistenceService` for Event and Semaphore Cleanup — **DONE**
+- **Criticality**: `Low`
+- **Status**: `DONE` (implemented idempotent `IDisposable` on `TerminalProfileService` to unsubscribe `LanguageChanged` and dispose `_semaphore`, and on `TabStatePersistenceService` to dispose `_semaphore`)
+- **Scope**: `Services/ITerminalProfileService.cs`, `Services/TerminalProfileService.cs`, `Services/ITabStatePersistenceService.cs`, `Services/TabStatePersistenceService.cs`
+- **Summary**: `TerminalProfileService` subscribes to `_localizationService.LanguageChanged += OnLanguageChanged` in its constructor and allocates a `SemaphoreSlim _semaphore` (as does `TabStatePersistenceService`), but neither implements `IDisposable`. Implement `IDisposable` to unsubscribe `LanguageChanged` and dispose `_semaphore` cleanly in test and multi-instance lifecycles.
+
+#### `[BL-LOW-014]` (`REV-05`) Ensure Cross-Platform Guard Consistency for Win32 Interop Helpers (`KeyboardStateHelper`) — **DONE**
+- **Criticality**: `Low`
+- **Status**: `DONE` (aligned `KeyboardStateHelper.QueryCapsLockState()` with an explicit early `if (!OperatingSystem.IsWindows()) return false;` guard matching `Program.cs` and `MainWindow.axaml.cs`)
+- **Scope**: `Services/KeyboardStateHelper.cs`, `Program.cs`, `Views/MainWindow.axaml.cs`
+- **Summary**: Align `KeyboardStateHelper.QueryCapsLockState()` and related Win32 P/Invoke entry points with explicit `OperatingSystem.IsWindows()` platform checks matching `Program.cs` (`AllowSetForegroundWindow`) and `MainWindow.axaml.cs` (`SetForegroundWindow`).

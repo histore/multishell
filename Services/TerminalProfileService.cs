@@ -12,13 +12,14 @@ namespace MultiShell.Services;
 /// <summary>
 /// Implements persistent terminal profile management.
 /// </summary>
-public class TerminalProfileService : ITerminalProfileService
+public class TerminalProfileService : ITerminalProfileService, IDisposable
 {
     private readonly string _filePath;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly List<TerminalProfile> _profiles = new();
     private readonly Lock _profilesLock = new();
     private readonly ILocalizationService? _localizationService;
+    private int _disposed;
 
     public event Action? ProfilesChanged;
 
@@ -344,5 +345,23 @@ public class TerminalProfileService : ITerminalProfileService
         {
             System.Diagnostics.Debug.WriteLine($"Failed to save terminal profiles: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Releases event subscriptions and internal synchronization primitives.
+    /// </summary>
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        if (_localizationService != null)
+        {
+            _localizationService.LanguageChanged -= OnLanguageChanged;
+        }
+
+        _semaphore.Dispose();
     }
 }
