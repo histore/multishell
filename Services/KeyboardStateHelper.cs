@@ -18,13 +18,14 @@ public static partial class KeyboardStateHelper
     /// </summary>
     public static bool QueryCapsLockState()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return false;
+        }
+
         try
         {
-            if (OperatingSystem.IsWindows())
-            {
-                return (GetKeyState(VkCapital) & 1) != 0;
-            }
-            return false;
+            return (GetKeyState(VkCapital) & 1) != 0;
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or PlatformNotSupportedException)
         {

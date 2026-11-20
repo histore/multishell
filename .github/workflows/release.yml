@@ -52,6 +52,16 @@ jobs:
           Write-Output "TAG_NAME=$tag" >> $env:GITHUB_OUTPUT
           Write-Host "Releasing version $tag"
 
+      - name: Audit NuGet Package Vulnerabilities (CVE Check)
+        shell: pwsh
+        run: |
+          $output = dotnet list MultiShell.slnx package --vulnerable --include-transitive | Out-String
+          Write-Host $output
+          if ($output -match "has the following vulnerable packages") {
+            Write-Error "Vulnerable NuGet packages detected!"
+            exit 1
+          }
+
       - name: Run Automated Tests
         run: dotnet test MultiShell.Tests/MultiShell.Tests.csproj --configuration Release --verbosity normal
 

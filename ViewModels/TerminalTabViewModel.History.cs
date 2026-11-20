@@ -304,9 +304,16 @@ public partial class TerminalTabViewModel
 
     private void OnSessionCommandExecuted(string command)
     {
-        if (string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
+        if (_isDisposed || string.IsNullOrWhiteSpace(command) || IsInternalConfigurationCommand(command)) return;
 
-        var targetDir = _pendingCommandDirectory ?? WorkingDirectory;
+        var initialPane = _panes.Count > 0 ? _panes[0] : null;
+        var targetDir = initialPane?.PendingCommandDirectory
+            ?? _pendingCommandDirectory
+            ?? (!string.IsNullOrWhiteSpace(initialPane?.WorkingDirectory) ? initialPane.WorkingDirectory : WorkingDirectory);
+        if (initialPane != null)
+        {
+            initialPane.PendingCommandDirectory = null;
+        }
         _pendingCommandDirectory = null;
 
         var sanitizedCommand = ShellCommandFilter.SanitizeCommandForHistory(command);

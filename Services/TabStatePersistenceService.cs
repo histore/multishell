@@ -11,10 +11,11 @@ namespace MultiShell.Services;
 /// Persists and loads workspace tab states using JSON files in local app data.
 /// Thread-safe and atomic to preserve exact tab order across parallel events and restarts.
 /// </summary>
-public class TabStatePersistenceService : ITabStatePersistenceService
+public class TabStatePersistenceService : ITabStatePersistenceService, IDisposable
 {
     private readonly string _filePath;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private int _disposed;
 
     public TabStatePersistenceService(string? customFilePath = null)
     {
@@ -32,6 +33,7 @@ public class TabStatePersistenceService : ITabStatePersistenceService
 
     public async Task SaveStateAsync(WorkspaceState state, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -54,6 +56,7 @@ public class TabStatePersistenceService : ITabStatePersistenceService
 
     public async Task<WorkspaceState?> LoadStateAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -83,5 +86,18 @@ public class TabStatePersistenceService : ITabStatePersistenceService
         {
             _semaphore.Release();
         }
+    }
+
+    /// <summary>
+    /// Releases internal synchronization primitives.
+    /// </summary>
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        _semaphore.Dispose();
     }
 }

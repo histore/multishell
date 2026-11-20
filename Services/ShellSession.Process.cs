@@ -119,7 +119,7 @@ public sealed partial class ShellSession
             return (GetFallbackLocalDirectory(), workingDir);
         }
 
-        if (Directory.Exists(workingDir))
+        if (LinkDetectionHelper.IsSafeLocalPath(workingDir) && Directory.Exists(workingDir))
         {
             return (workingDir, workingDir);
         }
@@ -222,7 +222,8 @@ public sealed partial class ShellSession
         if (_shellType == ShellType.NuShell)
         {
             string exePath = ShellDiscoveryService.ResolveExecutable("nu.exe") ?? "nu.exe";
-            return FormatWin32QuotedArgument(exePath);
+            string args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments.Trim()}";
+            return $"{FormatWin32QuotedArgument(exePath)}{args}";
         }
 
         if (_shellType == ShellType.WSL)
@@ -231,11 +232,12 @@ public sealed partial class ShellSession
                              Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
             if (!File.Exists(exePath)) exePath = "wsl.exe";
 
-            if (!string.IsNullOrWhiteSpace(workingDir))
+            string args = string.IsNullOrWhiteSpace(_customArguments) ? "" : $" {_customArguments.Trim()}";
+            if (!string.IsNullOrWhiteSpace(workingDir) && !args.Contains("--cd", StringComparison.OrdinalIgnoreCase))
             {
-                return BuildWslCommandLine(exePath, workingDir);
+                return BuildWslCommandLine(exePath, workingDir, args);
             }
-            return FormatWin32QuotedArgument(exePath);
+            return $"{FormatWin32QuotedArgument(exePath)}{args}";
         }
 
         string cmdPath;
@@ -261,7 +263,7 @@ public sealed partial class ShellSession
     {
         if (string.IsNullOrWhiteSpace(customArguments)) return false;
 
-        foreach (var token in customArguments.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        foreach (var token in SplitCommandLineArguments(customArguments))
         {
             if (token.Equals("-Command", StringComparison.OrdinalIgnoreCase) ||
                 token.Equals("-c", StringComparison.OrdinalIgnoreCase) ||
@@ -281,7 +283,7 @@ public sealed partial class ShellSession
         if (string.IsNullOrWhiteSpace(customArguments)) return string.Empty;
 
         var filtered = new System.Collections.Generic.List<string>();
-        foreach (var token in customArguments.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        foreach (var token in SplitCommandLineArguments(customArguments))
         {
             if (!token.Equals("-NoLogo", StringComparison.OrdinalIgnoreCase) &&
                 !token.Equals("-NoExit", StringComparison.OrdinalIgnoreCase))
@@ -291,6 +293,42 @@ public sealed partial class ShellSession
         }
 
         return filtered.Count > 0 ? " " + string.Join(' ', filtered) : string.Empty;
+    }
+
+    private static System.Collections.Generic.List<string> SplitCommandLineArguments(string commandLine)
+    {
+        var tokens = new System.Collections.Generic.List<string>();
+        var current = new System.Text.StringBuilder();
+        bool inDoubleQuotes = false;
+
+        for (int i = 0; i < commandLine.Length; i++)
+        {
+            char c = commandLine[i];
+            if (c == '"')
+            {
+                inDoubleQuotes = !inDoubleQuotes;
+                current.Append(c);
+            }
+            else if (char.IsWhiteSpace(c) && !inDoubleQuotes)
+            {
+                if (current.Length > 0)
+                {
+                    tokens.Add(current.ToString());
+                    current.Clear();
+                }
+            }
+            else
+            {
+                current.Append(c);
+            }
+        }
+
+        if (current.Length > 0)
+        {
+            tokens.Add(current.ToString());
+        }
+
+        return tokens;
     }
 
     internal static string BuildWslCommandLine(string executable, string workingDir, string? extraArgs = null)

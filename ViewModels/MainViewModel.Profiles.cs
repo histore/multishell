@@ -122,7 +122,7 @@ public partial class MainViewModel
         EditingProfileId = null;
         EditingProfileName = _localizationService["Profiles_Default_CustomName"];
         EditingExecutablePath = "pwsh.exe";
-        EditingWorkingDirectory = TerminalProfileService.GetDefaultWorkingDirectory();
+        EditingWorkingDirectory = _terminalProfileService.GetDefaultWorkingDirectory();
         EditingArguments = string.Empty;
         EditingIconTag = "SH";
         EditingShellType = ShellType.PowerShell;
@@ -139,7 +139,7 @@ public partial class MainViewModel
         EditingExecutablePath = item.ExecutablePath;
         EditingWorkingDirectory = !string.IsNullOrWhiteSpace(item.WorkingDirectory)
             ? item.WorkingDirectory
-            : TerminalProfileService.GetDefaultWorkingDirectory();
+            : _terminalProfileService.GetDefaultWorkingDirectory();
         EditingArguments = item.Arguments;
         EditingIconTag = item.IconTag;
         EditingShellType = item.ShellType;
@@ -164,7 +164,7 @@ public partial class MainViewModel
 
         var workingDir = !string.IsNullOrWhiteSpace(EditingWorkingDirectory)
             ? EditingWorkingDirectory.Trim()
-            : TerminalProfileService.GetDefaultWorkingDirectory();
+            : _terminalProfileService.GetDefaultWorkingDirectory();
 
         var profile = new TerminalProfile(
             EditingProfileId ?? Guid.NewGuid(),

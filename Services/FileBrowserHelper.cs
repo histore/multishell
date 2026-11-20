@@ -71,7 +71,7 @@ public static class FileBrowserHelper
             try
             {
                 var full = Path.GetFullPath(path);
-                if (Directory.Exists(full) || File.Exists(full))
+                if (LinkDetectionHelper.IsSafeLocalPath(full) && (Directory.Exists(full) || File.Exists(full)))
                 {
                     // Platform-independently trims redundant trailing separators while preserving root drives (e.g. C:\ or /)
                     return Path.TrimEndingDirectorySeparator(full);
@@ -95,6 +95,11 @@ public static class FileBrowserHelper
 
     private static bool OpenDirectory(string directoryPath)
     {
+        if (!LinkDetectionHelper.IsSafeLocalPath(directoryPath))
+        {
+            return false;
+        }
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             // Windows ShellExecuteEx natively handles directories without CLI quote-escaping pitfalls

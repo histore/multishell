@@ -501,4 +501,64 @@ public class SplitPaneTreeTests
             starHalf, 10, starHalf, 990, out double clampedLow));
         Assert.Equal(0.1, clampedLow, 3);
     }
+
+    [Fact]
+    public void SplitPanes_IsolateInputLineBuffers_AndSynchronizeExecutionStateOnPaneSwitch()
+    {
+        var session1 = new TestSession { ShellType = ShellType.CMD, WorkingDirectory = @"C:\Pane1" };
+        var session2 = new TestSession { ShellType = ShellType.CMD, WorkingDirectory = @"C:\Pane2" };
+        using var tab = new TerminalTabViewModel(session1);
+        tab.SessionFactory = (_, _) => session2;
+
+        var pane1 = tab.ActivePane;
+        // Type partial draft in pane1 without pressing Enter
+        pane1.SendInput("git sta"u8.ToArray());
+        Assert.True(tab.HasDraftCommand);
+
+        var pane2 = tab.SplitPane(pane1, PaneSplitDirection.Vertical);
+        // Switching to pane2 must reflect pane2's empty draft state
+        Assert.False(tab.HasDraftCommand);
+
+        // Type and execute a command in pane2; pane1's draft must not be interleaved
+        pane2.SendInput("dir\r"u8.ToArray());
+        Assert.Equal(ProcessExecutionState.Running, tab.ExecutionState);
+        Assert.Equal("dir", tab.LastExecutedCommand);
+
+        // Background pane1 completes a command -> must NOT overwrite active pane2's Running state
+        session1.SimulateCommandCompleted(1);
+        Assert.Equal(ProcessExecutionState.Running, tab.ExecutionState);
+        Assert.Null(tab.LastExitCode);
+
+        // Switching back to pane1 must synchronize pane1's Failed state and preserved draft command
+        tab.SetActivePane(pane1);
+        Assert.Equal(ProcessExecutionState.Failed, tab.ExecutionState);
+        Assert.Equal(1, tab.LastExitCode);
+        Assert.True(tab.HasDraftCommand);
+    }
+
+    [Fact]
+    public void SplitPane_ProfileSessionFactory_ForwardsCustomExecutableAndArguments()
+    {
+        using var sourceSession = new ShellSession(
+            "CustomWsl",
+            initialWorkingDirectory: @"C:\Projects",
+            shellType: ShellType.WSL,
+            customExecutable: @"C:\Windows\System32\wsl.exe",
+            customArguments: "-d Ubuntu");
+        using var tab = new TerminalTabViewModel(sourceSession);
+
+        string? capturedExe = null;
+        string? capturedArgs = null;
+        tab.ProfileSessionFactory = (dir, shell, exe, args) =>
+        {
+            capturedExe = exe;
+            capturedArgs = args;
+            return new TestSession { WorkingDirectory = dir, ShellType = shell };
+        };
+
+        tab.SplitPane(tab.ActivePane, PaneSplitDirection.Vertical);
+
+        Assert.Equal(@"C:\Windows\System32\wsl.exe", capturedExe);
+        Assert.Equal("-d Ubuntu", capturedArgs);
+    }
 }

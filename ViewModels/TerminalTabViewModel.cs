@@ -338,7 +338,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
 
         if (ReferenceEquals(pane, ActivePane) || _panes.Count <= 1)
         {
-            OnSessionWorkingDirectoryChanged(newDir);
+            ApplyActiveWorkingDirectoryChanged(newDir);
         }
         else
         {
@@ -352,8 +352,23 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
 
     private void OnSessionWorkingDirectoryChanged(string newDir)
     {
-        if (string.IsNullOrWhiteSpace(newDir)) return;
+        if (_isDisposed || string.IsNullOrWhiteSpace(newDir)) return;
 
+        if (_panes.Count > 1 && !ReferenceEquals(_panes[0], ActivePane))
+        {
+            _dispatcherService.RunOnUi(() =>
+            {
+                if (_isDisposed) return;
+                _directoryHistoryService.RecordDirectory(newDir);
+            });
+            return;
+        }
+
+        ApplyActiveWorkingDirectoryChanged(newDir);
+    }
+
+    private void ApplyActiveWorkingDirectoryChanged(string newDir)
+    {
         void UpdateDir()
         {
             WorkingDirectory = newDir;
@@ -420,6 +435,22 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
 
     [RelayCommand]
     public void RequestUndock() => UndockRequested?.Invoke(this);
+
+    /// <summary>
+    /// Attempts to terminate all underlying shell sessions in this tab and reports whether all sessions stopped.
+    /// </summary>
+    internal bool TryStopSessions()
+    {
+        if (_panes != null)
+        {
+            foreach (var pane in _panes.ToList())
+            {
+                pane.Session.Dispose();
+            }
+        }
+        _session.Dispose();
+        return !IsRunning;
+    }
 
     public void Dispose()
     {

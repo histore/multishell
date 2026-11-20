@@ -12,18 +12,24 @@ namespace MultiShell.Views;
 
 public partial class MainWindow
 {
+    private bool IsAnyModalOpen()
+        => HelpModal?.IsVisible == true || AboutModal?.IsVisible == true || ProfilesModal?.IsVisible == true;
+
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
         if (TryHandleTabSwitcherKeyDown(e)) return;
-        if (TryHandleCtrlShiftActionKeyDown(e)) return;
-        if (HistoryDrawer?.IsDrawerOpen == true && HistoryDrawer.HandleKeyDown(e)) return;
         if (TryHandleActiveTabRenameKeyDown(e)) return;
-        if (TryHandleFunctionKeyDown(e)) return;
         if (e.Key == Key.Escape && TryHandleEscapeKeyDown())
         {
             e.Handled = true;
             return;
         }
+
+        if (IsAnyModalOpen()) return;
+
+        if (TryHandleCtrlShiftActionKeyDown(e)) return;
+        if (HistoryDrawer?.IsDrawerOpen == true && HistoryDrawer.HandleKeyDown(e)) return;
+        if (TryHandleFunctionKeyDown(e)) return;
 
         TryHandleTabManagementKeyDown(e);
     }
@@ -95,6 +101,7 @@ public partial class MainWindow
 
     private bool TryHandleCtrlShiftCopyKeyDown(KeyEventArgs e)
     {
+        if (IsSourceInsideTextBox(e.Source)) return false;
         if (DataContext is not MainViewModel cVm || cVm.SelectedTab?.ActivePane == null) return false;
         var pane = cVm.SelectedTab.ActivePane;
         var term = GetActiveTerminalControl();
@@ -114,6 +121,7 @@ public partial class MainWindow
 
     private bool TryHandleCtrlShiftPasteKeyDown(KeyEventArgs e)
     {
+        if (IsSourceInsideTextBox(e.Source)) return false;
         if (DataContext is not MainViewModel pVm || pVm.SelectedTab?.ActivePane == null) return false;
         var pane = pVm.SelectedTab.ActivePane;
         if (Clipboard == null || !pane.IsRunning) return false;

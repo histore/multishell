@@ -53,7 +53,7 @@ jobs:
           }
 
       - name: Build Solution
-        run: dotnet build MultiShell.slnx --configuration Release --no-restore
+        run: dotnet build MultiShell.slnx --configuration Release --no-restore /p:TreatWarningsAsErrors=true
 
       - name: Run Automated Tests
         run: dotnet test MultiShell.Tests/MultiShell.Tests.csproj --configuration Release --no-build --verbosity normal

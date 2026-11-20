@@ -153,24 +153,47 @@ public partial class TerminalTabViewModel
     /// <summary>
     /// Marks the start of a command execution, transitioning state to Running and starting duration timer.
     /// </summary>
-    public void MarkCommandStarted(string command)
+    public void MarkCommandStarted(string command) => MarkCommandStarted(command, ActivePane);
+
+    internal void MarkCommandStarted(string command, TerminalPaneViewModel? sourcePane)
     {
         if (_isDisposed || string.IsNullOrWhiteSpace(command)) return;
 
         var trimmed = command.Trim();
-        Interlocked.Exchange(ref _commandStartTimestamp, TimeProvider.GetTimestamp());
+        var now = TimeProvider.GetTimestamp();
+        var pane = sourcePane ?? ActivePane;
+
+        if (pane != null)
+        {
+            Interlocked.Exchange(ref pane.PaneCommandStartTimestamp, now);
+        }
+        if (pane == null || ReferenceEquals(pane, ActivePane))
+        {
+            Interlocked.Exchange(ref _commandStartTimestamp, now);
+        }
 
         _dispatcherService.RunOnUi(() =>
         {
             if (_isDisposed) return;
 
-            LastExecutedCommand = trimmed;
-            LastExitCode = null;
-            OutputActivityOpacity = 1.0;
-            IsOutputActive = true;
-            ExecutionState = ProcessExecutionState.Running;
+            if (pane != null)
+            {
+                pane.PaneLastExecutedCommand = trimmed;
+                pane.PaneLastExitCode = null;
+                pane.PaneIsOutputActive = true;
+                pane.PaneExecutionState = ProcessExecutionState.Running;
+            }
 
-            RestartCooldownTimer();
+            if (pane == null || ReferenceEquals(pane, ActivePane))
+            {
+                LastExecutedCommand = trimmed;
+                LastExitCode = null;
+                OutputActivityOpacity = 1.0;
+                IsOutputActive = true;
+                ExecutionState = ProcessExecutionState.Running;
+
+                RestartCooldownTimer();
+            }
         });
     }
 
@@ -178,36 +201,80 @@ public partial class TerminalTabViewModel
     /// Triggered when the shell session reports command completion (e.g. via OSC 133;D).
     /// </summary>
     public void OnSessionCommandCompleted(int exitCode)
+        => HandlePaneCommandCompleted(_panes.Count > 0 ? _panes[0] : null, exitCode);
+
+    internal void HandlePaneCommandCompleted(TerminalPaneViewModel? pane, int exitCode)
     {
         if (_isDisposed) return;
 
-        var startTimestamp = Interlocked.Exchange(ref _commandStartTimestamp, 0);
+        long startTimestamp = pane != null
+            ? Interlocked.Exchange(ref pane.PaneCommandStartTimestamp, 0)
+            : 0;
+        if (startTimestamp == 0 && (pane == null || ReferenceEquals(pane, ActivePane)))
+        {
+            startTimestamp = Interlocked.Exchange(ref _commandStartTimestamp, 0);
+        }
+
         var duration = startTimestamp > 0
             ? TimeProvider.GetElapsedTime(startTimestamp)
             : TimeSpan.Zero;
+
+        var completedState = exitCode != 0 ? ProcessExecutionState.Failed : ProcessExecutionState.Success;
 
         _dispatcherService.RunOnUi(() =>
         {
             if (_isDisposed) return;
 
-            LastExecutionDuration = duration;
-            LastExitCode = exitCode;
-            ExecutionState = exitCode != 0 ? ProcessExecutionState.Failed : ProcessExecutionState.Success;
-            OutputActivityOpacity = 1.0;
-            IsOutputActive = false;
+            if (pane != null)
+            {
+                pane.PaneLastExecutionDuration = duration;
+                pane.PaneLastExitCode = exitCode;
+                pane.PaneExecutionState = completedState;
+                pane.PaneIsOutputActive = false;
+            }
 
-            _activityCooldownTimer?.Stop();
+            if (pane == null || ReferenceEquals(pane, ActivePane))
+            {
+                LastExecutionDuration = duration;
+                LastExitCode = exitCode;
+                ExecutionState = completedState;
+                OutputActivityOpacity = 1.0;
+                IsOutputActive = false;
+
+                _activityCooldownTimer?.Stop();
+            }
 
             if (duration >= LongRunningThreshold)
             {
+                var commandText = pane?.PaneLastExecutedCommand ?? LastExecutedCommand ?? Title;
                 var result = new CommandExecutionResult(
-                    LastExecutedCommand ?? Title,
+                    commandText,
                     exitCode,
                     duration,
-                    ExecutionState);
+                    completedState);
                 CommandExecutionCompleted?.Invoke(this, result);
             }
         });
+    }
+
+    internal void SyncExecutionAndDraftStateFromPane(TerminalPaneViewModel pane)
+    {
+        LastExecutedCommand = pane.PaneLastExecutedCommand;
+        LastExecutionDuration = pane.PaneLastExecutionDuration;
+        LastExitCode = pane.PaneLastExitCode;
+        ExecutionState = pane.PaneExecutionState;
+        IsOutputActive = pane.PaneIsOutputActive;
+        OutputActivityOpacity = 1.0;
+        HasDraftCommand = pane.HasDraftCommand;
+
+        if (pane.PaneExecutionState == ProcessExecutionState.Running && pane.PaneIsOutputActive)
+        {
+            RestartCooldownTimer();
+        }
+        else
+        {
+            _activityCooldownTimer?.Stop();
+        }
     }
 
     /// <summary>

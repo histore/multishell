@@ -70,7 +70,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     /// </summary>
     public void UpdateCapsLockState()
     {
-        IsCapsLockActive = KeyboardStateHelper.QueryCapsLockState();
+        IsCapsLockActive = WindowsPlatformService.Instance.QueryCapsLockState();
     }
 
     private Func<string?, Task<string?>>? _folderPickerHandler;
@@ -147,19 +147,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     [RelayCommand]
     public void OpenGitHubUrl()
     {
-        try
-        {
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = GitHubUrl,
-                UseShellExecute = true
-            };
-            using var proc = System.Diagnostics.Process.Start(psi);
-        }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MainViewModel.OpenGitHubUrl] Browser launch failed: {ex.Message}");
-        }
+        WindowsPlatformService.Instance.OpenUrl(GitHubUrl);
     }
 
     private static string DetermineAppVersion()
@@ -358,7 +346,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         {
             if (tab == null) continue;
             UnregisterTabEvents(tab);
-            tab.Dispose();
+            try
+            {
+                tab.Dispose();
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or System.IO.IOException or ObjectDisposedException or NotSupportedException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel.Dispose] Tab disposal failed: {ex.Message}");
+            }
         }
         Tabs.Clear();
     }

@@ -216,16 +216,15 @@ public partial class MainViewModel
 
         try
         {
+            if (!tab.TryStopSessions())
+            {
+                return;
+            }
             tab.Dispose();
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or System.IO.IOException or ObjectDisposedException or NotSupportedException)
         {
             System.Diagnostics.Debug.WriteLine($"[MainViewModel.CloseTab] Tab disposal failed: {ex.Message}");
-            return;
-        }
-
-        if (tab.IsRunning)
-        {
             return;
         }
 
@@ -260,6 +259,8 @@ public partial class MainViewModel
         tab.PropertyChanged += OnTabPropertyChanged;
         tab.CommandExecutionCompleted += OnTabCommandExecutionCompleted;
         tab.RequestFolderPickerAsync = FolderPickerHandler;
+        tab.ProfileSessionFactory = (dir, shell, customExe, customArgs) =>
+            _shellProcessService.CreateSession(tab.Title, dir, shell, customExe, customArgs);
         tab.SessionFactory = (dir, shell) => _shellProcessService.CreateSession(tab.Title, dir, shell);
         tab.UpdateTheme(IsDarkTerminalTheme);
         tab.UpdateFontSize(_fontSizeService.TerminalFontSize);
@@ -274,6 +275,7 @@ public partial class MainViewModel
         tab.PropertyChanged -= OnTabPropertyChanged;
         tab.CommandExecutionCompleted -= OnTabCommandExecutionCompleted;
         tab.RequestFolderPickerAsync = null;
+        tab.ProfileSessionFactory = null;
         tab.SessionFactory = null;
     }
 

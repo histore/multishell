@@ -30,6 +30,19 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
     private DateTime? _commandStartTime;
     private volatile bool _isDisposed;
 
+    internal StringBuilder InputLineBuffer { get; } = new();
+    internal Lock InputLineBufferLock { get; } = new();
+    internal bool PreviousWasCr { get; set; }
+    internal string? PendingCommandDirectory { get; set; }
+    internal bool HasDraftCommand { get; set; }
+
+    internal long PaneCommandStartTimestamp;
+    internal ProcessExecutionState PaneExecutionState { get; set; } = ProcessExecutionState.Idle;
+    internal int? PaneLastExitCode { get; set; }
+    internal TimeSpan PaneLastExecutionDuration { get; set; } = TimeSpan.Zero;
+    internal bool PaneIsOutputActive { get; set; }
+    internal string? PaneLastExecutedCommand { get; set; }
+
     /// <summary>
     /// Gets the unique identifier for this terminal pane.
     /// </summary>
@@ -287,11 +300,14 @@ public partial class TerminalPaneViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public void Focus()
+    public void Focus(bool focusTerminal = true)
     {
         Tab.SetActivePane(this);
         Activated?.Invoke(this);
-        FocusTerminalRequested?.Invoke();
+        if (focusTerminal)
+        {
+            FocusTerminalRequested?.Invoke();
+        }
     }
 
     public void PageUp()

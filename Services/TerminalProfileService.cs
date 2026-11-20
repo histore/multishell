@@ -12,13 +12,14 @@ namespace MultiShell.Services;
 /// <summary>
 /// Implements persistent terminal profile management.
 /// </summary>
-public class TerminalProfileService : ITerminalProfileService
+public class TerminalProfileService : ITerminalProfileService, IDisposable
 {
     private readonly string _filePath;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly List<TerminalProfile> _profiles = new();
     private readonly Lock _profilesLock = new();
     private readonly ILocalizationService? _localizationService;
+    private int _disposed;
 
     public event Action? ProfilesChanged;
 
@@ -131,6 +132,7 @@ public class TerminalProfileService : ITerminalProfileService
 
     public async Task AddProfileAsync(TerminalProfile profile, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         var normalized = NormalizeProfile(profile);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -150,6 +152,7 @@ public class TerminalProfileService : ITerminalProfileService
 
     public async Task UpdateProfileAsync(TerminalProfile profile, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         var normalized = NormalizeProfile(profile);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -173,6 +176,7 @@ public class TerminalProfileService : ITerminalProfileService
 
     public async Task<bool> DeleteProfileAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         bool removed = false;
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -204,6 +208,7 @@ public class TerminalProfileService : ITerminalProfileService
 
     public async Task ResetToDefaultsAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -219,6 +224,7 @@ public class TerminalProfileService : ITerminalProfileService
 
     public async Task LoadProfilesAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         bool loaded = false;
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -344,5 +350,23 @@ public class TerminalProfileService : ITerminalProfileService
         {
             System.Diagnostics.Debug.WriteLine($"Failed to save terminal profiles: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Releases event subscriptions and internal synchronization primitives.
+    /// </summary>
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        if (_localizationService != null)
+        {
+            _localizationService.LanguageChanged -= OnLanguageChanged;
+        }
+
+        _semaphore.Dispose();
     }
 }

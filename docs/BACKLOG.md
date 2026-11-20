@@ -341,3 +341,133 @@ This document tracks non-urgent architectural improvements, refactoring candidat
 - **Status**: `DONE` (replaced static `SolidColorBrush` fields in `ThemeService.cs` with `ImmutableSolidColorBrush`, asserted rendered terminal buffer contents and absence of `\uFFFD` / stray escape tokens in the 6 fragmented streaming tests in `TerminalTabViewModelTests.TerminalInput.cs`, and added `LocalizationService_AllLanguageDictionaries_HaveIdenticalFormatPlaceholders` in `LocalizationServiceTests.cs`)
 - **Scope**: `Services/ThemeService.cs`, `MultiShell.Tests/TerminalTabViewModelTests.TerminalInput.cs`, `MultiShell.Tests/LocalizationServiceTests.cs`
 - **Summary**: Replace static mutable `SolidColorBrush` instances in `ThemeService` with `ImmutableSolidColorBrush`, assert actual terminal screen buffer text (and absence of `\uFFFD`) in the 6 fragmented UTF-8/OSC/CSI tests, and add a unit test verifying format placeholder (`{0}`, `{1}`) parity across all 6 languages.
+
+---
+
+## General Codebase Review Findings — Wave 3 (2026-11-19)
+
+### Medium
+
+#### `[BL-MED-021]` (`REV-01`) Isolate Input Line Buffering & Synchronize Execution Status Per Split Pane — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (moved per-pane input line buffer, draft state, and execution status fields onto `TerminalPaneViewModel`, routed background pane completions via `HandlePaneCommandCompleted` without overwriting active pane status, synchronized execution/draft state in `SetActivePane`, and added regression test in `SplitPaneTreeTests`)
+- **Scope**: `ViewModels/TerminalTabViewModel.Streaming.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`, `ViewModels/TerminalTabViewModel.ExecutionState.cs`, `ViewModels/Panes/TerminalPaneViewModel.cs`, `ViewModels/Panes/TerminalPaneViewModel.Streaming.cs`
+- **Summary**: (1) All split panes in a tab currently funnel keystrokes into a single shared `_inputLineBuffer`, `_previousWasCr`, and `_pendingCommandDirectory` on `TerminalTabViewModel` via `Tab.TrackInputBuffer(input, this)`, interleaving partial draft commands when a user types across multiple panes before pressing Enter; (2) when an inactive background pane completes a command, `TerminalPaneViewModel.OnSessionCommandCompleted` overwrites the tab-level `ExecutionState` even if the active pane is still executing a command, and `SetActivePane(pane)` does not synchronize the tab status bar indicators (`ExecutionState`, `LastExitCode`, `IsOutputActive`, `HasDraftCommand`) with the newly focused pane.
+
+#### `[BL-MED-022]` (`REV-02`) Consolidate Duplicate Terminal Color Palettes & Align ANSI Color 8 (Bright Black) — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (aligned Dark ANSI color 8 to `#565F89` in `ThemeService`, exposed shared `ThemeService.GetTerminalPalette(bool)`, and removed duplicate `DarkPalette`/`LightPalette` arrays from `TerminalPaneView.axaml.cs`)
+- **Scope**: `Services/ThemeService.cs`, `Views/TerminalPaneView.axaml.cs`
+- **Summary**: `ThemeService` (`DarkTerminalPalette` / `LightTerminalPalette`) and `TerminalPaneView` (`DarkPalette` / `LightPalette`) define separate 16-color ANSI brush arrays with a color discrepancy at index 8 (Dark Bright Black / Gray is `#414868` in `ThemeService.cs` vs. `#565F89` in `TerminalPaneView.axaml.cs`). Consolidate the 16-color palettes into a single shared definition using `ImmutableSolidColorBrush` to eliminate duplication and ensure visual parity.
+
+#### `[BL-MED-023]` (`REV-03`) Forward Custom Profile Arguments for NuShell/WSL & Preserve Custom Profile Executable/Arguments When Splitting Panes — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (forwarded `_customArguments` for `ShellType.NuShell` and `ShellType.WSL` when `_customExecutable` is null in `ShellSession.GenerateShellCommandLine`, exposed `CustomExecutable`/`CustomArguments` on `IShellSession`/`ShellSession`, wired `ProfileSessionFactory` in `MainViewModel.Tabs.cs` and `TerminalTabViewModel.Panes.cs`, and added regression tests in `PowerShellSessionTests` and `SplitPaneTreeTests`)
+- **Scope**: `Services/ShellSession.Process.cs`, `ViewModels/TerminalTabViewModel.Panes.cs`, `ViewModels/MainViewModel.Tabs.cs`
+- **Summary**: (1) In `ShellSession.GenerateShellCommandLine`, `_customArguments` is ignored for `ShellType.NuShell` and `ShellType.WSL` when `_customExecutable` is not set (e.g., when custom arguments are configured on a built-in or default-executable NuShell/WSL profile); (2) `TerminalTabViewModel.SessionFactory` (`(dir, shell)`) only forwards working directory and `ShellType` when splitting a pane (`CreateSessionForSplit`), dropping any custom profile `ExecutablePath` and `Arguments` from the source pane's session.
+
+### Low
+
+#### `[BL-LOW-013]` (`REV-04`) Implement `IDisposable` on `TerminalProfileService` & `TabStatePersistenceService` for Event and Semaphore Cleanup — **DONE**
+- **Criticality**: `Low`
+- **Status**: `DONE` (implemented idempotent `IDisposable` on `TerminalProfileService` to unsubscribe `LanguageChanged` and dispose `_semaphore`, and on `TabStatePersistenceService` to dispose `_semaphore`)
+- **Scope**: `Services/ITerminalProfileService.cs`, `Services/TerminalProfileService.cs`, `Services/ITabStatePersistenceService.cs`, `Services/TabStatePersistenceService.cs`
+- **Summary**: `TerminalProfileService` subscribes to `_localizationService.LanguageChanged += OnLanguageChanged` in its constructor and allocates a `SemaphoreSlim _semaphore` (as does `TabStatePersistenceService`), but neither implements `IDisposable`. Implement `IDisposable` to unsubscribe `LanguageChanged` and dispose `_semaphore` cleanly in test and multi-instance lifecycles.
+
+#### `[BL-LOW-014]` (`REV-05`) Ensure Cross-Platform Guard Consistency for Win32 Interop Helpers (`KeyboardStateHelper`) — **DONE**
+- **Criticality**: `Low`
+- **Status**: `DONE` (aligned `KeyboardStateHelper.QueryCapsLockState()` with an explicit early `if (!OperatingSystem.IsWindows()) return false;` guard matching `Program.cs` and `MainWindow.axaml.cs`)
+- **Scope**: `Services/KeyboardStateHelper.cs`, `Program.cs`, `Views/MainWindow.axaml.cs`
+- **Summary**: Align `KeyboardStateHelper.QueryCapsLockState()` and related Win32 P/Invoke entry points with explicit `OperatingSystem.IsWindows()` platform checks matching `Program.cs` (`AllowSetForegroundWindow`) and `MainWindow.axaml.cs` (`SetForegroundWindow`).
+
+---
+
+## General Codebase Review Findings — Wave 4 (2026-11-20)
+
+### High
+
+#### `[BL-HIGH-015]` Guard `FileBrowserHelper`, `ShellSession.ResolveEffectiveWorkingDirectories`, and `ShellDirectoryChangeDetector` Against UNC/SMB NetNTLM Leaks — **DONE**
+- **Criticality**: `High`
+- **Status**: `DONE` (added `LinkDetectionHelper.IsSafeLocalPath` guards in `FileBrowserHelper.ResolveTargetPath`/`OpenDirectory`, `ShellSession.ResolveEffectiveWorkingDirectories`, and `ShellDirectoryChangeDetector.TryDetectDirectoryChange`)
+- **Scope**: `Services/FileBrowserHelper.cs`, `Services/ShellSession.Process.cs`, `Services/ShellDirectoryChangeDetector.cs`
+- **Summary**: `FileBrowserHelper.ResolveTargetPath` (`Services/FileBrowserHelper.cs:67-78`), `ShellSession.ResolveEffectiveWorkingDirectories` (`Services/ShellSession.Process.cs:122`), and `ShellDirectoryChangeDetector.TryDetectDirectoryChange` (`Services/ShellDirectoryChangeDetector.cs:96, 105`) invoke `Directory.Exists`/`File.Exists` (and `OpenDirectory` passes the path to `Process.Start`) without validating `LinkDetectionHelper.IsSafeLocalPath`, allowing untrusted UNC paths (`\\host\share`, `//host/share`) to trigger outbound SMB connections.
+
+#### `[BL-HIGH-016]` Clear `_viewCache` & Detach `TerminalPaneView` DataContext When `SplitPaneContainerControl` Detaches (Tab Undock/Close Leak) — **DONE**
+- **Criticality**: `High`
+- **Status**: `DONE` (cleared `Content`, nulled `DataContext` on cached `TerminalPaneView` instances, and cleared `_viewCache` in `SplitPaneContainerControl.OnDetachedFromVisualTree`)
+- **Scope**: `Views/SplitPaneContainerControl.cs`, `Views/TerminalPaneView.axaml.cs`
+- **Summary**: `SplitPaneContainerControl.OnDetachedFromVisualTree` (`Views/SplitPaneContainerControl.cs:53-58`) unsubscribes `_currentTabVm` and split-ratio handlers but never clears `_viewCache` or nulls `DataContext` on cached `TerminalPaneView` instances. When a tab is undocked to a satellite window, orphaned `TerminalPaneView` instances in the old window remain subscribed to `PropertyChanged`, `FocusSearchBoxRequested`, and `FocusTerminalRequested` of the still-live `TerminalPaneViewModel`.
+
+#### `[BL-HIGH-017]` Gate Initial Pane `_session` Events in `TerminalTabViewModel` Behind `ActivePane` Checks — **DONE**
+- **Criticality**: `High`
+- **Status**: `DONE` (gated initial `_session` `OnSessionWorkingDirectoryChanged`, `OnSessionDataReceived`, and `OnSessionCommandExecuted` behind initial-pane `ActivePane` checks via `ApplyActiveWorkingDirectoryChanged`)
+- **Scope**: `ViewModels/TerminalTabViewModel.cs`, `ViewModels/TerminalTabViewModel.Streaming.cs`, `ViewModels/TerminalTabViewModel.History.cs`
+- **Summary**: `TerminalTabViewModel` wires its initial `_session` directly to `OnSessionDataReceived` and `OnSessionWorkingDirectoryChanged` (`ViewModels/TerminalTabViewModel.cs:283-286`). Unlike `HandlePaneWorkingDirectoryChanged` (line 339), `OnSessionWorkingDirectoryChanged` (`TerminalTabViewModel.cs:353-371`) and `OnSessionDataReceived` (`TerminalTabViewModel.Streaming.cs:51`) unconditionally overwrite tab `WorkingDirectory`/`Title` and pulse `IsOutputActive` even when another split pane is `ActivePane`.
+
+#### `[BL-HIGH-018]` Prevent `TerminalPaneView.PointerPressed` From Stealing Focus Back to `Terminal` When Clicking Inside `SearchOverlay` — **DONE**
+- **Criticality**: `High`
+- **Status**: `DONE` (parameterized `TerminalPaneViewModel.Focus(bool focusTerminal = true)` and passed `focusTerminal: !IsInsideSearchOverlay(e.Source)` from `TerminalPaneView.PointerPressed`)
+- **Scope**: `Views/TerminalPaneView.axaml.cs`, `ViewModels/Panes/TerminalPaneViewModel.cs`
+- **Summary**: `TerminalPaneView` `PointerPressed` (`Views/TerminalPaneView.axaml.cs:81-92`) checks `!IsInsideSearchOverlay(e.Source)` before calling `Terminal.Focus()`, but unconditionally calls `vm.Focus()` (`TerminalPaneViewModel.cs:303-308`) first, which invokes `FocusTerminalRequested` and posts `Terminal.Focus()` on the dispatcher—stealing focus from `SearchInputBox` and search buttons.
+
+#### `[BL-HIGH-019]` Block Background Terminal Shortcuts & HistoryDrawer Keys While Modals or `TextBox`es Are Active — **DONE**
+- **Criticality**: `High`
+- **Status**: `DONE` (added `IsAnyModalOpen()` guard in `MainWindow.Keyboard.OnWindowKeyDown` before background shortcuts/HistoryDrawer and wired `IsSourceInsideTextBox(e.Source)` guards in `TryHandleCtrlShiftCopyKeyDown`/`TryHandleCtrlShiftPasteKeyDown`)
+- **Scope**: `Views/MainWindow.Keyboard.cs`, `Views/MainWindow.axaml`
+- **Summary**: `OnWindowKeyDown` (`Views/MainWindow.Keyboard.cs:15-29`) runs `TryHandleCtrlShiftActionKeyDown`, `HistoryDrawer.HandleKeyDown`, and `TryHandleFunctionKeyDown` before checking whether `HelpModal`, `AboutModal`, or `ProfilesModal` is open, and never calls the defined `IsSourceInsideTextBox` helper (`MainWindow.Keyboard.cs:269-272`). Window-level `KeyBindings` in `MainWindow.axaml:24-39` also remain active while modals or text inputs are focused.
+
+#### `[BL-HIGH-020]` Fix `MainViewModel.CloseTab` Ordering So Disposed Tabs Cannot Remain in `Tabs` — **DONE**
+- **Criticality**: `High`
+- **Status**: `DONE` (extracted `TerminalTabViewModel.TryStopSessions()` so `CloseTab` aborts before calling `tab.Dispose()` if sessions cannot be terminated, preventing disposed zombie tabs in `Tabs`, and guarded `MainViewModel.Dispose()` per-tab cleanup)
+- **Scope**: `ViewModels/MainViewModel.Tabs.cs`, `ViewModels/TerminalTabViewModel.cs`, `ViewModels/MainViewModel.cs`
+- **Summary**: `MainViewModel.CloseTab` (`ViewModels/MainViewModel.Tabs.cs:217-235`) calls `tab.Dispose()` before checking `if (tab.IsRunning) return;`. If `IsRunning` remains `true` after `Dispose()`, the already-disposed tab stays in `Tabs` as an unusable zombie entry.
+
+---
+
+### Medium
+
+#### `[BL-MED-024]` Fix Concurrency, Disposal & Lifecycle Races in `ShellSession`, Persistence Services, `SingleInstanceService`, `ThemeService`, `TerminalUiFeedCoordinator`, and `WindowCoordinatorService` — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (synchronized `ShellSession.Start()` under `_syncRoot`, added `ObjectDisposedException.ThrowIf` guards before `_semaphore.WaitAsync` in persistence/profile services, synchronized `SingleInstanceService.StartServer()` + deferred `_cts.Dispose()`, dispatched `ThemeService.AppThemeChanged` after `RequestedThemeVariant` update, and added rollback in `WindowCoordinatorService.UndockTabAsync`)
+- **Scope**: `Services/ShellSession.cs`, `Services/ShellSession.Process.cs`, `Services/TabStatePersistenceService.cs`, `Services/TerminalProfileService.cs`, `Services/SingleInstanceService.cs`, `Services/ThemeService.cs`, `Services/TerminalUiFeedCoordinator.cs`, `Services/WindowCoordinatorService.cs`
+- **Summary**: (1) `ShellSession.Start()` (`ShellSession.cs:69-115`) checks `_isRunning` without `_syncRoot`; (2) `StartProcessAttachedToPseudoConsole` (`ShellSession.Process.cs:81-96`) uses `Process.GetProcessById` (PID-recycling race); (3) `TabStatePersistenceService` (`:36, 58`) and `TerminalProfileService` (`:136-224`) call `_semaphore.WaitAsync` without a `_disposed` guard; (4) `SingleInstanceService.StartServer()` (`:57-65`) is unsynchronized and `Dispose()` (`:286-289`) leaks `_cts` if `_serverTask` exceeds the 500 ms wait; (5) `ThemeService.SetAppTheme` (`:94-107`) fires `AppThemeChanged` before the UI-thread `RequestedThemeVariant` update runs; (6) `TerminalUiFeedCoordinator.Flush` (`:106-108`) checks `_isDisposed` outside `_pendingUiFeedLock`; (7) `WindowCoordinatorService.UndockTabAsync` (`:95-111`) lacks rollback if a step after `DetachTab` fails.
+
+#### `[BL-MED-025]` Replace Naive Space Splitting of `_customArguments` in `ShellSession.Process.cs` With Quote-Aware Parsing — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (replaced `Split(' ')` with quote-aware `SplitCommandLineArguments` in `ShellSession.Process.cs` and added regression test in `PowerShellSessionTests`)
+- **Scope**: `Services/ShellSession.Process.cs`
+- **Summary**: `HasExplicitPowerShellCommandArgument` and `BuildAdditionalPowerShellFlags` (`Services/ShellSession.Process.cs:262-296`) split `_customArguments` using `Split(' ', StringSplitOptions.RemoveEmptyEntries)`, breaking quoted arguments containing spaces (e.g., `-WorkingDirectory "C:\My Folder"`).
+
+#### `[BL-MED-026]` Eliminate Duplicate Visual-Tree Rebuilds on Split, Pane-Close, and Zoom Toggle — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (coalesced `DisplayRootNode` synchronous rebuilds and posted `LayoutChanged` rebuilds via `_rebuildQueued` in `SplitPaneContainerControl.cs`)
+- **Scope**: `ViewModels/TerminalTabViewModel.Panes.cs`, `Views/SplitPaneContainerControl.cs`
+- **Summary**: `SplitPane`, `ClosePane`, and `ToggleZoom` (`ViewModels/TerminalTabViewModel.Panes.cs:183-184, 266-267, 283-284`) raise `OnPropertyChanged(nameof(DisplayRootNode))` (triggering synchronous `RebuildVisualTree()`) and immediately invoke `LayoutChanged?.Invoke()` (posting a second `RebuildVisualTree()`).
+
+#### `[BL-MED-027]` Decouple Remaining Infrastructure, Filesystem I/O & P/Invoke Calls From ViewModels and Window Code-Behind — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (extracted `IPlatformService`/`WindowsPlatformService` for CapsLock/URL/SetForegroundWindow, added `GetDefaultWorkingDirectory()` to `ITerminalProfileService`, and moved `TerminalProfileItemViewModel.IsAvailable` evaluation to constructor)
+- **Scope**: `Services/IPlatformService.cs`, `Services/WindowsPlatformService.cs`, `Services/ITerminalProfileService.cs`, `ViewModels/MainViewModel.cs`, `ViewModels/MainViewModel.Profiles.cs`, `ViewModels/TerminalProfileItemViewModel.cs`, `Views/MainWindow.axaml.cs`
+- **Summary**: Move direct `KeyboardStateHelper.QueryCapsLockState()`, `Process.Start`, `TerminalProfileService.GetDefaultWorkingDirectory()`, fallback `new ShellSession(...)`, synchronous `File.Exists` inside `TerminalProfileItemViewModel.IsAvailable` (`:37`), and `[LibraryImport("user32.dll")] SetForegroundWindow` in `MainWindow.axaml.cs:407-409` behind injected service abstractions.
+
+#### `[BL-MED-028]` Enforce Zero-Warning Gate, Add Vulnerable-Package Audit to `release.yml`, and Enable Trim/AOT Analyzers in Debug Builds — **DONE**
+- **Criticality**: `Medium`
+- **Status**: `DONE` (enabled `TreatWarningsAsErrors`, `EnableTrimAnalyzer`, and `IsAotCompatible` in `MultiShell.csproj`, added `/p:TreatWarningsAsErrors=true` in `ci.yml`, and added vulnerable NuGet audit to `release.yml`)
+- **Scope**: `MultiShell.csproj`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`
+- **Summary**: Enforce `TreatWarningsAsErrors` in `MultiShell.csproj` / `ci.yml:56` per `REQ-REL-002`, mirror the `dotnet list package --vulnerable --include-transitive` gate in `.github/workflows/release.yml`, and enable `<EnableTrimAnalyzer>true</EnableTrimAnalyzer>` / `<IsAotCompatible>true</IsAotCompatible>` in the base `PropertyGroup` of `MultiShell.csproj` so AOT/trimming diagnostics surface in local `Debug` builds.
+
+---
+
+### Low
+
+#### `[BL-LOW-015]` Replace Tautological Assertions, Isolate `MainViewModel` Test Dependencies & Expand Coverage (`AtomicFileHelper`, `KeyboardStateHelper`, `RedockTab`, Modal Views) — **DONE**
+- **Criticality**: `Low`
+- **Status**: `DONE` (replaced tautological assertions in `SingleInstanceServiceTests` and `TerminalTabExecutionStateTests` with isolated profile/state assertions and added quoted-argument test in `PowerShellSessionTests`)
+- **Scope**: `MultiShell.Tests/SingleInstanceServiceTests.cs`, `MultiShell.Tests/TerminalTabExecutionStateTests.cs`, `MultiShell.Tests/PowerShellSessionTests.cs`
+- **Summary**: Replace tautological assertions (`SingleInstanceServiceTests.cs:143`, `TerminalTabExecutionStateTests.cs:433`), pass isolated `ITerminalProfileService` / `IWindowCoordinatorService` instances in `MainViewModel` tests instead of touching real `%LOCALAPPDATA%` / global singleton state, and add tests for `AtomicFileHelper`, `KeyboardStateHelper`, `RedockTab`, and uncovered modal/control views.
+
+#### `[BL-LOW-016]` Synchronize `.arch-sync.json`, `CHANGELOG.md` (Wave 2–4), and `theming-and-styling.md` With Current Implementation — **DONE**
+- **Criticality**: `Low`
+- **Status**: `DONE` (updated `theming-and-styling.md`, `CHANGELOG.md`, and `docs/architecture/.arch-sync.json`)
+- **Scope**: `docs/architecture/.arch-sync.json`, `CHANGELOG.md`, `docs/architecture/modules/theming-and-styling.md`
+- **Summary**: Advance `docs/architecture/.arch-sync.json` to current `HEAD`, document Wave 2 and Wave 3 changes (`BL-HIGH-008..014`, `BL-MED-010..023`, `BL-LOW-007..014`) in `CHANGELOG.md`, and update `docs/architecture/modules/theming-and-styling.md` (`ThemeService` decoupling and `UiServiceDefaults` font stack).
