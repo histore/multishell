@@ -4,10 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.30.0] - 2026-11-20
+
 ### Changed
 - **Wave 2 & Wave 3**: Propagate split-pane session events and input buffering per pane (`BL-HIGH-008`, `BL-MED-021`), consolidate terminal color palettes (`BL-MED-022`), forward custom NuShell/WSL profile arguments and split-pane profile settings (`BL-MED-023`), implement `IDisposable` on `TerminalProfileService` and `TabStatePersistenceService` (`BL-LOW-013`), and align cross-platform Win32 guards (`BL-LOW-014`).
 - **Wave 4**: Guard `FileBrowserHelper`, `ShellSession.ResolveEffectiveWorkingDirectories`, and `ShellDirectoryChangeDetector` against UNC/SMB leaks (`BL-HIGH-015`), clear `_viewCache` on `SplitPaneContainerControl` detach (`BL-HIGH-016`), gate initial pane session events behind `ActivePane` (`BL-HIGH-017`), prevent `SearchOverlay` focus stealing (`BL-HIGH-018`), block background shortcuts when modals or text boxes are active (`BL-HIGH-019`), fix `CloseTab` zombie tab ordering (`BL-HIGH-020`), harden service concurrency/disposal (`BL-MED-024`), parse quoted `_customArguments` (`BL-MED-025`), coalesce visual-tree rebuilds (`BL-MED-026`), extract `IPlatformService` (`BL-MED-027`), and enable `TreatWarningsAsErrors` / `EnableTrimAnalyzer` / `IsAotCompatible` (`BL-MED-028`).
-- **Wave 5 & Post-Review Hardening**: Initialize `UiFeedCoordinator` eagerly, track `_initialPane` safely without background `_panes[0]` indexing, fix multi-pane command/directory attribution and `ShellSession.Resize` caching, block `Window.KeyBindings` behind modals and `HistoryDrawer`, guard `SplitPaneContainerControl` against detached rebuilds, preserve `IsBuiltIn` when editing built-in profiles, guard secondary single-tab undock, preserve restored `WindowNumber` and custom profile launch params, and add `AtomicFileHelperTests` (`0a0e8f1`, `4f89fcd`).
+- **Wave 5 & Post-Review Hardening**: Initialize `UiFeedCoordinator` eagerly, track `_initialPane` safely without background `_panes[0]` indexing, fix multi-pane command/directory attribution and `ShellSession.Resize` caching, block `Window.KeyBindings` behind modals and `HistoryDrawer`, guard `SplitPaneContainerControl` against detached rebuilds, preserve `IsBuiltIn` when editing built-in profiles, guard secondary single-tab undock, preserve restored `WindowNumber` and custom profile launch params, and add `AtomicFileHelperTests` (`0a0e8f1`, `4f89fcd`, `aa1bead`).
+
+### Security
+- Harden OSC 133;E / 9;9 / 7 control-character and UNC sanitization, iterative bracketed-paste breakout stripping (including leading-zero CSI variants and raw C0/C1 controls), directory-navigation quote/expansion escaping, `AnsiStreamProcessor` C1/embedded-ESC stripping, UNC/SMB `IsSafeLocalPath` guards (`TerminalProfileItemViewModel`, `ShellDiscoveryService`, `StoragePickerHelper`), executable denylist extensions, and fix `ResolveProfileLaunchParameters` tuple unpacking on workspace/closed-tab restore (`ddca9fa`).
 
 ## [v0.28.0] - 2026-11-19
 
