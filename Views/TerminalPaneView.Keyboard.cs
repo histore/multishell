@@ -21,19 +21,19 @@ public partial class TerminalPaneView
 
     private void OnTerminalKeyUp(object? sender, KeyEventArgs e)
     {
-        // Standalone modifier keys: mark handled so terminal control doesn't misprocess
-        if (IsModifierKey(e.Key))
-        {
-            e.Handled = true;
-            return;
-        }
-
-        // AltGr is reported as Ctrl+Alt; clear once either modifier is released.
+        // AltGr is reported as Ctrl+Alt; clear once either modifier is released
+        // (including when the modifier key itself is released).
         var modifiers = e.KeyModifiers;
         var stillAltGr = (modifiers & KeyModifiers.Control) != 0 && (modifiers & KeyModifiers.Alt) != 0;
         if (!stillAltGr)
         {
             ResetAltGrState();
+        }
+
+        // Standalone modifier keys: mark handled so terminal control doesn't misprocess
+        if (IsModifierKey(e.Key))
+        {
+            e.Handled = true;
         }
     }
 

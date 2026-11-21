@@ -193,7 +193,7 @@ public partial class MainViewModel
     [RelayCommand]
     public void CloseTab(TerminalTabViewModel? tab)
     {
-        if (tab == null)
+        if (tab == null || !Tabs.Contains(tab))
         {
             return;
         }
@@ -204,15 +204,20 @@ public partial class MainViewModel
         }
 
         // Capture closed tab state before disposing
-        var closedItem = new ClosedTabItemViewModel(
-            tab.Title,
-            tab.WorkingDirectory,
-            tab.ShellType,
-            tab.CommandHistory,
-            tab.DirectoryHistory,
-            DateTime.Now,
-            customTitle: tab.CustomTitle,
-            tabColor: tab.TabColor);
+        var closedTabState = !IsPrimary && _windowCoordinator?.PrimaryWindow != null
+            ? tab.ToTabState()
+            : null;
+        var closedItem = closedTabState == null
+            ? new ClosedTabItemViewModel(
+                tab.Title,
+                tab.WorkingDirectory,
+                tab.ShellType,
+                tab.CommandHistory,
+                tab.DirectoryHistory,
+                DateTime.Now,
+                customTitle: tab.CustomTitle,
+                tabColor: tab.TabColor)
+            : null;
 
         try
         {
@@ -232,8 +237,15 @@ public partial class MainViewModel
         Tabs.Remove(tab);
         UnregisterTabEvents(tab);
 
-        // Push to recently closed history (newest at index 0, capped at MaxClosedTabsCount)
-        PushClosedTab(closedItem);
+        // Push to recently closed history (forward to primary window from satellite windows)
+        if (closedTabState != null && _windowCoordinator?.PrimaryWindow is { } primaryWindow)
+        {
+            primaryWindow.PushClosedTabState(closedTabState);
+        }
+        else if (closedItem != null)
+        {
+            PushClosedTab(closedItem);
+        }
 
         if (SelectedTab == tab)
         {
@@ -244,7 +256,7 @@ public partial class MainViewModel
 
         TriggerSaveState();
 
-        if (!IsPrimary && Tabs.Count == 0)
+        if (!IsPrimary && Tabs.Count == 0 && _windowCoordinator != null)
         {
             _ = _windowCoordinator.CloseWindowAsync(this);
         }
@@ -306,7 +318,13 @@ public partial class MainViewModel
                 result.Command,
                 result.Duration,
                 result.ExitCode,
-                onActivated: () => _dispatcherService.RunOnUi(() => SelectedTab = tab));
+                onActivated: () => _dispatcherService.RunOnUi(() =>
+                {
+                    if (!_isDisposed && !tab.IsDisposed && Tabs.Contains(tab))
+                    {
+                        SelectedTab = tab;
+                    }
+                }));
         }
     }
 
