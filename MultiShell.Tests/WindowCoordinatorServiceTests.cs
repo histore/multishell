@@ -450,4 +450,82 @@ public class WindowCoordinatorServiceTests
         Assert.Single(secondary.Tabs);
         Assert.Equal(0, openCount);
     }
+
+    [Fact]
+    public void CloseTab_WhenTabNotInWindow_IsSafeNoOp()
+    {
+        var coordinator = new WindowCoordinatorService();
+        using var primary = CreateTestViewModel(coordinator);
+        using var other = CreateTestViewModel(coordinator);
+        var foreignTab = other.Tabs[0];
+
+        var ex = Record.Exception(() => primary.CloseTab(foreignTab));
+
+        Assert.Null(ex);
+        Assert.Single(primary.Tabs);
+        Assert.Empty(primary.ClosedTabs);
+    }
+
+    [Fact]
+    public void CloseTab_InSecondaryWindow_ForwardsClosedTabToPrimaryWindow()
+    {
+        var coordinator = new WindowCoordinatorService();
+        using var primary = CreateTestViewModel(coordinator);
+        coordinator.RegisterWindow(primary, isPrimary: true);
+
+        using var secondary = CreateTestViewModel(coordinator);
+        coordinator.RegisterWindow(secondary, isPrimary: false);
+        secondary.AddNewTab();
+
+        var closedTab = secondary.Tabs[0];
+        secondary.CloseTab(closedTab);
+
+        Assert.Single(secondary.Tabs);
+        Assert.Empty(secondary.ClosedTabs);
+        Assert.Single(primary.ClosedTabs);
+        Assert.Equal(closedTab.WorkingDirectory, primary.ClosedTabs[0].WorkingDirectory);
+    }
+
+    private sealed class DeferredPersistenceService : ITabStatePersistenceService
+    {
+        private readonly TaskCompletionSource<WorkspaceState?> _loadTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public void CompleteLoad(WorkspaceState? state) => _loadTcs.TrySetResult(state);
+        public Task SaveStateAsync(WorkspaceState state, System.Threading.CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<WorkspaceState?> LoadStateAsync(System.Threading.CancellationToken cancellationToken = default) => _loadTcs.Task;
+    }
+
+    [Fact]
+    public async Task Dispose_BeforeLoadStateCompletes_DoesNotCreateTabsOrSecondaryWindows()
+    {
+        var coordinator = new WindowCoordinatorService();
+        var persistence = new DeferredPersistenceService();
+        int windowOpenCount = 0;
+        coordinator.WindowOpenRequested += (_, _) => windowOpenCount++;
+
+        var vm = new MainViewModel(
+            new MockShellProcessService(),
+            persistence,
+            new MockThemeService(),
+            new LocalizationService("en"),
+            new FontSizeService(),
+            windowCoordinator: coordinator,
+            dispatcherService: new TrackingDispatcherService());
+        coordinator.RegisterWindow(vm, isPrimary: true);
+
+        vm.Dispose();
+
+        var state = new WorkspaceState(
+            new List<TabState> { new("Primary", Environment.CurrentDirectory) },
+            0,
+            Version: 2,
+            SecondaryWindows: new List<WindowWorkspaceState>
+            {
+                new(2, new List<TabState> { new("Secondary", Environment.CurrentDirectory) }, 0)
+            });
+        persistence.CompleteLoad(state);
+        await vm.InitializeWorkspaceAsync();
+
+        Assert.Empty(vm.Tabs);
+        Assert.Equal(0, windowOpenCount);
+    }
 }

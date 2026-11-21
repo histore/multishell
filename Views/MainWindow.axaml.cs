@@ -61,7 +61,7 @@ public partial class MainWindow : Window
 
         if (TabBarContainer != null)
         {
-            TabBarContainer.AddHandler(InputElement.PointerWheelChangedEvent, OnTabsPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
+            TabBarContainer.AddHandler(InputElement.PointerWheelChangedEvent, OnTabsPointerWheelChanged, RoutingStrategies.Bubble);
             TabBarContainer.AddHandler(InputElement.PointerPressedEvent, OnTabBarPointerPressed, RoutingStrategies.Bubble);
             TabBarContainer.AddHandler(DragDrop.DragEnterEvent, OnTabBarDragOver, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
             TabBarContainer.AddHandler(DragDrop.DragOverEvent, OnTabBarDragOver, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
@@ -80,7 +80,6 @@ public partial class MainWindow : Window
         {
             TabsScrollViewer.ScrollChanged += (_, _) => UpdateTabOverflowIndicators();
             TabsScrollViewer.SizeChanged += (_, _) => UpdateTabOverflowIndicators();
-            TabsScrollViewer.AddHandler(InputElement.PointerWheelChangedEvent, OnTabsPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
         }
 
         if (TabScrollLeftBtn != null)
@@ -251,7 +250,11 @@ public partial class MainWindow : Window
 
     public void ShowHelpModal()
     {
-        if (HelpModal != null) HelpModal.IsVisible = true;
+        if (HelpModal != null)
+        {
+            HelpModal.IsVisible = true;
+            HelpModal.Focus();
+        }
     }
 
     public void HideHelpModal()
@@ -262,7 +265,11 @@ public partial class MainWindow : Window
 
     public void ShowAboutModal()
     {
-        if (AboutModal != null) AboutModal.IsVisible = true;
+        if (AboutModal != null)
+        {
+            AboutModal.IsVisible = true;
+            AboutModal.Focus();
+        }
     }
 
     public void HideAboutModal()

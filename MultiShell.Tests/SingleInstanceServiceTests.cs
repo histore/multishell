@@ -192,4 +192,61 @@ public class SingleInstanceServiceTests
             if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
         }
     }
+
+    [Fact]
+    public async Task Server_ContinuesAcceptingConnections_AfterClientReadTimeout()
+    {
+        var testGuid = Guid.NewGuid().ToString("N");
+        var mutexName = $@"Local\MultiShell_Test_Mutex_{testGuid}";
+        var pipeName = $"MultiShell_Test_Pipe_{testGuid}";
+
+        var tempDir = Path.Combine(Path.GetTempPath(), $"multishell_timeout_ipc_{testGuid}");
+        Directory.CreateDirectory(tempDir);
+
+        using var server = new SingleInstanceService(mutexName, pipeName);
+        var receivedTcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        server.DirectoryOpenRequested += path =>
+        {
+            if (!string.IsNullOrEmpty(path))
+            {
+                receivedTcs.TrySetResult(path);
+            }
+        };
+        server.StartServer();
+
+        try
+        {
+            // Connect a stalled client that keeps the write stream open past the 5-second read timeout
+            using (var stalledClient = new System.IO.Pipes.NamedPipeClientStream(
+                ".",
+                pipeName,
+                System.IO.Pipes.PipeDirection.Out,
+                System.IO.Pipes.PipeOptions.Asynchronous | System.IO.Pipes.PipeOptions.CurrentUserOnly))
+            {
+                await stalledClient.ConnectAsync(2000);
+                await Task.Delay(5400);
+            }
+
+            // A subsequent valid client must still be accepted by the same IPC server
+            using (var validClient = new System.IO.Pipes.NamedPipeClientStream(
+                ".",
+                pipeName,
+                System.IO.Pipes.PipeDirection.Out,
+                System.IO.Pipes.PipeOptions.Asynchronous | System.IO.Pipes.PipeOptions.CurrentUserOnly))
+            {
+                await validClient.ConnectAsync(2000);
+                using var writer = new StreamWriter(validClient, System.Text.Encoding.UTF8);
+                await writer.WriteAsync(tempDir);
+                await writer.FlushAsync();
+            }
+
+            var completedTask = await Task.WhenAny(receivedTcs.Task, Task.Delay(3000));
+            Assert.Equal(receivedTcs.Task, completedTask);
+            Assert.Equal(Path.GetFullPath(tempDir), await receivedTcs.Task);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
 }

@@ -30,15 +30,22 @@ public partial class MainViewModel
     private async Task DoInitializeWorkspaceAsync()
     {
         var state = await _persistenceService.LoadStateAsync();
+        if (_isDisposed) return;
+
         await RunOnUiThreadAsync(() =>
         {
+            if (_isDisposed) return;
             ApplyRestoredSettingsAndHistories(state);
             ApplyLoadedTabs(state);
         });
 
-        if (state?.SecondaryWindows is { Count: > 0 } && _windowCoordinator != null)
+        if (!_isDisposed && state?.SecondaryWindows is { Count: > 0 } && _windowCoordinator != null)
         {
-            await RunOnUiThreadAsync(() => RestoreSecondaryWindows(state.SecondaryWindows));
+            await RunOnUiThreadAsync(() =>
+            {
+                if (_isDisposed) return;
+                RestoreSecondaryWindows(state.SecondaryWindows);
+            });
         }
     }
 

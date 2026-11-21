@@ -116,7 +116,9 @@ public class SingleInstanceService : ISingleInstanceService
         }
         catch (OperationCanceledException)
         {
-            return false;
+            // Only stop the server loop when the service itself is shutting down/disposed;
+            // a client read timeout (readCts) must not terminate the IPC server.
+            return Volatile.Read(ref _disposed) == 0 && !_cts.IsCancellationRequested;
         }
         catch (ObjectDisposedException)
         {

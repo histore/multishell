@@ -133,6 +133,8 @@ public partial class TerminalPaneView
             // 1. Ctrl + Left-Click: Open Clickable Hyperlink or Local File Path (REQ-TERM-005)
             if (point.Properties.IsLeftButtonPressed && isCtrl && TryOpenCtrlClickedLink(vm, point.Position))
             {
+                vm.Focus(focusTerminal: true);
+                Terminal.Focus();
                 e.Handled = true;
                 return;
             }
@@ -140,6 +142,8 @@ public partial class TerminalPaneView
             // 2. Right-Click: Instant Copy if text is selected, or Paste if no selection (REQ-TERM-004 / REQ-TAB-017)
             if (point.Properties.IsRightButtonPressed)
             {
+                vm.Focus(focusTerminal: true);
+                Terminal.Focus();
                 e.Handled = true;
                 if (await TryCopySelectionAsync(vm))
                 {

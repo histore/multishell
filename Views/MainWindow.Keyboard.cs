@@ -36,7 +36,7 @@ public partial class MainWindow
         if (TryHandleTabSwitcherKeyDown(e)) return;
         if (DataContext is MainViewModel switcherCheckVm && switcherCheckVm.IsTabSwitcherOpen)
         {
-            if (IsWindowKeyBindingGesture(e)) e.Handled = true;
+            e.Handled = true;
             return;
         }
 
@@ -54,7 +54,13 @@ public partial class MainWindow
                 e.Handled = true;
                 return;
             }
-            if (IsWindowKeyBindingGesture(e)) e.Handled = true;
+            if (IsWindowKeyBindingGesture(e) ||
+                HelpModal?.IsVisible == true ||
+                AboutModal?.IsVisible == true ||
+                (ProfilesModal?.IsVisible == true && (e.Source is not Visual sourceVisual || !ProfilesModal.IsVisualAncestorOf(sourceVisual))))
+            {
+                e.Handled = true;
+            }
             return;
         }
 
@@ -124,6 +130,15 @@ public partial class MainWindow
 
         switch (e.Key)
         {
+            case Key.T:
+                if (DataContext is MainViewModel addTabVm) { addTabVm.AddNewTab(); e.Handled = true; return true; }
+                return false;
+            case Key.D:
+                if (DataContext is MainViewModel dupTabVm) { dupTabVm.DuplicateTab(); e.Handled = true; return true; }
+                return false;
+            case Key.U:
+                if (DataContext is MainViewModel undockTabVm) { _ = undockTabVm.UndockTabAsync(); e.Handled = true; return true; }
+                return false;
             case Key.H: OpenOrToggleHistoryDrawer(0); e.Handled = true; return true;
             case Key.L: OpenOrToggleHistoryDrawer(1); e.Handled = true; return true;
             case Key.P: OpenOrToggleHistoryDrawer(2); e.Handled = true; return true;
@@ -257,6 +272,7 @@ public partial class MainWindow
             else
             {
                 pvm.CloseProfilesModal();
+                FocusActiveTerminal();
             }
             return true;
         }
