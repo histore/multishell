@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -155,7 +156,7 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    public async Task SaveProfileAsync()
+    public async Task SaveProfileAsync(CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(EditingProfileName) || string.IsNullOrWhiteSpace(EditingExecutablePath))
         {
@@ -181,21 +182,21 @@ public partial class MainViewModel
 
         if (IsCreatingNewProfile)
         {
-            await _terminalProfileService.AddProfileAsync(profile);
+            await _terminalProfileService.AddProfileAsync(profile, cancellationToken);
         }
         else
         {
-            await _terminalProfileService.UpdateProfileAsync(profile);
+            await _terminalProfileService.UpdateProfileAsync(profile, cancellationToken);
         }
 
         CancelEditProfile();
     }
 
     [RelayCommand]
-    public async Task DeleteProfileAsync(TerminalProfileItemViewModel? item)
+    public async Task DeleteProfileAsync(TerminalProfileItemViewModel? item, CancellationToken cancellationToken = default)
     {
         if (item == null) return;
-        await _terminalProfileService.DeleteProfileAsync(item.Id);
+        await _terminalProfileService.DeleteProfileAsync(item.Id, cancellationToken);
         if (EditingProfileId == item.Id)
         {
             CancelEditProfile();
@@ -203,9 +204,9 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    public async Task ResetProfilesToDefaultAsync()
+    public async Task ResetProfilesToDefaultAsync(CancellationToken cancellationToken = default)
     {
-        await _terminalProfileService.ResetToDefaultsAsync();
+        await _terminalProfileService.ResetToDefaultsAsync(cancellationToken);
         CancelEditProfile();
     }
 }

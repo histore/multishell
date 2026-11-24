@@ -77,7 +77,7 @@ public class TabStatePersistenceService : ITabStatePersistenceService, IDisposab
         {
             throw;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or NotSupportedException)
         {
             System.Diagnostics.Debug.WriteLine($"Failed to load tab state: {ex.Message}");
             return null;

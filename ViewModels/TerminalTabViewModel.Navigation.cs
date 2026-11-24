@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using MultiShell.Models;
@@ -132,7 +133,7 @@ public partial class TerminalTabViewModel
     /// Handles user interaction when clicking a path breadcrumb in the status bar (REQ-UI-010).
     /// </summary>
     [RelayCommand]
-    public async Task HandleBreadcrumbClickAsync(PathBreadcrumbSegment? segment)
+    public async Task HandleBreadcrumbClickAsync(PathBreadcrumbSegment? segment, CancellationToken cancellationToken = default)
     {
         if (segment == null) return;
 
@@ -141,6 +142,7 @@ public partial class TerminalTabViewModel
             if (RequestFolderPickerAsync == null) return;
 
             var selectedFolder = await RequestFolderPickerAsync(segment.FullPath);
+            cancellationToken.ThrowIfCancellationRequested();
             if (string.IsNullOrWhiteSpace(selectedFolder)) return;
 
             if (IsProcessRunning || HasDraftCommand)

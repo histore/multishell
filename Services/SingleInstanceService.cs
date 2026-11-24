@@ -197,12 +197,16 @@ public class SingleInstanceService : ISingleInstanceService
         }
     }
 
-    public async Task<bool> SendArgsToFirstInstanceAsync(string[] args, string clientCurrentDirectory, int timeoutMs = 2000)
+    public async Task<bool> SendArgsToFirstInstanceAsync(
+        string[] args,
+        string clientCurrentDirectory,
+        int timeoutMs = 2000,
+        CancellationToken cancellationToken = default)
     {
         var resolvedPath = _pathResolver.ResolveFromArgs(args, clientCurrentDirectory);
         int primaryTimeout = _pipeName != DefaultPipeNamePrefix ? Math.Max(250, timeoutMs / 2) : timeoutMs;
 
-        if (await TrySendToPipeAsync(_pipeName, resolvedPath, primaryTimeout).ConfigureAwait(false))
+        if (await TrySendToPipeAsync(_pipeName, resolvedPath, primaryTimeout, cancellationToken).ConfigureAwait(false))
         {
             return true;
         }
@@ -211,13 +215,13 @@ public class SingleInstanceService : ISingleInstanceService
         if (_pipeName != DefaultPipeNamePrefix)
         {
             int fallbackTimeout = Math.Max(250, timeoutMs - primaryTimeout);
-            return await TrySendToPipeAsync(DefaultPipeNamePrefix, resolvedPath, fallbackTimeout).ConfigureAwait(false);
+            return await TrySendToPipeAsync(DefaultPipeNamePrefix, resolvedPath, fallbackTimeout, cancellationToken).ConfigureAwait(false);
         }
 
         return false;
     }
 
-    private static async Task<bool> TrySendToPipeAsync(string pipeName, string? message, int timeoutMs)
+    private static async Task<bool> TrySendToPipeAsync(string pipeName, string? message, int timeoutMs, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -226,11 +230,11 @@ public class SingleInstanceService : ISingleInstanceService
                 pipeName,
                 PipeDirection.Out,
                 PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-            await client.ConnectAsync(timeoutMs).ConfigureAwait(false);
+            await client.ConnectAsync(timeoutMs, cancellationToken).ConfigureAwait(false);
 
             using var writer = new StreamWriter(client, Encoding.UTF8);
-            await writer.WriteAsync(message ?? string.Empty).ConfigureAwait(false);
-            await writer.FlushAsync().ConfigureAwait(false);
+            await writer.WriteAsync((message ?? string.Empty).AsMemory(), cancellationToken).ConfigureAwait(false);
+            await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
             return true;
         }
         catch (Exception ex) when (ex is IOException or TimeoutException or UnauthorizedAccessException or OperationCanceledException or InvalidOperationException)

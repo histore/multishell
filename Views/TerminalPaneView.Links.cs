@@ -154,7 +154,7 @@ public partial class TerminalPaneView
                 await PasteFromClipboardAsync(vm);
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or System.Runtime.InteropServices.COMException or System.ComponentModel.Win32Exception or System.IO.IOException or ArgumentException)
         {
             System.Diagnostics.Debug.WriteLine($"[TerminalPaneView] Pointer pressed handling failed: {ex.Message}");
         }
@@ -199,7 +199,7 @@ public partial class TerminalPaneView
         {
             await SetClipboardTextAsync(text);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or System.Runtime.InteropServices.COMException)
         {
             System.Diagnostics.Debug.WriteLine($"[TerminalPaneView] Clipboard copy failed (locked by another process): {ex.Message}");
         }

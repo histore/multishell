@@ -314,7 +314,7 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
                 _session.Resize(TerminalModel.Cols, TerminalModel.Rows);
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or System.IO.IOException or ObjectDisposedException or NotSupportedException)
         {
             TerminalModel.Feed($"{Loc["Terminal_Start_Failed"]}\r\n{ex.Message}\r\n");
             OnPropertyChanged(nameof(IsRunning));
@@ -386,37 +386,6 @@ public partial class TerminalTabViewModel : ViewModelBase, IDisposable, ICoordin
         }
 
         _dispatcherService.RunOnUi(UpdateDir);
-    }
-
-    /// <summary>
-    /// Coordinates shell process exit for a pane: updates execution state, prints exit summary,
-    /// and collapses the pane (closing the tab only when the last pane exits).
-    /// </summary>
-    internal void HandlePaneSessionExited(TerminalPaneViewModel pane, int exitCode)
-    {
-        if (_isDisposed) return;
-
-        void HandleExit()
-        {
-            if (_isDisposed) return;
-
-            OnPropertyChanged(nameof(IsRunning));
-            if (exitCode != 0 && (ReferenceEquals(pane, ActivePane) || _panes.Count <= 1))
-            {
-                ExecutionState = ProcessExecutionState.Failed;
-                LastExitCode = exitCode;
-            }
-
-            if (!pane.IsDisposed)
-            {
-                pane.TerminalModel.Feed($"\r\n{string.Format(Loc["Terminal_Process_Exited"], exitCode)}\r\n");
-            }
-
-            pane.RaiseCloseRequested();
-            ClosePane(pane);
-        }
-
-        _dispatcherService.RunOnUi(HandleExit);
     }
 
     private void DetachInitialSessionHandlers()

@@ -109,7 +109,7 @@ public sealed class AvaloniaTerminalModelAdapter : ITerminalModelAdapter
             // Reset DEC private modes for mouse tracking via standard VT sequences (1000, 1002, 1003, 1006)
             Model.Terminal.Feed("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or ArgumentException)
         {
             System.Diagnostics.Debug.WriteLine($"SuppressMouseTracking feed failed: {ex.Message}");
         }
@@ -124,7 +124,7 @@ public sealed class AvaloniaTerminalModelAdapter : ITerminalModelAdapter
                 prop?.SetValue(tracker, 0); // MouseTrackingMode.None
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is System.Reflection.TargetInvocationException or FieldAccessException or MethodAccessException or InvalidOperationException or ArgumentException)
         {
             System.Diagnostics.Debug.WriteLine($"SuppressMouseTracking reflection failed: {ex.Message}");
         }

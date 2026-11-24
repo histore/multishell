@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MultiShell.Services;
@@ -31,5 +32,5 @@ public interface ISingleInstanceService : IDisposable
     /// <param name="clientCurrentDirectory">Current working directory of the secondary instance caller.</param>
     /// <param name="timeoutMs">Connection timeout in milliseconds.</param>
     /// <returns>True if message was delivered successfully; otherwise false.</returns>
-    Task<bool> SendArgsToFirstInstanceAsync(string[] args, string clientCurrentDirectory, int timeoutMs = 2000);
+    Task<bool> SendArgsToFirstInstanceAsync(string[] args, string clientCurrentDirectory, int timeoutMs = 2000, CancellationToken cancellationToken = default);
 }
