@@ -13,7 +13,7 @@ namespace MultiShell.Tests;
 
 public partial class TerminalTabViewModelTests
 {
-    private class MockPowerShellSession : IShellSession
+    internal class MockPowerShellSession : IShellSession
     {
         public Guid SessionId { get; } = Guid.NewGuid();
         public string Title { get; }

@@ -113,43 +113,8 @@ public partial class TerminalTabViewModelTests
         Assert.Equal("@", Encoding.UTF8.GetString(session.SentData[0]));
     }
 
-    [Fact]
-    public void TerminalControl_WhenEscapePressed_SendsEscapeByte()
-    {
-        var session = new MockPowerShellSession("PS 1");
-        session.Start();
-        using var vm = new TerminalTabViewModel(session);
-        var terminal = new SvcSystems.UI.Terminal.TerminalControl
-        {
-            Model = (SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel
-        };
-
-        terminal.RaiseEvent(new Avalonia.Input.KeyEventArgs
-        {
-            RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent,
-            Key = Avalonia.Input.Key.Escape
-        });
-
-        Assert.Single(session.SentData);
-        Assert.Equal(new byte[] { 0x1B }, session.SentData[0]);
-    }
-
-    [Fact]
-    public void TerminalControl_ThemePalette_AppliesSolidColorBrushCorrectly()
-    {
-        var terminal = new SvcSystems.UI.Terminal.TerminalControl();
-        var resolveMethod = typeof(SvcSystems.UI.Terminal.TerminalControl).GetMethod("ResolvePaletteBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-
-        // With ImmutableSolidColorBrush, TerminalControl ignores it because it checks "value is Brush"
-        terminal.Resources["SvcSystems.UI.TerminalColor0"] = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Colors.LightYellow);
-        var brushIgnored = resolveMethod.Invoke(terminal, [0]);
-        Assert.NotEqual(Avalonia.Media.Colors.LightYellow, ((Avalonia.Media.ISolidColorBrush)brushIgnored!).Color);
-
-        // With SolidColorBrush (inherits from Brush), TerminalControl accepts it
-        terminal.Resources["SvcSystems.UI.TerminalColor0"] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.LightYellow);
-        var brushAccepted = resolveMethod.Invoke(terminal, [0]);
-        Assert.Equal(Avalonia.Media.Colors.LightYellow, ((Avalonia.Media.ISolidColorBrush)brushAccepted!).Color);
-    }
+    // TerminalControl_* tests are in TerminalControlHeadlessTests ([Collection("HeadlessUI")]) below
+    // so they are serialized with all other Avalonia headless UI tests.
 
 
 
@@ -491,5 +456,53 @@ public partial class TerminalTabViewModelTests
 
         var text = strMethod!.Invoke(line0, new object[] { true, 0, term.Cols })?.ToString();
         Assert.Equal("echo https://github.com/histore/multishell", text);
+    }
+}
+
+[Collection("HeadlessUI")]
+public class TerminalControlHeadlessTests
+{
+    [Fact]
+    public async Task TerminalControl_WhenEscapePressed_SendsEscapeByte()
+    {
+        await HeadlessTestSession.DispatchAsync(() =>
+        {
+            var session = new TerminalTabViewModelTests.MockPowerShellSession("PS 1");
+            session.Start();
+            using var vm = new TerminalTabViewModel(session);
+            var terminal = new SvcSystems.UI.Terminal.TerminalControl
+            {
+                Model = (SvcSystems.UI.Terminal.TerminalControlModel)vm.TerminalModel.NativeModel
+            };
+
+            terminal.RaiseEvent(new Avalonia.Input.KeyEventArgs
+            {
+                RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent,
+                Key = Avalonia.Input.Key.Escape
+            });
+
+            Assert.Single(session.SentData);
+            Assert.Equal(new byte[] { 0x1B }, session.SentData[0]);
+        });
+    }
+
+    [Fact]
+    public async Task TerminalControl_ThemePalette_AppliesSolidColorBrushCorrectly()
+    {
+        await HeadlessTestSession.DispatchAsync(() =>
+        {
+            var terminal = new SvcSystems.UI.Terminal.TerminalControl();
+            var resolveMethod = typeof(SvcSystems.UI.Terminal.TerminalControl).GetMethod("ResolvePaletteBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+            // With ImmutableSolidColorBrush, TerminalControl ignores it because it checks "value is Brush"
+            terminal.Resources["SvcSystems.UI.TerminalColor0"] = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Colors.LightYellow);
+            var brushIgnored = resolveMethod.Invoke(terminal, [0]);
+            Assert.NotEqual(Avalonia.Media.Colors.LightYellow, ((Avalonia.Media.ISolidColorBrush)brushIgnored!).Color);
+
+            // With SolidColorBrush (inherits from Brush), TerminalControl accepts it
+            terminal.Resources["SvcSystems.UI.TerminalColor0"] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.LightYellow);
+            var brushAccepted = resolveMethod.Invoke(terminal, [0]);
+            Assert.Equal(Avalonia.Media.Colors.LightYellow, ((Avalonia.Media.ISolidColorBrush)brushAccepted!).Color);
+        });
     }
 }
