@@ -28,6 +28,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
     private readonly IDispatcherService _dispatcherService;
     private readonly ITerminalModelFactory _terminalModelFactory;
     private readonly IPlatformService _platformService;
+    private readonly List<IDisposable> _ownedDisposables = [];
+    internal IReadOnlyList<IDisposable> OwnedDisposables => _ownedDisposables;
     private int _tabCounter;
     private bool _isDisposed;
     private bool _isInitialized;
@@ -181,18 +183,55 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
 
     private static string DetermineUiTerminalStack() => UiFrameworkInfo.GetUiTerminalStack();
 
+    private sealed record OwnedDefaultServices(
+        IShellProcessService ShellProcess,
+        TabStatePersistenceService Persistence,
+        IThemeService Theme,
+        LocalizationService Localization,
+        FontSizeService FontSize);
+
+    private static OwnedDefaultServices CreateDefaultOwnedServices(IShellProcessService? shellProcessService = null)
+    {
+        return new OwnedDefaultServices(
+            shellProcessService ?? new ShellProcessService(),
+            new TabStatePersistenceService(),
+            new ThemeService(),
+            new LocalizationService(),
+            new FontSizeService());
+    }
+
+    private MainViewModel(
+        OwnedDefaultServices owned,
+        IWindowCoordinatorService? windowCoordinator,
+        string? initialDirectory,
+        IDispatcherService? dispatcherService,
+        ITerminalModelFactory? terminalModelFactory)
+        : this(
+            owned.ShellProcess,
+            owned.Persistence,
+            owned.Theme,
+            owned.Localization,
+            owned.FontSize,
+            windowCoordinator: windowCoordinator,
+            initialDirectory: initialDirectory,
+            dispatcherService: dispatcherService,
+            terminalModelFactory: terminalModelFactory)
+    {
+        _ownedDisposables.Add(owned.Persistence);
+    }
+
     public MainViewModel(string? initialDirectory = null, IWindowCoordinatorService? windowCoordinator = null, IDispatcherService? dispatcherService = null, ITerminalModelFactory? terminalModelFactory = null)
-        : this(new ShellProcessService(), new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), windowCoordinator: windowCoordinator, initialDirectory: initialDirectory, dispatcherService: dispatcherService, terminalModelFactory: terminalModelFactory)
+        : this(CreateDefaultOwnedServices(), windowCoordinator, initialDirectory, dispatcherService, terminalModelFactory)
     {
     }
 
     public MainViewModel(IShellProcessService shellProcessService, string? initialDirectory = null)
-        : this(shellProcessService, new TabStatePersistenceService(), new ThemeService(), new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), initialDirectory: initialDirectory)
+        : this(CreateDefaultOwnedServices(shellProcessService ?? throw new ArgumentNullException(nameof(shellProcessService))), null, initialDirectory, null, null)
     {
     }
 
     public MainViewModel(IShellProcessService shellProcessService, ITabStatePersistenceService persistenceService, IThemeService themeService, string? initialDirectory = null)
-        : this(shellProcessService, persistenceService, themeService, new LocalizationService(), new FontSizeService(), new ShellDiscoveryService(), new TerminalProfileService(), initialDirectory: initialDirectory)
+        : this(shellProcessService, persistenceService, themeService, new LocalizationService(), new FontSizeService(), initialDirectory: initialDirectory)
     {
     }
 
@@ -222,7 +261,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
         _localizationService = localizationService ?? new LocalizationService();
         _fontSizeService = fontSizeService ?? new FontSizeService();
         _shellDiscoveryService = shellDiscoveryService ?? new ShellDiscoveryService(_localizationService);
-        _terminalProfileService = terminalProfileService ?? new TerminalProfileService(localizationService: _localizationService);
+        if (terminalProfileService == null)
+        {
+            var ownedProfileService = new TerminalProfileService(localizationService: _localizationService);
+            _ownedDisposables.Add(ownedProfileService);
+            _terminalProfileService = ownedProfileService;
+        }
+        else
+        {
+            _terminalProfileService = terminalProfileService;
+        }
         _terminalProfileService.ProfilesChanged += ReloadProfiles;
         _pathCommandHistoryService = pathCommandHistoryService ?? new PathCommandHistoryService();
         _directoryHistoryService = directoryHistoryService ?? new DirectoryHistoryService();
@@ -359,5 +407,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
             }
         }
         Tabs.Clear();
+
+        foreach (var disposable in _ownedDisposables)
+        {
+            try
+            {
+                disposable.Dispose();
+            }
+            catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel.Dispose] Owned service disposal failed: {ex.Message}");
+            }
+        }
+        _ownedDisposables.Clear();
     }
 }

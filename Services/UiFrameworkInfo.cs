@@ -15,7 +15,7 @@ public static class UiFrameworkInfo
     public static string GetUiTerminalStack()
     {
         var avaloniaVersion = typeof(Application).Assembly.GetName().Version;
-        var versionStr = avaloniaVersion != null ? $"{avaloniaVersion.Major}.{avaloniaVersion.Minor}" : "12.1";
+        var versionStr = avaloniaVersion != null ? $"{avaloniaVersion.Major}.{avaloniaVersion.Minor}" : "12.2";
         return $"Avalonia UI {versionStr} / ConPTY";
     }
 

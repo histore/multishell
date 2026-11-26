@@ -48,10 +48,7 @@
     <PackageReference Include="Avalonia.Desktop" Version="12.2.0" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.2.0" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.2.0" />
-    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
-      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
-      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="MinVer" Version="6.0.0">
       <PrivateAssets>all</PrivateAssets>
@@ -59,4 +56,20 @@
     </PackageReference>
     <PackageReference Include="SvcSystems.UI.Terminal" Version="2.3.5" />
   </ItemGroup>
+
+  <!-- Restored unconditionally so Release/Debug builds without re-restoring succeed;
+       excluded from Release compilation, runtime output, and host configuration. -->
+  <Target Name="ExcludeDiagnosticsSupportInNonDebug"
+          AfterTargets="ResolvePackageAssets"
+          Condition="'$(Configuration)' != 'Debug'">
+    <ItemGroup>
+      <ResolvedCompileFileDefinitions Remove="@(ResolvedCompileFileDefinitions)"
+                                      Condition="'%(NuGetPackageId)' == 'AvaloniaUI.DiagnosticsSupport'" />
+      <RuntimeCopyLocalItems Remove="@(RuntimeCopyLocalItems)"
+                             Condition="'%(NuGetPackageId)' == 'AvaloniaUI.DiagnosticsSupport'" />
+      <ResolvedCopyLocalItems Remove="@(ResolvedCopyLocalItems)"
+                              Condition="'%(NuGetPackageId)' == 'AvaloniaUI.DiagnosticsSupport'" />
+      <RuntimeHostConfigurationOption Remove="Avalonia.Diagnostics.Diagnostic.IsEnabled" />
+    </ItemGroup>
+  </Target>
 </Project>

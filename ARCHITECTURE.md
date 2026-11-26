@@ -1,7 +1,7 @@
 # MultiShell Architecture & Design
 
 ## System Purpose & Scope
-MultiShell is a high-performance, multi-tab terminal emulator built with **C# 13**, **.NET 10.0**, and **Avalonia UI 12.1** for Windows. It provides direct Win32 ConPTY virtualization, zero-allocation UTF-8 stream processing, persistent workspaces, multi-shell profile management (PowerShell 7, Windows PowerShell, WSL, CMD, NuShell), and live fuzzy search history drawers with dynamic i18n support.
+MultiShell is a high-performance, multi-tab terminal emulator built with **C# 13**, **.NET 10.0**, and **Avalonia UI 12.2** for Windows. It provides direct Win32 ConPTY virtualization, zero-allocation UTF-8 stream processing, persistent workspaces, multi-shell profile management (PowerShell 7, Windows PowerShell, WSL, CMD, NuShell), and live fuzzy search history drawers with dynamic i18n support.
 
 For the comprehensive system architecture specification and subsystem diagrams, see [docs/architecture/overview.md](docs/architecture/overview.md).
 

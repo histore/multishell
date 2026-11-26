@@ -430,4 +430,68 @@ public partial class MainViewModelTabTests
         Assert.Null(tab2.TerminalModel.UpdateUI);
         Assert.Empty(tab2.CommandHistory);
     }
+
+    [Fact]
+    public async Task Dispose_DisposesOwnedInternalServices_AfterCleanup()
+    {
+        // Arrange: construct with terminalProfileService = null so MainViewModel owns the created TerminalProfileService
+        var processService = new FakePowerShellProcessService();
+        var persistenceService = new FakeTabStatePersistenceService();
+        var vm = new MainViewModel(
+            processService,
+            persistenceService,
+            new ThemeService(),
+            new LocalizationService(),
+            new FontSizeService());
+
+        var ownedProfileService = Assert.IsType<TerminalProfileService>(Assert.Single(vm.OwnedDisposables));
+
+        // Act
+        vm.Dispose();
+
+        // Assert: owned internal service was disposed
+        Assert.Empty(vm.OwnedDisposables);
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => ownedProfileService.LoadProfilesAsync());
+    }
+
+    [Fact]
+    public async Task Dispose_DoesNotDisposeCallerInjectedOrSatelliteSharedServices()
+    {
+        // Arrange
+        var tempDir = Path.Combine(Path.GetTempPath(), $"multishell-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var processService = new FakePowerShellProcessService();
+            using var persistenceService = new TabStatePersistenceService(Path.Combine(tempDir, "tabs.json"));
+            using var profileService = new TerminalProfileService(Path.Combine(tempDir, "profiles.json"));
+            using var primary = new MainViewModel(
+                processService,
+                persistenceService,
+                new ThemeService(),
+                new LocalizationService(),
+                new FontSizeService(),
+                terminalProfileService: profileService);
+
+            Assert.Empty(primary.OwnedDisposables);
+
+            using var satellite = primary.CreateSatelliteViewModel();
+            Assert.Empty(satellite.OwnedDisposables);
+
+            // Act: dispose satellite then primary
+            satellite.Dispose();
+            primary.Dispose();
+
+            // Assert: caller-injected services remain usable (not disposed by MainViewModel)
+            await persistenceService.SaveStateAsync(new WorkspaceState(new List<TabState>(), 0));
+            await profileService.LoadProfilesAsync();
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
 }
