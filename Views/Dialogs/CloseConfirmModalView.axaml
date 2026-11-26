@@ -1,0 +1,157 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MultiShell.ViewModels"
+             x:Class="MultiShell.Views.Dialogs.CloseConfirmModalView"
+             x:DataType="vm:MainViewModel"
+             KeyboardNavigation.TabNavigation="Cycle">
+    <Grid x:Name="CloseConfirmModalOverlay"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Background="{DynamicResource AppModalOverlay}">
+        <Border Classes="modalDialog"
+                Width="520"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Padding="20">
+            <Grid RowDefinitions="Auto, Auto, Auto, Auto">
+                <!-- Header -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+                    <Border Background="{DynamicResource AppDangerSubtle}"
+                            BorderBrush="{DynamicResource AppDanger}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Width="30" Height="30"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="⚠"
+                                   FontSize="15"
+                                   Foreground="{DynamicResource AppDanger}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="{Binding Loc[CloseConfirm_Title]}"
+                               FontSize="15"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource AppTextPrimary}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Explanation -->
+                <TextBlock Grid.Row="1"
+                           Text="{Binding CloseConfirmationMessage}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextSecondary}"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,12" />
+
+                <!-- Active Process Tabs List -->
+                <Border Grid.Row="2" Classes="modalSection" Padding="6" Margin="0,0,0,16">
+                    <ListBox x:Name="ActiveProcessTabsList"
+                             ItemsSource="{Binding ActiveProcessTabs}"
+                             SelectedItem="{Binding SelectedActiveProcessTab}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             MaxHeight="180"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ActiveProcessTabItem">
+                                <Grid ColumnDefinitions="Auto, Auto, *, Auto" Margin="2,3">
+                                    <Border Grid.Column="0"
+                                            Background="{DynamicResource AppSurfaceBackground}"
+                                            BorderBrush="{DynamicResource AppBorder}"
+                                            BorderThickness="1"
+                                            CornerRadius="3"
+                                            Padding="5,1"
+                                            Margin="0,0,8,0"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding ShellIconTag}"
+                                                   FontFamily="{StaticResource AppMonoFontFamily}"
+                                                   FontSize="10"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource AppAccent}" />
+                                    </Border>
+
+                                    <Border Grid.Column="1"
+                                            IsVisible="{Binding HasWindowBadge}"
+                                            Background="{DynamicResource AppSurfaceBackground}"
+                                            BorderBrush="{DynamicResource AppBorder}"
+                                            BorderThickness="1"
+                                            CornerRadius="3"
+                                            Padding="5,1"
+                                            Margin="0,0,6,0"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding WindowBadge}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource AppTextMuted}" />
+                                    </Border>
+
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding DisplayTitle}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource AppTextPrimary}"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+
+                                    <TextBlock Grid.Column="3"
+                                               IsVisible="{Binding HasCommandSummary}"
+                                               Text="{Binding CommandSummary}"
+                                               FontFamily="{StaticResource AppMonoFontFamily}"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource AppTextMuted}"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxWidth="180"
+                                               Margin="10,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+
+                <!-- Action Buttons (Cancel is last and pre-selected/focused by default) -->
+                <StackPanel Grid.Row="3"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8">
+                    <Button x:Name="ExitApplicationButton"
+                            Content="{Binding Loc[CloseConfirm_Exit_Button]}"
+                            Command="{Binding ConfirmExitFromCloseDialogCommand}"
+                            Padding="14,6"
+                            Background="{DynamicResource AppDangerSubtle}"
+                            BorderBrush="{DynamicResource AppDanger}"
+                            BorderThickness="1"
+                            Foreground="{DynamicResource AppDanger}"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            CornerRadius="4" />
+
+                    <Button x:Name="SwitchToTabButton"
+                            Content="{Binding Loc[CloseConfirm_SwitchTab_Button]}"
+                            Command="{Binding SwitchToActiveProcessTabCommand}"
+                            CommandParameter="{Binding SelectedActiveProcessTab}"
+                            Padding="14,6"
+                            Background="{DynamicResource AppSurfaceBackground}"
+                            BorderBrush="{DynamicResource AppBorder}"
+                            BorderThickness="1"
+                            Foreground="{DynamicResource AppTextPrimary}"
+                            FontSize="12"
+                            CornerRadius="4" />
+
+                    <Button x:Name="CancelExitButton"
+                            Content="{Binding Loc[CloseConfirm_Cancel_Button]}"
+                            Command="{Binding CancelCloseConfirmationCommand}"
+                            IsDefault="True"
+                            IsCancel="True"
+                            Padding="16,6"
+                            Background="{DynamicResource AppAccent}"
+                            BorderBrush="{DynamicResource AppAccentHover}"
+                            BorderThickness="1"
+                            Foreground="#FFFFFF"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            CornerRadius="4" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

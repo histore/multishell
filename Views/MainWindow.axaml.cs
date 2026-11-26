@@ -184,13 +184,22 @@ public partial class MainWindow : Window
                 AttachTabRenameListeners(vm);
                 vm.PropertyChanged += OnMainViewModelPropertyChanged;
                 vm.Tabs.CollectionChanged += OnMainViewModelTabsCollectionChanged;
+                vm.ExitConfirmedRequested += OnExitConfirmedRequested;
+                vm.CloseConfirmationDismissed += FocusActiveTerminal;
+                vm.WindowFocusRequested += BringToForeground;
             }
         };
 
-        Closing += (_, _) =>
+        Closing += (_, e) =>
         {
             if (DataContext is MainViewModel vm)
             {
+                if (vm.TryRequestCloseConfirmation())
+                {
+                    e.Cancel = true;
+                    return;
+                }
+
                 if (vm.IsPrimary)
                 {
                     vm.SaveCurrentStateSynchronously();
@@ -234,12 +243,20 @@ public partial class MainWindow : Window
         }, DispatcherPriority.Loaded);
     }
 
+    private void OnExitConfirmedRequested()
+    {
+        Dispatcher.UIThread.Post(Close);
+    }
+
     private void DetachMainViewModelListeners()
     {
         if (_subscribedMainVm == null) return;
 
         _subscribedMainVm.PropertyChanged -= OnMainViewModelPropertyChanged;
         _subscribedMainVm.Tabs.CollectionChanged -= OnMainViewModelTabsCollectionChanged;
+        _subscribedMainVm.ExitConfirmedRequested -= OnExitConfirmedRequested;
+        _subscribedMainVm.CloseConfirmationDismissed -= FocusActiveTerminal;
+        _subscribedMainVm.WindowFocusRequested -= BringToForeground;
         DetachTabRenameListeners(_subscribedMainVm);
         if (_subscribedMainVm.FolderPickerHandler == ShowFolderPickerForBreadcrumbAsync)
         {

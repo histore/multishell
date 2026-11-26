@@ -561,6 +561,13 @@
                                        IsVisible="{Binding IsProfilesModalOpen}"
                                        ZIndex="60" />
 
+            <!-- Modal Dialog for Active-Process Close Confirmation (REQ-UI-011) -->
+            <dialogs:CloseConfirmModalView x:Name="CloseConfirmModal"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Stretch"
+                                           IsVisible="{Binding IsCloseConfirmationOpen}"
+                                           ZIndex="80" />
+
             <!-- ========================================== -->
             <!-- Unified Tab Switcher HUD Overlay (Ctrl+Tab & Tab Bar Button) (REQ-TAB-019) -->
             <!-- ========================================== -->

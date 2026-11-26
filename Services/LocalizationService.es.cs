@@ -214,6 +214,14 @@ public partial class LocalizationService
         ["Profiles_Browse_Exe_Filter"] = "Ejecutables (*.exe, *.cmd, *.bat)",
         ["Terminal_Start_Failed"] = "Error al iniciar la sesión de shell.",
         ["Terminal_Process_Exited"] = "[Proceso finalizado con código {0}]",
-        ["Process_Notification_ExitCode"] = "{0} (Código de salida {1})"
+        ["Process_Notification_ExitCode"] = "{0} (Código de salida {1})",
+
+        // Main Window Close Confirmation (REQ-UI-011)
+        ["CloseConfirm_Title"] = "Procesos activos en ejecución",
+        ["CloseConfirm_Message_Single"] = "1 pestaña aún tiene un proceso activo en ejecución. Cerrar MultiShell lo finalizará.",
+        ["CloseConfirm_Message_Multiple"] = "{0} pestañas aún tienen procesos activos en ejecución. Cerrar MultiShell los finalizará.",
+        ["CloseConfirm_Exit_Button"] = "Salir de MultiShell",
+        ["CloseConfirm_SwitchTab_Button"] = "Ir a la pestaña",
+        ["CloseConfirm_Cancel_Button"] = "Cancelar"
     };
 }

@@ -232,6 +232,7 @@ docs/requirements/modules/
 | `REQ-LNC-001` | Launcher Search & Item Filtering | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `DEPRECATED` |
 | `REQ-UI-009` | Modal Command Palette (`Ctrl+Shift+P`) | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `DEPRECATED` |
 | `REQ-UI-010` | Interactive Status Bar Path Breadcrumbs & Folder Picker | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
+| `REQ-UI-011` | Main Window Close Confirmation for Active Processes | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-HIST-005` | Global Panel Actions, Commands & Snippets Integration | [`docs/requirements/modules/search-and-drawer.md`](docs/requirements/modules/search-and-drawer.md) | `BACKLOG` |
 | `REQ-TAB-026` | Detachable Window Undocking & Redocking for Multi-Monitor Workflows | [`docs/requirements/modules/presentation.md`](docs/requirements/modules/presentation.md) | `IMPLEMENTED` |
 | `REQ-TERM-012` | Long-Running Process Completion Desktop & Tab Notifications | [`docs/requirements/modules/terminal-session.md`](docs/requirements/modules/terminal-session.md) | `IMPLEMENTED` |

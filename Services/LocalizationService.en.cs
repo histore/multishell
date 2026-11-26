@@ -214,6 +214,14 @@ public partial class LocalizationService
         ["Profiles_Browse_Exe_Filter"] = "Executables (*.exe, *.cmd, *.bat)",
         ["Terminal_Start_Failed"] = "Failed to start shell session.",
         ["Terminal_Process_Exited"] = "[Process exited with code {0}]",
-        ["Process_Notification_ExitCode"] = "{0} (Exit code {1})"
+        ["Process_Notification_ExitCode"] = "{0} (Exit code {1})",
+
+        // Main Window Close Confirmation (REQ-UI-011)
+        ["CloseConfirm_Title"] = "Active Processes Running",
+        ["CloseConfirm_Message_Single"] = "1 tab still has an active running process. Closing MultiShell will terminate it.",
+        ["CloseConfirm_Message_Multiple"] = "{0} tabs still have active running processes. Closing MultiShell will terminate them.",
+        ["CloseConfirm_Exit_Button"] = "Exit MultiShell",
+        ["CloseConfirm_SwitchTab_Button"] = "Switch to Tab",
+        ["CloseConfirm_Cancel_Button"] = "Cancel"
     };
 }

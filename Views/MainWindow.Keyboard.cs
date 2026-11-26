@@ -13,7 +13,7 @@ namespace MultiShell.Views;
 public partial class MainWindow
 {
     private bool IsAnyModalOpen()
-        => HelpModal?.IsVisible == true || AboutModal?.IsVisible == true || ProfilesModal?.IsVisible == true;
+        => HelpModal?.IsVisible == true || AboutModal?.IsVisible == true || ProfilesModal?.IsVisible == true || CloseConfirmModal?.IsVisible == true;
 
     private static bool IsWindowKeyBindingGesture(KeyEventArgs e)
     {
@@ -57,6 +57,7 @@ public partial class MainWindow
             if (IsWindowKeyBindingGesture(e) ||
                 HelpModal?.IsVisible == true ||
                 AboutModal?.IsVisible == true ||
+                (CloseConfirmModal?.IsVisible == true && (e.Source is not Visual confirmVisual || !CloseConfirmModal.IsVisualAncestorOf(confirmVisual))) ||
                 (ProfilesModal?.IsVisible == true && (e.Source is not Visual sourceVisual || !ProfilesModal.IsVisualAncestorOf(sourceVisual))))
             {
                 e.Handled = true;
@@ -263,6 +264,11 @@ public partial class MainWindow
         }
         if (HelpModal?.IsVisible == true) { HideHelpModal(); return true; }
         if (AboutModal?.IsVisible == true) { HideAboutModal(); return true; }
+        if (CloseConfirmModal?.IsVisible == true && DataContext is MainViewModel cvm)
+        {
+            cvm.CancelCloseConfirmation();
+            return true;
+        }
         if (ProfilesModal?.IsVisible == true && DataContext is MainViewModel pvm)
         {
             if (pvm.IsEditingProfile)
@@ -289,7 +295,7 @@ public partial class MainWindow
 
     private void TryHandleTabManagementKeyDown(KeyEventArgs e)
     {
-        if (HelpModal?.IsVisible == true || AboutModal?.IsVisible == true || ProfilesModal?.IsVisible == true) return;
+        if (IsAnyModalOpen()) return;
         if (DataContext is not MainViewModel vm) return;
 
         var isAlt = (e.KeyModifiers & KeyModifiers.Alt) != 0;

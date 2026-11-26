@@ -319,6 +319,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable, ICoordinatedWin
             OnPropertyChanged(nameof(AvailableShells));
             OnPropertyChanged(nameof(NewTabTooltip));
             OnPropertyChanged(nameof(WindowTitle));
+            OnPropertyChanged(nameof(CloseConfirmationMessage));
         };
         _localizationService.LanguageChanged += _languageChangedHandler;
 

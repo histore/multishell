@@ -76,6 +76,44 @@ public partial class TerminalTabViewModel
     public bool IsProcessRunning => ExecutionState == ProcessExecutionState.Running;
 
     /// <summary>
+    /// Gets whether this tab or any of its split panes currently has an actively running process (REQ-UI-011).
+    /// </summary>
+    public bool HasActiveProcess
+    {
+        get
+        {
+            if (IsProcessRunning) return true;
+            if (_panes == null) return false;
+            for (int i = 0; i < _panes.Count; i++)
+            {
+                if (_panes[i].PaneExecutionState == ProcessExecutionState.Running)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Returns the first split pane with an active running process, or <see cref="ActivePane"/> if none.
+    /// </summary>
+    internal TerminalPaneViewModel? FindActiveProcessPane()
+    {
+        if (_panes != null)
+        {
+            for (int i = 0; i < _panes.Count; i++)
+            {
+                if (_panes[i].PaneExecutionState == ProcessExecutionState.Running)
+                {
+                    return _panes[i];
+                }
+            }
+        }
+        return ActivePane;
+    }
+
+    /// <summary>
     /// Gets whether the floating in-terminal activity HUD pill should be displayed.
     /// </summary>
     public bool IsProcessHudVisible => IsProcessRunning;

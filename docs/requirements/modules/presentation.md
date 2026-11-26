@@ -568,6 +568,7 @@ This document defines the functional and non-functional requirements specific to
 | `REQ-UI-008` | Empty State Welcome & Profile Selector Dashboard | UI/UX | IMPLEMENTED | `v0.1.0` |
 | `REQ-UI-006` | Split Panes (Horizontal & Vertical Session Splits) | Functional | IMPLEMENTED | `v1.1.0` |
 | `REQ-UI-010` | Interactive Status Bar Path Breadcrumbs & Folder Picker | UI/UX | IMPLEMENTED | `v1.2.0` |
+| `REQ-UI-011` | Main Window Close Confirmation for Active Processes | UI/UX | IMPLEMENTED | `v0.32.0` |
 | `REQ-SNIP-001` | Customizable Snippet & Quick Command Launcher | Functional | DEPRECATED | `v1.2.0` |
 | `REQ-AI-001` | Context-Aware AI Command Generator & Auto-Suggest | Functional | BACKLOG | `v1.3.0` |
 | `REQ-LNC-001` | Launcher Search & Item Filtering | Functional | DEPRECATED | `v1.3.0` |
@@ -594,3 +595,27 @@ This document defines the functional and non-functional requirements specific to
 #### Traceability & Verification
 - **Architecture Contract**: `docs/architecture/modules/presentation.md`
 - **Test Suite**: `MultiShell.Tests/StatusBreadcrumbNavigationTests.cs`
+
+---
+
+### `[REQ-UI-011]` Main Window Close Confirmation for Active Processes
+
+- **Status**: `IMPLEMENTED`
+- **Type**: `UI/UX`
+- **Target Release**: `v0.32.0`
+
+#### User Story
+> **As a** user closing the main MultiShell window,  
+> **I want** a confirmation dialog whenever one or more tabs still have actively running processes, offering options to exit MultiShell, switch to the affected tab, or cancel closing (with Cancel pre-selected),  
+> **so that** I do not accidentally terminate running commands or builds.
+
+#### Acceptance Criteria (Given-When-Then)
+- [x] **AC-1**: **Given** the primary main window is closing and at least one tab (including split panes or coordinated secondary windows) has an active running process (`HasActiveProcess == true`), **When** closing is requested, **Then** window closure is cancelled and the confirmation dialog opens listing affected tabs.
+- [x] **AC-2**: **Given** no tab has an active running process, **When** closing the primary main window, **Then** the application closes immediately without showing a confirmation dialog.
+- [x] **AC-3**: **When** selecting `Exit MultiShell`, **Then** the application proceeds to save workspace state and terminate cleanly without re-prompting.
+- [x] **AC-4**: **When** selecting `Switch to Tab`, **Then** the confirmation dialog closes, MultiShell stays open, and the selected affected tab (and its active running split pane) receives focus.
+- [x] **AC-5**: **When** the confirmation dialog opens, **Then** the `Cancel` option (last option) is pre-selected/focused by default, and confirming it or pressing `Escape` aborts exit and returns focus to the terminal.
+
+#### Traceability & Verification
+- **Architecture Contract**: `docs/architecture/modules/presentation.md`
+- **Test Suite**: `MultiShell.Tests/MainViewModelCloseConfirmationTests.cs`

@@ -46,7 +46,9 @@ ViewModels/
 ├── MainViewModel.ClosedTabs.cs        # Recently closed tab history & restore commands
 ├── MainViewModel.Profiles.cs          # Shell profile selection & management
 ├── MainViewModel.Settings.cs          # Theme, font, language, and modal states
+├── MainViewModel.CloseConfirmation.cs # Active-process exit confirmation dialog state & commands (REQ-UI-011)
 ├── MainViewModel.TabSwitcher.cs       # Quick tab switcher (Ctrl+Tab)
+├── ActiveProcessTabItem.cs            # Active-process tab entry for close confirmation modal (REQ-UI-011)
 ├── Panes/
 │   ├── IPaneNodeViewModel.cs          # Binary tree node contract (IsLeaf, GetLeaves, FindParent, FindLeaf)
 │   ├── LeafPaneNodeViewModel.cs       # Leaf node wrapping TerminalPaneViewModel
@@ -92,6 +94,8 @@ Views/
 └── Dialogs/                           # Modal overlay & empty-state views (Profiles, About, Help, HistoryDrawer, Welcome)
     ├── AboutModalView.axaml           # About dialog layout
     ├── AboutModalView.axaml.cs        # About dialog code-behind
+    ├── CloseConfirmModalView.axaml    # Active-process close confirmation modal layout (REQ-UI-011)
+    ├── CloseConfirmModalView.axaml.cs # Close confirmation modal focus & keyboard/pointer handling
     ├── HelpModalView.axaml            # Keyboard shortcuts & help modal layout
     ├── HelpModalView.axaml.cs         # Help modal code-behind
     ├── ProfilesModalView.axaml        # Terminal profiles manager modal layout
