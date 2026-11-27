@@ -33,6 +33,22 @@ public partial class MainWindow
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
+        if (CloseConfirmModal?.IsVisible == true)
+        {
+            if (e.Key == Key.Escape && TryHandleEscapeKeyDown())
+            {
+                e.Handled = true;
+                return;
+            }
+            if (IsWindowKeyBindingGesture(e) ||
+                e.Source is not Visual confirmVisual ||
+                !CloseConfirmModal.IsVisualAncestorOf(confirmVisual))
+            {
+                e.Handled = true;
+            }
+            return;
+        }
+
         if (TryHandleTabSwitcherKeyDown(e)) return;
         if (DataContext is MainViewModel switcherCheckVm && switcherCheckVm.IsTabSwitcherOpen)
         {
@@ -57,7 +73,6 @@ public partial class MainWindow
             if (IsWindowKeyBindingGesture(e) ||
                 HelpModal?.IsVisible == true ||
                 AboutModal?.IsVisible == true ||
-                (CloseConfirmModal?.IsVisible == true && (e.Source is not Visual confirmVisual || !CloseConfirmModal.IsVisualAncestorOf(confirmVisual))) ||
                 (ProfilesModal?.IsVisible == true && (e.Source is not Visual sourceVisual || !ProfilesModal.IsVisualAncestorOf(sourceVisual))))
             {
                 e.Handled = true;

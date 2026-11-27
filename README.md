@@ -76,6 +76,7 @@ MultiShell
         ├── TabSwitcherOverlayView.axaml  # Process status Tab Switcher HUD
         ├── HistoryDrawerView.axaml       # Fuzzy command & directory overlay
         ├── ProfilesModalView.axaml       # Shell profile launcher dialog
+        ├── CloseConfirmModalView.axaml   # Active-process exit confirmation modal
         ├── HelpModalView.axaml           # Keyboard shortcuts modal
         └── AboutModalView.axaml          # Technology & system info dialog
 ```
@@ -135,7 +136,7 @@ dotnet run
 
 ## 🧪 Testing
 
-MultiShell includes a comprehensive xUnit test suite (828 automated test cases) covering MVVM ViewModels, Process services, Split-Pane binary trees, Localization, Dual-Theming, Fuzzy Search, and Workspace persistence:
+MultiShell includes a comprehensive xUnit test suite (839 automated test cases) covering MVVM ViewModels, Process services, Split-Pane binary trees, Localization, Dual-Theming, Fuzzy Search, and Workspace persistence:
 
 ```powershell
 dotnet test MultiShell.Tests/MultiShell.Tests.csproj

@@ -234,7 +234,9 @@ public class MainViewModelCloseConfirmationTests
         tab2.MarkCommandStarted("python train.py");
 
         var secondaryFocusCount = 0;
+        var primaryDismissedCount = 0;
         secondary.WindowFocusRequested += () => secondaryFocusCount++;
+        primary.CloseConfirmationDismissed += () => primaryDismissedCount++;
 
         // Act & Assert: secondary window close never prompts
         Assert.False(secondary.TryRequestCloseConfirmation());
@@ -248,6 +250,100 @@ public class MainViewModelCloseConfirmationTests
         primary.SwitchToActiveProcessTab(activeItem);
         Assert.Same(tab2, secondary.SelectedTab);
         Assert.Equal(1, secondaryFocusCount);
+        Assert.Equal(0, primaryDismissedCount);
+    }
+
+    [Fact]
+    public async Task TryRequestCloseConfirmation_CancelsOpenTabSwitcherAndInlineRename()
+    {
+        // Arrange
+        var processService = new MockShellProcessService();
+        using var vm = CreateViewModel(processService);
+        await vm.InitializeWorkspaceAsync();
+        vm.AddNewTab();
+        vm.Tabs[0].MarkCommandStarted("dotnet watch");
+        vm.ShowTabSwitcher(forward: true, isKeyboardTriggered: false);
+        vm.SelectedTab!.StartRenaming();
+
+        Assert.True(vm.IsTabSwitcherOpen);
+        Assert.True(vm.SelectedTab.IsRenaming);
+
+        // Act
+        var shouldCancel = vm.TryRequestCloseConfirmation();
+
+        // Assert
+        Assert.True(shouldCancel);
+        Assert.True(vm.IsCloseConfirmationOpen);
+        Assert.False(vm.IsTabSwitcherOpen);
+        Assert.False(vm.SelectedTab.IsRenaming);
+    }
+
+    [Fact]
+    public async Task SwitchToActiveProcessTab_WhenTargetTabWasRemoved_DoesNotSelectOrphanTab()
+    {
+        // Arrange
+        var processService = new MockShellProcessService();
+        using var vm = CreateViewModel(processService);
+        await vm.InitializeWorkspaceAsync();
+        vm.AddNewTab();
+        var tab1 = vm.Tabs[0];
+        var tab2 = vm.Tabs[1];
+        tab1.MarkCommandStarted("npm run build");
+        vm.SelectedTab = tab2;
+
+        Assert.True(vm.TryRequestCloseConfirmation());
+        var staleItem = Assert.Single(vm.ActiveProcessTabs);
+
+        // Remove tab1 while confirmation modal is open
+        vm.Tabs.Remove(tab1);
+
+        var dismissedCount = 0;
+        vm.CloseConfirmationDismissed += () => dismissedCount++;
+
+        // Act
+        vm.SwitchToActiveProcessTab(staleItem);
+
+        // Assert
+        Assert.False(vm.IsCloseConfirmationOpen);
+        Assert.Same(tab2, vm.SelectedTab);
+        Assert.Equal(1, dismissedCount);
+    }
+
+    [Fact]
+    public async Task SwitchToActiveProcessTab_WhenSecondaryWindowUnregistered_DoesNotFocusClosedWindow()
+    {
+        // Arrange
+        var coordinator = new WindowCoordinatorService();
+        var processService = new MockShellProcessService();
+        using var primary = CreateViewModel(processService, coordinator, isSatellite: false);
+        coordinator.RegisterWindow(primary, isPrimary: true);
+        await primary.InitializeWorkspaceAsync();
+
+        primary.AddNewTab();
+        var tab2 = primary.Tabs[1];
+        await coordinator.UndockTabAsync(primary, tab2);
+
+        var secondary = Assert.IsType<MainViewModel>(Assert.Single(coordinator.Windows, w => !w.IsPrimary));
+        tab2.MarkCommandStarted("cargo test");
+
+        Assert.True(primary.TryRequestCloseConfirmation());
+        var staleItem = Assert.Single(primary.ActiveProcessTabs);
+
+        var secondaryFocusCount = 0;
+        var primaryDismissedCount = 0;
+        secondary.WindowFocusRequested += () => secondaryFocusCount++;
+        primary.CloseConfirmationDismissed += () => primaryDismissedCount++;
+
+        // Simulate secondary window closing while primary modal is open
+        coordinator.UnregisterWindow(secondary);
+
+        // Act
+        primary.SwitchToActiveProcessTab(staleItem);
+
+        // Assert
+        Assert.False(primary.IsCloseConfirmationOpen);
+        Assert.Equal(0, secondaryFocusCount);
+        Assert.Equal(1, primaryDismissedCount);
     }
 
     [Collection("HeadlessUI")]

@@ -66,6 +66,15 @@ public partial class MainViewModel
             return false;
         }
 
+        if (IsTabSwitcherOpen)
+        {
+            CancelTabSwitcher();
+        }
+        if (SelectedTab?.IsRenaming == true)
+        {
+            SelectedTab.CancelRenaming();
+        }
+
         ActiveProcessTabs.Clear();
         foreach (var item in activeItems)
         {
@@ -141,7 +150,8 @@ public partial class MainViewModel
         var target = item ?? SelectedActiveProcessTab ?? ActiveProcessTabs.FirstOrDefault();
         CloseAndClearConfirmationState();
 
-        if (target != null)
+        var focusedSecondaryWindow = false;
+        if (target != null && IsActiveProcessTargetValid(target))
         {
             target.OwnerWindow.SelectedTab = target.Tab;
             var runningPane = target.Tab.FindActiveProcessPane();
@@ -152,11 +162,32 @@ public partial class MainViewModel
 
             if (!ReferenceEquals(target.OwnerWindow, this))
             {
+                focusedSecondaryWindow = true;
                 target.OwnerWindow.WindowFocusRequested?.Invoke();
             }
         }
 
-        CloseConfirmationDismissed?.Invoke();
+        if (!focusedSecondaryWindow)
+        {
+            CloseConfirmationDismissed?.Invoke();
+        }
+    }
+
+    private bool IsActiveProcessTargetValid(ActiveProcessTabItem target)
+    {
+        if (!target.OwnerWindow.Tabs.Contains(target.Tab))
+        {
+            return false;
+        }
+
+        if (!ReferenceEquals(target.OwnerWindow, this) &&
+            _windowCoordinator != null &&
+            !_windowCoordinator.Windows.Contains(target.OwnerWindow))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
